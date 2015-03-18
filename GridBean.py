@@ -201,15 +201,57 @@ class GridBeanRepository(dict):
                                [{'type': 'GBEString', 'name': 'ScriptText'}]) 
       
 import unittest
-class SimpleTester(unittest.TestCase):
+import yaml
+
+class SimpleTests(unittest.TestCase):
     def setUp(self):
-        filename  = "TestSettings.yml"
+        input1 = """
+Name: MDSimulator
+Settings:
+  - Forcefield:
+     GBType: Selection
+     Value:
+      - AMBER99
+      - AMBER99*
+      - GROMOS
+  - Box:
+     GBType: Section
+     Value:
+     - Lx:
+        GBType: Float
+        Value : 25.0
+     - Ly:
+        GBType: Float
+        Value : 25.0
+     - Lz:
+        GBType: Float
+        Value : 25.0
+  - Variables:
+      GBType:  Section
+      Value:
+         - Temperature:
+             GBType: Float
+             Value:  300.0
+         - Inputfile: 
+             GBType: File
+             Value:  $BASE/inputs/input.top
+         - Trajectory: 
+              GBType: LocalFile
+              Value:  run.tr
+  # VARIOUS PREPROCESSING OPTIONS
+  - PREPROCESSING OPTIONS:
+      GBType: Section
+      Value:
+       - define: 
+           GBType: String
+           Value: -DPOSRES
+           
+           
+""" 
         self.logger = logging.getLogger(__name__)
-        self.logger.debug('Parsing Gridbean in ' + filename)
-        import yaml
+        self.logger.debug('Parsing Gridbean')      
         try:
-            stream    = open(filename, 'r')
-            self.inputData = yaml.load(stream)
+            self.inputData = yaml.load(input1)
         except:
             print "YAML error reading/parsing " + filename
             sys.exit()
