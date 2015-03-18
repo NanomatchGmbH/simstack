@@ -207,7 +207,7 @@ class YAMLInputToGB:
                                      ' found but other keywords missing in ' + str(self.element))
                         raise ValueError
                     # 
-                    # unclear what we have here lets do something 
+                    # unclear what we have 
                     #
                     return 'GBESection'
     def getName(self):
