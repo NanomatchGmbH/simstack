@@ -1,18 +1,1 @@
-DEBUG:__main__:Parsing Gridbean in TestSettings.yml
-DEBUG:__main__:GridBean initMDSimulator
-DEBUG:__main__:... Parsing: Forcefield Type: GBESelection
-DEBUG:__main__:... Parsing: Box Type: GBESection
-DEBUG:__main__:GridBean Section InitBox
-DEBUG:__main__:... Parsing: Lx Type: GBEFloat
-DEBUG:__main__:... Parsing: Ly Type: GBEFloat
-DEBUG:__main__:... Parsing: Lz Type: GBEFloat
-DEBUG:__main__:... Parsing: Variables Type: GBESection
-DEBUG:__main__:GridBean Section InitVariables
-DEBUG:__main__:... Parsing: Temperature Type: GBEFloat
-DEBUG:__main__:... Parsing: Inputfile Type: GBEFile
-ERROR:__main__:YAMLI input element could not be converted to Gridbean Element
-DEBUG:__main__:... Parsing: Trajectory Type: GBELocalFile
-ERROR:__main__:YAMLI input element could not be converted to Gridbean Element
-DEBUG:__main__:... Parsing: PREPROCESSING OPTIONS Type: GBESection
-DEBUG:__main__:GridBean Section InitPREPROCESSING OPTIONS
-DEBUG:__main__:... Parsing: define Type: GBEString
+DEBUG:GridBean:GridBean initGromacs

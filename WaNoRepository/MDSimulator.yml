@@ -1,0 +1,40 @@
+Name: MDSimulator
+Settings:
+  - Forcefield:
+     WaNoType: Selection
+     Value:
+      - AMBER99
+      - AMBER99*
+      - GROMOS
+  - Box:
+     WaNoType: Section
+     Value:
+     - Lx:
+        WaNoType: Float
+        Value : 25.0
+     - Ly:
+        WaNoType: Float
+        Value : 25.0
+     - Lz:
+        WaNoType: Float
+        Value : 25.0
+  - Variables:
+      WaNoType:  Section
+      Value:
+         - Temperature:
+             WaNoType: Float
+             Value:  300.0
+         - Inputfile: 
+             WaNoType: File
+             Value:  $BASE/inputs/input.top
+         - Trajectory: 
+              WaNoType: LocalFile
+              Value:  run.tr
+  # VARIOUS PREPROCESSING OPTIONS
+  - PREPROCESSING OPTIONS:
+      WaNoType: Section
+      Value:
+       - define: 
+           WaNoType: String
+           Value: -DPOSRES
+

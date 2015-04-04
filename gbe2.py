@@ -3,45 +3,47 @@
 # Import PySide classes
 import sys
 import copy
+import logging
+
 import PySide.QtCore as QtCore
 import PySide.QtGui  as QtGui
 
 import WFELicense
-from GridBean import GridBean, GridBeanRepository
+from WaNo import WaNo, WaNoRepository
 
-class GBEditor(QtGui.QDialog):
-    def __init__(self, gb, exportedFiles, exportedVars,parent = None):
-        super(GBEditor, self).__init__(parent)
+class WaNoEditor(QtGui.QDialog):
+    def __init__(self, wano, exportedFiles, exportedVars,parent = None):
+        super(WaNoEditor, self).__init__(parent)
         
-        self.gb = gb
+        self.wano = wano
         
         tabWidget       = QtGui.QTabWidget()
         self.activeTabs = []
         if len(exportedFiles) > 0:
-            tab = GBFileImportEditor(gb,exportedFiles)
+            tab = WaNoFileImportEditor(wano,exportedFiles)
             tabWidget.addTab(tab, "File Import")
             self.activeTabs.append(tab)
             
         if len(exportedFiles) > 0:
-            tab = GBVarImportEditor(gb,exportedVars)
+            tab = WaNoVarImportEditor(wano,exportedVars)
             tabWidget.addTab(tab, "Var Import")
             self.activeTabs.append(tab)
       
-        if  gb.preScript != None:
-            tab = ScriptTab(gb.preScript)
+        if  wano.preScript != None:
+            tab = ScriptTab(wano.preScript)
             tabWidget.addTab(tab, "Prepocessor")
             self.activeTabs.append(tab)
             
-        tab = GBItemEditor(gb)
+        tab = WaNoItemEditor(wano)
         tabWidget.addTab(tab, "Items")
         self.activeTabs.append(tab)
         
-        if  gb.postScript != None:
-            tab = ScriptTab(gb.postScript)
+        if  wano.postScript != None:
+            tab = ScriptTab(wano.postScript)
             tabWidget.addTab(tab, "Postpocessor")
             self.activeTabs.append(tab)
         
-        tab = GBExportEditor(gb,exportedFiles)
+        tab = WaNoExportEditor(wano,exportedFiles)
         tabWidget.addTab(tab, "Export")
         self.activeTabs.append(tab)
             
@@ -55,21 +57,15 @@ class GBEditor(QtGui.QDialog):
         mainLayout.addWidget(tabWidget)
         mainLayout.addWidget(buttonBox)
         self.setLayout(mainLayout)
-        self.setWindowTitle("GridBeanEditor " + gb.name)
+        self.setWindowTitle("WaNoEditor " + wano.name)
         
     def CopyContent(self):
         for tab in self.activeTabs:
             tab.copyContent()
-        print self.gb
+        print self.wano
         self.accept()
         
-class DummyTab(QtGui.QWidget):
-    def __init__(self, parent = None):
-        super(DummyTab, self).__init__(parent)
-        mainLayout = QtGui.QVBoxLayout()
-        mainLayout.addWidget(QtGui.QTextEdit('Hello World'))
-        self.setLayout(mainLayout)
-        
+
 class ScriptTab(QtGui.QWidget):
     def __init__(self, script, parent = None):
         super(ScriptTab, self).__init__(parent)
@@ -82,14 +78,14 @@ class ScriptTab(QtGui.QWidget):
         self.script.content = self.editor.toPlainText()
         
         
-class GBImportEditor(QtGui.QWidget):
-    def __init__(self,gb,exportedItems, parent = None):
-        super(GBImportEditor, self).__init__(parent)
+class WaNoImportEditor(QtGui.QWidget):
+    def __init__(self,wano,exportedItems, parent = None):
+        super(WaNoImportEditor, self).__init__(parent)
         
         self.exportedItems = exportedItems
         self.data          = []  # list of (localNameWidget,GlobalNameWidget) tuples 
         self.buttons       = []  # list of the kill buttons
-        self.gb            = gb
+        self.wano            = wano
         
         # main button
         self.addButton = QtGui.QPushButton('Add')
@@ -172,9 +168,9 @@ class GBImportEditor(QtGui.QWidget):
                 print 'Global Name' + globalName + ' not found in ' + str(self.exportedItems)
         return globalNameWidget
                 
-class GBExportEditor(GBImportEditor):
-    def __init__(self,gb,exportedItems, parent = None):
-        super(GBExportEditor, self).__init__(gb,exportedItems,parent)
+class WaNoExportEditor(WaNoImportEditor):
+    def __init__(self,wano,exportedItems, parent = None):
+        super(WaNoExportEditor, self).__init__(wano,exportedItems,parent)
     
     def fillExistingData(self):
         pass 
@@ -183,58 +179,55 @@ class GBExportEditor(GBImportEditor):
         return QtGui.QLineEdit()    
     
     def copyContent(self):
-        self.gb.fileExports = {} # erase old stuff
+        self.wano.fileExports = {} # erase old stuff
         # not implemented: there should be a warning for multiple keys
         for (loc,glob,xxx) in self.data:
             localName = loc.text()
-            self.gb.fileExports[localName] = str(glob.text())
+            self.wano.fileExports[localName] = str(glob.text())
            
 
-class GBFileImportEditor(GBImportEditor):
-    def __init__(self,gb,exportedItems, parent = None):
-        super(GBFileImportEditor, self).__init__(gb,exportedItems,parent)
+class WaNoFileImportEditor(WaNoImportEditor):
+    def __init__(self,wano,exportedItems, parent = None):
+        super(WaNoFileImportEditor, self).__init__(wano,exportedItems,parent)
         
     def fillExistingData(self):
-        for localName in gb.fileImports:
-            self.addData(localName,gb.fileImports[localName]) 
+        for localName in wano.fileImports:
+            self.addData(localName,wano.fileImports[localName]) 
             
     def copyContent(self):
-        self.gb.fileImports = {} # erase old stuff
+        self.wano.fileImports = {} # erase old stuff
         # not implemented: there should be a warning for multiple keys
         for (loc,glob,xxx) in self.data:
             localName = loc.text()
-            self.gb.fileImports[localName] = str(glob.currentText())
+            self.wano.fileImports[localName] = str(glob.currentText())
            
            
-class GBVarImportEditor(GBImportEditor):
-    def __init__(self,gb,exportedItems, parent = None):
-        super(GBVarImportEditor, self).__init__(gb,exportedItems,parent)
+class WaNoVarImportEditor(WaNoImportEditor):
+    def __init__(self,wano,exportedItems, parent = None):
+        super(WaNoVarImportEditor, self).__init__(wano,exportedItems,parent)
         
     def fillExistingData(self):
-        for localName in gb.varImports:
-            self.addData(localName,gb.varImports[k]) 
+        for localName in wano.varImports:
+            self.addData(localName,wano.varImports[k]) 
             
     def copyContent(self):
-        self.gb.varImports = {} # erase old stuff
+        self.wano.varImports = {} # erase old stuff
         for (loc,glob,xxx) in self.data:
             localName = loc.text()
-            self.gb.varImports[localName] = str(glob.currentText())
+            self.wano.varImports[localName] = str(glob.currentText())
             
-             
-
-
-
-class GBItemEditor(QtGui.QWidget):
-    def __init__(self, gb, parent = None):
-        super(GBItemEditor, self).__init__(parent)
+           
+class WaNoItemEditor(QtGui.QWidget):
+    def __init__(self, wano, parent = None):
+        super(WaNoItemEditor, self).__init__(parent)
         
-        self.gb = gb
+        self.wano = wano
    
         # scroll area widget contents - layout
         self.scrollLayout = QtGui.QFormLayout()        # empty layout to be filled later
         
         self.items = []
-        for element in self.gb.elements:
+        for element in self.wano.elements:
             line_edit = QtGui.QLineEdit(str(element.value))
             self.items.append(line_edit)
             self.scrollLayout.addRow(element.name,line_edit)
@@ -256,22 +249,35 @@ class GBItemEditor(QtGui.QWidget):
         self.setLayout(self.mainLayout)
 
     def copyContent(self):
-        for e,v in zip(self.gb.elements,self.items):
+        for e,v in zip(self.wano.elements,self.items):
             print e.name,v.text()
             e.value = v.text()
         
-       
+import argparse
+
 if __name__ == '__main__':
-    gbr = GridBeanRepository()
+    parser = argparse.ArgumentParser('Option Parser')
+    parser.add_argument('--log', default='DEBUG')
     
-    gb                  = copy.deepcopy(gbr['Gromacs'])
-    gb.fileImports['File1'] = 'GLOBAL1'
-    gb.fileImports['File2'] = 'GLOBAL2'
+    args  = parser.parse_args()
+
+    logging.basicConfig(filename='WaNo.log',filemode='w',level=logging.DEBUG)
     
-    exportedFiles      = ['FILEA','FILEB','FILEC'] + gb.fileImports.values()
+    print args
+    
+
+    wanoRep = WaNoRepository()
+    wanoRep.parse_yml_dir('WaNoRepository')
+
+    
+    wano                      = copy.copy(wanoRep['Gromacs'])
+    wano.fileImports['File1'] = 'GLOBAL1'
+    wano.fileImports['File2'] = 'GLOBAL2'
+    
+    exportedFiles      = ['FILEA','FILEB','FILEC'] + wano.fileImports.values()
     exportedVariables  = ['ITER','ACC']
     
     app = QtGui.QApplication(sys.argv)
-    gbe = GBEditor(gb,exportedFiles,exportedVariables)
-    gbe.show()
+    wanoe = WaNoEditor(wano,exportedFiles,exportedVariables)
+    wanoe.show()
     app.exec_()
