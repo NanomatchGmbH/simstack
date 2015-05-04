@@ -14,14 +14,17 @@ class DragButton(QtGui.QPushButton):
 
     def __init__(self, text, parent=None):
         super(DragButton, self).__init__(text,parent)        
-        self.window = parent
+        self.moved  = False
   
+    def parentElementList(self):
+        return self.parent().buttons
+    
     def mouseMoveEvent(self, e):
-
-        if e.buttons() == QtCore.Qt.LeftButton:
-            
-           
-            self.window.buttons.remove(self)
+        if self.text() == "Start":
+            e.ignore()
+            return
+        if e.buttons() == QtCore.Qt.LeftButton:   
+            self.parentElementList().remove(self)
             mimeData = QtCore.QMimeData()
             drag = QtGui.QDrag(self)
             drag.setMimeData(mimeData)
@@ -29,33 +32,18 @@ class DragButton(QtGui.QPushButton):
             self.move( e.globalPos() );
             dropAction = drag.start(QtCore.Qt.MoveAction)
 
-
-    def mousePressEvent(self, e):
-      
-        QtGui.QPushButton.mousePressEvent(self, e)
-        if e.button() == QtCore.Qt.LeftButton:
-            print ('press')
-
+    def mouseDoubleClickEvent(self,e):
+        print ('clicked',self.text())
 
 
         
-class WFWidget(QtGui.QFrame):
+class WFBaseWidget(QtGui.QFrame):
     def __init__(self, parent=None):
-        super(WFWidget, self).__init__(parent)        
-        self.setMinimumSize(400, 600)
-        self.setFrameStyle(QtGui.QFrame.Panel)
-        #self.setFrameStyle(QtGui.QFrame.WinPanel | QtGui.QFrame.Sunken) 
-        
-    
-        self.setWindowTitle('Workflow')
-        #
-        #  the start button is always there
-        #
+        super(WFBaseWidget, self).__init__(parent)    
+        self.setAcceptDrops(True)
         self.buttons = []
-        btn = DragButton('Start',self)
-        self.placeElementPosition(btn)
-        self.show()
-        
+        self.autoResize = False
+            
     def placeElementPosition(self,element):
         # this function computes the position of the next button
         newb  = []
@@ -74,7 +62,7 @@ class WFWidget(QtGui.QFrame):
         #
         #  now add the new element
         #
-        print ("Placing Element: %-12s %4i %4i" % (element.text(),posHint.y(),count))
+        print ("Placing Element: %-12s %4i %4i" % (element.text(),posHint.y(),element.height()))
         newb.append(element)
         #
         # move rest of elments down
@@ -86,19 +74,8 @@ class WFWidget(QtGui.QFrame):
         self.placeButtons()
    
     def dragLeaveEvent(self, e): 
-        print ("DragLeave Workflow")
         e.accept()
     
-   
-    def mouseReleaseEvent(self, event):
-        print ("HUHU")
-        self.update()
-        super(WFWidget, self).mouseReleaseEvent(event)
-
-    def mousePressedEvent(self, event):
-        self.update()
-        super(WFWidget, self).mouseReleaseEvent(event)
-
     def placeButtons(self):
         dims        = self.geometry()
         elementSkip = 20    # distance to skip between elements
@@ -111,31 +88,46 @@ class WFWidget(QtGui.QFrame):
             
         
     def paintEvent(self, event):
+        super(WFBaseWidget,self).paintEvent(event)
+        
         painter = QtGui.QPainter(self)
         painter.setBrush(QtGui.QBrush(QtCore.Qt.blue))
+        sy = 20
         if len(self.buttons)>1:
             e  = self.buttons[0]
             sx = e.pos().x() + e.width()/2
             sy = e.pos().y() + e.height()
         for b in self.buttons[1:]:
-            ey = b.pos().y() 
+            ey  = b.pos().y() 
             line = QtCore.QLine(sx,sy,sx,ey)
             painter.drawLine(line) 
-            sy+= e.height()
+            sy  = b.pos().y() + b.height()         
         painter.end()     
+        if self.autoResize:
+            self.setFixedHeight(sy + 20)
+           
+  
 
     def dragEnterEvent(self, e): 
-        print ("DragEnterEvent Workflow Window")
+        print ("DragEnterEvent Window",self.text())
         e.accept()
 
     def dragLeaveEvent(self, e): 
-        print ("DragLeave Workflow Window")
+        super(WFBaseWidget,self).dragLeaveEvent(e)
+        print ("DragLeave Workflow",self.text())
+        self.placeButtons()
+        self.update()
         e.accept()
         
     def dropEvent(self, e):
+        print ("DropEvent Workflow",self.text())
+        super(WFBaseWidget,self).dropEvent(e)
         position = e.pos()
         sender   = e.source()
         if type(sender) is DragButton:
+            sender.move(e.pos())
+            self.placeElementPosition(sender)
+        elif type(sender) is WFWhileWidget:
             sender.move(e.pos())
             self.placeElementPosition(sender)
         else:
@@ -143,20 +135,103 @@ class WFWidget(QtGui.QFrame):
             text     = item.text()
         
             # make a new widget
-            
-            btn = DragButton(text,self)
-            btn.move(e.pos())
-            btn.show()
+            if text=='While':
+                btn = WFWhileWidget(self) 
+                btn.move(e.pos())
+                btn.show()
+            else:
+                btn = DragButton(text,self)
+                btn.move(e.pos())
+                btn.show()
             self.placeElementPosition(btn)
         e.accept()
         self.update()
+    def text(self):
+        return 'Abstract WFWindow Class'
+    
+class WFWidget(QtGui.QWidget):
+    def __init__(self, parent=None):
+        super(WFWidget, self).__init__(parent)   
+        
+        self.acceptDrops()
+        self.setDragEnabled(True)
+        self.wf = WFWidgetArea(self)
+        scroll = QtGui.QScrollArea()
+        scroll.setMinimumSize(400, 600)
+        scroll.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOn)
+        scroll.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOff)
+        scroll.setWidgetResizable(False)
+        scroll.setWidget(self.wf)
+        scroll.acceptDrops()
+        
+        vLayout = QtGui.QVBoxLayout(self)
+        vLayout.addWidget(scroll)
+        self.setLayout(vLayout)
+         
        
+    def text(self):
+        return 'Main WF Window'
+    
+class WFWidgetArea(WFBaseWidget):
+    def __init__(self, parent=None):
+        super(WFWidgetArea, self).__init__(parent)   
+        self.acceptDrops()
+       
+        self.setMinimumSize(400, 600)
+        self.setFrameStyle(QtGui.QFrame.WinPanel | QtGui.QFrame.Sunken) 
+        #
+        #  the start button is always there
+        #
+        btn = DragButton('Start',self)
+        self.placeElementPosition(btn)
+        self.show()
+    def text(self):
+        return 'Main WF Window'
+    
+class WFWhileWidget(QtGui.QFrame):
+    def __init__(self, parent=None):
+        super(WFWhileWidget, self).__init__(parent)        
+        self.setFrameStyle(QtGui.QFrame.Panel)
+        self.setAcceptDrops(True)
+        #self.setDragEnabled(True)
         
+        layout        = QtGui.QVBoxLayout()
         
+        topLineLayout = QtGui.QHBoxLayout()
+        topLineLayout.addWidget(QtGui.QPushButton('While'))  
+        topLineLayout.addWidget(QtGui.QLineEdit('condition'))
+        
+        self.wf = WFBaseWidget(self)
+        self.wf.setMinimumSize(parent.width()-50,100)
+        self.wf.setFrameStyle(QtGui.QFrame.WinPanel | QtGui.QFrame.Sunken) 
+        self.wf.autoResize = True
+        self.wf.show()
+        
+        layout.addLayout(topLineLayout)
+        layout.addWidget(self.wf)
+        
+        self.setLayout(layout)
+    
+    def parentElementList(self):
+        return self.parent().buttons
+    
+    def text(self):
+        return 'While'
+    
+    def mouseMoveEvent(self, e):
+        print ("moving whole widget")
+        if e.buttons() == QtCore.Qt.LeftButton:   
+            self.parentElementList().remove(self)
+            mimeData = QtCore.QMimeData()
+            drag = QtGui.QDrag(self)
+            drag.setMimeData(mimeData)
+            drag.setHotSpot(e.pos() - self.rect().topLeft())
+            self.move( e.globalPos() );
+            dropAction = drag.start(QtCore.Qt.MoveAction)
+            
 class WFEListWidget(QtGui.QListWidget):
     def __init__(self, parent=None):
         super(WFEListWidget, self).__init__(parent) 
-      
         self.setAcceptDrops(True)
         self.setDragEnabled(True)
         path = os.path.dirname(__file__)
@@ -167,12 +242,12 @@ class WFEListWidget(QtGui.QListWidget):
                                    "images/{0}".format(image))))
                 self.addItem(item)
  
-    def mouseReleaseEvent(self, event):       
-        print ("MRE LIST")
-        e.accept()
         
     def dragEnterEvent(self, e): 
         print ("DragEnterEvent ListWidget")
+        e.accept()
+        
+    def dragEvent(self, e): 
         e.accept()
         
     def dropEvent(self, e):
@@ -180,7 +255,9 @@ class WFEListWidget(QtGui.QListWidget):
         sender   = e.source()
         print ("DE:",e.source())
         e.accept()
-
+    
+  
+    
 class Test(QtGui.QWidget):
     def __init__(self, parent=None):
         super(Test, self).__init__(parent)     
@@ -201,7 +278,7 @@ class Form(QtGui.QDialog):
         super(Form, self).__init__(parent)
 
         
-        workflowWidget = WFWidget(self)
+        workflowWidget = WFWidgetArea(self)
         workflowWidget.setAcceptDrops(True)
         
         listWidget = WFEListWidget()
