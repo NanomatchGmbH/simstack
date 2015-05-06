@@ -35,15 +35,14 @@ class DragButton(QtGui.QPushButton):
     def mouseDoubleClickEvent(self,e):
         print ('clicked',self.text())
 
-
-        
 class WFBaseWidget(QtGui.QFrame):
     def __init__(self, parent=None):
         super(WFBaseWidget, self).__init__(parent)    
         self.setAcceptDrops(True)
         self.buttons = []
         self.autoResize = False
-    
+        self.topWidget  = False
+       
     def removeElement(self,element):
         # remove element both from the buttons and child list
         try:
@@ -84,7 +83,14 @@ class WFBaseWidget(QtGui.QFrame):
    
     def dragLeaveEvent(self, e): 
         e.accept()
-    
+
+    def recPlaceButtons(self): 
+        # redo your own buttons and then do the parent
+        self.placeButtons()
+        self.update()
+        if not self.topWidget:
+            self.parent().recPlaceButtons()
+            
     def placeButtons(self):
         dims        = self.geometry()
         elementSkip = 20    # distance to skip between elements
@@ -94,11 +100,15 @@ class WFBaseWidget(QtGui.QFrame):
             xpos  = (dims.width()-e.width())/2
             e.move(xpos,ypos)
             ypos += e.height() + elementSkip
+        
+        if self.autoResize:
+            self.setFixedHeight(ypos + 10)  
+            self.parent().setMinimumHeight(ypos+elementSkip+15) 
+            self.parent().recPlaceButtons()
             
-        
-    def paintEvent(self, event):
+                
+    def paintEvent(self, event):        
         super(WFBaseWidget,self).paintEvent(event)
-        
         painter = QtGui.QPainter(self)
         painter.setBrush(QtGui.QBrush(QtCore.Qt.blue))
         sy = 20
@@ -110,13 +120,9 @@ class WFBaseWidget(QtGui.QFrame):
             ey  = b.pos().y() 
             line = QtCore.QLine(sx,sy,sx,ey)
             painter.drawLine(line) 
-            sy  = b.pos().y() + b.height()         
-        painter.end()     
-        if self.autoResize:
-            self.setFixedHeight(sy + 20)
-           
-  
-
+            sy  = b.pos().y() + b.height()        
+        painter.end()         
+        
     def dragEnterEvent(self, e): 
         print ("DragEnterEvent Window",self.text())
         e.accept()
@@ -157,6 +163,7 @@ class WFBaseWidget(QtGui.QFrame):
             self.placeElementPosition(btn)
         e.accept()
         self.update()
+    
     def text(self):
         return 'Abstract WFWindow Class'
     
@@ -178,7 +185,7 @@ class WFWidget(QtGui.QWidget):
         vLayout = QtGui.QVBoxLayout(self)
         vLayout.addWidget(scroll)
         self.setLayout(vLayout)
-         
+   
        
     def text(self):
         return 'Main WF Window'
@@ -187,7 +194,7 @@ class WFWidgetArea(WFBaseWidget):
     def __init__(self, parent=None):
         super(WFWidgetArea, self).__init__(parent)   
         self.acceptDrops()
-       
+        self.topWidget = True 
         self.setMinimumSize(400, 600)
         self.setFrameStyle(QtGui.QFrame.WinPanel | QtGui.QFrame.Sunken) 
         #
@@ -204,32 +211,54 @@ class WFWhileWidget(QtGui.QFrame):
         super(WFWhileWidget, self).__init__(parent)        
         self.setFrameStyle(QtGui.QFrame.Panel)
         self.setAcceptDrops(True)
+
         #self.setDragEnabled(True)
         
-        layout        = QtGui.QVBoxLayout()
+        self.layout        = QtGui.QVBoxLayout()
         
-        topLineLayout = QtGui.QHBoxLayout()
-        topLineLayout.addWidget(QtGui.QPushButton('While'))  
-        topLineLayout.addWidget(QtGui.QLineEdit('condition'))
+        self.topLineLayout = QtGui.QHBoxLayout()
+        self.topLineLayout.addWidget(QtGui.QPushButton('While'))  
+        self.topLineLayout.addWidget(QtGui.QLineEdit('condition'))
         
         self.wf = WFBaseWidget(self)
-        self.wf.setMinimumSize(parent.width()-50,100)
+        self.wf.setMinimumSize(parent.width()-50,50)
         self.wf.setFrameStyle(QtGui.QFrame.WinPanel | QtGui.QFrame.Sunken) 
         self.wf.autoResize = True
         self.wf.show()
         
-        layout.addLayout(topLineLayout)
-        layout.addWidget(self.wf)
+        bottomLayout = QtGui.QHBoxLayout()
+        bottomLayout.addWidget(self.wf)
+        self.layout.addLayout(self.topLineLayout)
+        self.layout.addLayout(bottomLayout)
         
-        self.setLayout(layout)
+        self.setLayout(self.layout)
+      
+        self.show()
     
-  
+    def recPlaceButtons(self): 
+        # redo your own buttons and then do the parent
+        if self.parent() != None:
+            self.parent().recPlaceButtons()
+        
+    #def forceResize(self,childHeight):
+        #self.hHint = self.topLineLayout.contentsRect().height() + childHeight + 20
+        #print ("fr",self.hHint)
+        #self.setMinimumHeight(self.hHint)
+        #self.updateGeometry()
+        #self.parent().recursiveUpdate()
     
+    #def sizeHint(self):
+        #s = QtCore.QSize()
+        #c = self.wf.sizeHint()
+        #s.setHeight(c.height()+70)
+        #s.setWidth(self.parent().width()-80)
+        #print ("SH FRAME: ",s)
+        #return s
+
     def text(self):
         return 'While'
     
     def mouseMoveEvent(self, e):
-        print ("moving whole widget")
         if e.buttons() == QtCore.Qt.LeftButton:   
             self.parent().removeElement(self)
             mimeData = QtCore.QMimeData()
