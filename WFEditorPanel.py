@@ -24,7 +24,7 @@ class DragButton(QtGui.QPushButton):
             e.ignore()
             return
         if e.buttons() == QtCore.Qt.LeftButton:   
-            self.parentElementList().remove(self)
+            self.parent().removeElement(self)
             mimeData = QtCore.QMimeData()
             drag = QtGui.QDrag(self)
             drag.setMimeData(mimeData)
@@ -43,6 +43,15 @@ class WFBaseWidget(QtGui.QFrame):
         self.setAcceptDrops(True)
         self.buttons = []
         self.autoResize = False
+    
+    def removeElement(self,element):
+        # remove element both from the buttons and child list
+        try:
+            self.buttons.remove(element)
+            self.children().remove(element)
+        except IndexError:
+            print ("Removing Element ",element.text()," from WFBaseWidget",self.text())
+            
             
     def placeElementPosition(self,element):
         # this function computes the position of the next button
@@ -126,9 +135,11 @@ class WFBaseWidget(QtGui.QFrame):
         sender   = e.source()
         if type(sender) is DragButton:
             sender.move(e.pos())
+            sender.setParent(self)
             self.placeElementPosition(sender)
         elif type(sender) is WFWhileWidget:
             sender.move(e.pos())
+            sender.setParent(self)
             self.placeElementPosition(sender)
         else:
             item     = sender.selectedItems()[0]
@@ -212,8 +223,7 @@ class WFWhileWidget(QtGui.QFrame):
         
         self.setLayout(layout)
     
-    def parentElementList(self):
-        return self.parent().buttons
+  
     
     def text(self):
         return 'While'
@@ -221,7 +231,7 @@ class WFWhileWidget(QtGui.QFrame):
     def mouseMoveEvent(self, e):
         print ("moving whole widget")
         if e.buttons() == QtCore.Qt.LeftButton:   
-            self.parentElementList().remove(self)
+            self.parent().removeElement(self)
             mimeData = QtCore.QMimeData()
             drag = QtGui.QDrag(self)
             drag.setMimeData(mimeData)
