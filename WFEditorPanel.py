@@ -55,6 +55,9 @@ class WFBaseWidget(QtGui.QFrame):
             self.buttons.remove(element)
             self.children().remove(element)
             self.placeElements()
+            if len(self.buttons) == 0 and \
+               hasattr(self.parent(),'removePanel'):  # maybe remove the whole widget ?
+                self.parent().removePanel(self)
         except IndexError:
             print ("Removing Element ",element.text()," from WFBaseWidget",self.text())
    
@@ -99,12 +102,12 @@ class WFBaseWidget(QtGui.QFrame):
 
     def recPlaceElements(self): 
         # redo your own buttons and then do the parent
-        self.placeOwnButtons()
+        ypos = self.placeOwnButtons()
+        self.setFixedHeight(ypos+2.25*self.elementSkip) 
         self.update()  
         if not self.topWidget:
             self.parent().recPlaceElements()
         else:
-            print ("Top Widget Resize",self.embeddedIn)
             if self.embeddedIn != None:
                 self.embeddedIn.recPlaceElements()    
     
@@ -125,7 +128,7 @@ class WFBaseWidget(QtGui.QFrame):
             #print ("autores:",self.text(),ypos)
             ypos = max(ypos,self.elementSkip) # all derived elements have a min wf size 
             self.setFixedHeight(ypos) 
-            self.parent().setFixedHeight(ypos+2.25*self.elementSkip) 
+            #self.parent().setFixedHeight(ypos+2.25*self.elementSkip) 
             if not self.topWidget:
                 self.parent().recPlaceElements()
             else:
@@ -168,11 +171,14 @@ class WFBaseWidget(QtGui.QFrame):
         super(WFBaseWidget,self).dropEvent(e)
         position = e.pos()
         sender   = e.source()
+        
+        controlWidgetNames = ["While","If","ForEach","For","Parallel"]
+        controlWidgetClasses = [ "WF"+a+"Widget" for a in controlWidgetNames]
         if type(sender) is DragButton:
             sender.move(e.pos())
             sender.setParent(self)
             self.placeElementPosition(sender)
-        elif type(sender) is WFWhileWidget:
+        elif type(sender).__name__ in controlWidgetClasses:
             sender.move(e.pos())
             sender.setParent(self)
             self.placeElementPosition(sender)
@@ -182,8 +188,8 @@ class WFBaseWidget(QtGui.QFrame):
             text     = item.text()
         
             # make a new widget
-            if text=='While':
-                btn = WFWhileWidget(self) 
+            if text in controlWidgetNames:
+                btn = eval("WF"+text+"Widget")(self) #  WFWhileWidget(self) 
                 btn.move(e.pos())
                 btn.show()
             else:
@@ -211,10 +217,8 @@ class WFWidget(QtGui.QWidget):
         dummylayout = QtGui.QVBoxLayout(dummy)
         dummylayout.setContentsMargins(0,0,0,0) # there is only 1 widget inside no margins
         dummylayout.addWidget(self.wf)
-        dummylayout.addStretch(1)
         dummy.setLayout(dummylayout) 
-       
-        
+    
         self.setMinimumSize(self.wf.width()+50,600) # widget with scrollbar
         
         scroll = QtGui.QScrollArea(self)
@@ -222,9 +226,7 @@ class WFWidget(QtGui.QWidget):
         scroll.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOn)
         scroll.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOff)
         scroll.setWidgetResizable(True)
-        scroll.setWidget(dummy)
-       
-          
+        scroll.setWidget(dummy)      
         scroll.acceptDrops()      
         scroll.setParent(self)
         
@@ -249,51 +251,83 @@ class WFMainWidgetArea(WFBaseWidget):
         self.placeElementPosition(btn)
        
     def recPlaceElements(self): 
+        # here is min height of main widget
+      
         ypos=max(self.placeOwnButtons(),600)
         self.setFixedHeight(ypos)
         self.parent().setFixedHeight(ypos) 
-    
-    #def sizeHint(self):
-        #s = QtCore.QSize(400,600) 
-        #return s
-    
-class WFWhileWidget(QtGui.QFrame):
+
+class WFControlWidget(QtGui.QFrame):
     def __init__(self, parent=None):
-        super(WFWhileWidget, self).__init__(parent)        
+        super(WFControlWidget, self).__init__(parent)        
         self.setFrameStyle(QtGui.QFrame.Panel)
         self.setAcceptDrops(True)
-        
+        self.isVisible = True     # the subwidget are is visible
         self.layout        = QtGui.QVBoxLayout()
         
-        self.topLineLayout = QtGui.QHBoxLayout()
-        self.topLineLayout.addWidget(QtGui.QPushButton('While'))  
-        self.topLineLayout.addWidget(QtGui.QLineEdit('condition'))
-        
-        self.wf = WFBaseWidget(self)
-        self.wf.myName = "While"
-        self.wf.setFrameStyle(QtGui.QFrame.WinPanel | QtGui.QFrame.Sunken) 
-        self.wf.autoResize = True
-        self.wf.show()
-        
-        bottomLayout = QtGui.QHBoxLayout()
-        bottomLayout.addWidget(self.wf)
+        noPar=self.makeTopLine()
+        self.wf = []
+        self.hidden = []
+        self.bottomLayout = QtGui.QHBoxLayout()
+        self.elementSkip = 0 
+        for i in range(noPar):
+            wf = WFBaseWidget(self)
+            self.elementSkip = max(self.elementSkip,wf.elementSkip)
+            wf.myName = self.myName + ("WF%i" % i)
+            wf.setFrameStyle(QtGui.QFrame.WinPanel | QtGui.QFrame.Sunken) 
+            wf.autoResize = True
+            self.wf.append(wf)
+            if self.isVisible:
+                self.bottomLayout.addWidget(wf)
+            
         self.layout.addLayout(self.topLineLayout)
-        self.layout.addLayout(bottomLayout)
+        self.layout.addLayout(self.bottomLayout)
         
         self.setLayout(self.layout)
-      
         self.show()
     
+    def toggleVisible(self):
+        print ("Toggle Visible")
+        if self.isVisible: # remove widget from bottomlayout
+            for w in self.wf:
+                self.bottomLayout.takeAt(0)
+                w.setParent(None)
+            self.hidden = self.wf
+            self.wf = []
+        else:
+            for w in self.hidden:
+                self.bottomLayout.addWidget(w)
+                w.show()
+            self.wf = self.hidden
+            self.hidden = []
+          
+        self.recPlaceElements()
+        self.bottomLayout.update()
+        self.update()
+        self.isVisible = not self.isVisible
+        
+        
     def text(self):
-        return self.wf.text() 
+        return self.myName 
     
     def placeElements(self):
-        self.wf.placeElements()
+        print ("Place Elements",self.text())
+        for w in self.wf:
+            w.placeElements()
         
     def recPlaceElements(self): 
         # redo your own buttons and then do the parent
-        print ("recPlace: while")
-        self.wf.placeOwnButtons()
+        ypos = 0 
+        if len(self.wf) > 0:
+            for w in self.wf:
+                ypos=max(ypos,w.placeOwnButtons())
+            print ("WFControlElement Child Height:",ypos)
+            ypos = max(ypos,2*self.elementSkip)
+            self.setFixedHeight(ypos+2.25*self.elementSkip) 
+            for w in self.wf:
+                w.setFixedHeight(ypos) 
+        else:
+            self.setFixedHeight(50)
         self.update()  
         self.parent().recPlaceElements()
                   
@@ -311,8 +345,99 @@ class WFWhileWidget(QtGui.QFrame):
             drag.setHotSpot(e.pos() - self.rect().topLeft())
             self.move( e.globalPos() );
             dropAction = drag.start(QtCore.Qt.MoveAction)
+
+class WFWhileWidget(WFControlWidget):
+    def __init__(self, parent=None):
+        super(WFWhileWidget, self).__init__(parent)      
         
+    def makeTopLine(self):
+        self.myName = 'While'
+        self.topLineLayout = QtGui.QHBoxLayout()
+        b = QtGui.QPushButton(self.myName)
+        b.clicked.connect(self.toggleVisible)
+        self.topLineLayout.addWidget(b)  
+        self.topLineLayout.addWidget(QtGui.QLineEdit('condition'))
+        return 1
+    
+class WFIfWidget(WFControlWidget):
+    def __init__(self, parent=None):
+        super(WFIfWidget, self).__init__(parent)      
+        
+    def makeTopLine(self):
+        self.myName = 'If'
+        self.topLineLayout = QtGui.QHBoxLayout()
+        b = QtGui.QPushButton(self.myName)
+        b.clicked.connect(self.toggleVisible)
+        self.topLineLayout.addWidget(b)  
+        self.topLineLayout.addWidget(QtGui.QLineEdit('condition'))
+        return 2
+
+class WFForEachWidget(WFControlWidget):
+    def __init__(self, parent=None):
+        super(WFForEachWidget, self).__init__(parent)      
+        
+    def makeTopLine(self):
+        self.myName = 'ForEach'
+        self.topLineLayout = QtGui.QHBoxLayout()
+        b = QtGui.QPushButton(self.myName)
+        b.clicked.connect(self.toggleVisible)
+        self.topLineLayout.addWidget(b)   
+        self.topLineLayout.addWidget(QtGui.QLineEdit('name'))
+        self.topLineLayout.addWidget(QtGui.QLineEdit('list'))
+        return 1
+
+
+class WFParallelWidget(WFControlWidget):
+    def __init__(self, parent=None):
+        super(WFParallelWidget, self).__init__(parent)      
+        
+    def makeTopLine(self):
+        self.myName = 'Parallel'
+        self.topLineLayout = QtGui.QHBoxLayout()
+        b = QtGui.QPushButton(self.myName)
+        b.clicked.connect(self.toggleVisible)
+        self.topLineLayout.addWidget(b)  
+        a = QtGui.QPushButton('Add')
+        a.clicked.connect(self.addWF)
+        self.topLineLayout.addWidget(a) 
+        return 2
+    
+    #----------------------------------------------------------------------
+    def removePanel(self,panel):
+        """"""
+        if self.bottomLayout.count() > 2: # 2 panels min
+            print ("remove panel",panel.text())
+            try:
+                index = self.bottomLayout.indexOf(panel)
+            except IndexError:
+                print ("Error Panel not found",panel.text())
             
+            print ("Index",index)
+            if self.isVisible:
+                self.wf.remove(panel)
+            else:
+                self.hidden.remove(panel)
+            widget = self.bottomLayout.takeAt(index).widget()
+            widget.setParent(None)
+            if widget is not None: 
+                # widget will be None if the item is a layout
+                widget.deleteLater()
+            
+        
+    
+    def addWF(self):
+        if not self.isVisible:
+            self.toggleVisible()
+        wf = WFBaseWidget(self)
+        self.elementSkip = max(self.elementSkip,wf.elementSkip)
+        wf.myName = self.myName + "WF" + str(self.bottomLayout.count())
+        wf.setFrameStyle(QtGui.QFrame.WinPanel | QtGui.QFrame.Sunken) 
+        wf.autoResize = True
+        self.wf.append(wf)       
+        self.bottomLayout.addWidget(wf)
+        self.placeElements()
+        
+    
 class WFEListWidget(QtGui.QListWidget):
     def __init__(self, parent=None):
         super(WFEListWidget, self).__init__(parent) 
@@ -321,12 +446,12 @@ class WFEListWidget(QtGui.QListWidget):
         path = os.path.dirname(__file__)
         for image in sorted(os.listdir(os.path.join(path, "images"))):
             if image.endswith(".png"):
-                item = QtGui.QListWidgetItem(image.split(".")[0].capitalize())
+                item = QtGui.QListWidgetItem(image.split(".")[0])
                 item.setIcon(QtGui.QIcon(os.path.join(path,
                                    "images/{0}".format(image))))
                 self.addItem(item)
- 
-  
+
+   
     
 class Test(QtGui.QWidget):
     def __init__(self, parent=None):
