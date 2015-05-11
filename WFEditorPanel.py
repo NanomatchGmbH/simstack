@@ -19,6 +19,9 @@ class DragButton(QtGui.QPushButton):
     def parentElementList(self):
         return self.parent().buttons
     
+    def placeElements(self):
+        pass
+    
     def mouseMoveEvent(self, e):
         if self.text() == "Start":
             e.ignore()
@@ -42,16 +45,26 @@ class WFBaseWidget(QtGui.QFrame):
         self.buttons = []
         self.autoResize = False
         self.topWidget  = False
+        self.embeddedIn = None
+        self.myName     = "AbstractWFWidget"
+        self.elementSkip = 20    # distance to skip between elements
        
     def removeElement(self,element):
         # remove element both from the buttons and child list
         try:
             self.buttons.remove(element)
             self.children().remove(element)
+            self.placeElements()
         except IndexError:
             print ("Removing Element ",element.text()," from WFBaseWidget",self.text())
-            
-            
+   
+    def sizeHint(self):
+        if self.topWidget:            
+            s = QtCore.QSize(self.width(),self.height()) 
+        else:
+            s = QtCore.QSize(self.parent().width()-50,self.height()) 
+        return s
+        
     def placeElementPosition(self,element):
         # this function computes the position of the next button
         newb  = []
@@ -70,7 +83,7 @@ class WFBaseWidget(QtGui.QFrame):
         #
         #  now add the new element
         #
-        print ("Placing Element: %-12s %4i %4i" % (element.text(),posHint.y(),element.height()))
+        #print ("Placing Element: %-12s %4i %4i" % (element.text(),posHint.y(),element.height()))
         newb.append(element)
         #
         # move rest of elments down
@@ -79,39 +92,55 @@ class WFBaseWidget(QtGui.QFrame):
             e    = self.buttons.pop(0)
             newb.append(e)
         self.buttons = newb
-        self.placeButtons()
+        self.placeElements()
    
     def dragLeaveEvent(self, e): 
         e.accept()
 
-    def recPlaceButtons(self): 
+    def recPlaceElements(self): 
         # redo your own buttons and then do the parent
-        self.placeButtons()
-        self.update()
+        self.placeOwnButtons()
+        self.update()  
         if not self.topWidget:
-            self.parent().recPlaceButtons()
-            
-    def placeButtons(self):
+            self.parent().recPlaceElements()
+        else:
+            print ("Top Widget Resize",self.embeddedIn)
+            if self.embeddedIn != None:
+                self.embeddedIn.recPlaceElements()    
+    
+    def placeOwnButtons(self):
         dims        = self.geometry()
-        elementSkip = 20    # distance to skip between elements
-        ypos        = elementSkip/2
+        ypos        = self.elementSkip/2
         
         for e in self.buttons:
             xpos  = (dims.width()-e.width())/2
             e.move(xpos,ypos)
-            ypos += e.height() + elementSkip
+            ypos += e.height() + self.elementSkip
+        #print ("Computed Widget height: ",self.text(),ypos)
+        return ypos
         
+    def placeElements(self):
+        ypos = self.placeOwnButtons()
         if self.autoResize:
-            self.setFixedHeight(ypos + 10)  
-            self.parent().setMinimumHeight(ypos+elementSkip+15) 
-            self.parent().recPlaceButtons()
-            
+            #print ("autores:",self.text(),ypos)
+            ypos = max(ypos,self.elementSkip) # all derived elements have a min wf size 
+            self.setFixedHeight(ypos) 
+            self.parent().setFixedHeight(ypos+2.25*self.elementSkip) 
+            if not self.topWidget:
+                self.parent().recPlaceElements()
+            else:
+                self.recPlaceElements()
+                if self.embeddedIn != None:
+                    #print ("resize  ",self.text(),ypos,self.height())
+                    hh = max(ypos,self.embeddedIn.height())
+                    self.embeddedIn.setFixedHeight(max(ypos,self.height()))              
+                    self.embeddedIn.updateGeometry()
                 
     def paintEvent(self, event):        
         super(WFBaseWidget,self).paintEvent(event)
         painter = QtGui.QPainter(self)
         painter.setBrush(QtGui.QBrush(QtCore.Qt.blue))
-        sy = 20
+        sy = self.elementSkip
         if len(self.buttons)>1:
             e  = self.buttons[0]
             sx = e.pos().x() + e.width()/2
@@ -124,18 +153,18 @@ class WFBaseWidget(QtGui.QFrame):
         painter.end()         
         
     def dragEnterEvent(self, e): 
-        print ("DragEnterEvent Window",self.text())
+        #print ("DragEnterEvent Window",self.text())
         e.accept()
 
     def dragLeaveEvent(self, e): 
         super(WFBaseWidget,self).dragLeaveEvent(e)
-        print ("DragLeave Workflow",self.text())
-        self.placeButtons()
+        #print ("DragLeave Workflow",self.text())
+        self.placeElements()
         self.update()
         e.accept()
         
     def dropEvent(self, e):
-        print ("DropEvent Workflow",self.text())
+        #print ("DropEvent Workflow",self.text())
         super(WFBaseWidget,self).dropEvent(e)
         position = e.pos()
         sender   = e.source()
@@ -147,6 +176,7 @@ class WFBaseWidget(QtGui.QFrame):
             sender.move(e.pos())
             sender.setParent(self)
             self.placeElementPosition(sender)
+            sender.placeElements() # place all the buttons 
         else:
             item     = sender.selectedItems()[0]
             text     = item.text()
@@ -165,54 +195,73 @@ class WFBaseWidget(QtGui.QFrame):
         self.update()
     
     def text(self):
-        return 'Abstract WFWindow Class'
+        return self.myName
     
 class WFWidget(QtGui.QWidget):
     def __init__(self, parent=None):
         super(WFWidget, self).__init__(parent)   
         
         self.acceptDrops()
-        self.setDragEnabled(True)
-        self.wf = WFWidgetArea(self)
-        scroll = QtGui.QScrollArea()
-        scroll.setMinimumSize(400, 600)
+       
+        self.wf = WFMainWidgetArea(self)
+      
+        dummy  = QtGui.QFrame() # this is needed to resize the scrollbar
+        self.wf.embeddedIn = dummy   # this is the widget that needs to be reiszed when the main layout widget resizes
+        dummy.setFrameStyle(QtGui.QFrame.Panel)
+        dummylayout = QtGui.QVBoxLayout(dummy)
+        dummylayout.setContentsMargins(0,0,0,0) # there is only 1 widget inside no margins
+        dummylayout.addWidget(self.wf)
+        dummylayout.addStretch(1)
+        dummy.setLayout(dummylayout) 
+       
+        
+        self.setMinimumSize(self.wf.width()+50,600) # widget with scrollbar
+        
+        scroll = QtGui.QScrollArea(self)
+        scroll.setMinimumHeight(600)
         scroll.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOn)
         scroll.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOff)
-        scroll.setWidgetResizable(False)
-        scroll.setWidget(self.wf)
-        scroll.acceptDrops()
-        
-        vLayout = QtGui.QVBoxLayout(self)
-        vLayout.addWidget(scroll)
-        self.setLayout(vLayout)
-   
+        scroll.setWidgetResizable(True)
+        scroll.setWidget(dummy)
        
-    def text(self):
-        return 'Main WF Window'
+          
+        scroll.acceptDrops()      
+        scroll.setParent(self)
+        
+        self.scroll = scroll
     
-class WFWidgetArea(WFBaseWidget):
+    
+         
+class WFMainWidgetArea(WFBaseWidget):
     def __init__(self, parent=None):
-        super(WFWidgetArea, self).__init__(parent)   
+        super(WFMainWidgetArea, self).__init__(parent)   
         self.acceptDrops()
-        self.topWidget = True 
-        self.setMinimumSize(400, 600)
+        self.topWidget  = True
+        self.autoResize = True
+        self.myName     = "WFMainWidgetArea"
+        self.setMinimumWidth(400)
         self.setFrameStyle(QtGui.QFrame.WinPanel | QtGui.QFrame.Sunken) 
         #
         #  the start button is always there
         #
         btn = DragButton('Start',self)
+        btn.show()
         self.placeElementPosition(btn)
-        self.show()
-    def text(self):
-        return 'Main WF Window'
+       
+    def recPlaceElements(self): 
+        ypos=max(self.placeOwnButtons(),600)
+        self.setFixedHeight(ypos)
+        self.parent().setFixedHeight(ypos) 
+    
+    #def sizeHint(self):
+        #s = QtCore.QSize(400,600) 
+        #return s
     
 class WFWhileWidget(QtGui.QFrame):
     def __init__(self, parent=None):
         super(WFWhileWidget, self).__init__(parent)        
         self.setFrameStyle(QtGui.QFrame.Panel)
         self.setAcceptDrops(True)
-
-        #self.setDragEnabled(True)
         
         self.layout        = QtGui.QVBoxLayout()
         
@@ -221,7 +270,7 @@ class WFWhileWidget(QtGui.QFrame):
         self.topLineLayout.addWidget(QtGui.QLineEdit('condition'))
         
         self.wf = WFBaseWidget(self)
-        self.wf.setMinimumSize(parent.width()-50,50)
+        self.wf.myName = "While"
         self.wf.setFrameStyle(QtGui.QFrame.WinPanel | QtGui.QFrame.Sunken) 
         self.wf.autoResize = True
         self.wf.show()
@@ -235,28 +284,23 @@ class WFWhileWidget(QtGui.QFrame):
       
         self.show()
     
-    def recPlaceButtons(self): 
-        # redo your own buttons and then do the parent
-        if self.parent() != None:
-            self.parent().recPlaceButtons()
-        
-    #def forceResize(self,childHeight):
-        #self.hHint = self.topLineLayout.contentsRect().height() + childHeight + 20
-        #print ("fr",self.hHint)
-        #self.setMinimumHeight(self.hHint)
-        #self.updateGeometry()
-        #self.parent().recursiveUpdate()
-    
-    #def sizeHint(self):
-        #s = QtCore.QSize()
-        #c = self.wf.sizeHint()
-        #s.setHeight(c.height()+70)
-        #s.setWidth(self.parent().width()-80)
-        #print ("SH FRAME: ",s)
-        #return s
-
     def text(self):
-        return 'While'
+        return self.wf.text() 
+    
+    def placeElements(self):
+        self.wf.placeElements()
+        
+    def recPlaceElements(self): 
+        # redo your own buttons and then do the parent
+        print ("recPlace: while")
+        self.wf.placeOwnButtons()
+        self.update()  
+        self.parent().recPlaceElements()
+                  
+    def sizeHint(self):
+        hh = max(self.height(),100)
+        s = QtCore.QSize(self.parent().width()-50,hh) 
+        return s        
     
     def mouseMoveEvent(self, e):
         if e.buttons() == QtCore.Qt.LeftButton:   
@@ -267,6 +311,7 @@ class WFWhileWidget(QtGui.QFrame):
             drag.setHotSpot(e.pos() - self.rect().topLeft())
             self.move( e.globalPos() );
             dropAction = drag.start(QtCore.Qt.MoveAction)
+        
             
 class WFEListWidget(QtGui.QListWidget):
     def __init__(self, parent=None):
@@ -281,20 +326,6 @@ class WFEListWidget(QtGui.QListWidget):
                                    "images/{0}".format(image))))
                 self.addItem(item)
  
-        
-    def dragEnterEvent(self, e): 
-        print ("DragEnterEvent ListWidget")
-        e.accept()
-        
-    def dragEvent(self, e): 
-        e.accept()
-        
-    def dropEvent(self, e):
-        position = e.pos()
-        sender   = e.source()
-        print ("DE:",e.source())
-        e.accept()
-    
   
     
 class Test(QtGui.QWidget):
@@ -308,7 +339,7 @@ class Test(QtGui.QWidget):
         self.acceptDrops()
         self.show()
     def dragEnterEvent(self, e): 
-        print ("DragEnterEvent ListWidget")
+        #print ("DragEnterEvent ListWidget")
         e.accept()    
         
 class Form(QtGui.QDialog):
@@ -316,8 +347,7 @@ class Form(QtGui.QDialog):
     def __init__(self, parent=None):
         super(Form, self).__init__(parent)
 
-        
-        workflowWidget = WFWidgetArea(self)
+        workflowWidget = WFWidget(self)
         workflowWidget.setAcceptDrops(True)
         
         listWidget = WFEListWidget()
@@ -334,6 +364,10 @@ class Form(QtGui.QDialog):
         self.setWindowTitle("Workflow Panel")
 
    
+    def resizeEvent(self,e):
+        super(Form,self).resizeEvent(e)
+        print ("RES")
+
         
         
 app = QtGui.QApplication(sys.argv)
