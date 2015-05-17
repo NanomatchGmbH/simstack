@@ -3,18 +3,28 @@ from __future__ import print_function
 from __future__ import unicode_literals
 from future_builtins import *
 
-import os
-import sys
+#import os
+#import sys
+
 import WFELicense
+import copy 
+from   lxml import etree
+import ntpath
 
 import PySide.QtCore as QtCore
 import PySide.QtGui  as QtGui
 
-class DragButton(QtGui.QPushButton):
+def mapClassToTag(name):
+    xx = name.replace('Widget','')
+    return xx[2:]
+    
+    
 
-    def __init__(self, text, parent=None):
-        super(DragButton, self).__init__(text,parent)        
+class WFWanoWidget(QtGui.QPushButton):
+    def __init__(self, text, wano, parent=None):
+        super(WFWanoWidget, self).__init__(text,parent)        
         self.moved  = False
+        self.wano   = copy.copy(wano)
   
     def parentElementList(self):
         return self.parent().buttons
@@ -22,6 +32,10 @@ class DragButton(QtGui.QPushButton):
     def placeElements(self):
         pass
     
+    def xml(self):
+        if self.text() != "Start":
+            return self.wano.xml() 
+   
     def mouseMoveEvent(self, e):
         if self.text() == "Start":
             e.ignore()
@@ -35,9 +49,20 @@ class DragButton(QtGui.QPushButton):
             self.move( e.globalPos() );
             dropAction = drag.start(QtCore.Qt.MoveAction)
 
+    def clear(self):
+        pass 
+    
     def mouseDoubleClickEvent(self,e):
-        print ('clicked',self.text())
-
+        if self.wano != None:
+            self.parent().openWaNoEditor(self.wano)
+    
+    def gatherExports(self,wano,varExp,filExp,waNoNames):
+        if wano == self.wano:
+            return True
+        if self.wano != None:
+            self.wano.gatherExports(varExp,filExp,waNoNames)
+        return False
+    
 class WFBaseWidget(QtGui.QFrame):
     def __init__(self, parent=None):
         super(WFBaseWidget, self).__init__(parent)    
@@ -48,7 +73,16 @@ class WFBaseWidget(QtGui.QFrame):
         self.embeddedIn = None
         self.myName     = "AbstractWFWidget"
         self.elementSkip = 20    # distance to skip between elements
-       
+     
+    def clear(self):
+        for e in self.buttons:
+            e.clear()
+        
+        for c in self.children():
+            c.deleteLater()
+            
+        self.buttons = []
+            
     def removeElement(self,element):
         # remove element both from the buttons and child list
         try:
@@ -67,7 +101,14 @@ class WFBaseWidget(QtGui.QFrame):
         else:
             s = QtCore.QSize(self.parent().width()-50,self.height()) 
         return s
-        
+    
+    def xml(self):
+        ee =  etree.Element(mapClassToTag(self.__class__.__name__),name='Untitled')
+        for e in self.buttons:
+            if e.text() != "Start":
+                ee.append(e.xml())
+        return ee 
+            
     def placeElementPosition(self,element):
         # this function computes the position of the next button
         newb  = []
@@ -174,7 +215,7 @@ class WFBaseWidget(QtGui.QFrame):
         
         controlWidgetNames = ["While","If","ForEach","For","Parallel"]
         controlWidgetClasses = [ "WF"+a+"Widget" for a in controlWidgetNames]
-        if type(sender) is DragButton:
+        if type(sender) is WFWanoWidget:
             sender.move(e.pos())
             sender.setParent(self)
             self.placeElementPosition(sender)
@@ -193,69 +234,127 @@ class WFBaseWidget(QtGui.QFrame):
                 btn.move(e.pos())
                 btn.show()
             else:
-                btn = DragButton(text,self)
+                if hasattr(item,'WaNo'):
+                    btn = WFWanoWidget(text,item.WaNo,self)
+                else:
+                    btn = WFWanoWidget(text,None,self)
                 btn.move(e.pos())
                 btn.show()
             self.placeElementPosition(btn)
         e.accept()
         self.update()
     
+    def gatherExports(self,wano,varExp,filExp,waNoNames):
+        for b in self.buttons:
+            if b.gatherExports(wano,varExp,filExp,waNoNames):
+                return True 
+        return False 
+                
     def text(self):
         return self.myName
-    
+
+targetHeight = 600
 class WFWidget(QtGui.QWidget):
     def __init__(self, parent=None):
         super(WFWidget, self).__init__(parent)   
         
         self.acceptDrops()
-       
-        self.wf = WFMainWidgetArea(self)
+        
+        self.wf = WFWorkflowWidget(parent,self)
       
-        dummy  = QtGui.QFrame() # this is needed to resize the scrollbar
-        self.wf.embeddedIn = dummy   # this is the widget that needs to be reiszed when the main layout widget resizes
-        dummy.setFrameStyle(QtGui.QFrame.Panel)
-        dummylayout = QtGui.QVBoxLayout(dummy)
-        dummylayout.setContentsMargins(0,0,0,0) # there is only 1 widget inside no margins
-        dummylayout.addWidget(self.wf)
-        dummy.setLayout(dummylayout) 
-    
-        self.setMinimumSize(self.wf.width()+50,600) # widget with scrollbar
+        self.tabWidget  = QtGui.QTabWidget() # this is needed to resize the scrollbar
+        self.wf.embeddedIn = self.tabWidget   # this is the widget that needs to be reiszed when the main layout widget resizes
+        
+        self.tabWidget.addTab(self.wf,'Untitled')
+        self.setWidthLarge()
+        self.setMinimumSize(self.wf.width(),targetHeight) # widget with scrollbar
         
         scroll = QtGui.QScrollArea(self)
         scroll.setMinimumHeight(600)
         scroll.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOn)
-        scroll.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOff)
+        scroll.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarAsNeeded)
         scroll.setWidgetResizable(True)
-        scroll.setWidget(dummy)      
+        scroll.setWidget(self.tabWidget)      
         scroll.acceptDrops()      
         scroll.setParent(self)
         
         self.scroll = scroll
     
+    def clear(self):
+        self.wf.clear()
+        
+    def saveFile(self,fileName):
+        xml = self.wf.xml()
+        head, tail = ntpath.split(fileName)
+        nn = tail.split('.')[-2]
+        print ("Saving File to: ",nn)
+        textFile = open(fileName,"w")
+        textFile.write(etree.tostring(xml,pretty_print=True))
+        textFile.close()
+      
+    def loadFile(self,fileName):
+        try:
+            self.inputData = etree.parse(filename)
+        except:
+            self.logger.error('File not found: ' + filename)
+            raise 
+        r = self.inputData.getroot()
+        if r.tag == "Workflow":
+            for c in r:
+                
+                w = WaNo(c)
+                self[w.name] = w
+        else:
+            print ("Could not Parse Workflow in ",filename)
     
+    def setWidthSmall(self):
+        print ("set widht small")
+        #self.setMinimumSize(400,targetHeight)
+        #self.wf.setFixedWidth(400)
+        #self.tabWidget.setFixedWidth(400)
+    
+    def setWidthLarge(self):
+        print ("set widht large")
+        #self.tabWidget.setFixedWidth(800)
+        #self.setMinimumSize(800,targetHeight)
+        #self.wf.setFixedWidth(800)
+       
          
-class WFMainWidgetArea(WFBaseWidget):
-    def __init__(self, parent=None):
-        super(WFMainWidgetArea, self).__init__(parent)   
+class WFWorkflowWidget(WFBaseWidget):
+    def __init__(self, editor,parent=None):
+        super(WFWorkflowWidget, self).__init__(parent)   
         self.acceptDrops()
+        self.editor     = editor
         self.topWidget  = True
         self.autoResize = True
-        self.myName     = "WFMainWidgetArea"
+        self.myName     = "WFWorkflowWidget"
+        self.name       = "Untitled"
         self.setMinimumWidth(400)
         self.setFrameStyle(QtGui.QFrame.WinPanel | QtGui.QFrame.Sunken) 
         #
         #  the start button is always there
         #
-        btn = DragButton('Start',self)
+        btn = WFWanoWidget('Start',None,self)
         btn.show()
         self.placeElementPosition(btn)
-       
+    
+  
+        
     def recPlaceElements(self): 
         # here is min height of main widget
       
-        ypos=max(self.placeOwnButtons(),600)
+        ypos=max(self.placeOwnButtons(),targetHeight)
         self.setFixedHeight(ypos)
         self.parent().setFixedHeight(ypos) 
+
+   
+    def openWaNoEditor(self,wano):
+        varEx = {}
+        filEx = {}
+        waNoNames = []
+        if not self.gatherExports(wano,varEx,filEx,waNoNames):
+            self.logger.error("Error gathering exports for Wano:",wano.name)
+        self.editor.openWaNoEditor(wano,varEx,filEx,waNoNames)
 
 class WFControlWidget(QtGui.QFrame):
     def __init__(self, parent=None):
@@ -263,7 +362,7 @@ class WFControlWidget(QtGui.QFrame):
         self.setFrameStyle(QtGui.QFrame.Panel)
         self.setAcceptDrops(True)
         self.isVisible = True     # the subwidget are is visible
-        self.layout        = QtGui.QVBoxLayout()
+        self.layout    = QtGui.QVBoxLayout()
         
         noPar=self.makeTopLine()
         self.wf = []
@@ -286,8 +385,18 @@ class WFControlWidget(QtGui.QFrame):
         self.setLayout(self.layout)
         self.show()
     
+    def clear(self):
+        for w in self.wf:
+            w.clear()
+            w.deleteLater()
+            
+    def xml(self):
+        ee =  etree.Element(mapClassToTag(self.__class__.__name__))
+        for e in self.wf:
+            ee.append(e.xml())
+        return ee 
+    
     def toggleVisible(self):
-        print ("Toggle Visible")
         if self.isVisible: # remove widget from bottomlayout
             for w in self.wf:
                 self.bottomLayout.takeAt(0)
@@ -321,7 +430,7 @@ class WFControlWidget(QtGui.QFrame):
         if len(self.wf) > 0:
             for w in self.wf:
                 ypos=max(ypos,w.placeOwnButtons())
-            print ("WFControlElement Child Height:",ypos)
+            #print ("WFControlElement Child Height:",ypos)
             ypos = max(ypos,2*self.elementSkip)
             self.setFixedHeight(ypos+2.25*self.elementSkip) 
             for w in self.wf:
@@ -437,66 +546,4 @@ class WFParallelWidget(WFControlWidget):
         self.bottomLayout.addWidget(wf)
         self.placeElements()
         
-    
-class WFEListWidget(QtGui.QListWidget):
-    def __init__(self, parent=None):
-        super(WFEListWidget, self).__init__(parent) 
-        self.setAcceptDrops(True)
-        self.setDragEnabled(True)
-        path = os.path.dirname(__file__)
-        for image in sorted(os.listdir(os.path.join(path, "images"))):
-            if image.endswith(".png"):
-                item = QtGui.QListWidgetItem(image.split(".")[0])
-                item.setIcon(QtGui.QIcon(os.path.join(path,
-                                   "images/{0}".format(image))))
-                self.addItem(item)
-
-   
-    
-class Test(QtGui.QWidget):
-    def __init__(self, parent=None):
-        super(Test, self).__init__(parent)     
-        self.setMinimumSize(200,200)
-        p = self.palette()
-        p.setColor(self.backgroundRole(), QtCore.Qt.darkCyan)
-        self.setPalette(p)
-        self.setAutoFillBackground(True)
-        self.acceptDrops()
-        self.show()
-    def dragEnterEvent(self, e): 
-        #print ("DragEnterEvent ListWidget")
-        e.accept()    
-        
-class Form(QtGui.QDialog):
-
-    def __init__(self, parent=None):
-        super(Form, self).__init__(parent)
-
-        workflowWidget = WFWidget(self)
-        workflowWidget.setAcceptDrops(True)
-        
-        listWidget = WFEListWidget()
-       
-        splitter = QtGui.QSplitter(QtCore.Qt.Horizontal)
-        splitter.addWidget(listWidget)
-        splitter.addWidget(workflowWidget)
-        splitter.addWidget(Test())
-        
-        layout = QtGui.QHBoxLayout()
-        layout.addWidget(splitter)
-        self.setLayout(layout)
-
-        self.setWindowTitle("Workflow Panel")
-
-   
-    def resizeEvent(self,e):
-        super(Form,self).resizeEvent(e)
-        print ("RES")
-
-        
-        
-app = QtGui.QApplication(sys.argv)
-form = Form()
-form.show()
-app.exec_()
-
+ 
