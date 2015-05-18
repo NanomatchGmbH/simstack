@@ -1,0 +1,30 @@
+<WaNoTemplate name="Simona">
+    <WaNoSection name="Box">
+        <WaNoFloat name="LX" hidden="False">
+            0.25
+        </WaNoFloat>
+        <WaNoFloat name="LABC" hidden="True">
+            0.25
+        </WaNoFloat>
+        <WaNoFloat name="LZ">
+            0.25
+        </WaNoFloat>
+    </WaNoSection>
+    <WaNoSection name="System" layout="vertical">
+        <WaNoSelection name="Forcefield" selection_type="single" selected_item="3">
+            <WaNoSelectionElement>AMBER</WaNoSelectionElement>
+            <WaNoSelectionElement>GROMOS</WaNoSelectionElement>
+            <WaNoSelectionElement>AMBER99</WaNoSelectionElement>
+            <WaNoSelectionElement>AMBER99ISLN</WaNoSelectionElement>
+            <WaNoSelectionElement>AMBER99ISLN*</WaNoSelectionElement>
+        </WaNoSelection>
+        <WaNoLocalFile name="localFile"> 
+            run.tr 
+        </WaNoLocalFile>
+        <WaNoFile name="InputFile">
+            $Base/input/input.top
+        </WaNoFile>
+    </WaNoSection>
+    </WaNoTemplate>
+   
+
