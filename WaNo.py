@@ -7,9 +7,10 @@ from   six import string_types
 import logging
 import sys
 import glob
-import yaml
+
+#import yaml
 from   lxml import etree
-from   io import StringIO, BytesIO
+#from   io import StringIO, BytesIO
 
 from   WaNoWidgets import *
 
@@ -19,54 +20,122 @@ class WaNoElementFactory:
         WaNoElementFactory.factories.put[id] = shapeFactory
     addFactory = staticmethod(addFactory)
     # A Template Method:
-    def createWaNoE(id,name,inputData):
+    def createWaNoE(id,inputData):
         if not WaNoElementFactory.factories.has_key(id):
+           
             xclass = globals()[id]
             xclass.widget = eval(id + 'Widget')   ## this is a sick way to assign the widget functions to the classes 
             WaNoElementFactory.factories[id] = \
               eval(id + '.Factory()')
-        return  WaNoElementFactory.factories[id].create(name,inputData)
+        return  WaNoElementFactory.factories[id].create(inputData)
     createWaNoE = staticmethod(createWaNoE)
     
 class WaNoElement(object):   # abstract class: does not implement validator
-    def __init__(self,name,value):
-        self.name    = name
-        self.value   = value
+    def __init__(self,inputData):
+        self.name    = inputData.get("name")
+        
+        self.attrib = {}
+        for key in inputData.attrib.keys():
+            self.attrib[key] = inputData.get(key)
+        if 'name' in self.attrib:
+            del self.attrib['name']
+        
+        if not 'sourceType' in self.attrib:
+            self.attrib['sourceType']  = 'V'
+        if not 'importFrom' in self.attrib:
+            self.attrib['importFrom']  = ''
+        
+        if inputData.text != None:
+            self.value          = self.fromString(inputData.text.strip())
+
+    def fromString(self,s):
+        return s
     def __str__(self):
-        return 'WaNoE: ' + self.__class__.__name__ + ' Named: ' + self.name + ' Value: ' + str(self.value)
+        return 'WaNoElement: ' + self.__class__.__name__ + ' Named: ' + self.name + ' Value: ' + str(self.value)
+    
     def copyContent(self): # override for all that have no 'text' in the widget
-        text = getWidgetText(self.editor)
+        text = getWidgetText(self.myWidget.editor)
+        
+        self.attrib['hidden']     = str(self.myWidget.hiddenButton.isChecked())
+        self.attrib['sourceType'] = self.myWidget.typeSelect.currentText()
+        if hasattr(self.myWidget,"importSelect"):
+            self.attrib['importFrom'] = self.myWidget.importSelect.currentText()
         self.value = text
+        
+    def xmlNode(self):
+        ee =  etree.Element(self.__class__.__name__,name=self.name)
+        for key in self.attrib:
+            ee.set(key,self.attrib[key])
+        return ee
+        
+    def xml(self):
+        ee = self.xmlNode()
+        ee.text = str(self.value)
+        return ee 
 
-class WaNoEString(WaNoElement): 
+class WaNoString(WaNoElement): 
     class Factory:
-        def create(self,name,inputData): return WaNoEString(name,inputData)
+        def create(self,inputData): return WaNoEString(inputData)
      
-class WaNoEFile(WaNoElement): 
+class WaNoFile(WaNoElement): 
     class Factory:
-        def create(self,name,inputData): return WaNoEFile(name,inputData)
+        def create(self,inputData): return WaNoFile(inputData)
         
-class WaNoELocalFile(WaNoElement): 
+class WaNoOutputFile(WaNoElement): 
     class Factory:
-        def create(self,name,inputData): return WaNoELocalFile(name,inputData)
+        def create(self,inputData): return WaNoOutputFile(inputData)
         
-class WaNoEInt(WaNoElement): 
+class WaNoLocalFile(WaNoElement): 
     class Factory:
-        def create(self,name,inputData): return WaNoEInt(name,inputData)
-
-class WaNoEFloat(WaNoElement):
+        def create(self,inputData): return WaNoLocalFile(inputData)
+        
+class WaNoInt(WaNoElement): 
     class Factory:
-        def create(self,name,inputData): return WaNoEFloat(name,inputData)
+        def create(self,inputData): return WaNoInt(inputData)
+    def fromString(self,s):
+        return int(s)
+    
+class WaNoFloat(WaNoElement):
+    class Factory:
+        def create(self,inputData): return WaNoFloat(inputData)
+    def fromString(self,s):
+        return float(s)
+    
+class WaNoSelectionElement(WaNoElement):
+    def __init__(self,inputData):
+        super(WaNoSelectionElement,self).__init__(inputData)
+        self.name = "NoName"
+        
+    class Factory:
+        def create(self,inputData): return WaNoSelectionElement(inputData)
 
-class WaNoESelection(WaNoElement):  
-    def __init__(self,name,value):
-        super(WaNoESelection,self).__init__(name,value)
-        self.selectedItem = 0
+class WaNoSelection(WaNoElement):  
+    def __init__(self,value):
+        super(WaNoSelection,self).__init__(value)
+        self.elements = []
+        for c in value:
+            if c.tag != "WaNoSelectionElement":
+                self.logger.error("Illegal Element in WaNoSelection" + self.name + " Type: " + c.tag)
+            else:
+                self.elements.append(WaNoElementFactory.createWaNoE(c.tag,c) )
+        if "selected_item" in self.attrib.keys():
+            self.selectedItems = [int(self.attrib["selected_item"])]
+        else:
+            self.selectedItems = []
+            
     def copyContent(self):
-        self.selectedItem = getSelectedItem(self.editor)
-        
+        self.selectedItems = getSelectedItems(self.editor)
+    
+    def xml(self):
+        if len(self.selectedItems) > 0:
+            self.attrib["selected_item"]=str(self.selectedItems[0])
+        ee = self.xmlNode()
+        for e in self.elements:
+            ee.append(e.xml())
+        return ee
+    
     class Factory:
-        def create(self,name,inputData): return WaNoESelection(name,inputData)
+        def create(self,inputData): return WaNoSelection(inputData)
  
 class Script:  # this is a wrapper for strings
     def __init__(self):
@@ -74,26 +143,25 @@ class Script:  # this is a wrapper for strings
     def __str__(self):
         return self.content
 
-class WaNoESection(WaNoElement):
-    def __init__(self,name,inputData,logger=None):
-        super(WaNoESection, self).__init__(name,None)        
+class WaNoSection(WaNoElement):
+    def __init__(self,inputData,logger=None):
+        super(WaNoSection, self).__init__(inputData)        
         self.logger = logger or logging.getLogger(__name__)
-        self.logger.debug("WaNo Section: " + name)
+        self.logger.debug("WaNo Section: " + inputData.get("name"))
         self.elements = []
    
         for einfo in inputData:
             # here we can variables assigment or sections 
             # a variable assignment has the form:
             # 
-            parsedElement = YAMLInputToWaNo(einfo)
-            self.logger.debug('... Parsing: ' + parsedElement.getName() + ' Type: ' + parsedElement.gbeType())
+           
+            self.logger.debug('... Parsing: ' + einfo.get("name") + ' Type: ' + einfo.tag)
             try:
-                self.elements.append(WaNoElementFactory.createWaNoE(parsedElement.gbeType(),
-                                                            parsedElement.getName(),
-                                                            parsedElement.getValue()))
+                ee = WaNoElementFactory.createWaNoE(einfo.tag,einfo)
+                self.elements.append(ee)
             except:
-                self.logger.error('Input element '+ parsedElement.gbeType() +  
-                                  ' with name ' + parsedElement.getName() +
+                self.logger.error('Input element '+ einfo.tag +  
+                                  ' with name ' + einfo.get("name") +
                                   ' could not be converted to WaNo Element')
                 raise TypeError
     def copyContent(self): #
@@ -105,9 +173,24 @@ class WaNoESection(WaNoElement):
         for e in self.elements:
             xs += '   ' + str(e) + '\n'
         return xs
+ 
+    def xml(self):
+        ee = self.xmlNode()
+        for e in self.elements:
+            ee.append(e.xml())
+        return ee
     
     class Factory:
-        def create(self,name,inputData): return WaNoESection(name,inputData)    
+        def create(self,inputData): return WaNoSection(inputData)    
+    
+    
+        
+class WaNoVarSection(WaNoSection):
+    def __init__(self,inputData,logger=None):
+        super(WaNoVarSection, self).__init__(inputData)  
+     
+    class Factory:
+        def create(self,inputData): return WaNoVarSection(inputData)    
         
 class WaNo:
     def __str__(self):
@@ -125,96 +208,52 @@ class WaNo:
         s += 'File Exports: ' + str(self.fileExports) + '\n'
         s += 'Var  Exports: ' + str(self.varExports) + '\n'
         return s
-    
-   
-      
-            
+     
     def __init__(self,inputData,name=None):
         self.logger = logging.getLogger(__name__)
         self.name        = name
         self.gbType      = 'standard'
-        self.fileImports = {}          # key: local name, value: exported name from prior WaNo
-        self.varImports  = {}          # key: local name, value: exported name from prior WaNo
-        self.fileExports = {}          # key: exported name, value: local name
-        self.varExports  = {}          # key: exported name, value: local name
+        #self.fileImports = {}          # key: local name, value: exported name from prior WaNo
+        #self.varImports  = {}          # key: local name, value: exported name from prior WaNo
+        #self.fileExports = {}          # key: exported name, value: local name
+        #self.varExports  = {}          # key: exported name, value: local name
+        self.importSelection = []
         self.preScript   = Script()
         self.postScript  = Script()
         
         self.elements = []
         
-        if name != None: # YML
-            self.parse_yml(inputData)
-        else:
-            self.name = inputData.get('name')
-            for c in inputData:
-                xx = eval(c.tag)(c)  # 
-                print c
-            self.name = "Dummy"    
-    def parse_yml(self,inputData):
-        self.logger.debug("WaNo Parsing: " + name)
-        self.name        = name
-        #
-        #  we expect here a list of items or a dictionary (the latter means we have sections)
-        #
-        assert isinstance(inputData, (list, tuple))
-                
-        for einfo in inputData: 
-            # here we can variables assigment or sections 
-            # a variable assignment has the form:
-            # 
-            parsedElement = YAMLInputToWaNo(einfo)
-            self.logger.debug('... Parsing: ' + parsedElement.getName() + ' Type: ' + parsedElement.gbeType())
-            try:
-                self.elements.append(WaNoElementFactory.createWaNoE(parsedElement.gbeType(),
-                                                                parsedElement.getName(),
-                                                                parsedElement.getValue()))
-            except:
-                self.logger.error('Input element '+ parsedElement.gbeType() + 
-                                   ' with name ' + parsedElement.getName() + 
-                                   ' could not be generated')
-                raise TypeError
-       
+        self.name = inputData.get('name')
+        self.logger.debug('Parsing Wano:  '+ self.name) 
+        for c in inputData:
+            self.logger.debug('Making Element: ' + c.tag)
+            xx = WaNoElementFactory.createWaNoE(c.tag,c) 
+            self.elements.append(xx)
+
+   # def myCopy(self,source):
         
-class YAMLInputToWaNo:
-    def __init__(self,element):
-        self.element = element
-        self.typekeyword  = 'WaNoType'
-        self.valuekeyword = 'Value'
-        self.content      = None
-        self.logger = logging.getLogger(__name__)
-   
-        # all elements have the form:
-        #   name: 
-        #      WaNoTYPE : type
-        #      WaNoValue: value 
-        #      other_key: v1 (more of those) 
-        # 
-        if type(self.element) is dict:
-            if len(self.element.keys()) != 1:
-                logger.error('Expected Dict with one key for variable definition in ' + str(self.element))       
-                raise KeyError
-            else:
-                self.name     = self.element.keys()[0]
-                self.content  = self.element[self.name]
-                required_keys = [self.typekeyword, self.valuekeyword]
-                for k in required_keys:
-                    if not k in self.content:
-                        self.logger.error('Element: ' + str(self.content) + ' has no key: ' + k)
-                        raise KeyError
-                
-    def gbeType(self):
-        return 'WaNoE'+self.content[self.typekeyword]
-    def getName(self):
-        return self.name
-    def getValue(self):
-        return self.content[self.valuekeyword]
-    def getOptions(self):
-        options = copy.copy(self.content)
-        del options[self.valuekeyword]
-        del options[self.typekeyword]
-        return options
+    def gatherExports(self,varEx,filEx,waNoNames):
+        xx    = self.name
+        count = 1
+        if xx in waNoNames:
+            if count == 1:
+                del waNoNames[waNoNames.index(xx)]
+                waNoNames.append(self.name + '.1')
+                count = 2
+            xx = self.name + '.' + str(count)
+            count += 1
+        waNoNames.append(xx)
             
-    
+        #varEx.update(self.varExports)
+        #filEx.update(self.fileExports)
+  
+    def xml(self):
+        ee = etree.Element(self.__class__.__name__,name=self.name)
+        for e in self.elements:
+            ee.append(e.xml())
+        return ee
+       
+   
 class WorkFlow(list):
     def __str__(self):
         s = 'Workflow: ' + self.name + '\n'
@@ -222,63 +261,72 @@ class WorkFlow(list):
             s += '\t' + str(e) + '\n'
         return s
         
-    def __init__(self,name,inputData):
+    def __init__(self,inputData):
         super(WorkFlow, self).__init__() 
+        self.logger = logging.getLogger(__name__)
         self.name     = name
         self.is_sub_workflow = False 
+    
+    def parse(self,xml):
+        for c in xml:
+            print ("Workflow parse",c.tag)
+            if c.tag == 'WaNo':
+                w = WaNo(c)
+            else:
+                e = eval(c.tag)(c) 
+            self.append(e)
       
+
+class WorkflowControlElement():
+    def __init__(self):
+        self.logger = logging.getLogger(__name__)
+        self.wf = []
+
+    def parse(self,c):
+        count = 0
+        for c in xml:      
+            if c.tag != 'Base':
+                self.logger.error("Found Tag ",c.tag, " in control block")
+            else:
+                w = Workflow(c)
+                self.wf[count].parse(c)
+                count += 1
+                #self.wf.append(e)
+        if count != len(self.wf):
+            self.logger.error("Not enough base widgets in control element")
+class ForEach(WorkflowControlElement):
+    def __init__(self):
+        super(ForEach,self).__init__(self)
+        self.parse(c)
+        
+        
+class If(WorkflowControlElement):
+    def __init__(self):
+        super(ForEach,self).__init__(self)
+        self.parse(c)
+        
+        
+class While(WorkflowControlElement):
+    def __init__(self):
+        super(ForEach,self).__init__(self)
+        self.parse(c)
+        
+class Parallel(WorkflowControlElement):
+    def __init__(self):
+        super(ForEach,self).__init__(self)
+        self.parse(c)
+        
+            
+        
 class WaNoRepository(dict):
     def __init__(self):
         super(WaNoRepository, self).__init__()
         self.logger = logging.getLogger(__name__)
         
-    def parse_yml_doc(self,stream):
-        try:
-            self.inputData = yaml.load(stream)
-        except:
-            print "YAML error reading/parsing stream"
-            raise        
-        try:
-            gbName = self.inputData['Name']
-        except:
-            self.logger.error('YAML input has not Name field')
-            raise            
-        try:
-            settings = self.inputData['Settings']
-        except:
-            self.logger.error('YAML input has no Settings field')
-            raise ValueError        
-        self[gbName] = WaNo(settings,gbName)
-        return self[gbName]
-    
+  
     def parse_xml_doc(self,stream):
         self.logger.error('Not Implemented')
-        try:
-            self.inputData = etree.parse(StringIO(stream))
-        except:
-            print "XAML error reading/parsing stream"
-            raise        
-
-        try:
-            gbName = self.inputData['Name']
-        except:
-            
-            raise            
-        try:
-            settings = self.inputData['Settings']
-        except:
-            self.logger.error('YAML input has no Settings field')
-            raise ValueError        
-       
-        
-    def parse_yml_file(self,filename):
-        try:
-            stream = open(filename,'r')
-        except:
-            self.logger.error('File not found: ' + filename)
-            raise 
-        return self.parse_yml_doc(stream)
-    
+                
     def parse_xml_file(self,filename):
         try:
             self.inputData = etree.parse(filename)
@@ -297,13 +345,12 @@ class WaNoRepository(dict):
             w = WaNo(r)
             self[w.name] = w
         return w
-        
-    def parse_yml_dir(self,directory):
+    
+    def parse_xml_dir(self,directory):
         for filename in glob.iglob(directory+'/*.yml'):
             print filename
             self.parse_yml_file(filename) 
-        
-        
+  
 """
         self['Gromacs'] = WaNo('Gromacs',
                                [{'type': 'WaNoEString', 'name': 'Forcefield','value': 'AMBER99'} ,
@@ -401,8 +448,10 @@ if __name__ == '__main__':
     logging.getLogger(__name__).addHandler(logging.StreamHandler())
     #unittest.main()
     gbr = WaNoRepository()
-    gbr.parse_xml_file('WaNoRepository/Simona.xml')
+    gbr.parse_xml_file('WaNoRepository/Deposit.xml')
     
+    ee = gbr['Deposit'].xml()
+    print etree.tostring(ee,pretty_print=True)
 
     print "done"
     

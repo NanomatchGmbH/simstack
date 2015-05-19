@@ -22,7 +22,7 @@
             run.tr 
         </WaNoLocalFile>
         <WaNoFile name="InputFile">
-            $Base/input/input.top
+            input.top
         </WaNoFile>
     </WaNoSection>
     </WaNoTemplate>

@@ -8,11 +8,14 @@ from future_builtins import *
 
 import WFELicense
 import copy 
+import logging
 from   lxml import etree
 import ntpath
 
 import PySide.QtCore as QtCore
 import PySide.QtGui  as QtGui
+
+from WaNo import WaNo
 
 def mapClassToTag(name):
     xx = name.replace('Widget','')
@@ -20,11 +23,14 @@ def mapClassToTag(name):
     
     
 
-class WFWanoWidget(QtGui.QPushButton):
+class WFWaNoWidget(QtGui.QPushButton):
     def __init__(self, text, wano, parent=None):
-        super(WFWanoWidget, self).__init__(text,parent)        
+        super(WFWaNoWidget, self).__init__(text,parent)        
         self.moved  = False
-        self.wano   = copy.copy(wano)
+        xml = wano.xml()
+        self.wano   = WaNo(xml)
+        self.setAutoFillBackground(True)
+        self.setColor(QtCore.Qt.lightGray)
   
     def parentElementList(self):
         return self.parent().buttons
@@ -32,6 +38,16 @@ class WFWanoWidget(QtGui.QPushButton):
     def placeElements(self):
         pass
     
+    def setColor(self,color):
+        #self.setStyleSheet("background-color: " + color)
+        p = QtGui.QPalette()
+        p.setColor(QtGui.QPalette.Button,color)
+        self.setPalette(p)
+       
+       
+    def parse(self,r):
+        self.wano = Wano(r)
+        
     def xml(self):
         if self.text() != "Start":
             return self.wano.xml() 
@@ -54,7 +70,7 @@ class WFWanoWidget(QtGui.QPushButton):
     
     def mouseDoubleClickEvent(self,e):
         if self.wano != None:
-            self.parent().openWaNoEditor(self.wano)
+            self.parent().openWaNoEditor(self) # pass the widget to remember it
     
     def gatherExports(self,wano,varExp,filExp,waNoNames):
         if wano == self.wano:
@@ -64,10 +80,12 @@ class WFWanoWidget(QtGui.QPushButton):
         return False
     
 class WFBaseWidget(QtGui.QFrame):
-    def __init__(self, parent=None):
+    def __init__(self, editor, parent=None):
         super(WFBaseWidget, self).__init__(parent)    
+        self.logger     = logging.getLogger(__name__)
+        self.editor     = editor
         self.setAcceptDrops(True)
-        self.buttons = []
+        self.buttons    = []
         self.autoResize = False
         self.topWidget  = False
         self.embeddedIn = None
@@ -94,7 +112,15 @@ class WFBaseWidget(QtGui.QFrame):
                 self.parent().removePanel(self)
         except IndexError:
             print ("Removing Element ",element.text()," from WFBaseWidget",self.text())
-   
+  
+    def openWaNoEditor(self,wanoWidget):
+        varEx = {}
+        filEx = {}
+        waNoNames = []
+        if not self.gatherExports(wanoWidget.wano,varEx,filEx,waNoNames):
+            self.logger.error("Error gathering exports for Wano:",wano.name)
+        self.editor.openWaNoEditor(wanoWidget,varEx,filEx,waNoNames)
+        
     def sizeHint(self):
         if self.topWidget:            
             s = QtCore.QSize(self.width(),self.height()) 
@@ -197,25 +223,22 @@ class WFBaseWidget(QtGui.QFrame):
         painter.end()         
         
     def dragEnterEvent(self, e): 
-        #print ("DragEnterEvent Window",self.text())
         e.accept()
 
     def dragLeaveEvent(self, e): 
         super(WFBaseWidget,self).dragLeaveEvent(e)
-        #print ("DragLeave Workflow",self.text())
         self.placeElements()
         self.update()
         e.accept()
         
     def dropEvent(self, e):
-        #print ("DropEvent Workflow",self.text())
         super(WFBaseWidget,self).dropEvent(e)
         position = e.pos()
         sender   = e.source()
         
         controlWidgetNames = ["While","If","ForEach","For","Parallel"]
         controlWidgetClasses = [ "WF"+a+"Widget" for a in controlWidgetNames]
-        if type(sender) is WFWanoWidget:
+        if type(sender) is WFWaNoWidget:
             sender.move(e.pos())
             sender.setParent(self)
             self.placeElementPosition(sender)
@@ -230,19 +253,33 @@ class WFBaseWidget(QtGui.QFrame):
         
             # make a new widget
             if text in controlWidgetNames:
-                btn = eval("WF"+text+"Widget")(self) #  WFWhileWidget(self) 
+                btn = eval("WF"+text+"Widget")(self.editor,self) #  WFWhileWidget(self) 
                 btn.move(e.pos())
                 btn.show()
             else:
                 if hasattr(item,'WaNo'):
-                    btn = WFWanoWidget(text,item.WaNo,self)
+                    btn = WFWaNoWidget(text,item.WaNo,self)
                 else:
-                    btn = WFWanoWidget(text,None,self)
+                    btn = WFWaNoWidget(text,None,self)
                 btn.move(e.pos())
                 btn.show()
             self.placeElementPosition(btn)
         e.accept()
         self.update()
+        
+    def parse(self,xml):
+        for c in xml:
+            print ("WFBaseWidget parse",c.tag)
+            if c.tag == 'WaNo':
+                w = WaNo(c)
+                e = WFWaNoWidget(w.name,w,self)
+            else:
+                e = eval("WF"+c.tag+"Widget")(self.editor,self)
+                e.parse(c)
+            self.buttons.append(e)
+            e.show()
+        self.placeElements()
+            
     
     def gatherExports(self,wano,varExp,filExp,waNoNames):
         for b in self.buttons:
@@ -294,71 +331,64 @@ class WFWidget(QtGui.QWidget):
       
     def loadFile(self,fileName):
         try:
-            self.inputData = etree.parse(filename)
+            self.inputData = etree.parse(fileName)
         except:
             self.logger.error('File not found: ' + filename)
             raise 
         r = self.inputData.getroot()
-        if r.tag == "Workflow":
-            for c in r:
-                
-                w = WaNo(c)
-                self[w.name] = w
+        if r.tag == 'Workflow':
+            self.wf.parse(r)
         else:
             print ("Could not Parse Workflow in ",filename)
     
     def setWidthSmall(self):
-        print ("set widht small")
+        print ("set width small")
         #self.setMinimumSize(400,targetHeight)
         #self.wf.setFixedWidth(400)
         #self.tabWidget.setFixedWidth(400)
     
     def setWidthLarge(self):
-        print ("set widht large")
+        print ("set width large")
         #self.tabWidget.setFixedWidth(800)
         #self.setMinimumSize(800,targetHeight)
         #self.wf.setFixedWidth(800)
        
-         
+#
+#  editor is the workflow editor that can open/close the WaNo editor
+#   
 class WFWorkflowWidget(WFBaseWidget):
-    def __init__(self, editor,parent=None):
-        super(WFWorkflowWidget, self).__init__(parent)   
+    def __init__(self, editor, parent=None):
+        super(WFWorkflowWidget, self).__init__(editor,parent)   
         self.acceptDrops()
-        self.editor     = editor
         self.topWidget  = True
         self.autoResize = True
         self.myName     = "WFWorkflowWidget"
         self.name       = "Untitled"
+        self.hasStart   = False
         self.setMinimumWidth(400)
         self.setFrameStyle(QtGui.QFrame.WinPanel | QtGui.QFrame.Sunken) 
         #
-        #  the start button is always there
+        #  we do not really need a start button anymore
         #
-        btn = WFWanoWidget('Start',None,self)
-        btn.show()
-        self.placeElementPosition(btn)
-    
-  
-        
+        if self.hasStart:
+            btn = WFWaNoWidget('Start',None,self)
+            btn.show()
+            self.placeElementPosition(btn)
+          
     def recPlaceElements(self): 
-        # here is min height of main widget
-      
+        # here is min height of main widget  
         ypos=max(self.placeOwnButtons(),targetHeight)
         self.setFixedHeight(ypos)
         self.parent().setFixedHeight(ypos) 
 
-   
-    def openWaNoEditor(self,wano):
-        varEx = {}
-        filEx = {}
-        waNoNames = []
-        if not self.gatherExports(wano,varEx,filEx,waNoNames):
-            self.logger.error("Error gathering exports for Wano:",wano.name)
-        self.editor.openWaNoEditor(wano,varEx,filEx,waNoNames)
+
 
 class WFControlWidget(QtGui.QFrame):
-    def __init__(self, parent=None):
-        super(WFControlWidget, self).__init__(parent)        
+    def __init__(self, editor, parent=None):
+        super(WFControlWidget, self).__init__(parent) 
+        self.logger = logging.getLogger(__name__)
+        self.editor = editor
+        
         self.setFrameStyle(QtGui.QFrame.Panel)
         self.setAcceptDrops(True)
         self.isVisible = True     # the subwidget are is visible
@@ -370,7 +400,7 @@ class WFControlWidget(QtGui.QFrame):
         self.bottomLayout = QtGui.QHBoxLayout()
         self.elementSkip = 0 
         for i in range(noPar):
-            wf = WFBaseWidget(self)
+            wf = WFBaseWidget(editor,self)
             self.elementSkip = max(self.elementSkip,wf.elementSkip)
             wf.myName = self.myName + ("WF%i" % i)
             wf.setFrameStyle(QtGui.QFrame.WinPanel | QtGui.QFrame.Sunken) 
@@ -389,6 +419,13 @@ class WFControlWidget(QtGui.QFrame):
         for w in self.wf:
             w.clear()
             w.deleteLater()
+    
+    def gatherExports(self,wano,varExp,filExp,waNoNames):
+        self.logger.error('gather exports for control elements not implemented')
+        pass
+    
+    def parse(self,xml):
+      
             
     def xml(self):
         ee =  etree.Element(mapClassToTag(self.__class__.__name__))
@@ -456,8 +493,8 @@ class WFControlWidget(QtGui.QFrame):
             dropAction = drag.start(QtCore.Qt.MoveAction)
 
 class WFWhileWidget(WFControlWidget):
-    def __init__(self, parent=None):
-        super(WFWhileWidget, self).__init__(parent)      
+    def __init__(self, editor, parent=None):
+        super(WFWhileWidget, self).__init__(editor, parent)      
         
     def makeTopLine(self):
         self.myName = 'While'
@@ -469,8 +506,8 @@ class WFWhileWidget(WFControlWidget):
         return 1
     
 class WFIfWidget(WFControlWidget):
-    def __init__(self, parent=None):
-        super(WFIfWidget, self).__init__(parent)      
+    def __init__(self, editor, parent=None):
+        super(WFIfWidget, self).__init__(editor, parent)      
         
     def makeTopLine(self):
         self.myName = 'If'
@@ -482,8 +519,8 @@ class WFIfWidget(WFControlWidget):
         return 2
 
 class WFForEachWidget(WFControlWidget):
-    def __init__(self, parent=None):
-        super(WFForEachWidget, self).__init__(parent)      
+    def __init__(self, editor, parent=None):
+        super(WFForEachWidget, self).__init__(editor, parent)      
         
     def makeTopLine(self):
         self.myName = 'ForEach'
@@ -497,8 +534,8 @@ class WFForEachWidget(WFControlWidget):
 
 
 class WFParallelWidget(WFControlWidget):
-    def __init__(self, parent=None):
-        super(WFParallelWidget, self).__init__(parent)      
+    def __init__(self, editor, parent=None):
+        super(WFParallelWidget, self).__init__(editor, parent)      
         
     def makeTopLine(self):
         self.myName = 'Parallel'
@@ -532,12 +569,11 @@ class WFParallelWidget(WFControlWidget):
                 # widget will be None if the item is a layout
                 widget.deleteLater()
             
-        
     
     def addWF(self):
         if not self.isVisible:
             self.toggleVisible()
-        wf = WFBaseWidget(self)
+        wf = WFBaseWidget(self.editor,self)
         self.elementSkip = max(self.elementSkip,wf.elementSkip)
         wf.myName = self.myName + "WF" + str(self.bottomLayout.count())
         wf.setFrameStyle(QtGui.QFrame.WinPanel | QtGui.QFrame.Sunken) 
@@ -547,3 +583,15 @@ class WFParallelWidget(WFControlWidget):
         self.placeElements()
         
  
+    def parse(self,xml):
+        count = 0
+        for c in xml:      
+            if c.tag != 'Base':
+                self.logger.error("Found Tag ",c.tag, " in control block")
+            else:
+                if count > 2:
+                    self.addWF() 
+                self.wf[count].parse(c)
+                count += 1
+        if count != len(self.wf):
+            self.logger.error("Not enough base widgets in control element")

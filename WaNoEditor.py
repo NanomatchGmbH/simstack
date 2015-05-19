@@ -12,7 +12,7 @@ import WFELicense
 from WaNo import WaNo, WaNoRepository
 
 class WaNoEditor(QtGui.QDialog):
-    def __init__(self, wano, editor, exportedFiles, exportedVars,parent = None):
+    def __init__(self, wano, editor, exportedFiles, exportedVars, importSelection, parent = None):
         super(WaNoEditor, self).__init__(parent)
         self.editor = editor
         self.wano = wano
@@ -20,22 +20,22 @@ class WaNoEditor(QtGui.QDialog):
         
         tabWidget       = QtGui.QTabWidget()
         self.activeTabs = []
-        if len(exportedFiles) > 0:
-            tab = WaNoFileImportEditor(wano,exportedFiles)
-            tabWidget.addTab(tab, "File Import")
-            self.activeTabs.append(tab)
+        #if len(exportedFiles) > 0:
+            #tab = WaNoFileImportEditor(wano,exportedFiles)
+            #tabWidget.addTab(tab, "File Import")
+            #self.activeTabs.append(tab)
             
-        if len(exportedFiles) > 0:
-            tab = WaNoVarImportEditor(wano,exportedVars)
-            tabWidget.addTab(tab, "Var Import")
-            self.activeTabs.append(tab)
+        #if len(exportedFiles) > 0:
+            #tab = WaNoVarImportEditor(wano,exportedVars)
+            #tabWidget.addTab(tab, "Var Import")
+            #self.activeTabs.append(tab)
       
         if  wano.preScript != None:
             tab = ScriptTab(wano.preScript)
             tabWidget.addTab(tab, "Prepocessor")
             self.activeTabs.append(tab)
             
-        tab = WaNoItemEditor(wano)
+        tab = WaNoItemEditor(wano,importSelection)
         tabWidget.addTab(tab, "Items")
         self.activeTabs.append(tab)
         
@@ -44,32 +44,49 @@ class WaNoEditor(QtGui.QDialog):
             tabWidget.addTab(tab, "Postpocessor")
             self.activeTabs.append(tab)
         
-        tab = WaNoExportEditor(wano,exportedFiles)
-        tabWidget.addTab(tab, "Export")
-        self.activeTabs.append(tab)
-            
+        #tab = WaNoExportEditor(wano,exportedFiles)
+        #tabWidget.addTab(tab, "Export")
+        #self.activeTabs.append(tab)
+        tabWidget.setCurrentIndex(1)
         buttonBox = QtGui.QDialogButtonBox(QtGui.QDialogButtonBox.Save | 
                                            QtGui.QDialogButtonBox.Cancel)
       
         
-        buttonBox.button(QtGui.QDialogButtonBox.Save).clicked.connect(self.CopyContent)
-        buttonBox.rejected.connect(self.reject)
+        buttonBox.button(QtGui.QDialogButtonBox.Save).clicked.connect(self.saveClose)
+        buttonBox.rejected.connect(self.deleteClose)
         mainLayout = QtGui.QVBoxLayout()
         mainLayout.addWidget(tabWidget)
         mainLayout.addWidget(buttonBox)
         self.setLayout(mainLayout)
         self.setWindowTitle("WaNoEditor " + wano.name)
-        
-    def CopyContent(self):
-        for tab in self.activeTabs:
-            tab.copyContent()
+       
+    def deleteClose(self):
         if self.editor != None:
             self.editor.closeWaNoEditor()
-        self.accept()
+           
+    def saveClose(self):
+        self.copyContent()
+        self.deleteClose()
+        
+    def copyContent(self):
+        for tab in self.activeTabs:
+            tab.copyContent()
+       
     
     def closeAction(self):
-        print ("Close Action Called to ask for Save")
-        
+        reply = QtGui.QMessageBox(self)
+        reply.setText("There is an open WaNo")
+        reply.setInformativeText("Do you want to save your changes?")
+        reply.setStandardButtons(QtGui.QMessageBox.Save | QtGui.QMessageBox.Discard | QtGui.QMessageBox.Cancel)
+        reply.setDefaultButton(QtGui.QMessageBox.Save)
+        ret = reply.exec_()
+    
+        if ret == QtGui.QMessageBox.Cancel:
+            return ret
+        if ret == QtGui.QMessageBox.Save:
+            self.copyContent()
+        return ret
+    
 
 class ScriptTab(QtGui.QWidget):
     def __init__(self, script, parent = None):
@@ -142,8 +159,7 @@ class WaNoImportEditor(QtGui.QWidget):
         if localName == None:
             localName = 'Item'+str(pos)
 
-        localNameWidget = QtGui.QLineEdit(localName)
-        
+        localNameWidget  = QtGui.QLineEdit(localName)
         globalNameWidget = self.getGlobalNameWidget(globalName)
         
         singleLineLayout.addWidget(localNameWidget)
@@ -235,19 +251,20 @@ class WaNoVarImportEditor(WaNoImportEditor):
             
            
 class WaNoItemEditor(QtGui.QWidget):
-    def __init__(self, wano, parent = None):
+    def __init__(self, wano, importSelection, parent = None):
         super(WaNoItemEditor, self).__init__(parent)
         
         self.wano = wano
-   
+        
         # scroll area widget contents - layout
         self.scrollLayout = QtGui.QVBoxLayout()        # empty layout to be filled later
         # left top right bottom
-        self.scrollLayout.setContentsMargins(5,1,1,1)
+        self.scrollLayout.setContentsMargins(1,1,1,1)
         self.items = []
         
+        ll = max( [ len(element.name) for element in self.wano.elements] )
         for element in self.wano.elements:
-            widget = element.widget()  
+            widget = element.widget(ll,importSelection)  
             self.items.append(widget) 
             self.scrollLayout.addWidget(widget) # this sets the parent 
     
