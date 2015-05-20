@@ -79,7 +79,7 @@ class WFEditor(QtGui.QDialog):
        
         selectionPanel = QtGui.QSplitter(QtCore.Qt.Vertical)
         selectionPanel.setSizePolicy(QtGui.QSizePolicy.Fixed,QtGui.QSizePolicy.Expanding)
-        #selectionPanelLayout = QtGui.QHBoxLayout(selectionPanel)
+      
         
         WanoListWidget = WFEWaNoListWidget('WaNoRepository')
         CtrlListWidget = WFEListWidget('ctrl_img')
@@ -92,33 +92,25 @@ class WFEditor(QtGui.QDialog):
         selectionPanel.addWidget(WorkListWidget)
         selectionPanel.addWidget(QtGui.QLabel('Controls'))
         selectionPanel.addWidget(CtrlListWidget)
-        #selectionPanel.setLayout(selectionPanelLayout)
         
+        self.wanoEditor = WaNoEditor(self) 
        
-        #splitter = QtGui.QSplitter(QtCore.Qt.Horizontal)
-        #splitter.addWidget(selectionPanel)
-        #splitter.addWidget(self.workflowWidget)
-        #self.mainPanels = splitter 
-   
-        layout = QtGui.QHBoxLayout()
-        #layout.addWidget(splitter)
         
+        layout = QtGui.QHBoxLayout()       
         layout.addWidget(selectionPanel)
         layout.addWidget(self.workflowWidget)
-        self.mainPanels = layout
-        
+        layout.addWidget(self.wanoEditor)
+         
+        self.mainPanels = layout  
         self.setLayout(layout)
-        self.wanoEditor = None 
+      
         self.lastActive = None
 
-    def closeWaNoEditor(self):
-        if self.wanoEditor != None:
-            if self.lastActive != None:
-                self.lastActive.setColor(QtCore.Qt.lightGray)
-                self.lastActive = None
-            self.wanoEditor.deleteLater()
-        self.wanoEditor = None 
-        self.workflowWidget.setWidthLarge()
+    def deactivateWidget(self):
+        if self.lastActive != None:
+            self.lastActive.setColor(QtCore.Qt.lightGray)
+            self.lastActive = None
+       
         
     def openWaNoEditor(self,wanoWidget,varExports,fileExports,waNoNames):
         if self.wanoEditor != None:            
@@ -127,9 +119,8 @@ class WFEditor(QtGui.QDialog):
             self.wanoEditor.deleteClose()
         wanoWidget.setColor(QtCore.Qt.green)
         self.lastActive = wanoWidget
-        self.wanoEditor = WaNoEditor(wanoWidget.wano,self,varExports,fileExports,waNoNames) 
-        self.mainPanels.addWidget(self.wanoEditor)
-        self.workflowWidget.setWidthSmall()
+        self.wanoEditor.init(wanoWidget.wano,varExports,fileExports,waNoNames) 
+       
    
     def resizeEvent(self,e):
         super(WFEditor,self).resizeEvent(e)
@@ -161,11 +152,7 @@ class WFEditorApplication(QtGui.QMainWindow):
         self.wfEditor = WFEditor()
         self.setCentralWidget(self.wfEditor)
         
-        self.infoLabel = QtGui.QLabel(
-                "<i>Choose a menu option, or right-click to invoke a context menu</i>",
-                alignment=QtCore.Qt.AlignCenter)
-        self.infoLabel.setFrameStyle(QtGui.QFrame.StyledPanel | QtGui.QFrame.Sunken)
-        
+             
         self.createActions()
         
         self.fileMenu = self.menuBar().addMenu("&File")

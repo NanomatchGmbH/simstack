@@ -12,57 +12,58 @@ import WFELicense
 from WaNo import WaNo, WaNoRepository
 
 class WaNoEditor(QtGui.QDialog):
-    def __init__(self, wano, editor, exportedFiles, exportedVars, importSelection, parent = None):
+    def __init__(self,editor,parent=None):
         super(WaNoEditor, self).__init__(parent)
+        self.setMinimumWidth(400)
         self.editor = editor
+        self.tabWidget  = QtGui.QTabWidget()
+        self.activeTabs = []
+        self.hasChanged = False
+    
+        tab = LogTab()     
+        self.tabWidget.addTab(tab, "Info")
+       
+        buttonBox = QtGui.QDialogButtonBox(QtGui.QDialogButtonBox.Save | 
+                                           QtGui.QDialogButtonBox.Cancel)
+      
+        buttonBox.button(QtGui.QDialogButtonBox.Save).clicked.connect(self.saveClose)
+        buttonBox.rejected.connect(self.deleteClose)
+        mainLayout = QtGui.QVBoxLayout()
+        mainLayout.addWidget(self.tabWidget)
+        mainLayout.addWidget(buttonBox)
+        self.setLayout(mainLayout)
+        
+       
+    def init(self, wano, exportedFiles, exportedVars, importSelection):
         self.wano = wano
         self.setMinimumWidth(400)
-        
-        tabWidget       = QtGui.QTabWidget()
-        self.activeTabs = []
-        #if len(exportedFiles) > 0:
-            #tab = WaNoFileImportEditor(wano,exportedFiles)
-            #tabWidget.addTab(tab, "File Import")
-            #self.activeTabs.append(tab)
-            
-        #if len(exportedFiles) > 0:
-            #tab = WaNoVarImportEditor(wano,exportedVars)
-            #tabWidget.addTab(tab, "Var Import")
-            #self.activeTabs.append(tab)
-      
+    
         if  wano.preScript != None:
-            tab = ScriptTab(wano.preScript)
-            tabWidget.addTab(tab, "Prepocessor")
+            tab = ScriptTab(wano.postScript)
+            self.tabWidget.addTab(tab, "Prepocessor")
             self.activeTabs.append(tab)
             
         tab = WaNoItemEditor(wano,importSelection)
-        tabWidget.addTab(tab, "Items")
+        self.tabWidget.addTab(tab, "Items")
         self.activeTabs.append(tab)
         
         if  wano.postScript != None:
             tab = ScriptTab(wano.postScript)
-            tabWidget.addTab(tab, "Postpocessor")
+            self.tabWidget.addTab(tab, "Postpocessor")
             self.activeTabs.append(tab)
         
-        #tab = WaNoExportEditor(wano,exportedFiles)
-        #tabWidget.addTab(tab, "Export")
-        #self.activeTabs.append(tab)
-        tabWidget.setCurrentIndex(1)
-        buttonBox = QtGui.QDialogButtonBox(QtGui.QDialogButtonBox.Save | 
-                                           QtGui.QDialogButtonBox.Cancel)
-      
-        
-        buttonBox.button(QtGui.QDialogButtonBox.Save).clicked.connect(self.saveClose)
-        buttonBox.rejected.connect(self.deleteClose)
-        mainLayout = QtGui.QVBoxLayout()
-        mainLayout.addWidget(tabWidget)
-        mainLayout.addWidget(buttonBox)
-        self.setLayout(mainLayout)
-        self.setWindowTitle("WaNoEditor " + wano.name)
+        self.tabWidget.setCurrentIndex(2)
        
+    def clear(self):
+        print ("Clearing Tabs",len(self.activeTabs))
+        for i in range(len(self.activeTabs)):
+            tab = self.tabWidget.removeTab(1)
+            #tab.deleteLater()
+        self.activeTabs = []
+            
     def deleteClose(self):
-        if self.editor != None:
-            self.editor.closeWaNoEditor()
+        self.editor.deactivateWidget()
+        self.clear()
            
     def saveClose(self):
         self.copyContent()
@@ -98,6 +99,14 @@ class ScriptTab(QtGui.QWidget):
         self.script = script
     def copyContent(self):
         self.script.content = self.editor.toPlainText()
+        
+class LogTab(QtGui.QTextBrowser):
+    def __init__(self, parent = None):
+        super(LogTab, self).__init__(parent)
+        self.append('<span>hello world<span>')
+      
+    def copyContent(self):
+        pass
         
         
 class WaNoImportEditor(QtGui.QWidget):

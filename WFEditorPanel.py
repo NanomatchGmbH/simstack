@@ -425,7 +425,8 @@ class WFControlWidget(QtGui.QFrame):
         pass
     
     def parse(self,xml):
-      
+        print ("XXX")
+        pass 
             
     def xml(self):
         ee =  etree.Element(mapClassToTag(self.__class__.__name__))
