@@ -10,7 +10,7 @@ import PySide.QtGui  as QtGui
 
 import WFELicense
 from WaNo import WaNo, WaNoRepository
-#from WFEditor import setLogWidget,testLogWidget
+
 
 class WaNoEditor(QtGui.QDialog):
     changedFlag = False
@@ -40,6 +40,8 @@ class WaNoEditor(QtGui.QDialog):
         
     @staticmethod  
     def hasChanged():
+        logger = logging.getLogger('WFELOG')
+        logger.debug("WaNo has changed")
         WaNoEditor.changedFlag=True
         print ("has changed")
         
@@ -59,7 +61,7 @@ class WaNoEditor(QtGui.QDialog):
         self.buttonBox.show()
         if  wano.preScript != None:
             tab = ScriptTab(wano.preScript)
-            self.tabWidget.addTab(tab, "Prepocessor")
+            self.tabWidget.addTab(tab, "Preprocessor")
             self.activeTabs.append(tab)
             
         tab = WaNoItemEditor(wano,importSelection)
@@ -141,20 +143,12 @@ class ScriptTab(QtGui.QWidget):
 class LogTab(QtGui.QTextBrowser):
     def __init__(self, parent = None):
         super(LogTab, self).__init__(parent)
-        #self.setStyleSheet("background-image: url(./)")
-        #self.autoFillBackground()
         self.logger = logging.getLogger('WFELOG')
-        self.logger.addHandler(logging.StreamHandler(self))
-        self.logger.debug("Logging Tab Enabled")
-       
-    #def paintEvent(self, event):
-        #super(LogTab, self).paintEvent(event)
-        #print ("paint")
-        #self.tile= QtGui.QPixmap("Media/Logo_NanoMatch200.jpg")
-        #print ("paint",self.tile.isNull())
-        #painter = QtGui.QPainter(self)
-        #painter.drawTiledPixmap(self.rect(), self.tile)
-       
+        handler = logging.StreamHandler(self)
+        self.logger.addHandler(handler)        
+        formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s','%Y-%m-%d %H:%M:%S')
+        handler.setFormatter(formatter)
+        self.logger.info("Logging Tab Enabled")
     
     def copyContent(self):
         pass  
