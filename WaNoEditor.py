@@ -10,36 +10,55 @@ import PySide.QtGui  as QtGui
 
 import WFELicense
 from WaNo import WaNo, WaNoRepository
+#from WFEditor import setLogWidget,testLogWidget
 
 class WaNoEditor(QtGui.QDialog):
+    changedFlag = False
     def __init__(self,editor,parent=None):
         super(WaNoEditor, self).__init__(parent)
+        self.logger = logging.getLogger('WFELOG')
         self.setMinimumWidth(400)
+        self.setSizePolicy(QtGui.QSizePolicy.Expanding,QtGui.QSizePolicy.Expanding)
+        self.setContentsMargins(0,0,0,0)
         self.editor = editor
         self.tabWidget  = QtGui.QTabWidget()
         self.activeTabs = []
-        self.hasChanged = False
     
         tab = LogTab()     
         self.tabWidget.addTab(tab, "Info")
        
-        buttonBox = QtGui.QDialogButtonBox(QtGui.QDialogButtonBox.Save | 
+        self.buttonBox = QtGui.QDialogButtonBox(QtGui.QDialogButtonBox.Save | 
                                            QtGui.QDialogButtonBox.Cancel)
       
-        buttonBox.button(QtGui.QDialogButtonBox.Save).clicked.connect(self.saveClose)
-        buttonBox.rejected.connect(self.deleteClose)
+        self.buttonBox.button(QtGui.QDialogButtonBox.Save).clicked.connect(self.saveClose)
+        self.buttonBox.rejected.connect(self.deleteClose)
         mainLayout = QtGui.QVBoxLayout()
         mainLayout.addWidget(self.tabWidget)
-        mainLayout.addWidget(buttonBox)
+        mainLayout.addWidget(self.buttonBox)
         self.setLayout(mainLayout)
+        self.buttonBox.hide()
         
-       
+    @staticmethod  
+    def hasChanged():
+        WaNoEditor.changedFlag=True
+        print ("has changed")
+        
     def init(self, wano, exportedFiles, exportedVars, importSelection):
+        # take care of the open 
+        if WaNoEditor.changedFlag and len(self.activeTabs)> 1:
+            ret = self.closeAction() # save is taken care inside
+            if ret == QtGui.QMessageBox.Cancel: 
+                return False
+        if len(self.activeTabs) > 1:
+            self.editor.deactivateWidget()
+            self.clear()
+            
         self.wano = wano
+        WaNoEditor.changedFlag=False
         self.setMinimumWidth(400)
-    
+        self.buttonBox.show()
         if  wano.preScript != None:
-            tab = ScriptTab(wano.postScript)
+            tab = ScriptTab(wano.preScript)
             self.tabWidget.addTab(tab, "Prepocessor")
             self.activeTabs.append(tab)
             
@@ -53,15 +72,24 @@ class WaNoEditor(QtGui.QDialog):
             self.activeTabs.append(tab)
         
         self.tabWidget.setCurrentIndex(2)
+        return True
        
     def clear(self):
-        print ("Clearing Tabs",len(self.activeTabs))
+        self.logger.debug("Clearing Tabs " + str(len(self.activeTabs)))
         for i in range(len(self.activeTabs)):
             tab = self.tabWidget.removeTab(1)
             #tab.deleteLater()
         self.activeTabs = []
+        self.buttonBox.hide()
             
     def deleteClose(self):
+        if WaNoEditor.changedFlag:
+            self.logger.debug("WaNo Content has changed")
+            ret = self.closeAction()
+            if ret == QtGui.QMessageBox.Save:
+                self.copyContent()
+            elif ret == QtGui.QMessageBox.Cancel:
+                return
         self.editor.deactivateWidget()
         self.clear()
            
@@ -72,11 +100,11 @@ class WaNoEditor(QtGui.QDialog):
     def copyContent(self):
         for tab in self.activeTabs:
             tab.copyContent()
+        WaNoEditor.changedFlag = False
        
-    
     def closeAction(self):
         reply = QtGui.QMessageBox(self)
-        reply.setText("There is an open WaNo")
+        reply.setText("The Workflow Active Node Data has changed.")
         reply.setInformativeText("Do you want to save your changes?")
         reply.setStandardButtons(QtGui.QMessageBox.Save | QtGui.QMessageBox.Discard | QtGui.QMessageBox.Cancel)
         reply.setDefaultButton(QtGui.QMessageBox.Save)
@@ -90,23 +118,58 @@ class WaNoEditor(QtGui.QDialog):
     
 
 class ScriptTab(QtGui.QWidget):
+    sig = QtCore.Signal()
     def __init__(self, script, parent = None):
         super(ScriptTab, self).__init__(parent)
         mainLayout = QtGui.QVBoxLayout()
         self.editor = QtGui.QTextEdit(script.content)
         mainLayout.addWidget(self.editor)
         self.setLayout(mainLayout)
-        self.script = script
+        self.script = script    
+        self.editor.textChanged.connect(self.changed) 
+        self.sig.connect(WaNoEditor.hasChanged)
+       
+        
+    def changed(self):
+        self.sig.emit()
+        
     def copyContent(self):
         self.script.content = self.editor.toPlainText()
         
+
+
 class LogTab(QtGui.QTextBrowser):
     def __init__(self, parent = None):
         super(LogTab, self).__init__(parent)
-        self.append('<span>hello world<span>')
-      
+        #self.setStyleSheet("background-image: url(./)")
+        #self.autoFillBackground()
+        self.logger = logging.getLogger('WFELOG')
+        self.logger.addHandler(logging.StreamHandler(self))
+        self.logger.debug("Logging Tab Enabled")
+       
+    #def paintEvent(self, event):
+        #super(LogTab, self).paintEvent(event)
+        #print ("paint")
+        #self.tile= QtGui.QPixmap("Media/Logo_NanoMatch200.jpg")
+        #print ("paint",self.tile.isNull())
+        #painter = QtGui.QPainter(self)
+        #painter.drawTiledPixmap(self.rect(), self.tile)
+       
+    
     def copyContent(self):
-        pass
+        pass  
+   
+    def write(self,message):
+        self.append('<span>'+message+'</span>')
+        #for m in message:
+            #self.append('<span>' + m + '<span>')
+        #c = self.textCursor()
+        #c.setPosition(QtGui.QTextCursor.End)
+        #self.setTextCursor(c)
+        #s = self.verticalScrollBar()
+        #s.setValue(s.maximum)
+        self.ensureCursorVisible() 
+        
         
         
 class WaNoImportEditor(QtGui.QWidget):

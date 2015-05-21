@@ -21,7 +21,8 @@ def mapClassToTag(name):
     xx = name.replace('Widget','')
     return xx[2:]
     
-    
+widgetColors = {'MainEditor' : '#F5FFF5' , 'Control': '#EBFFD6' , 'Base': '#F5FFEB' ,
+                'WaNo' : '#B8FFB8' }
 
 class WFWaNoWidget(QtGui.QPushButton):
     def __init__(self, text, wano, parent=None):
@@ -29,6 +30,7 @@ class WFWaNoWidget(QtGui.QPushButton):
         self.moved  = False
         xml = wano.xml()
         self.wano   = WaNo(xml)
+        self.setStyleSheet("background: NONE") # + widgetColors['WaNo'])
         self.setAutoFillBackground(True)
         self.setColor(QtCore.Qt.lightGray)
   
@@ -39,7 +41,6 @@ class WFWaNoWidget(QtGui.QPushButton):
         pass
     
     def setColor(self,color):
-        #self.setStyleSheet("background-color: " + color)
         p = QtGui.QPalette()
         p.setColor(QtGui.QPalette.Button,color)
         self.setPalette(p)
@@ -82,7 +83,10 @@ class WFWaNoWidget(QtGui.QPushButton):
 class WFBaseWidget(QtGui.QFrame):
     def __init__(self, editor, parent=None):
         super(WFBaseWidget, self).__init__(parent)    
-        self.logger     = logging.getLogger(__name__)
+        
+        self.setStyleSheet("background: " + widgetColors['Base'])
+        self.logger     = logging.getLogger('WFELOG')
+        
         self.editor     = editor
         self.setAcceptDrops(True)
         self.buttons    = []
@@ -296,6 +300,7 @@ class WFWidget(QtGui.QWidget):
         super(WFWidget, self).__init__(parent)   
         
         self.acceptDrops()
+      
         
         self.wf = WFWorkflowWidget(parent,self)
       
@@ -304,7 +309,7 @@ class WFWidget(QtGui.QWidget):
         
         self.tabWidget.addTab(self.wf,'Untitled')
         self.setWidthLarge()
-        self.setMinimumSize(self.wf.width(),targetHeight) # widget with scrollbar
+        self.setMinimumSize(self.wf.width()+25,targetHeight) # widget with scrollbar
         
         scroll = QtGui.QScrollArea(self)
         scroll.setMinimumHeight(600)
@@ -364,6 +369,13 @@ class WFWorkflowWidget(WFBaseWidget):
         self.autoResize = True
         self.myName     = "WFWorkflowWidget"
         self.name       = "Untitled"
+       
+        self.setStyleSheet("""background-color: #FAFFFA; 
+                              background-image: url('./Media/Logo_NanoMatch200.jpg') ;
+                              background-repeat: no-repeat;
+                              background-attachment: fixed;
+                              background-position: center;  """)
+          
         self.hasStart   = False
         self.setMinimumWidth(400)
         self.setFrameStyle(QtGui.QFrame.WinPanel | QtGui.QFrame.Sunken) 
@@ -386,10 +398,11 @@ class WFWorkflowWidget(WFBaseWidget):
 class WFControlWidget(QtGui.QFrame):
     def __init__(self, editor, parent=None):
         super(WFControlWidget, self).__init__(parent) 
-        self.logger = logging.getLogger(__name__)
+        self.logger = logging.getLogger('WFELOG')
         self.editor = editor
         
         self.setFrameStyle(QtGui.QFrame.Panel)
+        self.setStyleSheet("background: " + widgetColors['Control'])
         self.setAcceptDrops(True)
         self.isVisible = True     # the subwidget are is visible
         self.layout    = QtGui.QVBoxLayout()

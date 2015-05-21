@@ -24,7 +24,11 @@ class WFEListWidget(QtGui.QListWidget):
                 item.setIcon(QtGui.QIcon(os.path.join(path,
                                    "images/{0}".format(image))))
                 self.addItem(item)
+        self.myHeight = self.count()*10
 
+    def sizeHint(self):
+        return QtCore.QSize(100,self.myHeight)
+        
 class WFEWaNoListWidget(QtGui.QListWidget):
     def __init__(self, indir, parent=None):
         super(WFEWaNoListWidget, self).__init__(parent) 
@@ -42,6 +46,11 @@ class WFEWaNoListWidget(QtGui.QListWidget):
                 item.setIcon(QtGui.QIcon(os.path.join(path,"infile/{0}".format(infile))))
                 self.addItem(item)
                 
+        self.myHeight = self.count()*10
+        
+    def sizeHint(self):
+        return QtCore.QSize(100,max(self.myHeight,200))
+    
 class WFEWorkflowistWidget(QtGui.QListWidget):
     def __init__(self, indir, parent=None):
         super(WFEWorkflowistWidget, self).__init__(parent) 
@@ -64,13 +73,22 @@ class WFEWorkflowistWidget(QtGui.QListWidget):
                 item.WaNo = element
                 item.setIcon(QtGui.QIcon(os.path.join(path,"infile/{0}".format(infile))))
                 self.addItem(item)
+                
+        self.myHeight = self.count()*10
 
-        
+    def sizeHint(self):
+        return QtCore.QSize(100,max(self.myHeight,100))
+    
 class WFEditor(QtGui.QDialog):
 
     def __init__(self, parent=None):
         super(WFEditor, self).__init__(parent)
 
+        self.logger = logging.getLogger('WFELOG')
+        
+        self.wanoEditor = WaNoEditor(self) # make this first to enable logging
+        self.wanoEditor.setSizePolicy(QtGui.QSizePolicy.Expanding,QtGui.QSizePolicy.Expanding)
+        
         self.workflowWidget = WFWidget(self)
         self.workflowWidget.setAcceptDrops(True)
         
@@ -79,7 +97,15 @@ class WFEditor(QtGui.QDialog):
        
         selectionPanel = QtGui.QSplitter(QtCore.Qt.Vertical)
         selectionPanel.setSizePolicy(QtGui.QSizePolicy.Fixed,QtGui.QSizePolicy.Expanding)
-      
+                
+        layout = QtGui.QHBoxLayout()       
+        layout.addWidget(selectionPanel)
+        layout.addWidget(self.workflowWidget)
+        layout.addWidget(self.wanoEditor)
+        layout.addStretch(1)
+         
+        self.mainPanels = layout  
+        self.setLayout(layout)
         
         WanoListWidget = WFEWaNoListWidget('WaNoRepository')
         CtrlListWidget = WFEListWidget('ctrl_img')
@@ -92,18 +118,8 @@ class WFEditor(QtGui.QDialog):
         selectionPanel.addWidget(WorkListWidget)
         selectionPanel.addWidget(QtGui.QLabel('Controls'))
         selectionPanel.addWidget(CtrlListWidget)
+                   
         
-        self.wanoEditor = WaNoEditor(self) 
-       
-        
-        layout = QtGui.QHBoxLayout()       
-        layout.addWidget(selectionPanel)
-        layout.addWidget(self.workflowWidget)
-        layout.addWidget(self.wanoEditor)
-         
-        self.mainPanels = layout  
-        self.setLayout(layout)
-      
         self.lastActive = None
 
     def deactivateWidget(self):
@@ -113,18 +129,11 @@ class WFEditor(QtGui.QDialog):
        
         
     def openWaNoEditor(self,wanoWidget,varExports,fileExports,waNoNames):
-        if self.wanoEditor != None:            
-            if self.wanoEditor.closeAction() == QtGui.QMessageBox.Cancel:
-                return
-            self.wanoEditor.deleteClose()
-        wanoWidget.setColor(QtCore.Qt.green)
-        self.lastActive = wanoWidget
-        self.wanoEditor.init(wanoWidget.wano,varExports,fileExports,waNoNames) 
-       
-   
-    def resizeEvent(self,e):
-        super(WFEditor,self).resizeEvent(e)
-        print ("RES")
+        if self.wanoEditor.init(wanoWidget.wano,varExports,fileExports,waNoNames):
+            wanoWidget.setColor(QtCore.Qt.green)
+            self.lastActive = wanoWidget
+        
+     
         
     def SizeHint(self):
         s = QtGui.QSize()
@@ -149,6 +158,9 @@ class WFEditorApplication(QtGui.QMainWindow):
         super(WFEditorApplication,self).__init__(parent)
         
         self.curFile = None 
+        
+        self.setWindowIcon(QtGui.QIcon('Media/Logo_Nanomatch.jpg'))
+        
         self.wfEditor = WFEditor()
         self.setCentralWidget(self.wfEditor)
         
@@ -265,19 +277,16 @@ class WFEditorApplication(QtGui.QMainWindow):
         
         self.aboutWFEAct.triggered.connect(QtGui.qApp.aboutQt)
         
+import ctypes
+
 if __name__ == '__main__':   
+    myappid = 'Nanomatch.WorkFlowEditor.Developer.V10' # arbitrary string
+    ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(myappid)
+        
     app = QtGui.QApplication(sys.argv)
     logging.basicConfig(filename='wfeditor.log',filemode='w',level=logging.DEBUG)
-    logger = logging.getLogger(__name__)
-    logger.addHandler(logging.StreamHandler())
-    
-    ch = logging.StreamHandler(sys.stdout)
-    ch.setLevel(logging.DEBUG)
-    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-    ch.setFormatter(formatter)
-    logger.addHandler(ch)
-
-
+    logger = logging.getLogger('WFELOG')
+   
     editor = WFEditorApplication()
     editor.show()
     app.exec_()

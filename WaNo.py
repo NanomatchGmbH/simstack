@@ -146,7 +146,7 @@ class Script:  # this is a wrapper for strings
 class WaNoSection(WaNoElement):
     def __init__(self,inputData,logger=None):
         super(WaNoSection, self).__init__(inputData)        
-        self.logger = logger or logging.getLogger(__name__)
+        self.logger = logger or logging.getLogger('WFELOG')
         self.logger.debug("WaNo Section: " + inputData.get("name"))
         self.elements = []
    
@@ -210,7 +210,7 @@ class WaNo:
         return s
      
     def __init__(self,inputData,name=None):
-        self.logger = logging.getLogger(__name__)
+        self.logger = logging.getLogger('WFELOG')
         self.name        = name
         self.gbType      = 'standard'
         #self.fileImports = {}          # key: local name, value: exported name from prior WaNo
@@ -263,7 +263,7 @@ class WorkFlow(list):
         
     def __init__(self,inputData):
         super(WorkFlow, self).__init__() 
-        self.logger = logging.getLogger(__name__)
+        self.logger = logging.getLogger('WFELOG')
         self.name     = name
         self.is_sub_workflow = False 
     
@@ -279,7 +279,7 @@ class WorkFlow(list):
 
 class WorkflowControlElement():
     def __init__(self):
-        self.logger = logging.getLogger(__name__)
+        self.logger = logging.getLogger('WFELOG')
         self.wf = []
 
     def parse(self,c):
@@ -412,7 +412,7 @@ Settings:
            
            
 """ 
-        self.logger = logging.getLogger(__name__)
+        self.logger = logging.getLogger('WFELOG')
         self.logger.debug('Parsing WaNo')      
         try:
             self.inputData = yaml.load(input1)

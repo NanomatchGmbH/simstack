@@ -55,7 +55,7 @@ class WaNoItemWidget(QtGui.QDialog):
         self.layout = QtGui.QHBoxLayout()
  
         # left top right bottom
-        self.layout.setContentsMargins(0,0,0,0)
+        self.layout.setContentsMargins(1,1,1,1)
         
         label = QtGui.QLabel(waNoElement.name)
         label.setFixedWidth(6*labelSize+10)
