@@ -24,10 +24,10 @@
         <WaNoFloat name="TStart">  1000</WaNoFloat>
         <WaNoFloat name="TEnd">  1000</WaNoFloat>
         <WaNoSelection name="Forcefield" layout="auto">
-            <WaNoSelectionElement>"AMBER"</WaNoSelectionElement>
-            <WaNoSelectionElement>"AMBER99"</WaNoSelectionElement>
-            <WaNoSelectionElement>"AMBER99ISDL"</WaNoSelectionElement>
-            <WaNoSelectionElement>"AMBER99ISDL**"</WaNoSelectionElement>
+            <WaNoSelectionElement>AMBER</WaNoSelectionElement>
+            <WaNoSelectionElement>AMBER99</WaNoSelectionElement>
+            <WaNoSelectionElement>AMBER99ISDL</WaNoSelectionElement>
+            <WaNoSelectionElement>AMBER99ISDL**</WaNoSelectionElement>
         </WaNoSelection>
         <WaNoOutputFile required="True" name="outfile1" condition="filesize(outfile1) > 50.0"> 
             deposit.out

@@ -5,6 +5,7 @@ from future_builtins import *
 
 import os
 import sys
+import logging
 import WFELicense
 
 import PySide.QtCore as QtCore
@@ -284,7 +285,7 @@ if __name__ == '__main__':
     ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(myappid)
         
     app = QtGui.QApplication(sys.argv)
-    logging.basicConfig(filename='wfeditor.log',filemode='w',level=logging.DEBUG)
+    logging.basicConfig(filename='wfeditor.log',filemode='w',level=logging.INFO)
     logger = logging.getLogger('WFELOG')
    
     editor = WFEditorApplication()

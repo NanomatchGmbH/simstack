@@ -21,8 +21,7 @@ class WaNoElementFactory:
     addFactory = staticmethod(addFactory)
     # A Template Method:
     def createWaNoE(id,inputData):
-        if not WaNoElementFactory.factories.has_key(id):
-           
+        if not WaNoElementFactory.factories.has_key(id):    
             xclass = globals()[id]
             xclass.widget = eval(id + 'Widget')   ## this is a sick way to assign the widget functions to the classes 
             WaNoElementFactory.factories[id] = \
@@ -33,6 +32,7 @@ class WaNoElementFactory:
 class WaNoElement(object):   # abstract class: does not implement validator
     def __init__(self,inputData):
         self.name    = inputData.get("name")
+        self.logger  = logging.getLogger("WFELOG")
         
         self.attrib = {}
         for key in inputData.attrib.keys():
@@ -46,10 +46,17 @@ class WaNoElement(object):   # abstract class: does not implement validator
             self.attrib['importFrom']  = ''
         
         if inputData.text != None:
-            self.value          = self.fromString(inputData.text.strip())
-
+            self.value  = self.fromString(inputData.text.strip())
+            
+       
+    def makeWidget(self,labelSize,importedItems):
+        self.logger.info("Creating Widget: " + self.__class__.__name__ + 'Widget')
+        self.myWidget = eval(self.__class__.__name__ + 'Widget')(self,labelSize,importedItems) 
+        return self.myWidget
+        
     def fromString(self,s):
         return s
+    
     def __str__(self):
         return 'WaNoElement: ' + self.__class__.__name__ + ' Named: ' + self.name + ' Value: ' + str(self.value)
     
@@ -76,14 +83,17 @@ class WaNoElement(object):   # abstract class: does not implement validator
 class WaNoString(WaNoElement): 
     class Factory:
         def create(self,inputData): return WaNoEString(inputData)
-     
+  
+        
 class WaNoFile(WaNoElement): 
     class Factory:
         def create(self,inputData): return WaNoFile(inputData)
+  
         
 class WaNoOutputFile(WaNoElement): 
     class Factory:
         def create(self,inputData): return WaNoOutputFile(inputData)
+   
         
 class WaNoLocalFile(WaNoElement): 
     class Factory:
@@ -124,7 +134,7 @@ class WaNoSelection(WaNoElement):
             self.selectedItems = []
             
     def copyContent(self):
-        self.selectedItems = getSelectedItems(self.editor)
+        self.selectedItems = getSelectedItems(self.myWidget.editor)
     
     def xml(self):
         if len(self.selectedItems) > 0:
@@ -137,16 +147,25 @@ class WaNoSelection(WaNoElement):
     class Factory:
         def create(self,inputData): return WaNoSelection(inputData)
  
-class Script:  # this is a wrapper for strings
-    def __init__(self):
-        self.content = ''
+class WaNoScript(WaNoElement):  # this is a wrapper for strings
+    def __init__(self,name,inputData):
+        super(WaNoScript,self).__init__(inputData)
+        
+        self.name = name
+        
+        if not name in inputData:
+            self.logger.info('Creating default WaNoScript ' + name)
+            self.value = ''
+            
+        #self.attrib  = {}
+        
     def __str__(self):
-        return self.content
+        return self.value
 
 class WaNoSection(WaNoElement):
-    def __init__(self,inputData,logger=None):
+    def __init__(self,inputData):
         super(WaNoSection, self).__init__(inputData)        
-        self.logger = logger or logging.getLogger('WFELOG')
+        self.logger = logging.getLogger('WFELOG')
         self.logger.debug("WaNo Section: " + inputData.get("name"))
         self.elements = []
    
@@ -211,24 +230,23 @@ class WaNo:
      
     def __init__(self,inputData,name=None):
         self.logger = logging.getLogger('WFELOG')
-        self.name        = name
-        self.gbType      = 'standard'
-        #self.fileImports = {}          # key: local name, value: exported name from prior WaNo
-        #self.varImports  = {}          # key: local name, value: exported name from prior WaNo
-        #self.fileExports = {}          # key: exported name, value: local name
-        #self.varExports  = {}          # key: exported name, value: local name
+        self.name            = name
+        self.gbType          = 'standard'
+        
         self.importSelection = []
-        self.preScript   = Script()
-        self.postScript  = Script()
+        
+        self.preScript = WaNoScript('PreProcessor',inputData)
+        self.postScript = WaNoScript('PostProcessor',inputData)
         
         self.elements = []
         
         self.name = inputData.get('name')
-        self.logger.debug('Parsing Wano:  '+ self.name) 
+        self.logger.info('Parsing Wano:  '+ self.name) 
         for c in inputData:
-            self.logger.debug('Making Element: ' + c.tag)
-            xx = WaNoElementFactory.createWaNoE(c.tag,c) 
-            self.elements.append(xx)
+            if not c in ['PreProcessor','PostProcessor']:
+                self.logger.debug('Making Element: ' + c.tag)
+                xx = WaNoElementFactory.createWaNoE(c.tag,c) 
+                self.elements.append(xx)
 
    # def myCopy(self,source):
         

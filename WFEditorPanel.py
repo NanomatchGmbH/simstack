@@ -370,7 +370,7 @@ class WFWorkflowWidget(WFBaseWidget):
         self.myName     = "WFWorkflowWidget"
         self.name       = "Untitled"
        
-        self.setStyleSheet("""background-color: #FAFFFA; 
+        self.setStyleSheet("background-color: " + widgetColors['MainEditor'] + """ ;  
                               background-image: url('./Media/Logo_NanoMatch200.jpg') ;
                               background-repeat: no-repeat;
                               background-attachment: fixed;

@@ -12,14 +12,15 @@ import WFELicense
 from WaNo import WaNo, WaNoRepository
 
 
-class WaNoEditor(QtGui.QDialog):
+class WaNoEditor(QtGui.QFrame):
     changedFlag = False
     def __init__(self,editor,parent=None):
         super(WaNoEditor, self).__init__(parent)
         self.logger = logging.getLogger('WFELOG')
         self.setMinimumWidth(400)
         self.setSizePolicy(QtGui.QSizePolicy.Expanding,QtGui.QSizePolicy.Expanding)
-        self.setContentsMargins(0,0,0,0)
+        self.setFrameStyle(QtGui.QFrame.WinPanel | QtGui.QFrame.Sunken) 
+        self.setContentsMargins(1,1,1,1)
         self.editor = editor
         self.tabWidget  = QtGui.QTabWidget()
         self.activeTabs = []
@@ -123,22 +124,61 @@ class ScriptTab(QtGui.QWidget):
     sig = QtCore.Signal()
     def __init__(self, script, parent = None):
         super(ScriptTab, self).__init__(parent)
-        mainLayout = QtGui.QVBoxLayout()
-        self.editor = QtGui.QTextEdit(script.content)
+        
+        self.logger = logging.getLogger('WFELOG')
+        
+        mainLayout  = QtGui.QVBoxLayout()
+        
+        topLine = QtGui.QHBoxLayout()
+        self.language = QtGui.QComboBox()
+        languages = ['bash','python','java']
+        self.language.addItems(['bash','python','java'])
+        idx = 1
+        if 'lang' in script.attrib:
+            try:
+                idx = languages.index(script.attrib['lang'])
+            except:
+                self.logger.critical('WaNo Script sets unsupported language for ' + script.name)
+                idx = 1
+        else:
+            self.logger.error('WaNo Script sets not language for ' + script.name)
+        self.language.setCurrentIndex(idx)
+        self.language.currentIndexChanged[unicode].connect(self.uchanged)
+        topLine.addWidget(self.language)
+        
+        topLine.addStretch(1)
+        button = QtGui.QPushButton('Import')
+        topLine.addWidget(button)
+        button.clicked.connect(self.addImport)
+        
+        self.hiddenButton = QtGui.QRadioButton('hide')
+        self.hiddenButton.clicked.connect(self.changed)
+        topLine.addWidget(self.hiddenButton)
+        
+        self.editor = QtGui.QTextEdit(script.value)
+        
+        mainLayout.addLayout(topLine)
         mainLayout.addWidget(self.editor)
         self.setLayout(mainLayout)
         self.script = script    
         self.editor.textChanged.connect(self.changed) 
         self.sig.connect(WaNoEditor.hasChanged)
        
+    def addImport(self):
+        self.logger.info('Call for new Import')
         
     def changed(self):
         self.sig.emit()
         
-    def copyContent(self):
-        self.script.content = self.editor.toPlainText()
+    def uchanged(self,u):
+        self.sig.emit()
         
-
+    def copyContent(self):
+        self.script.value = self.editor.toPlainText()
+        
+def get_git_revision_short_hash():
+    import subprocess
+    return subprocess.check_output(['git', 'rev-parse', '--short', 'HEAD'])
 
 class LogTab(QtGui.QTextBrowser):
     def __init__(self, parent = None):
@@ -148,7 +188,7 @@ class LogTab(QtGui.QTextBrowser):
         self.logger.addHandler(handler)        
         formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s','%Y-%m-%d %H:%M:%S')
         handler.setFormatter(formatter)
-        self.logger.info("Logging Tab Enabled")
+        self.logger.info("Logging Tab Enabled Version: " + get_git_revision_short_hash())
     
     def copyContent(self):
         pass  
@@ -330,7 +370,7 @@ class WaNoItemEditor(QtGui.QWidget):
         
         ll = max( [ len(element.name) for element in self.wano.elements] )
         for element in self.wano.elements:
-            widget = element.widget(ll,importSelection)  
+            widget = element.makeWidget(ll,importSelection)  
             self.items.append(widget) 
             self.scrollLayout.addWidget(widget) # this sets the parent 
     
