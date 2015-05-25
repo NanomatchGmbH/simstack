@@ -1,6 +1,11 @@
 #!/usr/bin/python
 
 # Import PySide classes
+from __future__ import division
+from __future__ import print_function
+from __future__ import unicode_literals
+from future_builtins import *
+
 import sys
 import copy
 import logging
@@ -44,7 +49,7 @@ class WaNoEditor(QtGui.QFrame):
         logger = logging.getLogger('WFELOG')
         logger.debug("WaNo has changed")
         WaNoEditor.changedFlag=True
-        print ("has changed")
+      
         
     def init(self, wano, exportedFiles, exportedVars, importSelection):
         # take care of the open 
@@ -60,21 +65,30 @@ class WaNoEditor(QtGui.QFrame):
         WaNoEditor.changedFlag=False
         self.setMinimumWidth(400)
         self.buttonBox.show()
+        
+        hasElements = len(wano.elements) > 0
         if  wano.preScript != None:
-            tab = ScriptTab(wano.preScript)
-            self.tabWidget.addTab(tab, "Preprocessor")
+            tab = ScriptTab(wano.preScript,importSelection)
+            if hasElements:
+                self.tabWidget.addTab(tab, "Preprocessor")
+            else:
+                self.tabWidget.addTab(tab, "Script")
+            self.activeTabs.append(tab)
+        
+        if hasElements:
+            tab = WaNoItemEditor(wano,importSelection)
+            self.tabWidget.addTab(tab, "Items")
             self.activeTabs.append(tab)
             
-        tab = WaNoItemEditor(wano,importSelection)
-        self.tabWidget.addTab(tab, "Items")
-        self.activeTabs.append(tab)
+            if  wano.postScript != None:
+                tab = ScriptTab(wano.postScript,[]) # no imports in postprocessor
+                self.tabWidget.addTab(tab, "Postpocessor")
+                self.activeTabs.append(tab)
         
-        if  wano.postScript != None:
-            tab = ScriptTab(wano.postScript)
-            self.tabWidget.addTab(tab, "Postpocessor")
-            self.activeTabs.append(tab)
+            self.tabWidget.setCurrentIndex(2)
+        else:
+            self.tabWidget.setCurrentIndex(1)
         
-        self.tabWidget.setCurrentIndex(2)
         return True
        
     def clear(self):
@@ -90,6 +104,9 @@ class WaNoEditor(QtGui.QFrame):
             self.logger.debug("WaNo Content has changed")
             ret = self.closeAction()
             if ret == QtGui.QMessageBox.Save:
+                # WaNo has changed means WF has changed 
+                from WFEditorPanel import WFWorkflowWidget
+                WFWorkflowWidget.hasChanged()
                 self.copyContent()
             elif ret == QtGui.QMessageBox.Cancel:
                 return
@@ -97,6 +114,9 @@ class WaNoEditor(QtGui.QFrame):
         self.clear()
            
     def saveClose(self):
+        if WaNoEditor.changedFlag:          # WaNo has changed means WF has changed 
+            from WFEditorPanel import WFWorkflowWidget
+            WFWorkflowWidget.hasChanged()
         self.copyContent()
         self.deleteClose()
         
@@ -121,11 +141,14 @@ class WaNoEditor(QtGui.QFrame):
     
 
 class ScriptTab(QtGui.QWidget):
-    sig = QtCore.Signal()
-    def __init__(self, script, parent = None):
+    waNoChangedSig = QtCore.Signal()
+    
+    def __init__(self, script, importSelection, parent = None):
         super(ScriptTab, self).__init__(parent)
         
-        self.logger = logging.getLogger('WFELOG')
+        self.logger          = logging.getLogger('WFELOG')
+        self.importSelection = importSelection
+        self.script = script    
         
         mainLayout  = QtGui.QVBoxLayout()
         
@@ -134,9 +157,9 @@ class ScriptTab(QtGui.QWidget):
         languages = ['bash','python','java']
         self.language.addItems(['bash','python','java'])
         idx = 1
-        if 'lang' in script.attrib:
+        if 'language' in script.attrib:
             try:
-                idx = languages.index(script.attrib['lang'])
+                idx = languages.index(script.attrib['language'])
             except:
                 self.logger.critical('WaNo Script sets unsupported language for ' + script.name)
                 idx = 1
@@ -147,34 +170,87 @@ class ScriptTab(QtGui.QWidget):
         topLine.addWidget(self.language)
         
         topLine.addStretch(1)
-        button = QtGui.QPushButton('Import')
-        topLine.addWidget(button)
-        button.clicked.connect(self.addImport)
-        
+        if len(importSelection) > 0:
+            button = QtGui.QPushButton('Import')
+            topLine.addWidget(button)
+            button.clicked.connect(self.addImport)
+              
         self.hiddenButton = QtGui.QRadioButton('hide')
+        if 'hidden' in self.script.attrib and self.script.attrib['hidden'] == 'True':
+            self.hiddenButton.setChecked(True)
+                
+            
         self.hiddenButton.clicked.connect(self.changed)
         topLine.addWidget(self.hiddenButton)
         
         self.editor = QtGui.QTextEdit(script.value)
         
         mainLayout.addLayout(topLine)
+        
+        self.importWidgets = []
+        self.importList = QtGui.QGridLayout()
+        for imp in script.imports:
+            self.addImport(imp)
+      
+        mainLayout.addLayout(self.importList)
+        
         mainLayout.addWidget(self.editor)
         self.setLayout(mainLayout)
-        self.script = script    
+ 
         self.editor.textChanged.connect(self.changed) 
-        self.sig.connect(WaNoEditor.hasChanged)
+        self.waNoChangedSig.connect(WaNoEditor.hasChanged)
        
-    def addImport(self):
-        self.logger.info('Call for new Import')
+        
+    def addImport(self,importData=None):
+        if importData == None:  # make default data
+            importData = ('local',self.importSelection[0],'source')
+            
+        nn = self.importList.rowCount()
+        localName = QtGui.QLineEdit(importData[0])
+        localName.textChanged.connect(self.changed)       
+        self.importList.addWidget(localName,nn+1,0)
+        
+        importSelect    = QtGui.QComboBox()
+        importSelect.addItems(self.importSelection)
+        self.importList.addWidget(importSelect,nn+1,1)
+        
+        try:
+            idx = self.importSelection.index(importData[1])
+            importSelect.setCurrentIndex(idx)
+        except:
+            self.logger.error("Could not set current index in import selection of script tab Item#:" + str(nn) + \
+                              " key: " + importData[1] + " items: " + str(self.importSelection))
+        
+        fromName = QtGui.QLineEdit(importData[2])
+        fromName.textChanged.connect(self.changed)
+        self.importList.addWidget(fromName,nn+1,2)
+        
+        delButton = QtGui.QPushButton('delete')
+        delButton.clicked.connect(self.deleteImport)
+        self.importList.addWidget(delButton,nn+1,3)
+        
+        self.importWidgets.append((localName,importSelect,fromName,delButton))
+        self.changed()
         
     def changed(self):
-        self.sig.emit()
+        self.waNoChangedSig.emit()
+        
+    def deleteImport(self):
+        self.logger.info("delete import requested")
         
     def uchanged(self,u):
-        self.sig.emit()
+        self.waNoChangedSig.emit()
         
     def copyContent(self):
         self.script.value = self.editor.toPlainText()
+        self.script.imports = []
+        for imp in self.importWidgets:
+            self.script.imports.append((imp[0].text(),imp[1].currentText(),imp[2].text()))
+       
+        self.script.attrib['hidden']   = str(self.hiddenButton.isChecked())
+        print ("setting hidden to",self.hiddenButton.isChecked())
+        self.script.attrib['language'] = self.language.currentText()
+        
         
 def get_git_revision_short_hash():
     import subprocess
@@ -185,6 +261,7 @@ class LogTab(QtGui.QTextBrowser):
         super(LogTab, self).__init__(parent)
         self.logger = logging.getLogger('WFELOG')
         handler = logging.StreamHandler(self)
+        logging.basicConfig(stream=self)
         self.logger.addHandler(handler)        
         formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s','%Y-%m-%d %H:%M:%S')
         handler.setFormatter(formatter)
@@ -285,7 +362,7 @@ class WaNoImportEditor(QtGui.QWidget):
         try:
             idx = self.buttons.index(self.sender())
         except:
-            print 'Button not found'  
+            print ('Button not found')
         
         ind = self.linesLayout.indexOf(self.data[idx][2])        
         t = self.linesLayout.takeAt(ind)
@@ -304,7 +381,7 @@ class WaNoImportEditor(QtGui.QWidget):
                 idx = self.exportedItems.index(globalName)
                 globalNameWidget.setCurrentIndex(idx)
             except ValueError:
-                print 'Global Name' + globalName + ' not found in ' + str(self.exportedItems)
+                print ('Global Name' + globalName + ' not found in ' + str(self.exportedItems))
         return globalNameWidget
                 
 class WaNoExportEditor(WaNoImportEditor):
@@ -368,7 +445,10 @@ class WaNoItemEditor(QtGui.QWidget):
         self.scrollLayout.setContentsMargins(1,1,1,1)
         self.items = []
         
-        ll = max( [ len(element.name) for element in self.wano.elements] )
+        if len(self.wano.elements) > 0:
+            ll = max( [ len(element.name) for element in self.wano.elements] )
+        else:
+            ll = 10
         for element in self.wano.elements:
             widget = element.makeWidget(ll,importSelection)  
             self.items.append(widget) 
@@ -407,7 +487,7 @@ if __name__ == '__main__':
     logging.basicConfig(filename='wano.log',filemode='w',level=logging.DEBUG)
     logging.getLogger(__name__).addHandler(logging.StreamHandler())
      
-    print args
+    print (args)
     
 
     wanoRep = WaNoRepository()

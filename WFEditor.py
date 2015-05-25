@@ -6,13 +6,15 @@ from future_builtins import *
 import os
 import sys
 import logging
+from lxml import etree
 import WFELicense
 
 import PySide.QtCore as QtCore
 import PySide.QtGui  as QtGui
 
+from WaNo       import WorkFlow
 from WaNoEditor import *
-from WFEditorPanel import WFWidget
+from WFEditorPanel import WFTabsWidget
 
 class WFEListWidget(QtGui.QListWidget):
     def __init__(self, indir, parent=None):
@@ -44,8 +46,8 @@ class WFEWaNoListWidget(QtGui.QListWidget):
                 self.addItem(item)
                 element = wanoRep.parse_xml_file(xxi) 
                 item.WaNo = element
-                item.setIcon(QtGui.QIcon(os.path.join(path,"infile/{0}".format(infile))))
-                self.addItem(item)
+                #item.setIcon(QtGui.QIcon(os.path.join(path,"infile/{0}".format(infile))))
+                #self.addItem(item)
                 
         self.myHeight = self.count()*10
         
@@ -55,24 +57,27 @@ class WFEWaNoListWidget(QtGui.QListWidget):
 class WFEWorkflowistWidget(QtGui.QListWidget):
     def __init__(self, indir, parent=None):
         super(WFEWorkflowistWidget, self).__init__(parent) 
+        self.logger = logging.getLogger('WFEOG')
         self.setDragEnabled(True)
         path = os.path.dirname(__file__)
         
         for infile in sorted(os.listdir(os.path.join(path, indir))):
             if infile.endswith(".xml"):
-                item = QtGui.QListWidgetItem(infile.split(".")[0])
+               
                 xxi = os.path.join(path,indir+"/{0}".format(infile))
-                self.addItem(item)
+             
                 try:
-                    inputData = etree.parse(filename)
+                    inputData = etree.parse(xxi)
                 except:
-                    self.logger.error('File not found: ' + filename)
+                    self.logger.error('File not found: ' + xxi)
                     raise 
-                r = self.inputData.getroot()
+                r = inputData.getroot()
                 if r.tag == "Workflow":
-                    element = Workflow(r) 
+                    element = WorkFlow(r) 
+                else:
+                    self.logger.critical('Loading Workflows: no workflow in file ' + xxi)
+                item = QtGui.QListWidgetItem(element.name)
                 item.WaNo = element
-                item.setIcon(QtGui.QIcon(os.path.join(path,"infile/{0}".format(infile))))
                 self.addItem(item)
                 
         self.myHeight = self.count()*10
@@ -90,7 +95,7 @@ class WFEditor(QtGui.QDialog):
         self.wanoEditor = WaNoEditor(self) # make this first to enable logging
         self.wanoEditor.setSizePolicy(QtGui.QSizePolicy.Expanding,QtGui.QSizePolicy.Expanding)
         
-        self.workflowWidget = WFWidget(self)
+        self.workflowWidget = WFTabsWidget(self)
         self.workflowWidget.setAcceptDrops(True)
         
         self.workflowWidget.setSizePolicy(QtGui.QSizePolicy.Expanding,QtGui.QSizePolicy.Expanding)
@@ -110,7 +115,7 @@ class WFEditor(QtGui.QDialog):
         
         WanoListWidget = WFEWaNoListWidget('WaNoRepository')
         CtrlListWidget = WFEListWidget('ctrl_img')
-        WorkListWidget = WFEListWidget('workflow_img')
+        WorkListWidget = WFEWorkflowistWidget('WorkFlows')
         
         
         selectionPanel.addWidget(QtGui.QLabel('Nodes'))
@@ -123,6 +128,7 @@ class WFEditor(QtGui.QDialog):
         
         self.lastActive = None
 
+    
     def deactivateWidget(self):
         if self.lastActive != None:
             self.lastActive.setColor(QtCore.Qt.lightGray)
@@ -133,6 +139,9 @@ class WFEditor(QtGui.QDialog):
         if self.wanoEditor.init(wanoWidget.wano,varExports,fileExports,waNoNames):
             wanoWidget.setColor(QtCore.Qt.green)
             self.lastActive = wanoWidget
+    
+    def openWorkFlow(self,workFlow):
+        self.workflowWidget.openWorkFlow(workFlow)
         
      
         
@@ -147,27 +156,31 @@ class WFEditor(QtGui.QDialog):
     
     def clear(self):
         self.workflowWidget.clear()
+    
+    def open(self):
+        self.workflowWidget.open()
         
-    def saveFile(self,fileName):
-        self.workflowWidget.saveFile(fileName)
+    def save(self):
+        self.workflowWidget.save()
+        
+    def saveAs(self):
+        self.workflowWidget.saveAs()
         
     def loadFile(self,fileName):
         self.workflowWidget.loadFile(fileName)
         
 class WFEditorApplication(QtGui.QMainWindow):
+   
     def __init__(self,parent=None):
         super(WFEditorApplication,self).__init__(parent)
         
-        self.curFile = None 
         
         self.setWindowIcon(QtGui.QIcon('Media/Logo_Nanomatch.jpg'))
         
         self.wfEditor = WFEditor()
         self.setCentralWidget(self.wfEditor)
-        
-             
+    
         self.createActions()
-        
         self.fileMenu = self.menuBar().addMenu("&File")
         self.fileMenu.addAction(self.newAct)
         self.fileMenu.addAction(self.openAct)
@@ -179,7 +192,6 @@ class WFEditorApplication(QtGui.QMainWindow):
         
         self.runMenu = self.menuBar().addMenu("&Run")
         
-        
         self.helpMenu = self.menuBar().addMenu("&Help")
         self.helpMenu.addAction(self.aboutAct)
         self.helpMenu.addAction(self.aboutWFEAct)
@@ -190,47 +202,17 @@ class WFEditorApplication(QtGui.QMainWindow):
         self.setWindowTitle("Nanomatch Workflow Editor (C) 2015")
         
     def newFile(self):
-        reply = QtGui.QMessageBox(self)
-        reply.setText("The document has been modified.")
-        reply.setInformativeText("Do you want to save your changes?")
-        reply.setStandardButtons(QtGui.QMessageBox.Save | QtGui.QMessageBox.Discard | QtGui.QMessageBox.Cancel)
-        reply.setDefaultButton(QtGui.QMessageBox.Save)
-        ret = reply.exec_()
-        
-        if ret == QtGui.QMessageBox.Cancel:
-            return
-        if ret == QtGui.QMessageBox.Save:
-            self.save()
         self.wfEditor.clear()
         
-        
     def open(self):
-        fileName, filtr = QtGui.QFileDialog(self).getOpenFileName(self,'Open Workflow','.','xml (*.xml *.xm)')
-        if fileName:
-            print ("Loading Workflow from File:",fileName) 
-            self.newFile()
-            self.loadFile(fileName)
-        
-    def saveFile(self,fileName):
-        self.wfEditor.saveFile(fileName)
-        
-    def loadFile(self,fileName):
-        self.wfEditor.loadFile(fileName)
-        
+        self.wfEditor.open()
         
     def save(self):
-        if self.curFile == None:
-            return self.saveAs()
-        else:
-            return self.saveFile(self.curFile)
-
+        self.wfEditor.save()
+    
     def saveAs(self):
-        fileName, filtr = QtGui.QFileDialog.getSaveFileName(self, 'Open Workflow',self.curFile,'xml (*.xml *.xm)')
-        if not fileName:
-            return False
-
-        return self.saveFile(fileName)
-
+        self.wfEditor.saveAs()
+        
     def print_(self):
         self.infoLabel.setText("Invoked <b>File|Print</b>")
 

@@ -18,9 +18,9 @@
             <WaNoSelectionElement>AMBER99ISLN</WaNoSelectionElement>
             <WaNoSelectionElement>AMBER99ISLN*</WaNoSelectionElement>
         </WaNoSelection>
-        <WaNoLocalFile name="localFile"> 
+        <WaNoFile name="localFile"> 
             run.tr 
-        </WaNoLocalFile>
+        </WaNoFile>
         <WaNoFile name="InputFile">
             input.top
         </WaNoFile>

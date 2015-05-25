@@ -2,15 +2,17 @@
 # WaNo = Workflow Actice Nodes are the element Workflows are made of 
 #
 #
+from __future__ import division
+from __future__ import print_function
+from __future__ import unicode_literals
+from future_builtins import *
+
 import WFELicense
 from   six import string_types
 import logging
 import sys
 import glob
-
-#import yaml
 from   lxml import etree
-#from   io import StringIO, BytesIO
 
 from   WaNoWidgets import *
 
@@ -22,8 +24,8 @@ class WaNoElementFactory:
     # A Template Method:
     def createWaNoE(id,inputData):
         if not WaNoElementFactory.factories.has_key(id):    
-            xclass = globals()[id]
-            xclass.widget = eval(id + 'Widget')   ## this is a sick way to assign the widget functions to the classes 
+            #xclass = globals()[id]
+            #xclass.widget = eval(id + 'Widget')   ## this is a sick way to assign the widget functions to the classes 
             WaNoElementFactory.factories[id] = \
               eval(id + '.Factory()')
         return  WaNoElementFactory.factories[id].create(inputData)
@@ -50,7 +52,7 @@ class WaNoElement(object):   # abstract class: does not implement validator
             
        
     def makeWidget(self,labelSize,importedItems):
-        self.logger.info("Creating Widget: " + self.__class__.__name__ + 'Widget')
+        self.logger.debug("Creating Widget: " + self.__class__.__name__ + 'Widget')
         self.myWidget = eval(self.__class__.__name__ + 'Widget')(self,labelSize,importedItems) 
         return self.myWidget
         
@@ -83,18 +85,15 @@ class WaNoElement(object):   # abstract class: does not implement validator
 class WaNoString(WaNoElement): 
     class Factory:
         def create(self,inputData): return WaNoEString(inputData)
-  
-        
+   
 class WaNoFile(WaNoElement): 
     class Factory:
         def create(self,inputData): return WaNoFile(inputData)
-  
-        
+       
 class WaNoOutputFile(WaNoElement): 
     class Factory:
         def create(self,inputData): return WaNoOutputFile(inputData)
    
-        
 class WaNoLocalFile(WaNoElement): 
     class Factory:
         def create(self,inputData): return WaNoLocalFile(inputData)
@@ -122,6 +121,7 @@ class WaNoSelectionElement(WaNoElement):
 class WaNoSelection(WaNoElement):  
     def __init__(self,value):
         super(WaNoSelection,self).__init__(value)
+       
         self.elements = []
         for c in value:
             if c.tag != "WaNoSelectionElement":
@@ -134,8 +134,8 @@ class WaNoSelection(WaNoElement):
             self.selectedItems = []
             
     def copyContent(self):
-        self.selectedItems = getSelectedItems(self.myWidget.editor)
-    
+        self.selectedItems    = getSelectedItems(self.myWidget.editor)
+        self.attrib['hidden'] = str(self.myWidget.hiddenButton.isChecked())
     def xml(self):
         if len(self.selectedItems) > 0:
             self.attrib["selected_item"]=str(self.selectedItems[0])
@@ -148,20 +148,45 @@ class WaNoSelection(WaNoElement):
         def create(self,inputData): return WaNoSelection(inputData)
  
 class WaNoScript(WaNoElement):  # this is a wrapper for strings
-    def __init__(self,name,inputData):
+    def __init__(self,inputData):
         super(WaNoScript,self).__init__(inputData)
         
-        self.name = name
+        #try:
+            #self.name    = self.attrib['name']
+        #except:
+            #self.logger.error("No name attribute in script WaNo element")
+            #self.name    = 'Unnamed'
         
-        if not name in inputData:
-            self.logger.info('Creating default WaNoScript ' + name)
+        self.imports = []
+        try:
+            impxml = inputData.find('Imports')
+            for c in impxml:
+                if c.tag == 'ImportElement':
+                    self.imports.append((c.get('local'),c.get('source_wano'),c.get('source')))
+        except:
+            pass
+       
+        
+        if inputData.text != None:
+            self.value = inputData.text
+        else:
             self.value = ''
-            
-        #self.attrib  = {}
+        
         
     def __str__(self):
         return self.value
 
+
+    def xml(self):
+        ee = super(WaNoScript,self).xml()
+        impXml = etree.Element('Imports')
+        for imp in self.imports:
+            impXmlE = etree.Element('ImportElement',local=imp[0],source_wano=imp[1],source=imp[2])
+            impXml.append(impXmlE)
+        ee.append(impXml)
+        return ee 
+            
+        
 class WaNoSection(WaNoElement):
     def __init__(self,inputData):
         super(WaNoSection, self).__init__(inputData)        
@@ -182,7 +207,7 @@ class WaNoSection(WaNoElement):
                 self.logger.error('Input element '+ einfo.tag +  
                                   ' with name ' + einfo.get("name") +
                                   ' could not be converted to WaNo Element')
-                raise TypeError
+
     def copyContent(self): #
         for e in self.elements:
             e.copyContent()
@@ -234,21 +259,29 @@ class WaNo:
         self.gbType          = 'standard'
         
         self.importSelection = []
-        
-        self.preScript = WaNoScript('PreProcessor',inputData)
-        self.postScript = WaNoScript('PostProcessor',inputData)
-        
+       
         self.elements = []
         
         self.name = inputData.get('name')
         self.logger.info('Parsing Wano:  '+ self.name) 
         for c in inputData:
-            if not c in ['PreProcessor','PostProcessor']:
+            if c.tag != 'WaNoScript':
                 self.logger.debug('Making Element: ' + c.tag)
                 xx = WaNoElementFactory.createWaNoE(c.tag,c) 
                 self.elements.append(xx)
+            else:
+                if c.get('name') == 'PreProcessor':
+                    self.preScript = WaNoScript(c)
+                elif c.get('name') == 'PostProcessor':
+                    self.postScript = WaNoScript(c)
+                    
+       
+        if not hasattr(self,'preScript'):
+            self.preScript = WaNoScript(etree.Element('WaNoScript',name='PreProcessor'))
 
-   # def myCopy(self,source):
+        if not hasattr(self,'postScript'):
+            self.postScript = WaNoScript(etree.Element('WaNoScript',name='PostProcessor'))
+
         
     def gatherExports(self,varEx,filEx,waNoNames):
         xx    = self.name
@@ -267,8 +300,10 @@ class WaNo:
   
     def xml(self):
         ee = etree.Element(self.__class__.__name__,name=self.name)
+        ee.append(self.preScript.xml())
         for e in self.elements:
             ee.append(e.xml())
+        ee.append(self.postScript.xml())
         return ee
        
    
@@ -282,19 +317,48 @@ class WorkFlow(list):
     def __init__(self,inputData):
         super(WorkFlow, self).__init__() 
         self.logger = logging.getLogger('WFELOG')
-        self.name     = name
-        self.is_sub_workflow = False 
+        #self.is_sub_workflow = False 
+        self.isOpen = False
+        self.parse(inputData)
+    
+    def setToXML(self,xml):
+        for x in range(len(self)):
+            self.pop()
+            
+        for c in xml:
+            print ("Workflow parse",c.tag,c.get('name'))
+            if c.tag == 'WaNo':
+                e = WaNo(c)
+            else:
+                e = eval(c.tag)(c) 
+            self.append(e)
+        
+            
+    def xml(self):
+        ee =  etree.Element(self.__class__.__name__,name=self.name)
+        for key in self.attrib:
+            ee.set(key,self.attrib[key])
+        for e in self:
+            ee.append(e.xml())
+        return ee
     
     def parse(self,xml):
+        self.attrib = {}
+        for key in xml.attrib.keys():
+            self.attrib[key] = xml.get(key)
+        self.name = xml.get('name')
+        if 'name' in self.attrib:
+            del self.attrib['name']
         for c in xml:
             print ("Workflow parse",c.tag)
             if c.tag == 'WaNo':
-                w = WaNo(c)
+                e = WaNo(c)
             else:
                 e = eval(c.tag)(c) 
             self.append(e)
       
 
+        
 class WorkflowControlElement():
     def __init__(self):
         self.logger = logging.getLogger('WFELOG')
@@ -312,6 +376,9 @@ class WorkflowControlElement():
                 #self.wf.append(e)
         if count != len(self.wf):
             self.logger.error("Not enough base widgets in control element")
+#
+# Workflow Control Elements
+#
 class ForEach(WorkflowControlElement):
     def __init__(self):
         super(ForEach,self).__init__(self)
@@ -334,7 +401,6 @@ class Parallel(WorkflowControlElement):
         super(ForEach,self).__init__(self)
         self.parse(c)
         
-            
         
 class WaNoRepository(dict):
     def __init__(self):
@@ -366,7 +432,7 @@ class WaNoRepository(dict):
     
     def parse_xml_dir(self,directory):
         for filename in glob.iglob(directory+'/*.yml'):
-            print filename
+            print (filename)
             self.parse_yml_file(filename) 
   
 """
@@ -435,7 +501,7 @@ Settings:
         try:
             self.inputData = yaml.load(input1)
         except:
-            print "YAML error reading/parsing " + filename
+            print ("YAML error reading/parsing " + filename)
             raise ValueError            
         
     def test_parse(self):
@@ -469,9 +535,9 @@ if __name__ == '__main__':
     gbr.parse_xml_file('WaNoRepository/Deposit.xml')
     
     ee = gbr['Deposit'].xml()
-    print etree.tostring(ee,pretty_print=True)
+    print (etree.tostring(ee,pretty_print=True))
 
-    print "done"
+ 
     
 
         

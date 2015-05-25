@@ -1,24 +1,15 @@
 #
 #  Supply the memberfunctions making the widgets 
 #
+from __future__ import division
+from __future__ import print_function
+from __future__ import unicode_literals
+from future_builtins import *
+
 import PySide.QtCore as QtCore
 import PySide.QtGui  as QtGui
 
 import logging
-
-#class WaNoElementWidgetFactory:
-    #factories = {}
-    #def addFactory(id, shapeFactory):
-        #WaNoElementWidgetFactory.factories.put[id] = shapeFactory
-    #addFactory = staticmethod(addFactory)
-    ## A Template Method:
-    #def createWaNoE(id,inputData):
-        #if not WaNoElementWidgetFactory.factories.has_key(id):    
-            #WaNoElementWidgetFactory.factories[id] = \
-              #eval(id + '.Factory()')
-        #return  WaNoElementWidgetFactory.factories[id].create(inputData)
-    #createWaNoEWidget = staticmethod(createWaNoEWidget)
-    
 
 def getWidgetText(myWidget):
     return myWidget.text()
@@ -29,36 +20,33 @@ def getSelectedItems(myWidget):
     xlist    = [ elements.index(item.text()) for item in items]
     return xlist
 
-def WaNoSectionWidget(self,ll,importSelection):
-    self.layout = QtGui.QVBoxLayout()
-    self.layout.addWidget(QtGui.QLabel(self.name))
-
-    ll = max( [ len(element.name) for element in self.elements] )
+class WaNoSectionWidget(QtGui.QDialog):
+    def __init__(self,waNoElement,labelSize, importSelection,parent=None):
+        self.logger = logging.getLogger('WFELOG')
+        super(WaNoSectionWidget,self).__init__(parent)
+        
+        self.layout = QtGui.QVBoxLayout()
+        self.layout.addWidget(QtGui.QLabel("<b>"+waNoElement.name+"</b"))
     
-    for element in self.elements:
-        widget = element.makeWidget(ll,importSelection)
-        self.layout.addWidget(widget)
-            
-    self.myWidget = QtGui.QWidget()
-    self.myWidget.setLayout(self.layout)
-    return self.myWidget
+        ll = max( [ len(element.name) for element in waNoElement.elements] )
+        
+        for element in waNoElement.elements:
+            widget = element.makeWidget(ll,importSelection)
+            self.layout.addWidget(widget)
+     
+        self.setLayout(self.layout)
+      
 
-def WaNoVarSectionWidget(self,ll,importSelection):
-    self.layout = QtGui.QVBoxLayout()
-    self.layout.addWidget(QtGui.QLabel(self.name))
-    
-    ll = max( [ len(element.name) for element in self.elements] )
-    for element in self.elements:
-        widget = element.widget(ll,importSelection)
-        self.layout.addWidget(widget)
-            
-    self.myWidget = QtGui.QWidget()
-    self.myWidget.setLayout(self.layout)
-    return self.myWidget
-
+class WaNoVarSectionWidget(WaNoSectionWidget):
+    def __init__(self,waNoElement,labelSize, importSelection,parent=None):
+        super(WaNoVarSectionWidget,self).__init__(waNoElement,labelSize,importSelection,parent)
+        self.logger.error("WaNoVarSectionWidget funcitonality not implements, mimics WaNoSection")
+  
 
 class WaNoItemWidget(QtGui.QDialog):
-    sig = QtCore.Signal()
+    WaNoChangedSig = QtCore.Signal()
+    WFChangedSig = QtCore.Signal()
+    
     #----------------------------------------------------------------------
     def __init__(self,waNoElement,labelSize,importSelection,parent=None):
         super(WaNoItemWidget,self).__init__(parent)
@@ -125,14 +113,16 @@ class WaNoItemWidget(QtGui.QDialog):
         self.editor.textChanged.connect(self.changed)
         self.hiddenButton.clicked.connect(self.changed)
         from WaNoEditor import WaNoEditor
-        self.sig.connect(WaNoEditor.hasChanged)
-       
-        
+        self.WaNoChangedSig.connect(WaNoEditor.hasChanged)
+
+         
     def changed(self):
-        self.sig.emit()
+        self.WaNoChangedSig.emit()
+     
         
     def modifyInput(self):
-        self.sig.emit()
+        self.WaNoChangedSig.emit()
+      
         if len(self.importSelection) > 0:
             sel = self.typeSelect.currentText()
             if sel == 'W' or sel == 'X':
@@ -140,12 +130,10 @@ class WaNoItemWidget(QtGui.QDialog):
             else:
                 self.importSelect.hide()
     
-#def makeSimpleWidget(self,ll,importSelection):    
-    #self.myWidget  =  WaNoItemWidget(self,ll,importSelection,None)
-    #return self.myWidget
 
 class WaNoSelectionWidget(QtGui.QDialog):
-    sig = QtCore.Signal()
+    WaNoChangedSig = QtCore.Signal()
+    WFChangedSig = QtCore.Signal()
     #----------------------------------------------------------------------
     def __init__(self,waNoElement,labelSize, importSelection,parent=None):
         super(WaNoSelectionWidget,self).__init__(parent)
@@ -187,26 +175,19 @@ class WaNoSelectionWidget(QtGui.QDialog):
         self.editor.itemClicked.connect(self.changed)
         self.hiddenButton.clicked.connect(self.changed)
         from WaNoEditor import WaNoEditor
-        self.sig.connect(WaNoEditor.hasChanged)    
+        self.WaNoChangedSig.connect(WaNoEditor.hasChanged)    
         
     def changed(self):
-        self.sig.emit()
+        self.WaNoChangedSig.emit()
 
 
 def WaNoSelectionElementWidget(self,ll,importSelection):
     pass
 
+class WaNoStringWidget(WaNoItemWidget):
+    def __init__(self,waNoElement,ll,importSelection):
+        super(WaNoStringWidget,self).__init__(waNoElement,ll,importSelection)
         
-def WaNoStringWidget(self,ll,importSelection):
-    widget = makeSimpleWidget(self,ll,importSelection) 
-    return widget
-
-def WaNoLocalFileWidget(self,ll,importSelection):
-    widget = makeSimpleWidget(self,ll,importSelection) 
-    rx = QtCore.QRegExp("\\S+")
-    widget.myValidator = QtGui.QRegExpValidator(rx, widget.editor)
-    return widget
-
 class WaNoFileWidget(WaNoItemWidget):
     def __init__(self,waNoElement,ll,importSelection):
         super(WaNoFileWidget,self).__init__(waNoElement,ll,importSelection)

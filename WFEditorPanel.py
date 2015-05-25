@@ -15,7 +15,7 @@ import ntpath
 import PySide.QtCore as QtCore
 import PySide.QtGui  as QtGui
 
-from WaNo import WaNo
+from WaNo import WaNo,WorkFlow
 
 def mapClassToTag(name):
     xx = name.replace('Widget','')
@@ -24,12 +24,30 @@ def mapClassToTag(name):
 widgetColors = {'MainEditor' : '#F5FFF5' , 'Control': '#EBFFD6' , 'Base': '#F5FFEB' ,
                 'WaNo' : '#B8FFB8' }
 
+
+    
 class WFWaNoWidget(QtGui.QPushButton):
     def __init__(self, text, wano, parent=None):
         super(WFWaNoWidget, self).__init__(text,parent)        
+        self.logger = logging.getLogger('WFELOG')
         self.moved  = False
+        #
+        #  here we make a deep copy of the WaNo, but deep copy does not work. Do it via XMLK
+        #
+        lvl = self.logger.getEffectiveLevel() # switch off too many infos
+        self.logger.setLevel(logging.ERROR)
         xml = wano.xml()
-        self.wano   = WaNo(xml)
+        if xml.tag == 'WaNo':
+            self.wano   = WaNo(xml)
+            self.isWorkFlow = False
+        elif xml.tag == 'WorkFlow':
+            self.wano = WorkFlow(xml)
+            self.isWorkFlow = True
+        else:
+            self.logger.critical(__name__ + ' Do not know how to make WFWaNoWidger from ' + xml.tag)
+        
+        self.logger.setLevel(lvl)
+        
         self.setStyleSheet("background: NONE") # + widgetColors['WaNo'])
         self.setAutoFillBackground(True)
         self.setColor(QtCore.Qt.lightGray)
@@ -88,12 +106,14 @@ class WFBaseWidget(QtGui.QFrame):
         self.logger     = logging.getLogger('WFELOG')
         
         self.editor     = editor
+   
+        
         self.setAcceptDrops(True)
         self.buttons    = []
         self.autoResize = False
         self.topWidget  = False
         self.embeddedIn = None
-        self.myName     = "AbstractWFWidget"
+        self.myName     = "AbstractWFTabsWidget"
         self.elementSkip = 20    # distance to skip between elements
      
     def clear(self):
@@ -118,12 +138,16 @@ class WFBaseWidget(QtGui.QFrame):
             print ("Removing Element ",element.text()," from WFBaseWidget",self.text())
   
     def openWaNoEditor(self,wanoWidget):
-        varEx = {}
-        filEx = {}
-        waNoNames = []
-        if not self.gatherExports(wanoWidget.wano,varEx,filEx,waNoNames):
-            self.logger.error("Error gathering exports for Wano:",wano.name)
-        self.editor.openWaNoEditor(wanoWidget,varEx,filEx,waNoNames)
+        if wanoWidget.isWorkFlow:
+            print ("open Workflow")
+            self.editor.openWorkFlow(wanoWidget.wano)
+        else:
+            varEx = {}
+            filEx = {}
+            waNoNames = []
+            if not self.gatherExports(wanoWidget.wano,varEx,filEx,waNoNames):
+                self.logger.error("Error gathering exports for Wano:",wano.name)
+            self.editor.openWaNoEditor(wanoWidget,varEx,filEx,waNoNames)
         
     def sizeHint(self):
         if self.topWidget:            
@@ -237,6 +261,7 @@ class WFBaseWidget(QtGui.QFrame):
         
     def dropEvent(self, e):
         super(WFBaseWidget,self).dropEvent(e)
+        WFWorkflowWidget.hasChanged()
         position = e.pos()
         sender   = e.source()
         
@@ -273,7 +298,7 @@ class WFBaseWidget(QtGui.QFrame):
         
     def parse(self,xml):
         for c in xml:
-            print ("WFBaseWidget parse",c.tag)
+            self.logger.debug("WFBaseWidget parse" +c.tag)
             if c.tag == 'WaNo':
                 w = WaNo(c)
                 e = WFWaNoWidget(w.name,w,self)
@@ -295,20 +320,24 @@ class WFBaseWidget(QtGui.QFrame):
         return self.myName
 
 targetHeight = 600
-class WFWidget(QtGui.QWidget):
-    def __init__(self, parent=None):
-        super(WFWidget, self).__init__(parent)   
+class WFTabsWidget(QtGui.QWidget):
+    def __init__(self, parent):
+        super(WFTabsWidget, self).__init__(parent)   
+        self.logger = logging.getLogger('WFELOG')
         
         self.acceptDrops()
-      
-        
-        self.wf = WFWorkflowWidget(parent,self)
-      
+        self.curFile = WFFileName()
         self.tabWidget  = QtGui.QTabWidget() # this is needed to resize the scrollbar
+        self.tabWidget.setTabsClosable(True)
+        self.tabWidget.tabCloseRequested.connect(self.closeTab)
+         
+        self.wf = WFWorkflowWidget(parent,self)
         self.wf.embeddedIn = self.tabWidget   # this is the widget that needs to be reiszed when the main layout widget resizes
         
-        self.tabWidget.addTab(self.wf,'Untitled')
-        self.setWidthLarge()
+        self.tabWidget.addTab(self.wf,self.curFile.name)
+        bb = self.tabWidget.tabBar().tabButton(0, QtGui.QTabBar.RightSide)
+        bb.resize(0, 0)
+        
         self.setMinimumSize(self.wf.width()+25,targetHeight) # widget with scrollbar
         
         scroll = QtGui.QScrollArea(self)
@@ -319,22 +348,94 @@ class WFWidget(QtGui.QWidget):
         scroll.setWidget(self.tabWidget)      
         scroll.acceptDrops()      
         scroll.setParent(self)
-        
+
         self.scroll = scroll
+        
+  
     
     def clear(self):
+        print ("Workflow has changed ? ",WFWorkflowWidget.changedFlag)
+        if WFWorkflowWidget.changedFlag:
+            reply = QtGui.QMessageBox(self)
+            reply.setText("The document has been modified.")
+            reply.setInformativeText("Do you want to save your changes?")
+            reply.setStandardButtons(QtGui.QMessageBox.Save | QtGui.QMessageBox.Discard | QtGui.QMessageBox.Cancel)
+            reply.setDefaultButton(QtGui.QMessageBox.Save)
+            ret = reply.exec_()
+        
+            if ret == QtGui.QMessageBox.Cancel:
+                return
+            if ret == QtGui.QMessageBox.Save:
+                self.save()
         self.wf.clear()
+        WFWorkflowWidget.changedFlag = False
+        self.tabWidget.setTabText(0,'Untitled')
+
+    def markWFasChanged(self):
+        print ("mark as changed")
+    
+    def save(self):
+        if self.curFile.name == 'Untitled':
+            return self.saveAs()
+        else:
+            return self.saveFile(self.curFile.fullName())
+        
+    def saveAs(self):
+        fileName, filtr = QtGui.QFileDialog.getSaveFileName(self, 'Save Workflow',self.curFile.name,'xml (*.xml *.xm)')
+        if not fileName:
+            return False
+        return self.saveFile(fileName)
+    
+    def open(self):
+        fileName, filtr = QtGui.QFileDialog(self).getOpenFileName(self,'Open Workflow','.','xml (*.xml *.xm)')
+        if fileName:
+            print ("Loading Workflow from File:",fileName) 
+            self.clear()
+            self.loadFile(fileName)
+    
+    def openWorkFlow(self,workFlow):
+        if not workFlow.isOpen:
+            wf = WFWorkflowWidget(self.parent(),self)
+            wf.sourceWF = workFlow
+            wf.parse(workFlow.xml())
+            self.tabWidget.addTab(wf,workFlow.name)
+            
+    def closeTab(self,e):
+        # this works recursively
+        if self.parent().lastActive != None:
+            # close wano editor
+            self.parent().wanoEditor.deleteClose()
+            
+        nn = self.tabWidget.count()-1
+        for i in range(nn,e-1,-1):
+            self.logger.info("Removing Tab: " + str(e))
+            wf  = self.tabWidget.widget(e)
+            xml = wf.xml()     
+            wf.sourceWF.setToXML(xml)
+            wf.sourceWF.isOpen = False
+            self.tabWidget.removeTab(e)
+       
         
     def saveFile(self,fileName):
         xml = self.wf.xml()
-        head, tail = ntpath.split(fileName)
-        nn = tail.split('.')[-2]
-        print ("Saving File to: ",nn)
+        self.curFile.dirName, tail = ntpath.split(fileName)
+        tt =  tail.split('.')
+        self.curFile.name = tt[0]
+        if len(tt) > 1:
+            self.curFile.ext  = tail.split('.')[1]
+        else:
+            self.curFile.ext = 'xml'
+        
+        self.logger.info("Saving Workflow to: " + self.curFile.dirName + " t: " + self.curFile.name + ' x: ' + self.curFile.ext)
+    
         textFile = open(fileName,"w")
         textFile.write(etree.tostring(xml,pretty_print=True))
         textFile.close()
+        self.tabWidget.setTabText(0,self.curFile.name)
+        WFWorkflowWidget.changedFlag = False
       
     def loadFile(self,fileName):
+        self.logger.info('Loading Workflow from: ',fileName)
         try:
             self.inputData = etree.parse(fileName)
         except:
@@ -345,30 +446,47 @@ class WFWidget(QtGui.QWidget):
             self.wf.parse(r)
         else:
             print ("Could not Parse Workflow in ",filename)
+        WFWorkflowWidget.changedFlag = False
+        
+    #def setWidthSmall(self):
+        #print ("set width small")
+        ##self.setMinimumSize(400,targetHeight)
+        ##self.wf.setFixedWidth(400)
+        ##self.tabWidget.setFixedWidth(400)
     
-    def setWidthSmall(self):
-        print ("set width small")
-        #self.setMinimumSize(400,targetHeight)
-        #self.wf.setFixedWidth(400)
-        #self.tabWidget.setFixedWidth(400)
-    
-    def setWidthLarge(self):
-        print ("set width large")
-        #self.tabWidget.setFixedWidth(800)
-        #self.setMinimumSize(800,targetHeight)
-        #self.wf.setFixedWidth(800)
+    #def setWidthLarge(self):
+        #print ("set width large")
+        ##self.tabWidget.setFixedWidth(800)
+        ##self.setMinimumSize(800,targetHeight)
+        ##self.wf.setFixedWidth(800)
        
 #
 #  editor is the workflow editor that can open/close the WaNo editor
 #   
+class WFFileName:
+    def __init__(self):
+        self.dirName = '.'
+        self.name    = "Untitled"
+        self.ext     = 'xml'
+    def fullName(self):
+        return self.dirName + '/' + self.name + '.' + self.ext
+    
 class WFWorkflowWidget(WFBaseWidget):
-    def __init__(self, editor, parent=None):
+    changedFlag     = False
+    activeTabWidget = None
+  
+    
+    def __init__(self, editor,  parent):
         super(WFWorkflowWidget, self).__init__(editor,parent)   
         self.acceptDrops()
         self.topWidget  = True
         self.autoResize = True
-        self.myName     = "WFWorkflowWidget"
-        self.name       = "Untitled"
+        
+        self.myName          = "WFWorkflowWidget"
+        try:
+            WFWorkflowWidget.activeTabWidget = parent.tabWidget    # this is used to manipulate the changed state
+        except:
+            self.logger.error("WFWorkflowwidget cannot access parent tabs widget")
        
         self.setStyleSheet("background-color: " + widgetColors['MainEditor'] + """ ;  
                               background-image: url('./Media/Logo_NanoMatch200.jpg') ;
@@ -386,20 +504,37 @@ class WFWorkflowWidget(WFBaseWidget):
             btn = WFWaNoWidget('Start',None,self)
             btn.show()
             self.placeElementPosition(btn)
-          
+    
     def recPlaceElements(self): 
         # here is min height of main widget  
         ypos=max(self.placeOwnButtons(),targetHeight)
         self.setFixedHeight(ypos)
         self.parent().setFixedHeight(ypos) 
 
-
+    @staticmethod  
+    def hasChanged():
+        logger = logging.getLogger('WFELOG')
+        logger.info("WorkFlow has changed")
+        WFWorkflowWidget.changedFlag=True
+        if WFWorkflowWidget.activeTabWidget != None:
+            tt = WFWorkflowWidget.activeTabWidget.tabText(0)
+            if tt[-1] != '*':
+                tt += '*'
+                WFWorkflowWidget.activeTabWidget.setTabText(0,tt)
+        
+    @staticmethod
+    def unChanged():
+        logger = logging.getLogger('WFELOG')
+        logger.info("WorkFlow has changed")
+        WFWorkflowWidget.changedFlag=True
+      
 
 class WFControlWidget(QtGui.QFrame):
     def __init__(self, editor, parent=None):
         super(WFControlWidget, self).__init__(parent) 
         self.logger = logging.getLogger('WFELOG')
         self.editor = editor
+      
         
         self.setFrameStyle(QtGui.QFrame.Panel)
         self.setStyleSheet("background: " + widgetColors['Control'])
@@ -438,7 +573,7 @@ class WFControlWidget(QtGui.QFrame):
         pass
     
     def parse(self,xml):
-        print ("XXX")
+        print ("Unknown FunctionXXX")
         pass 
             
     def xml(self):
@@ -465,7 +600,6 @@ class WFControlWidget(QtGui.QFrame):
         self.bottomLayout.update()
         self.update()
         self.isVisible = not self.isVisible
-        
         
     def text(self):
         return self.myName 
@@ -507,8 +641,8 @@ class WFControlWidget(QtGui.QFrame):
             dropAction = drag.start(QtCore.Qt.MoveAction)
 
 class WFWhileWidget(WFControlWidget):
-    def __init__(self, editor, parent=None):
-        super(WFWhileWidget, self).__init__(editor, parent)      
+    def __init__(self, editor,  parent=None):
+        super(WFWhileWidget, self).__init__(editor,  parent)      
         
     def makeTopLine(self):
         self.myName = 'While'
@@ -520,8 +654,8 @@ class WFWhileWidget(WFControlWidget):
         return 1
     
 class WFIfWidget(WFControlWidget):
-    def __init__(self, editor, parent=None):
-        super(WFIfWidget, self).__init__(editor, parent)      
+    def __init__(self, editor,  parent=None):
+        super(WFIfWidget, self).__init__(editor,  parent)      
         
     def makeTopLine(self):
         self.myName = 'If'
@@ -533,8 +667,8 @@ class WFIfWidget(WFControlWidget):
         return 2
 
 class WFForEachWidget(WFControlWidget):
-    def __init__(self, editor, parent=None):
-        super(WFForEachWidget, self).__init__(editor, parent)      
+    def __init__(self, editor,  parent=None):
+        super(WFForEachWidget, self).__init__(editor,  parent)      
         
     def makeTopLine(self):
         self.myName = 'ForEach'
@@ -549,7 +683,7 @@ class WFForEachWidget(WFControlWidget):
 
 class WFParallelWidget(WFControlWidget):
     def __init__(self, editor, parent=None):
-        super(WFParallelWidget, self).__init__(editor, parent)      
+        super(WFParallelWidget, self).__init__(editor,  parent)      
         
     def makeTopLine(self):
         self.myName = 'Parallel'
