@@ -45,7 +45,7 @@ class WaNoVarSectionWidget(WaNoSectionWidget):
 
 class WaNoItemWidget(QtGui.QDialog):
     WaNoChangedSig = QtCore.Signal()
-    WFChangedSig = QtCore.Signal()
+   
     
     #----------------------------------------------------------------------
     def __init__(self,waNoElement,labelSize,importSelection,parent=None):
@@ -63,6 +63,8 @@ class WaNoItemWidget(QtGui.QDialog):
         self.layout.setContentsMargins(1,1,1,1)
         
         label = QtGui.QLabel(waNoElement.name)
+        label.setToolTip('hello world')
+                
         label.setFixedWidth(6*labelSize+10)
         self.layout.addWidget(label)
         
@@ -115,7 +117,8 @@ class WaNoItemWidget(QtGui.QDialog):
         from WaNoEditor import WaNoEditor
         self.WaNoChangedSig.connect(WaNoEditor.hasChanged)
 
-         
+    def dummy(self):
+        print ("dummy called")
     def changed(self):
         self.WaNoChangedSig.emit()
      

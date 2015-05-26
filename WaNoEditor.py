@@ -29,6 +29,12 @@ class WaNoEditor(QtGui.QFrame):
         self.editor = editor
         self.tabWidget  = QtGui.QTabWidget()
         self.activeTabs = []
+        
+        self.clearButton = QtGui.QPushButton('x')
+        self.clearButton.setMaximumWidth(20)
+        self.tabWidget.setCornerWidget(self.clearButton)
+        self.clearButton.clicked.connect(self.clearInfo)
+        
     
         tab = LogTab()     
         self.tabWidget.addTab(tab, "Info")
@@ -49,7 +55,10 @@ class WaNoEditor(QtGui.QFrame):
         logger = logging.getLogger('WFELOG')
         logger.debug("WaNo has changed")
         WaNoEditor.changedFlag=True
-      
+     
+    def clearInfo(self):
+        info = self.tabWidget.widget(0)
+        info.setText('')
         
     def init(self, wano, exportedFiles, exportedVars, importSelection):
         # take care of the open 
