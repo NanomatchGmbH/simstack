@@ -262,8 +262,8 @@ class ScriptTab(QtGui.QWidget):
         
         
 def get_git_revision_short_hash():
-    import subprocess
-    return subprocess.check_output(['git', 'rev-parse', '--short', 'HEAD'])
+    from WaNoGitRevision import get_git_revision
+    return get_git_revision()
 
 class LogTab(QtGui.QTextBrowser):
     def __init__(self, parent = None):
@@ -488,6 +488,7 @@ class WaNoItemEditor(QtGui.QWidget):
 import argparse
 
 if __name__ == '__main__':
+    mypath = os.path.dirname(os.path.realpath(__file__))
     parser = argparse.ArgumentParser('Option Parser')
     parser.add_argument('--log', default='DEBUG')
     
@@ -500,7 +501,7 @@ if __name__ == '__main__':
     
 
     wanoRep = WaNoRepository()
-    wanoRep.parse_xml_file('WaNoRepository/Simona.xml')
+    wanoRep.parse_xml_file(mypath + '/WaNoRepository/Simona.xml')
 
     
     wano                      = copy.copy(wanoRep['Simona'])

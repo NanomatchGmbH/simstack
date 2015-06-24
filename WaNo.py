@@ -520,11 +520,12 @@ Settings:
         
     def test_single_file(self):
         waNoRep = WaNoRepository()
-        waNoRep.parse_yml_file('WaNoRepository/MDSimulator.yml')
+        mypath = os.path.dirname(os.path.realpath(__file__))
+        waNoRep.parse_yml_file(mypath + '/WaNoRepository/MDSimulator.yml')
         
     def test_all_dir(self):
         waNoRep = WaNoRepository()
-        waNoRep.parse_yml_dir('WaNoRepository')
+        waNoRep.parse_yml_dir(mypath + '/WaNoRepository')
         
 
 if __name__ == '__main__':
@@ -532,7 +533,7 @@ if __name__ == '__main__':
     logging.getLogger(__name__).addHandler(logging.StreamHandler())
     #unittest.main()
     gbr = WaNoRepository()
-    gbr.parse_xml_file('WaNoRepository/Deposit.xml')
+    gbr.parse_xml_file(mypath + '/WaNoRepository/Deposit.xml')
     
     ee = gbr['Deposit'].xml()
     print (etree.tostring(ee,pretty_print=True))

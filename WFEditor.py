@@ -1,3 +1,4 @@
+#!/usr/bin/env python2
 from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
@@ -20,7 +21,7 @@ class WFEListWidget(QtGui.QListWidget):
     def __init__(self, indir, parent=None):
         super(WFEListWidget, self).__init__(parent) 
         self.setDragEnabled(True)
-        path = os.path.dirname(__file__)
+        path = os.path.dirname(os.path.realpath(__file__))
         for image in sorted(os.listdir(os.path.join(path, indir))):
             if image.endswith(".png"):
                 item = QtGui.QListWidgetItem(image.split(".")[0])
@@ -36,7 +37,7 @@ class WFEWaNoListWidget(QtGui.QListWidget):
     def __init__(self, indir, parent=None):
         super(WFEWaNoListWidget, self).__init__(parent) 
         self.setDragEnabled(True)
-        path = os.path.dirname(__file__)
+        path = os.path.dirname(os.path.realpath(__file__))
         wanoRep = WaNoRepository()
         
         for infile in sorted(os.listdir(os.path.join(path, indir))):
@@ -59,7 +60,7 @@ class WFEWorkflowistWidget(QtGui.QListWidget):
         super(WFEWorkflowistWidget, self).__init__(parent) 
         self.logger = logging.getLogger('WFEOG')
         self.setDragEnabled(True)
-        path = os.path.dirname(__file__)
+        path = os.path.dirname(os.path.realpath(__file__))
         
         for infile in sorted(os.listdir(os.path.join(path, indir))):
             if infile.endswith(".xml"):
@@ -261,10 +262,13 @@ class WFEditorApplication(QtGui.QMainWindow):
         self.aboutWFEAct.triggered.connect(QtGui.qApp.aboutQt)
         
 import ctypes
+import platform
 
 if __name__ == '__main__':   
     myappid = 'Nanomatch.WorkFlowEditor.Developer.V10' # arbitrary string
-    ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(myappid)
+
+    if platform.system() == 'Windows':
+        ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(myappid)
         
     app = QtGui.QApplication(sys.argv)
     logging.basicConfig(filename='wfeditor.log',filemode='w',level=logging.INFO)
