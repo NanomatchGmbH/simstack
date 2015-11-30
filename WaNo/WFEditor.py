@@ -178,7 +178,7 @@ class WFEditorApplication(QtGui.QMainWindow):
         super(WFEditorApplication,self).__init__(parent)
         
         
-        self.setWindowIcon(QtGui.QIcon('Media/Logo_Nanomatch.jpg'))
+        self.setWindowIcon(QtGui.QIcon('./WaNo/Media/Logo_Nanomatch.jpg'))
         
         self.wfEditor = WFEditor()
         self.setCentralWidget(self.wfEditor)
@@ -263,19 +263,3 @@ class WFEditorApplication(QtGui.QMainWindow):
         
         self.aboutWFEAct.triggered.connect(QtGui.qApp.aboutQt)
         
-import ctypes
-import platform
-
-if __name__ == '__main__':   
-    myappid = 'Nanomatch.WorkFlowEditor.Developer.V10' # arbitrary string
-
-    if platform.system() == 'Windows':
-        ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(myappid)
-        
-    app = QtGui.QApplication(sys.argv)
-    logging.basicConfig(filename='wfeditor.log',filemode='w',level=logging.INFO)
-    logger = logging.getLogger('WFELOG')
-   
-    editor = WFEditorApplication()
-    editor.show()
-    app.exec_()

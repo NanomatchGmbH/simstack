@@ -326,7 +326,7 @@ class WorkFlow(list):
             self.pop()
             
         for c in xml:
-            print ("Workflow parse",c.tag,c.get('name'))
+            print("Workflow parse",c.tag,c.get('name'))
             if c.tag == 'WaNo':
                 e = WaNo(c)
             else:
@@ -354,24 +354,25 @@ class WorkFlow(list):
             if c.tag == 'WaNo':
                 e = WaNo(c)
             else:
+                print(c.tag)
                 e = eval(c.tag)(c) 
             self.append(e)
       
 
         
-class WorkflowControlElement():
+class WorkflowControlElement(object):
     def __init__(self):
         self.logger = logging.getLogger('WFELOG')
         self.wf = []
 
-    def parse(self,c):
+    def parse(self,xml):
         count = 0
-        for c in xml:      
+        for c in xml:
             if c.tag != 'Base':
                 self.logger.error("Found Tag ",c.tag, " in control block")
             else:
-                w = Workflow(c)
-                self.wf[count].parse(c)
+                w = WorkFlow(c)
+                #self.wf[count].parse(c)
                 count += 1
                 #self.wf.append(e)
         if count != len(self.wf):
@@ -380,25 +381,25 @@ class WorkflowControlElement():
 # Workflow Control Elements
 #
 class ForEach(WorkflowControlElement):
-    def __init__(self):
+    def __init__(self, c):
         super(ForEach,self).__init__(self)
         self.parse(c)
         
         
 class If(WorkflowControlElement):
-    def __init__(self):
-        super(ForEach,self).__init__(self)
+    def __init__(self, c):
+        super(If,self).__init__(self)
         self.parse(c)
         
         
 class While(WorkflowControlElement):
-    def __init__(self):
-        super(ForEach,self).__init__(self)
+    def __init__(self, c):
+        super(While,self).__init__(self)
         self.parse(c)
         
 class Parallel(WorkflowControlElement):
-    def __init__(self):
-        super(ForEach,self).__init__(self)
+    def __init__(self, c):
+        super(Parallel, self).__init__()
         self.parse(c)
         
         

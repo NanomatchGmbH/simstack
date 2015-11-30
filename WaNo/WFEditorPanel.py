@@ -21,7 +21,7 @@ def mapClassToTag(name):
     return xx[2:]
     
 widgetColors = {'MainEditor' : '#F5FFF5' , 'Control': '#EBFFD6' , 'Base': '#F5FFEB' ,
-                'WaNo' : '#B8FFB8' }
+                'WaNo' : '#FF00FF' }
 
 
     
@@ -488,7 +488,7 @@ class WFWorkflowWidget(WFBaseWidget):
             self.logger.error("WFWorkflowwidget cannot access parent tabs widget")
        
         self.setStyleSheet("background-color: " + widgetColors['MainEditor'] + """ ;  
-                              background-image: url('./Media/Logo_NanoMatch200.jpg') ;
+                              background-image: url('./WaNo/Media/Logo_NanoMatch200.jpg') ;
                               background-repeat: no-repeat;
                               background-attachment: fixed;
                               background-position: center;  """)
