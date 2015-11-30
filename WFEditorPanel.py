@@ -3,14 +3,13 @@ from __future__ import print_function
 from __future__ import unicode_literals
 from future_builtins import *
 
-#import os
+import os
 #import sys
 
 import WFELicense
 import copy 
 import logging
 from   lxml import etree
-import ntpath
 
 import PySide.QtCore as QtCore
 import PySide.QtGui  as QtGui
@@ -156,8 +155,8 @@ class WFBaseWidget(QtGui.QFrame):
             s = QtCore.QSize(self.parent().width()-50,self.height()) 
         return s
     
-    def xml(self):
-        ee =  etree.Element(mapClassToTag(self.__class__.__name__),name='Untitled')
+    def xml(self,name="Untitled"):
+        ee =  etree.Element(mapClassToTag(self.__class__.__name__),name=name)
         for e in self.buttons:
             if e.text() != "Start":
                 ee.append(e.xml())
@@ -417,8 +416,8 @@ class WFTabsWidget(QtGui.QWidget):
        
         
     def saveFile(self,fileName):
-        xml = self.wf.xml()
-        self.curFile.dirName, tail = ntpath.split(fileName)
+        xml = self.wf.xml(os.path.basename(fileName).split('.')[0])
+        self.curFile.dirName, tail = os.path.split(fileName)
         tt =  tail.split('.')
         self.curFile.name = tt[0]
         if len(tt) > 1:

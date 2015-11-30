@@ -60,13 +60,14 @@ class WFEWorkflowistWidget(QtGui.QListWidget):
         super(WFEWorkflowistWidget, self).__init__(parent) 
         self.logger = logging.getLogger('WFEOG')
         self.setDragEnabled(True)
+        self.update(indir)
+
+    def update(self,indir = "WorkFlows"):
+        self.clear()
         path = os.path.dirname(os.path.realpath(__file__))
-        
         for infile in sorted(os.listdir(os.path.join(path, indir))):
             if infile.endswith(".xml"):
-               
                 xxi = os.path.join(path,indir+"/{0}".format(infile))
-             
                 try:
                     inputData = etree.parse(xxi)
                 except:
@@ -80,7 +81,6 @@ class WFEWorkflowistWidget(QtGui.QListWidget):
                 item = QtGui.QListWidgetItem(element.name)
                 item.WaNo = element
                 self.addItem(item)
-                
         self.myHeight = self.count()*10
 
     def sizeHint(self):
@@ -116,13 +116,13 @@ class WFEditor(QtGui.QDialog):
         
         WanoListWidget = WFEWaNoListWidget('WaNoRepository')
         CtrlListWidget = WFEListWidget('ctrl_img')
-        WorkListWidget = WFEWorkflowistWidget('WorkFlows')
+        self.WorkListWidget = WFEWorkflowistWidget('WorkFlows')
         
         
         selectionPanel.addWidget(QtGui.QLabel('Nodes'))
         selectionPanel.addWidget(WanoListWidget)
         selectionPanel.addWidget(QtGui.QLabel('Workflows'))      
-        selectionPanel.addWidget(WorkListWidget)
+        selectionPanel.addWidget(self.WorkListWidget)
         selectionPanel.addWidget(QtGui.QLabel('Controls'))
         selectionPanel.addWidget(CtrlListWidget)
                    
@@ -163,9 +163,11 @@ class WFEditor(QtGui.QDialog):
         
     def save(self):
         self.workflowWidget.save()
+        self.WorkListWidget.update()
         
     def saveAs(self):
         self.workflowWidget.saveAs()
+        self.WorkListWidget.update()
         
     def loadFile(self,fileName):
         self.workflowWidget.loadFile(fileName)
