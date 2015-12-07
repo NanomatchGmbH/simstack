@@ -115,7 +115,7 @@ class AbstractSettings(object):
 
 
     def _recursive_helper_finish(self,mydict):
-        for key,value in list(mydict.items()):
+        for key,value in mydict.items():
             if isinstance(value, dict):
                 self._recursive_helper_finish(value)
             else:
