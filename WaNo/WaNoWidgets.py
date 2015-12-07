@@ -114,7 +114,7 @@ class WaNoItemWidget(QtGui.QDialog):
     
         self.editor.textChanged.connect(self.changed)
         self.hiddenButton.clicked.connect(self.changed)
-        from WaNoEditor import WaNoEditor
+        from .WaNoEditor import WaNoEditor
         self.WaNoChangedSig.connect(WaNoEditor.hasChanged)
 
     def dummy(self):
@@ -177,7 +177,7 @@ class WaNoSelectionWidget(QtGui.QDialog):
         
         self.editor.itemClicked.connect(self.changed)
         self.hiddenButton.clicked.connect(self.changed)
-        from WaNoEditor import WaNoEditor
+        from .WaNoEditor import WaNoEditor
         self.WaNoChangedSig.connect(WaNoEditor.hasChanged)    
         
     def changed(self):

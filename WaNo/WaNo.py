@@ -7,14 +7,14 @@ from __future__ import print_function
 from __future__ import unicode_literals
 from future_builtins import *
 
-import WFELicense
+from . import WFELicense
 from   six import string_types
 import logging
 import sys
 import glob
 from   lxml import etree
 
-from   WaNoWidgets import *
+from   .WaNoWidgets import *
 
 class WaNoElementFactory:
     factories = {}
@@ -23,7 +23,7 @@ class WaNoElementFactory:
     addFactory = staticmethod(addFactory)
     # A Template Method:
     def createWaNoE(id,inputData):
-        if not WaNoElementFactory.factories.has_key(id):    
+        if id not in WaNoElementFactory.factories:
             #xclass = globals()[id]
             #xclass.widget = eval(id + 'Widget')   ## this is a sick way to assign the widget functions to the classes 
             WaNoElementFactory.factories[id] = \
@@ -37,7 +37,7 @@ class WaNoElement(object):   # abstract class: does not implement validator
         self.logger  = logging.getLogger("WFELOG")
         
         self.attrib = {}
-        for key in inputData.attrib.keys():
+        for key in list(inputData.attrib.keys()):
             self.attrib[key] = inputData.get(key)
         if 'name' in self.attrib:
             del self.attrib['name']
@@ -128,7 +128,7 @@ class WaNoSelection(WaNoElement):
                 self.logger.error("Illegal Element in WaNoSelection" + self.name + " Type: " + c.tag)
             else:
                 self.elements.append(WaNoElementFactory.createWaNoE(c.tag,c) )
-        if "selected_item" in self.attrib.keys():
+        if "selected_item" in list(self.attrib.keys()):
             self.selectedItems = [int(self.attrib["selected_item"])]
         else:
             self.selectedItems = []
@@ -344,7 +344,7 @@ class WorkFlow(list):
     
     def parse(self,xml):
         self.attrib = {}
-        for key in xml.attrib.keys():
+        for key in list(xml.attrib.keys()):
             self.attrib[key] = xml.get(key)
         self.name = xml.get('name')
         if 'name' in self.attrib:

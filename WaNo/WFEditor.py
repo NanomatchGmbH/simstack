@@ -7,15 +7,15 @@ import os
 import sys
 import logging
 from lxml import etree
-import WFELicense
+from . import WFELicense
 
 import PySide.QtCore as QtCore
 import PySide.QtGui  as QtGui
 
-from WaNo       import WorkFlow
-from WaNoEditor import *
-from WFEditorPanel import WFTabsWidget
-from WaNoSettings import WaNoUnicoreSettings
+from .WaNo       import WorkFlow
+from .WaNoEditor import *
+from .WFEditorPanel import WFTabsWidget
+from .WaNoSettings import WaNoUnicoreSettings
 
 class WFEListWidget(QtGui.QListWidget):
     def __init__(self, indir, parent=None):

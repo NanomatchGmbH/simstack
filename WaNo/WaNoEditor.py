@@ -13,8 +13,8 @@ import logging
 import PySide.QtCore as QtCore
 import PySide.QtGui  as QtGui
 
-import WFELicense
-from WaNo import WaNo, WaNoRepository
+from . import WFELicense
+from .WaNo import WaNo, WaNoRepository
 
 
 class WaNoEditor(QtGui.QFrame):
@@ -114,7 +114,7 @@ class WaNoEditor(QtGui.QFrame):
             ret = self.closeAction()
             if ret == QtGui.QMessageBox.Save:
                 # WaNo has changed means WF has changed 
-                from WFEditorPanel import WFWorkflowWidget
+                from .WFEditorPanel import WFWorkflowWidget
                 WFWorkflowWidget.hasChanged()
                 self.copyContent()
             elif ret == QtGui.QMessageBox.Cancel:
@@ -124,7 +124,7 @@ class WaNoEditor(QtGui.QFrame):
            
     def saveClose(self):
         if WaNoEditor.changedFlag:          # WaNo has changed means WF has changed 
-            from WFEditorPanel import WFWorkflowWidget
+            from .WFEditorPanel import WFWorkflowWidget
             WFWorkflowWidget.hasChanged()
         self.copyContent()
         self.deleteClose()
@@ -175,7 +175,7 @@ class ScriptTab(QtGui.QWidget):
         else:
             self.logger.error('WaNo Script sets not language for ' + script.name)
         self.language.setCurrentIndex(idx)
-        self.language.currentIndexChanged[unicode].connect(self.uchanged)
+        self.language.currentIndexChanged[str].connect(self.uchanged)
         topLine.addWidget(self.language)
         
         topLine.addStretch(1)
@@ -262,7 +262,7 @@ class ScriptTab(QtGui.QWidget):
         
         
 def get_git_revision_short_hash():
-    from WaNoGitRevision import get_git_revision
+    from .WaNoGitRevision import get_git_revision
     return get_git_revision()
 
 class LogTab(QtGui.QTextBrowser):
@@ -508,7 +508,7 @@ if __name__ == '__main__':
     wano.fileImports['File1'] = 'GLOBAL1'
     wano.fileImports['File2'] = 'GLOBAL2'
     
-    exportedFiles      = ['FILEA','FILEB','FILEC'] + wano.fileImports.values()
+    exportedFiles      = ['FILEA','FILEB','FILEC'] + list(wano.fileImports.values())
     exportedVariables  = ['ITER','ACC']
     
     app = QtGui.QApplication(sys.argv)

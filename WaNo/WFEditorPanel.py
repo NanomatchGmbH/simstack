@@ -1,12 +1,12 @@
-from __future__ import division
-from __future__ import print_function
-from __future__ import unicode_literals
+
+
+
 from future_builtins import *
 
 import os
 #import sys
 
-import WFELicense
+from . import WFELicense
 import copy 
 import logging
 from   lxml import etree
@@ -14,7 +14,7 @@ from   lxml import etree
 import PySide.QtCore as QtCore
 import PySide.QtGui  as QtGui
 
-from WaNo import WaNo,WorkFlow
+from .WaNo import WaNo,WorkFlow
 
 def mapClassToTag(name):
     xx = name.replace('Widget','')
