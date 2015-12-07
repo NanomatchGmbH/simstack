@@ -1,16 +1,44 @@
 from PySide.QtGui import QDialog, QLabel, QGridLayout, QLineEdit, QPushButton, \
-        QTabWidget
-from PySide.QtCore import Signal
+        QTabWidget, QWidget, QVBoxLayout, QHBoxLayout, QCheckBox, QTabBar, \
+        QToolButton
+from PySide.QtCore import Signal, QSignalMapper
 
 
 class WaNoRegistrySettings(QWidget):
+    title_edited = Signal(str, name='titleEdited')
+    
+    def get_name(self):
+        return self.__registryName.text()
+
+    def get_uri(self):
+        return self.__baseUri.text()
+
+    def get_user(self):
+        return self.__username.text()
+
+    def get_password(self):
+        return self.__password.text()
+
+    def __on_title_edited(self):
+        self.title_edited.emit(str(self.__registryName.text()))
+
+    def __on_password_show(self):
+        if (self.__cb_show_password.isChecked()):
+            self.__password.setEchoMode(QLineEdit.EchoMode.Normal)
+        else:
+            self.__password.setEchoMode(QLineEdit.EchoMode.PasswordEchoOnEdit)
+
+    def __connect_signals(self):
+        self.__registryName.editingFinished.connect(self.__on_title_edited)
+        self.__cb_show_password.stateChanged.connect(self.__on_password_show)
+
     def __init_ui(self):
         grid = QGridLayout(self)
 
-        self.__label_registryName = QLabel(self)
-        self.__label_baseUri      = QLabel(self)
-        self.__label_username     = QLabel(self)
-        self.__label_password     = QLabel(self)
+        self.__label_registryName   = QLabel(self)
+        self.__label_baseUri        = QLabel(self)
+        self.__label_username       = QLabel(self)
+        self.__label_password       = QLabel(self)
 
         self.__label_registryName.setText("<b>Registry Name</b>")
         self.__label_baseUri.setText("<b>Base URI</b>")
@@ -21,38 +49,198 @@ class WaNoRegistrySettings(QWidget):
         self.__baseUri      = QLineEdit(self)
         self.__username     = QLineEdit(self)
         self.__password     = QLineEdit(self)
+        self.__password.setEchoMode(QLineEdit.EchoMode.PasswordEchoOnEdit)
 
+        self.__cb_show_password = QCheckBox(self)
+        self.__cb_show_password.setText("show")
+        self.__cb_show_password.setChecked(False)
 
         grid.addWidget(self.__label_registryName, 0, 0)
         grid.addWidget(self.__label_baseUri     , 1, 0)
         grid.addWidget(self.__label_username    , 2, 0)
         grid.addWidget(self.__label_password    , 3, 0)
 
-        grid.addWidget(self.__registryName, 0, 1 )
-        grid.addWidget(self.__baseUri     , 1, 1 )
-        grid.addWidget(self.__username    , 2, 1 )
-        grid.addWidget(self.__password    , 3, 1 )
+        grid.addWidget(self.__registryName,         0, 1 )
+        grid.addWidget(self.__baseUri,              1, 1 )
+        grid.addWidget(self.__username,             2, 1 )
+        grid.addWidget(self.__password,             3, 1 )
+        grid.addWidget(self.__cb_show_password,     3, 2 )
+
+        self.setLayout(grid)
+
+    def set_fields(self, name, uri, user, password):
+        self.__registryName.setText(name)
+        self.__baseUri.setText(uri)
+        self.__username.setText(user)
+        self.__password.setText(password)
+
+    def __init__(self):
+        super(WaNoRegistrySettings, self).__init__()
+        self.__init_ui()
+        self.__connect_signals()
+
+class WaNoTabButtonsWidget(QWidget):
+    addClicked      = Signal(name='onAddClicked')
+    removeClicked   = Signal(name='onRemoveClicked')
+
+    def __connect_signals(self):
+        self.__btn_addRegistry.clicked.connect(self.addClicked)
+        self.__btn_removeRegistry.clicked.connect(self.removeClicked)
+
+    def disable_remove(self):
+        self.__btn_removeRegistry.setEnabled(False)
+
+    def enable_remove(self):
+        self.__btn_removeRegistry.setEnabled(True)
+
+    def __init_ui(self):
+        layout = QHBoxLayout(self)
+
+        self.__btn_addRegistry          = QToolButton(self)
+        self.__btn_removeRegistry       = QToolButton(self)
+
+        self.__btn_addRegistry.setText("+")
+        self.__btn_removeRegistry.setText("-")
+
+        self.__btn_addRegistry.setToolTip("Add Registry")
+        self.__btn_removeRegistry.setToolTip("Remove Registry")
+
+        self.__btn_addRegistry.resize(self.__btn_addRegistry.sizeHint())
+        self.__btn_removeRegistry.resize(self.__btn_removeRegistry.sizeHint())
+
+        layout.addWidget(self.__btn_addRegistry)
+        layout.addWidget(self.__btn_removeRegistry)
+
+        self.setLayout(layout)
+        self.resize(self.sizeHint())
 
     def __init__(self, config):
-        self.__init_ui
+        super(WaNoTabButtonsWidget, self).__init__()
+        self.__init_ui()
+        self.__connect_signals()
 
 class WaNoUnicoreSettings(QDialog):
-    on_save_config = Signal(dict, name='onSaveConfig')
+    DEFAULT_NAME = "[Unnamed Registry]"
+
+    def get_settings(self):
+        registries = []
+        for index in range(1, self.__tabs.count()):
+            tabWidget = self.__tabs.widget(index)
+            registries.append(
+                    self.__build_registry_settings(
+                        tabWidget.get_name(),
+                        tabWidget.get_uri(),
+                        tabWidget.get_user(),
+                        tabWidget.get_password()
+                    )
+                )
+
+        return registries
+
+    def __build_registry_settings(self, name, uri, user, password):
+        return {
+                'name': name,
+                'baseURI': uri,
+                'username': user,
+                'password': password
+            }
+
+    def __add_tab(self, name, index):
+        tabWidget = WaNoRegistrySettings()
+        self.__tabs.addTab(tabWidget, name)
+
+        # We want to identify the Tab by index -> +1 for tab buttons
+        self.__signalMapper.setMapping(tabWidget, index + 1)
+        tabWidget.title_edited.connect(self.__signalMapper.map)
+
+        return tabWidget
+
+
+    def __on_add_registry(self):
+        self.__add_tab(self.DEFAULT_NAME, self.__tabs.count() - 1)
+
+    def __on_remove_registry(self):
+        # -1 for tab buttons
+        index = self.__tabs.currentIndex()
+        if (index > 0):
+            tabWidget = self.__tabs.widget(index)
+            self.__signalMapper.removeMappings(tabWidget)
+            self.__tabs.removeTab(index)
+
+        if (self.__tabs.count() == 1):
+            self.__tab_buttons.disable_remove()
+
+    def __on_save(self):
+        self.accept()
+
+    def __on_cancel(self):
+        self.reject()
+
+    def __connect_signals(self):
+        self.__tab_buttons.addClicked.connect(self.__on_add_registry)
+        self.__tab_buttons.removeClicked.connect(self.__on_remove_registry)
+        self.__btn_save.clicked.connect(self.__on_save)
+        self.__btn_cancel.clicked.connect(self.__on_cancel)
+
+        self.__signalMapper.mapped.connect(self.__title_edited)
+
+    def __title_edited(self, index):
+        tabWidget = self.__tabs.widget(index)
+        if (not tabWidget is None):
+            text = tabWidget.get_name()
+            self.__tabs.setTabText(index, text if text != "" else self.DEFAULT_NAME)
 
     def __update(self, config):
         if self.__tabs is None:
             raise RuntimeError("WaNoUnicoreSettings not initialized correctly")
 
-        for registry in config['registries']:
-            tabWidget = WaNoRegistrySettings(registry)
-            self.__tabs.addTab(registy['name'], tabWidget)
+        if not config is None:
+            for i, registry in enumerate(config['registries']):
+                tabWidget = self.__add_tab(registry['name'], i)
+                tabWidget.set_fields(
+                        registry['name'],
+                        registry['baseURI'],
+                        registry['username'],
+                        registry['password']
+                    )
+
+            if (len(config['registries']) > 0):
+                self.__tabs.setCurrentIndex(1) # not 0, because of tab buttons
 
     def __init_ui(self):
-        self.__tabs = QTabWidget(self)
-        self.__addRegistryBtn = QPushButton(self)
-        self.__removeRegistryBtn = QPushButton(self)
+        layout = QVBoxLayout(self)
+        self.__tabs                     = QTabWidget(self)
+        self.__tab_buttons              = WaNoTabButtonsWidget(self)
+
+        self.__btn_save                 = QPushButton(self)
+        self.__btn_cancel               = QPushButton(self)
+
+        self.__btn_save.setText("Save")
+        self.__btn_cancel.setText("Cancel")
+
+        #self.__tabs.setTabPosition(QTabWidget.TabPosition.West)
+        self.__tabs.addTab(QLabel('Add Registry by clicking \"+\"'), '')
+        self.__tabs.setTabEnabled(0, False)
+        self.__tabs.setUsesScrollButtons(True)
+        self.__tabs.tabBar().setTabButton(0, QTabBar.RightSide, self.__tab_buttons)
+        
+
+        layout.addWidget(self.__tabs)
+        layout.addWidget(self.__btn_save)
+        layout.addWidget(self.__btn_cancel)
+        self.setLayout(layout)
+
+        self.setMinimumSize(300, 300)
 
     def __init__(self, config):
+        super(WaNoUnicoreSettings, self).__init__()
         self.__tabs     = None
         self.__config   = config
+
+        self.__signalMapper = QSignalMapper(self)
+
         self.__init_ui()
+
+        self.__connect_signals()
+        self.__update(config)
+        self.get_settings()

@@ -2,7 +2,6 @@
 from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
-from future_builtins import *
 
 import os
 import sys
@@ -16,6 +15,7 @@ import PySide.QtGui  as QtGui
 from WaNo       import WorkFlow
 from WaNoEditor import *
 from WFEditorPanel import WFTabsWidget
+from WaNoSettings import WaNoUnicoreSettings
 
 class WFEListWidget(QtGui.QListWidget):
     def __init__(self, indir, parent=None):
@@ -194,6 +194,15 @@ class WFEditorApplication(QtGui.QMainWindow):
         self.fileMenu.addAction(self.exitAct)
         
         self.runMenu = self.menuBar().addMenu("&Run")
+
+        self.settingsMenu = self.menuBar().addAction(
+                QtGui.QAction(
+                    "&Configuration",
+                    self,
+                    statusTip="Open Settings",
+                    triggered=self.openSettingsDialog
+                )
+            )
         
         self.helpMenu = self.menuBar().addMenu("&Help")
         self.helpMenu.addAction(self.aboutAct)
@@ -203,6 +212,14 @@ class WFEditorApplication(QtGui.QMainWindow):
         self.statusBar().showMessage(message)
         
         self.setWindowTitle("Nanomatch Workflow Editor (C) 2015")
+
+    def openSettingsDialog(self):
+        dialog = WaNoUnicoreSettings(None)
+
+        if (dialog.exec_()):
+            print("success")
+        else:
+            print("fail")
         
     def newFile(self):
         self.wfEditor.clear()
