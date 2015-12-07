@@ -158,6 +158,7 @@ class WaNoUnicoreSettings(QDialog):
 
     def __on_add_registry(self):
         self.__add_tab(self.DEFAULT_NAME, self.__tabs.count() - 1)
+        self.__tabs.setCurrentIndex(self.__tabs.count() - 1)
 
     def __on_remove_registry(self):
         # -1 for tab buttons
