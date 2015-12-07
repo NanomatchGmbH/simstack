@@ -57,18 +57,35 @@ class AbstractSettings(object):
         splitname = valuename.split(".")
         current_dict = self.settings_container
         for key in splitname[:-1]:
-            current_dict = current_dict[key]
-        return current_dict[splitname[-1]]
-
+            current_dict = current_dict[self._cast_string_to_correct_type(key)]
+        return current_dict[self._cast_string_to_correct_type(splitname[-1])]
+    
     #Set Value actually creates the entry:
     def set_value(self,valuename,value):
         splitname = valuename.split(".")
         current_dict = self.settings_container
         for key in splitname[:-1]:
-            if not key in current_dict:
-                current_dict[key] = {}
-            current_dict = current_dict[key]
-        current_dict[splitname[-1]] = value
+            parsed_key = self._cast_string_to_correct_type(key)
+            if isinstance(current_dict, dict):
+                if not parsed_key in current_dict:
+                    current_dict[parsed_key] = {}
+
+            elif isinstance(current_dict, list) and isinstance(parsed_key, int):
+                if (not current_dict is None and parsed_key == len(current_dict)):
+                    current_dict.append([])
+                else:
+                    current_dict[parsed_key] = []
+            current_dict = current_dict[parsed_key]
+        parsed_key = self._cast_string_to_correct_type(splitname[-1])
+        if isinstance(current_dict, dict) or (isinstance(current_dict, list) and isinstance(current_dict[parsed_key], dict)):
+            current_dict[parsed_key] = value
+        elif isinstance(current_dict, list) and isinstance(parsed_key, int):
+            if (parsed_key == len(current_dict)):
+                current_dict.append(value)
+            elif (parsed_key < len(current_dict) and parsed_key >= 0):
+                current_dict[parsed_key] = value
+            else:
+                raise IndexError('Out of range. You can only append consecutive list items.')
 
     def print_options(self,outstream):
         outstream.write("%s paramaters: \n" %(self.name))
@@ -127,25 +144,25 @@ class AbstractSettings(object):
     def _finish_parsing(self):
         self._recursive_helper_finish(self.settings_container)
 
+class TestSettings(AbstractSettings):
+    def __init__(self):
+        super(TestSettings,self).__init__("TestSettings")
+
+    def _set_defaults(self):
+        defaults = [
+            ('Box.Lx' , 25.0 , "Half box length, x direction [Angstrom]"),
+            ('Box.Ly' , "sameas:Box.Lx",  "Half box length, y direction [Angstrom] By default same as Box.Lx"),
+            ('Temperature', 50.0, "Temperature of the sim"),
+            ('simparams.acceptance', 1.0, 'Acceptance factor of simulation'),
+            ('settings.filename','TestSettings.yml','Filename of the file the chosen settings are written to')
+            ]
+        for valuename,default,explanation in defaults:
+            self._add_default(valuename,default,explanation)
+
 
 if __name__ == '__main__':
     #Small unit test.  
     import os,sys
-    
-    class TestSettings(AbstractSettings):
-        def __init__(self):
-            super(TestSettings,self).__init__("TestSettings")
-
-        def _set_defaults(self):
-            defaults = [
-                ('Box.Lx' , 25.0 , "Half box length, x direction [Angstrom]"),
-                ('Box.Ly' , "sameas:Box.Lx",  "Half box length, y direction [Angstrom] By default same as Box.Lx"),
-                ('Temperature', 50.0, "Temperature of the sim"),
-                ('simparams.acceptance', 1.0, 'Acceptance factor of simulation'),
-                ('settings.filename','TestSettings.yml','Filename of the file the chosen settings are written to')
-                ]
-            for valuename,default,explanation in defaults:
-                self._add_default(valuename,default,explanation)
     
     myset = TestSettings()
     myset.parse_eq_args(sys.argv)
