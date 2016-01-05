@@ -223,10 +223,46 @@ class WFEditorApplication(QtGui.QMainWindow):
         self.__init_ui()
 
     def openSettingsDialog(self):
-        dialog = WaNoUnicoreSettings(None)
+        print(self.__settings.as_dict())
+        print("SETTING_KEYS['registries']: %s" % str(type(
+                self.__settings.get_value(SETTING_KEYS['registries'])
+            )))
+        dialog = WaNoUnicoreSettings(
+                self.__settings.get_value(SETTING_KEYS['registries'])
+            )
 
         if (dialog.exec_()):
-            print("success")
+            print("success: %s" % str(dialog.get_settings()))
+            # first, delete all previous settings
+            self.__settings.delete_value(SETTING_KEYS['registries'])
+
+            # second, add new registries
+            for i, registry in enumerate(dialog.get_settings()):
+                settings_path = "%s.%d" % (SETTING_KEYS['registries'], i)
+                self.__settings.set_value(
+                        "%s.%s" % (settings_path, SETTING_KEYS['registry.name']),
+                        registry['name']
+                    )
+                self.__settings.set_value(
+                        "%s.%s" % (settings_path, SETTING_KEYS['registry.baseURI']),
+                        registry['baseURI']
+                    )
+                self.__settings.set_value(
+                        "%s.%s" % (settings_path, SETTING_KEYS['registry.username']),
+                        registry['username']
+                    )
+                self.__settings.set_value(
+                        "%s.%s" % (settings_path, SETTING_KEYS['registry.password']),
+                        registry['password']
+                    )
+                self.__settings.set_value(
+                        "%s.%s" % (settings_path, SETTING_KEYS['registry.is_default']),
+                        registry['default']
+                    )
+
+
+            # last, save new settings to file
+            self.__settings.save()
         else:
             print("fail")
         
