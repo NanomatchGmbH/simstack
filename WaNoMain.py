@@ -31,6 +31,6 @@ if __name__ == '__main__':
         # Default settings are already loaded, lets save them to file
         settings.dump_to_file(SETTINGS_FILE)
    
-    editor = WFEditorApplication()
+    editor = WFEditorApplication(settings)
     editor.show()
     app.exec_()
