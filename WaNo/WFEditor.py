@@ -15,7 +15,9 @@ import PySide.QtGui  as QtGui
 from .WaNo       import WorkFlow
 from .WaNoEditor import *
 from .WFEditorPanel import WFTabsWidget
+from .WaNoSettingsProvider import WaNoSettingsProvider
 from .WaNoSettings import WaNoUnicoreSettings
+from .Constants import SETTING_KEYS
 
 class WFEListWidget(QtGui.QListWidget):
     def __init__(self, indir, parent=None):
@@ -87,12 +89,7 @@ class WFEWorkflowistWidget(QtGui.QListWidget):
         return QtCore.QSize(100,max(self.myHeight,100))
     
 class WFEditor(QtGui.QDialog):
-
-    def __init__(self, parent=None):
-        super(WFEditor, self).__init__(parent)
-
-        self.logger = logging.getLogger('WFELOG')
-        
+    def __init_ui(self):
         self.wanoEditor = WaNoEditor(self) # make this first to enable logging
         self.wanoEditor.setSizePolicy(QtGui.QSizePolicy.Expanding,QtGui.QSizePolicy.Expanding)
         
@@ -101,14 +98,18 @@ class WFEditor(QtGui.QDialog):
         
         self.workflowWidget.setSizePolicy(QtGui.QSizePolicy.Expanding,QtGui.QSizePolicy.Expanding)
         self.setSizePolicy(QtGui.QSizePolicy.Expanding,QtGui.QSizePolicy.Expanding)
+
        
-        selectionPanel = QtGui.QSplitter(QtCore.Qt.Vertical)
-        selectionPanel.setSizePolicy(QtGui.QSizePolicy.Fixed,QtGui.QSizePolicy.Expanding)
+        leftPanel = QtGui.QSplitter(QtCore.Qt.Vertical)
+        leftPanel.setSizePolicy(QtGui.QSizePolicy.Fixed,QtGui.QSizePolicy.Expanding)
+
+        rightPanel = QtGui.QSplitter(QtCore.Qt.Vertical)
+        rightPanel.setSizePolicy(QtGui.QSizePolicy.Fixed,QtGui.QSizePolicy.Expanding)
                 
         layout = QtGui.QHBoxLayout()       
-        layout.addWidget(selectionPanel)
+        layout.addWidget(leftPanel)
         layout.addWidget(self.workflowWidget)
-        layout.addWidget(self.wanoEditor)
+        layout.addWidget(rightPanel)
         layout.addStretch(1)
          
         self.mainPanels = layout  
@@ -119,15 +120,22 @@ class WFEditor(QtGui.QDialog):
         self.WorkListWidget = WFEWorkflowistWidget('WorkFlows')
         
         
-        selectionPanel.addWidget(QtGui.QLabel('Nodes'))
-        selectionPanel.addWidget(WanoListWidget)
-        selectionPanel.addWidget(QtGui.QLabel('Workflows'))      
-        selectionPanel.addWidget(self.WorkListWidget)
-        selectionPanel.addWidget(QtGui.QLabel('Controls'))
-        selectionPanel.addWidget(CtrlListWidget)
-                   
+        leftPanel.addWidget(QtGui.QLabel('Nodes'))
+        leftPanel.addWidget(WanoListWidget)
+        leftPanel.addWidget(QtGui.QLabel('Workflows'))      
+        leftPanel.addWidget(self.WorkListWidget)
+        leftPanel.addWidget(QtGui.QLabel('Controls'))
+        leftPanel.addWidget(CtrlListWidget)
+
+        rightPanel.addWidget(self.wanoEditor)
         
         self.lastActive = None
+
+    def __init__(self, settings, parent=None):
+        super(WFEditor, self).__init__(parent)
+        self.__settings = settings
+        self.logger = logging.getLogger('WFELOG')
+        self.__init_ui()
 
     
     def deactivateWidget(self):
@@ -173,14 +181,10 @@ class WFEditor(QtGui.QDialog):
         self.workflowWidget.loadFile(fileName)
         
 class WFEditorApplication(QtGui.QMainWindow):
-   
-    def __init__(self,parent=None):
-        super(WFEditorApplication,self).__init__(parent)
-        
-        
+    def __init_ui(self):
         self.setWindowIcon(QtGui.QIcon('./WaNo/Media/Logo_Nanomatch.jpg'))
         
-        self.wfEditor = WFEditor()
+        self.wfEditor = WFEditor(self.__settings)
         self.setCentralWidget(self.wfEditor)
     
         self.createActions()
@@ -212,6 +216,11 @@ class WFEditorApplication(QtGui.QMainWindow):
         self.statusBar().showMessage(message)
         
         self.setWindowTitle("Nanomatch Workflow Editor (C) 2015")
+   
+    def __init__(self, settings, parent=None):
+        super(WFEditorApplication,self).__init__(parent)
+        self.__settings = settings
+        self.__init_ui()
 
     def openSettingsDialog(self):
         dialog = WaNoUnicoreSettings(None)
