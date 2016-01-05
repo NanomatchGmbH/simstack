@@ -18,6 +18,7 @@ from .WFEditorPanel import WFTabsWidget
 from .WaNoSettingsProvider import WaNoSettingsProvider
 from .WaNoSettings import WaNoUnicoreSettings
 from .Constants import SETTING_KEYS
+from .view.WaNoRegistrySelection import WaNoRegistrySelection
 
 class WFEListWidget(QtGui.QListWidget):
     def __init__(self, indir, parent=None):
@@ -99,6 +100,7 @@ class WFEditor(QtGui.QDialog):
         self.workflowWidget.setSizePolicy(QtGui.QSizePolicy.Expanding,QtGui.QSizePolicy.Expanding)
         self.setSizePolicy(QtGui.QSizePolicy.Expanding,QtGui.QSizePolicy.Expanding)
 
+        self.registrySelection = WaNoRegistrySelection(self)
        
         leftPanel = QtGui.QSplitter(QtCore.Qt.Vertical)
         leftPanel.setSizePolicy(QtGui.QSizePolicy.Fixed,QtGui.QSizePolicy.Expanding)
@@ -127,6 +129,7 @@ class WFEditor(QtGui.QDialog):
         leftPanel.addWidget(QtGui.QLabel('Controls'))
         leftPanel.addWidget(CtrlListWidget)
 
+        rightPanel.addWidget(self.registrySelection)
         rightPanel.addWidget(self.wanoEditor)
         
         self.lastActive = None
@@ -136,6 +139,19 @@ class WFEditor(QtGui.QDialog):
         self.__settings = settings
         self.logger = logging.getLogger('WFELOG')
         self.__init_ui()
+        self.update_registries()
+#        self.registrySelection.registrySelectionChanged.connect(self.test)
+
+
+    def update_registries(self):
+        default = 0
+        registries = self.__settings.get_value(SETTING_KEYS['registries'])
+        regList = []
+        for i, r in enumerate(registries):
+            regList.append(r[SETTING_KEYS['registry.name']])
+            if r[SETTING_KEYS['registry.is_default']]:
+                default = i
+        self.registrySelection.update_registries(regList, index=default)
 
     
     def deactivateWidget(self):
@@ -263,6 +279,9 @@ class WFEditorApplication(QtGui.QMainWindow):
 
             # last, save new settings to file
             self.__settings.save()
+            
+            # update registry list
+            self.wfEditor.update_registries()
         else:
             print("fail")
         
