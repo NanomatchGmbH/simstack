@@ -6,6 +6,7 @@ from PySide.QtCore import Signal, QSignalMapper
 
 class WaNoRegistrySettings(QWidget):
     title_edited = Signal(str, name='titleEdited')
+    default_set  = Signal(bool, name='defaultSet')
     
     def get_name(self):
         return self.__registryName.text()
@@ -19,6 +20,9 @@ class WaNoRegistrySettings(QWidget):
     def get_password(self):
         return self.__password.text()
 
+    def get_default(self):
+        return self.__cb_default.isChecked()
+
     def __on_title_edited(self):
         self.title_edited.emit(str(self.__registryName.text()))
 
@@ -28,9 +32,14 @@ class WaNoRegistrySettings(QWidget):
         else:
             self.__password.setEchoMode(QLineEdit.EchoMode.PasswordEchoOnEdit)
 
+    def __on_default_set(self):
+        print("__on_default_set")
+        self.default_set.emit(self.__cb_default.isChecked())
+
     def __connect_signals(self):
         self.__registryName.editingFinished.connect(self.__on_title_edited)
         self.__cb_show_password.stateChanged.connect(self.__on_password_show)
+        self.__cb_default.stateChanged.connect(self.__on_default_set)
 
     def __init_ui(self):
         grid = QGridLayout(self)
@@ -55,6 +64,10 @@ class WaNoRegistrySettings(QWidget):
         self.__cb_show_password.setText("show")
         self.__cb_show_password.setChecked(False)
 
+        self.__cb_default = QCheckBox(self)
+        self.__cb_default.setText("is default")
+        self.__cb_default.setChecked(False)
+
         grid.addWidget(self.__label_registryName, 0, 0)
         grid.addWidget(self.__label_baseUri     , 1, 0)
         grid.addWidget(self.__label_username    , 2, 0)
@@ -68,11 +81,15 @@ class WaNoRegistrySettings(QWidget):
 
         self.setLayout(grid)
 
-    def set_fields(self, name, uri, user, password):
+    def set_default(self, is_default):
+        self.__cb_default.setChecked(is_default)
+
+    def set_fields(self, name, uri, user, password, is_default):
         self.__registryName.setText(name)
         self.__baseUri.setText(uri)
         self.__username.setText(user)
         self.__password.setText(password)
+        self.set_default(is_default)
 
     def __init__(self):
         super(WaNoRegistrySettings, self).__init__()
@@ -131,18 +148,20 @@ class WaNoUnicoreSettings(QDialog):
                         tabWidget.get_name(),
                         tabWidget.get_uri(),
                         tabWidget.get_user(),
-                        tabWidget.get_password()
+                        tabWidget.get_password(),
+                        tabWidget.get_default()
                     )
                 )
 
         return registries
 
-    def __build_registry_settings(self, name, uri, user, password):
+    def __build_registry_settings(self, name, uri, user, password, default):
         return {
                 'name': name,
                 'baseURI': uri,
                 'username': user,
-                'password': password
+                'password': password,
+                'default': default
             }
 
     def __add_tab(self, name, index):
@@ -150,8 +169,11 @@ class WaNoUnicoreSettings(QDialog):
         self.__tabs.addTab(tabWidget, name)
 
         # We want to identify the Tab by index -> +1 for tab buttons
-        self.__signalMapper.setMapping(tabWidget, index + 1)
-        tabWidget.title_edited.connect(self.__signalMapper.map)
+        self.__signalMapper_title.setMapping(tabWidget, index + 1)
+        tabWidget.title_edited.connect(self.__signalMapper_title.map)
+
+        self.__signalMapper_default.setMapping(tabWidget, index + 1)
+        tabWidget.default_set.connect(self.__signalMapper_default.map)
 
         return tabWidget
 
@@ -165,7 +187,8 @@ class WaNoUnicoreSettings(QDialog):
         index = self.__tabs.currentIndex()
         if (index > 0):
             tabWidget = self.__tabs.widget(index)
-            self.__signalMapper.removeMappings(tabWidget)
+            self.__signalMapper_title.removeMappings(tabWidget)
+            self.__signalMapper_default.removeMappings(tabWidget)
             self.__tabs.removeTab(index)
 
         if (self.__tabs.count() == 1):
@@ -183,7 +206,8 @@ class WaNoUnicoreSettings(QDialog):
         self.__btn_save.clicked.connect(self.__on_save)
         self.__btn_cancel.clicked.connect(self.__on_cancel)
 
-        self.__signalMapper.mapped.connect(self.__title_edited)
+        self.__signalMapper_title.mapped.connect(self.__title_edited)
+        self.__signalMapper_default.mapped.connect(self.__on_default_set)
 
     def __title_edited(self, index):
         tabWidget = self.__tabs.widget(index)
@@ -191,21 +215,35 @@ class WaNoUnicoreSettings(QDialog):
             text = tabWidget.get_name()
             self.__tabs.setTabText(index, text if text != "" else self.DEFAULT_NAME)
 
+    def __on_default_set(self, index):
+        tabWidget = self.__tabs.widget(index)
+        if not self.__ignore_default_signal:
+            self.__ignore_default_signal = True
+            print("index: %d Count: %d" % (index, self.__tabs.count()))
+            for i in [x for x in range(1, self.__tabs.count()) if x != index]:
+                t = self.__tabs.widget(i)
+                print("%d : %s" % (i, str(t)))
+                t.set_default(False)
+            self.__ignore_default_signal = False
+
     def __update(self, config):
         if self.__tabs is None:
             raise RuntimeError("WaNoUnicoreSettings not initialized correctly")
 
-        if not config is None:
-            for i, registry in enumerate(config['registries']):
+        if not config is None and len(config) > 0:
+            print("config: %s %d" % (str(config), len(config)))
+            for i, registry in enumerate(config):
+                print("  %d, %s" % (i, str(registry)))
                 tabWidget = self.__add_tab(registry['name'], i)
                 tabWidget.set_fields(
                         registry['name'],
                         registry['baseURI'],
                         registry['username'],
-                        registry['password']
+                        registry['password'],
+                        registry['is_default']
                     )
 
-            if (len(config['registries']) > 0):
+            if (len(config) > 0):
                 self.__tabs.setCurrentIndex(1) # not 0, because of tab buttons
 
     def __init_ui(self):
@@ -238,7 +276,9 @@ class WaNoUnicoreSettings(QDialog):
         self.__tabs     = None
         self.__config   = config
 
-        self.__signalMapper = QSignalMapper(self)
+        self.__signalMapper_title       = QSignalMapper(self)
+        self.__signalMapper_default     = QSignalMapper(self)
+        self.__ignore_default_signal    = False
 
         self.__init_ui()
 
