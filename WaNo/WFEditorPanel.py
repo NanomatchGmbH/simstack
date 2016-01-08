@@ -86,7 +86,7 @@ class WFWaNoWidget(QtGui.QPushButton):
         pass 
     
     def mouseDoubleClickEvent(self,e):
-        if self.wano != None:
+        if self.wano is not None:
             self.parent().openWaNoEditor(self) # pass the widget to remember it
     
     def gatherExports(self,wano,varExp,filExp,waNoNames):
@@ -101,17 +101,14 @@ class WFBaseWidget(QtGui.QFrame):
         super(WFBaseWidget, self).__init__(parent)    
         
         self.setStyleSheet("background: " + widgetColors['Base'])
-        self.logger     = logging.getLogger('WFELOG')
-        
-        self.editor     = editor
-   
-        
+        self.logger = logging.getLogger('WFELOG')
+        self.editor = editor
         self.setAcceptDrops(True)
-        self.buttons    = []
+        self.buttons = []
         self.autoResize = False
-        self.topWidget  = False
+        self.topWidget = False
         self.embeddedIn = None
-        self.myName     = "AbstractWFTabsWidget"
+        self.myName = "AbstractWFTabsWidget"
         self.elementSkip = 20    # distance to skip between elements
      
     def clear(self):
@@ -185,7 +182,7 @@ class WFBaseWidget(QtGui.QFrame):
         # move rest of elments down
         #
         while len(self.buttons) > 0: 
-            e    = self.buttons.pop(0)
+            e = self.buttons.pop(0)
             newb.append(e)
         self.buttons = newb
         self.placeElements()
@@ -201,18 +198,17 @@ class WFBaseWidget(QtGui.QFrame):
         if not self.topWidget:
             self.parent().recPlaceElements()
         else:
-            if self.embeddedIn != None:
+            if self.embeddedIn is not None:
                 self.embeddedIn.recPlaceElements()    
     
     def placeOwnButtons(self):
-        dims        = self.geometry()
-        ypos        = self.elementSkip/2
+        dims = self.geometry()
+        ypos = self.elementSkip/2
         
         for e in self.buttons:
-            xpos  = (dims.width()-e.width())/2
+            xpos = (dims.width()-e.width())/2
             e.move(xpos,ypos)
             ypos += e.height() + self.elementSkip
-        #print ("Computed Widget height: ",self.text(),ypos)
         return ypos
         
     def placeElements(self):
@@ -275,8 +271,8 @@ class WFBaseWidget(QtGui.QFrame):
             self.placeElementPosition(sender)
             sender.placeElements() # place all the buttons 
         else:
-            item     = sender.selectedItems()[0]
-            text     = item.text()
+            item = sender.selectedItems()[0]
+            text = item.text()
         
             # make a new widget
             if text in controlWidgetNames:
@@ -317,40 +313,34 @@ class WFBaseWidget(QtGui.QFrame):
     def text(self):
         return self.myName
 
-targetHeight = 600
-class WFTabsWidget(QtGui.QWidget):
+class WFTabsWidget(QtGui.QTabWidget):
     def __init__(self, parent):
-        super(WFTabsWidget, self).__init__(parent)   
+        super(WFTabsWidget, self).__init__(parent)
+
         self.logger = logging.getLogger('WFELOG')
-        
+
         self.acceptDrops()
         self.curFile = WFFileName()
-        self.tabWidget  = QtGui.QTabWidget() # this is needed to resize the scrollbar
-        self.tabWidget.setTabsClosable(True)
-        self.tabWidget.tabCloseRequested.connect(self.closeTab)
-         
+        self.setTabsClosable(True)
+        self.tabCloseRequested.connect(self.closeTab)
         self.wf = WFWorkflowWidget(parent,self)
-        self.wf.embeddedIn = self.tabWidget   # this is the widget that needs to be reiszed when the main layout widget resizes
-        
-        self.tabWidget.addTab(self.wf,self.curFile.name)
-        bb = self.tabWidget.tabBar().tabButton(0, QtGui.QTabBar.RightSide)
-        bb.resize(0, 0)
-        
-        self.setMinimumSize(self.wf.width()+25,targetHeight) # widget with scrollbar
-        
+
+        #####self.wf.embeddedIn = self   # this is the widget that needs to be reiszed when the main layout widget resizes
+        #####self.addTab(self.wf,self.curFile.name)
+        #####self.setMinimumSize(self.wf.width()+25,600) # widget with scrollbar
+
         scroll = QtGui.QScrollArea(self)
-        scroll.setMinimumHeight(600)
+        scroll.setWidget(self.wf)
+        scroll.setMinimumWidth(300)
         scroll.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOn)
         scroll.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarAsNeeded)
         scroll.setWidgetResizable(True)
-        scroll.setWidget(self.tabWidget)      
-        scroll.acceptDrops()      
-        scroll.setParent(self)
+        self.addTab(scroll, self.curFile.name)
 
-        self.scroll = scroll
-        
-  
-    
+        ####bb = self.tabBar().tabButton(0, QtGui.QTabBar.RightSide)
+        ####bb.resize(0, 0)
+
+
     def clear(self):
         print ("Workflow has changed ? ",WFWorkflowWidget.changedFlag)
         if WFWorkflowWidget.changedFlag:
@@ -360,7 +350,7 @@ class WFTabsWidget(QtGui.QWidget):
             reply.setStandardButtons(QtGui.QMessageBox.Save | QtGui.QMessageBox.Discard | QtGui.QMessageBox.Cancel)
             reply.setDefaultButton(QtGui.QMessageBox.Save)
             ret = reply.exec_()
-        
+
             if ret == QtGui.QMessageBox.Cancel:
                 return
             if ret == QtGui.QMessageBox.Save:
@@ -371,49 +361,49 @@ class WFTabsWidget(QtGui.QWidget):
 
     def markWFasChanged(self):
         print ("mark as changed")
-    
+
     def save(self):
         if self.curFile.name == 'Untitled':
             return self.saveAs()
         else:
             return self.saveFile(self.curFile.fullName())
-        
+
     def saveAs(self):
         fileName, filtr = QtGui.QFileDialog.getSaveFileName(self, 'Save Workflow',self.curFile.name,'xml (*.xml *.xm)')
         if not fileName:
             return False
         return self.saveFile(fileName)
-    
+
     def open(self):
         fileName, filtr = QtGui.QFileDialog(self).getOpenFileName(self,'Open Workflow','.','xml (*.xml *.xm)')
         if fileName:
-            print ("Loading Workflow from File:",fileName) 
+            print ("Loading Workflow from File:",fileName)
             self.clear()
             self.loadFile(fileName)
-    
+
     def openWorkFlow(self,workFlow):
         if not workFlow.isOpen:
             wf = WFWorkflowWidget(self.parent(),self)
             wf.sourceWF = workFlow
             wf.parse(workFlow.xml())
             self.tabWidget.addTab(wf,workFlow.name)
-            
+
     def closeTab(self,e):
         # this works recursively
         if self.parent().lastActive != None:
             # close wano editor
             self.parent().wanoEditor.deleteClose()
-            
+
         nn = self.tabWidget.count()-1
         for i in range(nn,e-1,-1):
             self.logger.info("Removing Tab: " + str(e))
             wf  = self.tabWidget.widget(e)
-            xml = wf.xml()     
+            xml = wf.xml()
             wf.sourceWF.setToXML(xml)
             wf.sourceWF.isOpen = False
             self.tabWidget.removeTab(e)
-       
-        
+
+
     def saveFile(self,fileName):
         xml = self.wf.xml(os.path.basename(fileName).split('.')[0])
         self.curFile.dirName, tail = os.path.split(fileName)
@@ -423,41 +413,33 @@ class WFTabsWidget(QtGui.QWidget):
             self.curFile.ext  = tail.split('.')[1]
         else:
             self.curFile.ext = 'xml'
-        
+
         self.logger.info("Saving Workflow to: " + self.curFile.dirName + " t: " + self.curFile.name + ' x: ' + self.curFile.ext)
-    
+
         textFile = open(fileName,"w")
         textFile.write(etree.tostring(xml,pretty_print=True))
         textFile.close()
         self.tabWidget.setTabText(0,self.curFile.name)
         WFWorkflowWidget.changedFlag = False
-      
+
     def loadFile(self,fileName):
         self.logger.info('Loading Workflow from: ',fileName)
         try:
             self.inputData = etree.parse(fileName)
         except:
-            self.logger.error('File not found: ' + filename)
-            raise 
+            self.logger.error('File not found: ' + fileName)
+            raise
         r = self.inputData.getroot()
         if r.tag == 'Workflow':
             self.wf.parse(r)
         else:
-            print ("Could not Parse Workflow in ",filename)
+            print ("Could not Parse Workflow in ",fileName)
         WFWorkflowWidget.changedFlag = False
-        
-    #def setWidthSmall(self):
-        #print ("set width small")
-        ##self.setMinimumSize(400,targetHeight)
-        ##self.wf.setFixedWidth(400)
-        ##self.tabWidget.setFixedWidth(400)
-    
-    #def setWidthLarge(self):
-        #print ("set width large")
-        ##self.tabWidget.setFixedWidth(800)
-        ##self.setMinimumSize(800,targetHeight)
-        ##self.wf.setFixedWidth(800)
-       
+
+    def sizeHint(self):
+        return QtCore.QSize(500,500)
+
+
 #
 #  editor is the workflow editor that can open/close the WaNo editor
 #   
@@ -479,35 +461,26 @@ class WFWorkflowWidget(WFBaseWidget):
         self.acceptDrops()
         self.topWidget  = True
         self.autoResize = True
-        
-        self.myName          = "WFWorkflowWidget"
-        try:
-            WFWorkflowWidget.activeTabWidget = parent.tabWidget    # this is used to manipulate the changed state
-        except:
-            self.logger.error("WFWorkflowwidget cannot access parent tabs widget")
-       
-        self.setStyleSheet("background-color: " + widgetColors['MainEditor'] + """ ;  
-                              background-image: url('./WaNo/Media/Logo_NanoMatch200.jpg') ;
+        self.parent = parent
+        self.myName = "WFWorkflowWidget"
+        self.style_sheet_without_background = "background-color: " + widgetColors['MainEditor'] + """ ;
+                              %s
                               background-repeat: no-repeat;
                               background-attachment: fixed;
-                              background-position: center;  """)
+                              background-position: center;  """
+        self.background_drawn = True
+
+        self.setStyleSheet(self.style_sheet_without_background % "background-image: url('./WaNo/Media/Logo_NanoMatch200.png') ;")
           
-        self.hasStart   = False
         self.setMinimumWidth(400)
-        self.setFrameStyle(QtGui.QFrame.WinPanel | QtGui.QFrame.Sunken) 
-        #
-        #  we do not really need a start button anymore
-        #
-        if self.hasStart:
-            btn = WFWaNoWidget('Start',None,self)
-            btn.show()
-            self.placeElementPosition(btn)
-    
-    def recPlaceElements(self): 
-        # here is min height of main widget  
-        ypos=max(self.placeOwnButtons(),targetHeight)
+        self.setFrameStyle(QtGui.QFrame.WinPanel | QtGui.QFrame.Sunken)
+
+    def recPlaceElements(self):
+        if self.background_drawn:
+            self.setStyleSheet(self.style_sheet_without_background %"")
+            self.background_drawn = False
+        ypos = max(self.placeOwnButtons(), self.parent.height())
         self.setFixedHeight(ypos)
-        self.parent().setFixedHeight(ypos) 
 
     @staticmethod  
     def hasChanged():

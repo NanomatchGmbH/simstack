@@ -16,52 +16,42 @@ from . import WFELicense
 from .WaNo import WaNo, WaNoRepository
 
 
-class WaNoEditor(QtGui.QFrame):
+class WaNoEditor(QtGui.QTabWidget):
     changedFlag = False
+
     def __init__(self,editor,parent=None):
         super(WaNoEditor, self).__init__(parent)
         self.logger = logging.getLogger('WFELOG')
         self.setMinimumWidth(400)
         self.setSizePolicy(QtGui.QSizePolicy.Expanding,QtGui.QSizePolicy.Expanding)
-        self.setFrameStyle(QtGui.QFrame.WinPanel | QtGui.QFrame.Sunken) 
-        self.setContentsMargins(1,1,1,1)
         self.editor = editor
-        self.tabWidget  = QtGui.QTabWidget()
         self.activeTabs = []
-        
-        self.clearButton = QtGui.QPushButton('x')
-        self.clearButton.setMaximumWidth(20)
-        self.tabWidget.setCornerWidget(self.clearButton)
-        self.clearButton.clicked.connect(self.clearInfo)
-        
-    
-        tab = LogTab()     
-        self.tabWidget.addTab(tab, "Info")
-       
-        self.buttonBox = QtGui.QDialogButtonBox(QtGui.QDialogButtonBox.Save | 
-                                           QtGui.QDialogButtonBox.Cancel)
-      
-        self.buttonBox.button(QtGui.QDialogButtonBox.Save).clicked.connect(self.saveClose)
-        self.buttonBox.rejected.connect(self.deleteClose)
-        mainLayout = QtGui.QVBoxLayout()
-        mainLayout.addWidget(self.tabWidget)
-        mainLayout.addWidget(self.buttonBox)
-        self.setLayout(mainLayout)
-        self.buttonBox.hide()
-        
+
+        logtab = LogTab(parent = self)
+        self.addTab(logtab, "Log")
+        self.addTab(QtGui.QWidget(), "Copyright")
+        self.tabWidget = self
+        self.setTabsClosable(True)
+
+        QtCore.QObject.connect(self,QtCore.SIGNAL('tabCloseRequested(int)'), self.closeTab)
+
+    @QtCore.Slot(int)
+    def closeTab(self,myid):
+        #Log tab stays open:
+        if myid == 0:
+            return
+        else:
+            self.removeTab(myid)
+
     @staticmethod  
     def hasChanged():
         logger = logging.getLogger('WFELOG')
         logger.debug("WaNo has changed")
         WaNoEditor.changedFlag=True
-     
-    def clearInfo(self):
-        info = self.tabWidget.widget(0)
-        info.setText('')
-        
+
     def init(self, wano, exportedFiles, exportedVars, importSelection):
         # take care of the open 
-        if WaNoEditor.changedFlag and len(self.activeTabs)> 1:
+        if WaNoEditor.changedFlag and len(self.activeTabs) > 1:
             ret = self.closeAction() # save is taken care inside
             if ret == QtGui.QMessageBox.Cancel: 
                 return False
@@ -72,10 +62,9 @@ class WaNoEditor(QtGui.QFrame):
         self.wano = wano
         WaNoEditor.changedFlag=False
         self.setMinimumWidth(400)
-        self.buttonBox.show()
-        
+
         hasElements = len(wano.elements) > 0
-        if  wano.preScript != None:
+        if wano.preScript is not None:
             tab = ScriptTab(wano.preScript,importSelection)
             if hasElements:
                 self.tabWidget.addTab(tab, "Preprocessor")
@@ -88,7 +77,7 @@ class WaNoEditor(QtGui.QFrame):
             self.tabWidget.addTab(tab, "Items")
             self.activeTabs.append(tab)
             
-            if  wano.postScript != None:
+            if wano.postScript is not None:
                 tab = ScriptTab(wano.postScript,[]) # no imports in postprocessor
                 self.tabWidget.addTab(tab, "Postpocessor")
                 self.activeTabs.append(tab)
@@ -146,7 +135,9 @@ class WaNoEditor(QtGui.QFrame):
         if ret == QtGui.QMessageBox.Save:
             self.copyContent()
         return ret
-    
+
+class WaNoProgramWidget(QtGui.QWidget):
+    pass
 
 class ScriptTab(QtGui.QWidget):
     waNoChangedSig = QtCore.Signal()
@@ -169,10 +160,10 @@ class ScriptTab(QtGui.QWidget):
             try:
                 idx = languages.index(script.attrib['language'])
             except:
-                self.logger.critical('WaNo Script sets unsupported language for ' + script.name)
+                self.logger.critical('Unsupported language for Preprocessor set in script <%s>' % script.name)
                 idx = 1
         else:
-            self.logger.error('WaNo Script sets not language for ' + script.name)
+            self.logger.error('No language for Preprocessor set in script <%s>' % script.name)
         self.language.setCurrentIndex(idx)
         self.language.currentIndexChanged[str].connect(self.uchanged)
         topLine.addWidget(self.language)
@@ -183,7 +174,7 @@ class ScriptTab(QtGui.QWidget):
             topLine.addWidget(button)
             button.clicked.connect(self.addImport)
               
-        self.hiddenButton = QtGui.QRadioButton('hide')
+        self.hiddenButton = QtGui.QCheckBox('hide')
         if 'hidden' in self.script.attrib and self.script.attrib['hidden'] == 'True':
             self.hiddenButton.setChecked(True)
                 
@@ -264,6 +255,31 @@ def get_git_revision_short_hash():
     from .WaNoGitRevision import get_git_revision
     return get_git_revision()
 
+class LogTab(QtGui.QPlainTextEdit):
+    def __init__(self, parent = None):
+        super(LogTab, self).__init__(parent)
+        self.parent = parent
+        self.logger = logging.getLogger('WFELOG')
+        handler = logging.StreamHandler(self)
+        logging.basicConfig(stream=self)
+        self.logger.addHandler(handler)
+        formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s','%Y-%m-%d %H:%M:%S')
+        handler.setFormatter(formatter)
+        self.logger.info("Logging Tab Enabled Version: " + get_git_revision_short_hash())
+        self.setReadOnly(True)
+
+    def copyContent(self):
+        pass
+
+    def write(self,message):
+        if message == '\n':
+            return
+        message.replace("\n","")
+        #print ("<%s>"%message)
+        self.appendPlainText(message)
+        self.ensureCursorVisible()
+
+"""
 class LogTab(QtGui.QTextBrowser):
     def __init__(self, parent = None):
         super(LogTab, self).__init__(parent)
@@ -279,7 +295,11 @@ class LogTab(QtGui.QTextBrowser):
         pass  
    
     def write(self,message):
-        self.append('<span>'+message+'</span>')
+        #self.append('<span>'+message+'</span>')
+        #print (message)
+        message.replace("\n","")
+        print(message)
+        self.append(message)
         #for m in message:
             #self.append('<span>' + m + '<span>')
         #c = self.textCursor()
@@ -287,8 +307,8 @@ class LogTab(QtGui.QTextBrowser):
         #self.setTextCursor(c)
         #s = self.verticalScrollBar()
         #s.setValue(s.maximum)
-        self.ensureCursorVisible() 
-        
+        self.ensureCursorVisible()
+"""
         
         
 class WaNoImportEditor(QtGui.QWidget):

@@ -103,9 +103,9 @@ class WaNoItemWidget(QtGui.QDialog):
         
         self.editor = QtGui.QLineEdit(str(waNoElement.value))
         self.layout.addWidget(self.editor)
-        self.hiddenButton = QtGui.QRadioButton('hide')
+        self.hiddenButton = QtGui.QCheckBox('hide')
         if 'hidden' in waNoElement.attrib:
-            if waNoElement.attrib['hidden'] == 'True' or waNoElement.attrib['hidden'] == 'true':
+            if waNoElement.attrib['hidden'].lower() == 'true':
                 self.hiddenButton.setChecked(True)
         self.layout.addWidget(self.hiddenButton)
         
@@ -164,12 +164,13 @@ class WaNoSelectionWidget(QtGui.QDialog):
         for i in waNoElement.selectedItems:
             try:
                 self.editor.setCurrentRow(i,QtGui.QItemSelectionModel.Select)
-            except:
+            except Exception as e:
+                print(e)
                 self.logger.error("Selection Failure WaNo Element " + waNoElement.name)
                 
         self.layout.addWidget(self.editor)
         
-        self.hiddenButton = QtGui.QRadioButton('hide')
+        self.hiddenButton = QtGui.QCheckBox('hide')
         self.layout.addWidget(self.hiddenButton)
         
         self.setLayout(self.layout)
@@ -212,5 +213,3 @@ class WaNoIntWidget(WaNoItemWidget):
     def __init__(self,waNoElement,ll,importSelection):
         super(WaNoIntWidget,self).__init__(waNoElement,ll,importSelection)
         self.myValidator = QtGui.QIntValidator(self.editor)
-   
-    

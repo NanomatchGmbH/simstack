@@ -98,22 +98,23 @@ class WFEditor(QtGui.QDialog):
         
         self.workflowWidget = WFTabsWidget(self)
         self.workflowWidget.setAcceptDrops(True)
-        
         self.workflowWidget.setSizePolicy(QtGui.QSizePolicy.Expanding,QtGui.QSizePolicy.Expanding)
+
         self.setSizePolicy(QtGui.QSizePolicy.Expanding,QtGui.QSizePolicy.Expanding)
        
         selectionPanel = QtGui.QSplitter(QtCore.Qt.Vertical)
+
         selectionPanel.setSizePolicy(QtGui.QSizePolicy.Fixed,QtGui.QSizePolicy.Expanding)
                 
         layout = QtGui.QHBoxLayout()       
         layout.addWidget(selectionPanel)
         layout.addWidget(self.workflowWidget)
         layout.addWidget(self.wanoEditor)
-        layout.addStretch(1)
-         
-        self.mainPanels = layout  
+        #layout.addStretch(1)
+
+        #self.mainPanels = layout
         self.setLayout(layout)
-        
+
         WanoListWidget = WFEWaNoListWidget('WaNoRepository')
         CtrlListWidget = WFEListWidget('ctrl_img')
         self.WorkListWidget = WFEWorkflowistWidget('WorkFlows')
@@ -178,7 +179,7 @@ class WFEditorApplication(QtGui.QMainWindow):
         super(WFEditorApplication,self).__init__(parent)
         
         
-        self.setWindowIcon(QtGui.QIcon('./WaNo/Media/Logo_Nanomatch.jpg'))
+        self.setWindowIcon(QtGui.QIcon('./WaNo/Media/Logo_Nanomatch.png'))
         
         self.wfEditor = WFEditor()
         self.setCentralWidget(self.wfEditor)
