@@ -94,7 +94,7 @@ class WaNoEditor(QtGui.QTabWidget):
             tab = self.tabWidget.removeTab(1)
             #tab.deleteLater()
         self.activeTabs = []
-        self.buttonBox.hide()
+        #self.buttonBox.hide()
             
     def deleteClose(self):
         if WaNoEditor.changedFlag:
