@@ -5,22 +5,25 @@
 from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
+from __future__ import absolute_import
 
-from . import WFELicense
-from   six import string_types
+#from WaNo import WFELicense
+from six import string_types
 import logging
 import sys
 import glob
 from   lxml import etree
 
-from   .WaNoWidgets import *
+from WaNo.WaNoWidgets import getWidgetText, getSelectedItems
 
 class WaNoElementFactory:
     factories = {}
+    @staticmethod
     def addFactory(id, shapeFactory):
         WaNoElementFactory.factories.put[id] = shapeFactory
-    addFactory = staticmethod(addFactory)
+
     # A Template Method:
+    @staticmethod
     def createWaNoE(id,inputData):
         if id not in WaNoElementFactory.factories:
             #xclass = globals()[id]
@@ -28,7 +31,6 @@ class WaNoElementFactory:
             WaNoElementFactory.factories[id] = \
               eval(id + '.Factory()')
         return  WaNoElementFactory.factories[id].create(inputData)
-    createWaNoE = staticmethod(createWaNoE)
     
 class WaNoElement(object):   # abstract class: does not implement validator
     def __init__(self,inputData):
