@@ -15,7 +15,10 @@ import PySide.QtGui  as QtGui
 from .WaNo       import WorkFlow
 from .WaNoEditor import *
 from .WFEditorPanel import WFTabsWidget
+from .WaNoSettingsProvider import WaNoSettingsProvider
 from .WaNoSettings import WaNoUnicoreSettings
+from .Constants import SETTING_KEYS
+from .view.WaNoRegistrySelection import WaNoRegistrySelection
 
 class WFEListWidget(QtGui.QListWidget):
     def __init__(self, indir, parent=None):
@@ -87,12 +90,7 @@ class WFEWorkflowistWidget(QtGui.QListWidget):
         return QtCore.QSize(100,max(self.myHeight,100))
     
 class WFEditor(QtGui.QDialog):
-
-    def __init__(self, parent=None):
-        super(WFEditor, self).__init__(parent)
-
-        self.logger = logging.getLogger('WFELOG')
-        
+    def __init_ui(self):
         self.wanoEditor = WaNoEditor(self) # make this first to enable logging
         self.wanoEditor.setSizePolicy(QtGui.QSizePolicy.Expanding,QtGui.QSizePolicy.Expanding)
         
@@ -101,18 +99,22 @@ class WFEditor(QtGui.QDialog):
         self.workflowWidget.setSizePolicy(QtGui.QSizePolicy.Expanding,QtGui.QSizePolicy.Expanding)
 
         self.setSizePolicy(QtGui.QSizePolicy.Expanding,QtGui.QSizePolicy.Expanding)
-       
-        selectionPanel = QtGui.QSplitter(QtCore.Qt.Vertical)
 
-        selectionPanel.setSizePolicy(QtGui.QSizePolicy.Fixed,QtGui.QSizePolicy.Expanding)
+        self.registrySelection = WaNoRegistrySelection(self)
+       
+        leftPanel = QtGui.QSplitter(QtCore.Qt.Vertical)
+        leftPanel.setSizePolicy(QtGui.QSizePolicy.Fixed,QtGui.QSizePolicy.Expanding)
+
+        rightPanel = QtGui.QSplitter(QtCore.Qt.Vertical)
+        rightPanel.setSizePolicy(QtGui.QSizePolicy.Fixed,QtGui.QSizePolicy.Expanding)
                 
         layout = QtGui.QHBoxLayout()       
-        layout.addWidget(selectionPanel)
+        layout.addWidget(leftPanel)
         layout.addWidget(self.workflowWidget)
-        layout.addWidget(self.wanoEditor)
+        layout.addWidget(rightPanel)
         #layout.addStretch(1)
-
-        #self.mainPanels = layout
+         
+        #self.mainPanels = layout  
         self.setLayout(layout)
 
         WanoListWidget = WFEWaNoListWidget('WaNoRepository')
@@ -120,15 +122,36 @@ class WFEditor(QtGui.QDialog):
         self.WorkListWidget = WFEWorkflowistWidget('WorkFlows')
         
         
-        selectionPanel.addWidget(QtGui.QLabel('Nodes'))
-        selectionPanel.addWidget(WanoListWidget)
-        selectionPanel.addWidget(QtGui.QLabel('Workflows'))      
-        selectionPanel.addWidget(self.WorkListWidget)
-        selectionPanel.addWidget(QtGui.QLabel('Controls'))
-        selectionPanel.addWidget(CtrlListWidget)
-                   
+        leftPanel.addWidget(QtGui.QLabel('Nodes'))
+        leftPanel.addWidget(WanoListWidget)
+        leftPanel.addWidget(QtGui.QLabel('Workflows'))      
+        leftPanel.addWidget(self.WorkListWidget)
+        leftPanel.addWidget(QtGui.QLabel('Controls'))
+        leftPanel.addWidget(CtrlListWidget)
+
+        rightPanel.addWidget(self.registrySelection)
+        rightPanel.addWidget(self.wanoEditor)
         
         self.lastActive = None
+
+    def __init__(self, settings, parent=None):
+        super(WFEditor, self).__init__(parent)
+        self.__settings = settings
+        self.logger = logging.getLogger('WFELOG')
+        self.__init_ui()
+        self.update_registries()
+#        self.registrySelection.registrySelectionChanged.connect(self.test)
+
+
+    def update_registries(self):
+        default = 0
+        registries = self.__settings.get_value(SETTING_KEYS['registries'])
+        regList = []
+        for i, r in enumerate(registries):
+            regList.append(r[SETTING_KEYS['registry.name']])
+            if r[SETTING_KEYS['registry.is_default']]:
+                default = i
+        self.registrySelection.update_registries(regList, index=default)
 
     
     def deactivateWidget(self):
@@ -175,13 +198,9 @@ class WFEditor(QtGui.QDialog):
         
 class WFEditorApplication(QtGui.QMainWindow):
    
-    def __init__(self,parent=None):
-        super(WFEditorApplication,self).__init__(parent)
-        
-        
+    def __init_ui(self,parent=None):
         self.setWindowIcon(QtGui.QIcon('./WaNo/Media/Logo_Nanomatch.png'))
-        
-        self.wfEditor = WFEditor()
+        self.wfEditor = WFEditor(self.__settings)
         self.setCentralWidget(self.wfEditor)
     
         self.createActions()
@@ -213,12 +232,56 @@ class WFEditorApplication(QtGui.QMainWindow):
         self.statusBar().showMessage(message)
         
         self.setWindowTitle("Nanomatch Workflow Editor (C) 2015")
+   
+    def __init__(self, settings, parent=None):
+        super(WFEditorApplication,self).__init__(parent)
+        self.__settings = settings
+        self.__init_ui()
 
     def openSettingsDialog(self):
-        dialog = WaNoUnicoreSettings(None)
+        print(self.__settings.as_dict())
+        print("SETTING_KEYS['registries']: %s" % str(type(
+                self.__settings.get_value(SETTING_KEYS['registries'])
+            )))
+        dialog = WaNoUnicoreSettings(
+                self.__settings.get_value(SETTING_KEYS['registries'])
+            )
 
         if (dialog.exec_()):
-            print("success")
+            print("success: %s" % str(dialog.get_settings()))
+            # first, delete all previous settings
+            self.__settings.delete_value(SETTING_KEYS['registries'])
+
+            # second, add new registries
+            for i, registry in enumerate(dialog.get_settings()):
+                settings_path = "%s.%d" % (SETTING_KEYS['registries'], i)
+                self.__settings.set_value(
+                        "%s.%s" % (settings_path, SETTING_KEYS['registry.name']),
+                        registry['name']
+                    )
+                self.__settings.set_value(
+                        "%s.%s" % (settings_path, SETTING_KEYS['registry.baseURI']),
+                        registry['baseURI']
+                    )
+                self.__settings.set_value(
+                        "%s.%s" % (settings_path, SETTING_KEYS['registry.username']),
+                        registry['username']
+                    )
+                self.__settings.set_value(
+                        "%s.%s" % (settings_path, SETTING_KEYS['registry.password']),
+                        registry['password']
+                    )
+                self.__settings.set_value(
+                        "%s.%s" % (settings_path, SETTING_KEYS['registry.is_default']),
+                        registry['default']
+                    )
+
+
+            # last, save new settings to file
+            self.__settings.save()
+            
+            # update registry list
+            self.wfEditor.update_registries()
         else:
             print("fail")
         
