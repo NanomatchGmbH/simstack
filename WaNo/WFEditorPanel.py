@@ -1,19 +1,17 @@
 from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
+from __future__ import absolute_import
 
 import os
-#import sys
 
-from . import WFELicense
-import copy 
 import logging
 from   lxml import etree
 
 import PySide.QtCore as QtCore
 import PySide.QtGui  as QtGui
 
-from .WaNo import WaNo,WorkFlow
+from WaNo.WaNo import WaNo,WorkFlow
 
 def mapClassToTag(name):
     xx = name.replace('Widget','')
@@ -63,7 +61,7 @@ class WFWaNoWidget(QtGui.QPushButton):
        
        
     def parse(self,r):
-        self.wano = Wano(r)
+        self.wano = WaNo(r)
         
     def xml(self):
         if self.text() != "Start":
@@ -141,7 +139,7 @@ class WFBaseWidget(QtGui.QFrame):
             filEx = {}
             waNoNames = []
             if not self.gatherExports(wanoWidget.wano,varEx,filEx,waNoNames):
-                self.logger.error("Error gathering exports for Wano:",wano.name)
+                self.logger.error("Error gathering exports for Wano:",wanoWidget.name)
             self.editor.openWaNoEditor(wanoWidget,varEx,filEx,waNoNames)
         
     def sizeHint(self):
