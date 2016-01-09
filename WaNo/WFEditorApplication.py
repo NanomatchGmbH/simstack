@@ -2,6 +2,7 @@ import logging
 import os
 
 from PySide.QtCore import QObject
+from   lxml import etree
 
 from WaNo.view import WFViewManager
 from .WaNoRepository import WaNoRepository
