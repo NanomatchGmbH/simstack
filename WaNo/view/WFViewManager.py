@@ -3,10 +3,27 @@ from .WFEditor import WFEditor
 
 from PySide.QtCore import Signal, QObject
 
+from .MessageDialog import MessageDialog
+
 class WFViewManager(QObject):
     save_registries         = Signal(list, name="SaveRegistries")
     open_registry_settings  = Signal(name="OpenRegistrySettings")
     registry_changed        = Signal(int, name="RegistryChanged")
+
+    def _show_message(self, msg_type, msg):
+        MessageDialog(msg_type, msg)
+
+    def show_error(self, msg):
+        self._show_message(MessageDialog.MESSAGE_TYPES.error, msg)
+
+    def show_info(self, msg):
+        self._show_message(MessageDialog.MESSAGE_TYPES.info, msg)
+
+    def show_warning(self, msg):
+        self._show_message(MessageDialog.MESSAGE_TYPES.warning, msg)
+
+    def show_critical_error(self, msg):
+        self._show_message(MessageDialog.MESSAGE_TYPES.critical, msg)
 
     def show_mainwindow(self):
         self._mainwindow.show()

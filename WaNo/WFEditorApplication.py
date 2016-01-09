@@ -94,18 +94,27 @@ class WFEditorApplication(QObject):
         workflows = []
 
         for infile in files:
-            xxi = os.path.join(path, workflow_path +"/{0}".format(infile))
+            xxi = os.path.join(workflow_path, infile)
+            parsed = False
+
             try:
                 inputData = etree.parse(xxi)
-            except:
-                self.logger.error('File not found: ' + xxi)
-                raise 
-            r = inputData.getroot()
-            if r.tag == "Workflow":
-                element = WorkFlow(r) 
-                workflows.append(element)
-            else:
-                self.logger.critical('Loading Workflows: no workflow in file ' + xxi)
+            except Exception as e:
+                self._logger.error(
+                        "Error when trying to parse file '%s'\n\n%s" % \
+                            (xxi, e)
+                    )
+                self._view_manager.show_error(
+                        "Error when trying to parse file '%s'\n\n%s" % \
+                            (xxi, e)
+                    )
+            if parsed:
+                r = inputData.getroot()
+                if r.tag == "Workflow":
+                    element = WorkFlow(r)
+                    workflows.append(element)
+                else:
+                    self._logger.critical('Loading Workflows: no workflow in file ' + xxi)
         return workflows
 
 
