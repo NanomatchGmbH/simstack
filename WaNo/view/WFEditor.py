@@ -1,6 +1,6 @@
 import logging
 from PySide.QtGui import QWidget, QSizePolicy, QLabel, QSplitter, QHBoxLayout
-from PySide.QtCore import Qt
+from PySide.QtCore import Qt, Signal
 
 from .WaNoEditorWidget import WaNoEditor
 from .WFEditorPanel import WFTabsWidget
@@ -14,6 +14,8 @@ class WFEditor(QWidget):
             ("Parallel", "ctrl_img/Parallel.png"),
             ("While", "ctrl_img/While.png")
         ]
+
+    registry_changed        = Signal(int, name="RegistryChanged")
 
     def __init_ui(self):
         self.wanoEditor = WaNoEditor(self) # make this first to enable logging
@@ -62,7 +64,7 @@ class WFEditor(QWidget):
         super(WFEditor, self).__init__(parent)
         self.logger = logging.getLogger('WFELOG')
         self.__init_ui()
-#        self.registrySelection.registrySelectionChanged.connect(self.test)
+        self.registrySelection.registrySelectionChanged.connect(self.registry_changed)
 
     def update_wano_list(self, wanos):
         self.wanoListWidget.update_list(wanos)

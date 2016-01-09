@@ -6,6 +6,7 @@ from PySide.QtCore import Signal, QObject
 class WFViewManager(QObject):
     save_registries         = Signal(list, name="SaveRegistries")
     open_registry_settings  = Signal(name="OpenRegistrySettings")
+    registry_changed        = Signal(int, name="RegistryChanged")
 
     def show_mainwindow(self):
         self._mainwindow.show()
@@ -54,6 +55,7 @@ class WFViewManager(QObject):
         # Forwarded signals
         self._mainwindow.save_registries.connect(self.save_registries)
         self._mainwindow.open_registry_settings.connect(self.open_registry_settings)
+        self._editor.registry_changed.connect(self.registry_changed)
 
     def __init__(self):
         super(WFViewManager, self).__init__()

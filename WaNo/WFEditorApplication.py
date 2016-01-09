@@ -56,9 +56,13 @@ class WFEditorApplication(QObject):
                 self.__settings.get_value(SETTING_KEYS['registries'])
             )
 
-    def _connect_signals(self):
-        self._view_manager.save_registries.connect(self._save_registries)
-        self._view_manager.open_registry_settings.connect(self._open_registry_settings)
+    def _on_registry_changed(self, index):
+        self._logger.info("Registry changed to '%s'." % \
+                self.__settings.get_value(
+                    "%s.%d.name" % (SETTING_KEYS['registries'], index)
+                )
+            )
+        #TODO
 
     ############################################################################
     #                                                                          #
@@ -149,6 +153,7 @@ class WFEditorApplication(QObject):
     def _connect_signals(self):
         self._view_manager.save_registries.connect(self._on_save_registries)
         self._view_manager.open_registry_settings.connect(self._on_open_registry_settings)
+        self._view_manager.registry_changed.connect(self._on_registry_changed)
 
     def __init__(self, settings):
         super(WFEditorApplication, self).__init__()
