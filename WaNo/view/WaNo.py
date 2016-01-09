@@ -51,6 +51,7 @@ class WaNoElement(object):   # abstract class: does not implement validator
     def makeWidget(self,labelSize,importedItems):
         self.logger.debug("Creating Widget: " + self.__class__.__name__ + 'Widget')
         self.myWidget = eval(self.__class__.__name__ + 'Widget')(self,labelSize,importedItems) 
+        #TODO connect WaNoChangedSig to WaNoEditor.hasChanged.
         return self.myWidget
         
     def fromString(self,s):

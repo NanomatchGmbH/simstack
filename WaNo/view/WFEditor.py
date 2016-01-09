@@ -1,11 +1,13 @@
 import logging
-from PySide.QtGui import QWidget, QSizePolicy, QLabel, QSplitter, QHBoxLayout
+from PySide.QtGui import QWidget, QSizePolicy, QLabel, QSplitter, QHBoxLayout, \
+        QTabWidget
 from PySide.QtCore import Qt, Signal
 
 from .WaNoEditorWidget import WaNoEditor
 from .WFEditorPanel import WFTabsWidget
 from .WaNoRegistrySelection import WaNoRegistrySelection
 from .WFEditorWidgets import WFEWaNoListWidget, WFEListWidget, WFEWorkflowistWidget
+from .WFEditorLogTab import LogTab
 
 class WFEditor(QWidget):
     _controls = [
@@ -16,6 +18,13 @@ class WFEditor(QWidget):
         ]
 
     registry_changed        = Signal(int, name="RegistryChanged")
+
+    def __build_infobox(self):
+        infobox = QTabWidget(self)
+        infobox.setTabsClosable(False)
+        infobox.addTab(LogTab(), "Log")
+        infobox.addTab(QWidget(), "Copyright")
+        return infobox
 
     def __init_ui(self):
         self.wanoEditor = WaNoEditor(self) # make this first to enable logging
@@ -28,7 +37,9 @@ class WFEditor(QWidget):
         self.setSizePolicy(QSizePolicy.Expanding,QSizePolicy.Expanding)
 
         self.registrySelection = WaNoRegistrySelection(self)
-       
+
+        infobox = self.__build_infobox()
+
         leftPanel = QSplitter(Qt.Vertical)
         leftPanel.setSizePolicy(QSizePolicy.Fixed,QSizePolicy.Expanding)
 
@@ -57,6 +68,7 @@ class WFEditor(QWidget):
 
         rightPanel.addWidget(self.registrySelection)
         rightPanel.addWidget(self.wanoEditor)
+        rightPanel.addWidget(infobox)
         
         self.lastActive = None
 
