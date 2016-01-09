@@ -22,6 +22,7 @@ class WaNoEditor(QtGui.QTabWidget):
         super(WaNoEditor, self).__init__(parent)
         self.logger = logging.getLogger('WFELOG')
         self.setMinimumWidth(400)
+        self.setMinimumHeight(300)
         self.setSizePolicy(QtGui.QSizePolicy.Expanding,QtGui.QSizePolicy.Expanding)
         self.editor = editor
         self.activeTabs = []
@@ -38,6 +39,22 @@ class WaNoEditor(QtGui.QTabWidget):
             return
         else:
             self.removeTab(myid)
+
+    def paintEvent(self, event):
+        super(WaNoEditor, self).paintEvent(event)
+        if self.count() == 0:
+            painter = QtGui.QPainter()
+            painter.begin(self)
+            #painter.setPen(QtCore.Qt.lightGray)
+            painter.setFont(QtGui.QFont("Arial", 10))
+            painter.drawText(
+                    self.contentsRect(),
+                    QtCore.Qt.AlignVCenter \
+                            | QtCore.Qt.TextDontClip \
+                            | QtCore.Qt.AlignHCenter,
+                    "Select WaNo first.")
+            painter.end()
+            event.accept()
 
     @staticmethod  
     def hasChanged():
