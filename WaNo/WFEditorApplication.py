@@ -10,6 +10,9 @@ from .Constants import SETTING_KEYS
 
 
 class WFEditorApplication(QObject):
+    ############################################################################
+    #                               Slots                                      #
+    ############################################################################
     def _on_save_registries(self, registriesList):
         self._logger.debug("Saving UNICORE registries.")
 
@@ -57,6 +60,9 @@ class WFEditorApplication(QObject):
         self._view_manager.save_registries.connect(self._save_registries)
         self._view_manager.open_registry_settings.connect(self._open_registry_settings)
 
+    ############################################################################
+    #                                                                          #
+    ############################################################################
     def __load_wanos_from_repo(self, wano_repo_path):
         print("loading WaNos from %s." % wano_repo_path)
         self._logger.debug("loading WaNos from %s." % wano_repo_path)
@@ -99,6 +105,9 @@ class WFEditorApplication(QObject):
         return workflows
 
 
+    ############################################################################
+    #                             update                                       #
+    ############################################################################
     def _update_wanos(self):
         wanos = self.__load_wanos_from_repo(
                 self.__settings.get_value(SETTING_KEYS['wanoRepo'])
@@ -129,6 +138,9 @@ class WFEditorApplication(QObject):
         self._update_wanos()
         self._update_workflow_list()
 
+    ############################################################################
+    #                            init                                          #
+    ############################################################################
     def __start(self):
         self._view_manager.show_mainwindow()
 
