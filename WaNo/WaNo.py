@@ -14,7 +14,7 @@ import sys
 import glob
 from   lxml import etree
 
-from WaNo.WaNoWidgets import getWidgetText, getSelectedItems
+from WaNo.WaNoWidgets import *
 
 class WaNoElementFactory:
     factories = {}
