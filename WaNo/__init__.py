@@ -1,2 +1,2 @@
-from .WFEditor import WFEditorApplication
+from .WFEditorApplication import WFEditorApplication
 from .WaNoSettingsProvider import WaNoSettingsProvider

@@ -32,5 +32,5 @@ if __name__ == '__main__':
         settings.dump_to_file(SETTINGS_FILE)
    
     editor = WFEditorApplication(settings)
-    editor.show()
+#    editor.show()
     app.exec_()

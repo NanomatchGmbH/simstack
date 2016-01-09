@@ -11,7 +11,7 @@ from   lxml import etree
 import PySide.QtCore as QtCore
 import PySide.QtGui  as QtGui
 
-from WaNo.WaNo import WaNo,WorkFlow
+from .WaNo import WaNo,WorkFlow
 
 def mapClassToTag(name):
     xx = name.replace('Widget','')

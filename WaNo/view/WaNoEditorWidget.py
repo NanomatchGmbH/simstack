@@ -12,8 +12,7 @@ import logging
 import PySide.QtCore as QtCore
 import PySide.QtGui  as QtGui
 
-from . import WFELicense
-from .WaNo import WaNo, WaNoRepository
+from .WaNo import WaNo
 
 
 class WaNoEditor(QtGui.QTabWidget):
@@ -136,9 +135,6 @@ class WaNoEditor(QtGui.QTabWidget):
             self.copyContent()
         return ret
 
-class WaNoProgramWidget(QtGui.QWidget):
-    pass
-
 class ScriptTab(QtGui.QWidget):
     waNoChangedSig = QtCore.Signal()
     
@@ -251,10 +247,6 @@ class ScriptTab(QtGui.QWidget):
         self.script.attrib['language'] = self.language.currentText()
         
         
-def get_git_revision_short_hash():
-    from .WaNoGitRevision import get_git_revision
-    return get_git_revision()
-
 class LogTab(QtGui.QPlainTextEdit):
     def __init__(self, parent = None):
         super(LogTab, self).__init__(parent)
@@ -265,7 +257,6 @@ class LogTab(QtGui.QPlainTextEdit):
         self.logger.addHandler(handler)
         formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s','%Y-%m-%d %H:%M:%S')
         handler.setFormatter(formatter)
-        self.logger.info("Logging Tab Enabled Version: " + get_git_revision_short_hash())
         self.setReadOnly(True)
 
     def copyContent(self):
@@ -507,6 +498,7 @@ class WaNoItemEditor(QtGui.QWidget):
 import argparse
 
 if __name__ == '__main__':
+    from .WaNo import WaNoRepository
     mypath = os.path.dirname(os.path.realpath(__file__))
     parser = argparse.ArgumentParser('Option Parser')
     parser.add_argument('--log', default='DEBUG')

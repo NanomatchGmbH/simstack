@@ -1,0 +1,64 @@
+from .WFEditorMainWindow import WFEditorMainWindow
+from .WFEditor import WFEditor
+
+from PySide.QtCore import Signal, QObject
+
+class WFViewManager(QObject):
+    save_registries         = Signal(list, name="SaveRegistries")
+    open_registry_settings  = Signal(name="OpenRegistrySettings")
+
+    def show_mainwindow(self):
+        self._mainwindow.show()
+
+    def clear_editor(self):
+        self._editor.clear()
+
+    def open_dialog_open_workflow(self):
+        self._editor.open()
+        #TODO result must be passed to controller (via signals)
+
+    def open_dialog_save_workflow(self):
+        self._editor.save()
+        #TODO result must be passed to controller (via signals)
+
+    def open_dialog_save_workflow_as(self):
+        self._editor.saveAs()
+        #TODO result must be passed to controller (via signals)
+
+    def open_dialog_registry_settings(self, current_registries):
+        self._mainwindow.open_dialog_registry_settings(current_registries)
+
+    def update_wano_list(self, wanos):
+        self._editor.update_wano_list(wanos)
+
+    def update_saved_workflows_list(self, workflows):
+        self._editor.update_saved_workflows_list(workflows)
+
+    def open_new_workflow(self):
+        #TODO
+        pass
+
+    def update_registries(self, registries, selected):
+        self._editor.update_registries(registries, selected)
+
+    def test(self):
+        print("WFViewManager")
+        self.open_registry_settings.emit()
+        
+    def _connect_signals(self):
+        self._mainwindow.open_file.connect(self.open_dialog_open_workflow)
+        self._mainwindow.save.connect(self.open_dialog_save_workflow)
+        self._mainwindow.save_as.connect(self.open_dialog_save_workflow_as)
+        self._mainwindow.new_file.connect(self.open_new_workflow)
+
+        # Forwarded signals
+        self._mainwindow.save_registries.connect(self.save_registries)
+        self._mainwindow.open_registry_settings.connect(self.open_registry_settings)
+
+    def __init__(self):
+        super(WFViewManager, self).__init__()
+        self._editor        = WFEditor()
+
+        self._mainwindow    = WFEditorMainWindow(self._editor)
+
+        self._connect_signals()
