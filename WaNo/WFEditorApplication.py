@@ -10,7 +10,7 @@ from .Constants import SETTING_KEYS
 
 
 class WFEditorApplication(QObject):
-    def _save_registries(self, registriesList):
+    def _on_save_registries(self, registriesList):
         self._logger.debug("Saving UNICORE registries.")
 
         # first, delete all previous settings
@@ -47,7 +47,7 @@ class WFEditorApplication(QObject):
         # update registry list
         self._update_saved_registries()
 
-    def _open_registry_settings(self):
+    def _on_open_registry_settings(self):
         print("open_registry_settings")
         self._view_manager.open_dialog_registry_settings(
                 self.__settings.get_value(SETTING_KEYS['registries'])
@@ -133,6 +133,10 @@ class WFEditorApplication(QObject):
         self._view_manager.show_mainwindow()
 
         self._update_all()
+
+    def _connect_signals(self):
+        self._view_manager.save_registries.connect(self._on_save_registries)
+        self._view_manager.open_registry_settings.connect(self._on_open_registry_settings)
 
     def __init__(self, settings):
         super(WFEditorApplication, self).__init__()
