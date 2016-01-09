@@ -46,6 +46,9 @@ class WaNoEditor(QtGui.QTabWidget):
         WaNoEditor.changedFlag=True
 
     def init(self, wano, exportedFiles, exportedVars, importSelection):
+        # first, close all open tabs
+        self.clear()
+
         # take care of the open 
         if WaNoEditor.changedFlag and len(self.activeTabs) > 1:
             ret = self.closeAction() # save is taken care inside
@@ -84,14 +87,6 @@ class WaNoEditor(QtGui.QTabWidget):
         
         return True
        
-    def clear(self):
-        self.logger.debug("Clearing Tabs " + str(len(self.activeTabs)))
-        for i in range(len(self.activeTabs)):
-            tab = self.tabWidget.removeTab(1)
-            #tab.deleteLater()
-        self.activeTabs = []
-        #self.buttonBox.hide()
-            
     def deleteClose(self):
         if WaNoEditor.changedFlag:
             self.logger.debug("WaNo Content has changed")
