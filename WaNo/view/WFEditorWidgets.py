@@ -14,18 +14,18 @@ import PySide.QtGui  as QtGui
 from .WaNo       import WorkFlow
 
 class WFEListWidget(QtGui.QListWidget):
-    def __init__(self, parent=None):
+    def __init__(self, parent=None, controls=[]):
         super(WFEListWidget, self).__init__(parent) 
-# TODO
-#        self.setDragEnabled(True)
-#        path = os.path.dirname(os.path.realpath(__file__))
-#        for image in sorted(os.listdir(os.path.join(path, indir))):
-#            if image.endswith(".png"):
-#                item = QtGui.QListWidgetItem(image.split(".")[0])
-#                item.setIcon(QtGui.QIcon(os.path.join(path,
-#                                   "images/{0}".format(image))))
-#                self.addItem(item)
-#        self.myHeight = self.count()*10
+        self.setDragEnabled(True)
+        self.update_list(controls)
+
+    def update_list(self, controls):
+        for name, icon in controls:
+            item = QtGui.QListWidgetItem(name)
+            item.setIcon(QtGui.QIcon(icon))
+            self.addItem(item)
+        self.myHeight = 10
+        self.sortItems()
 
     def sizeHint(self):
         return QtCore.QSize(100,self.myHeight)
@@ -58,22 +58,7 @@ class WFEWorkflowistWidget(QtGui.QListWidget):
     def update_list(self, workflows):
         self.clear()
         path = os.path.dirname(os.path.realpath(__file__))
-        #for infile in sorted(os.listdir(os.path.join(path, indir))):
-        #    if infile.endswith(".xml"):
-        #        xxi = os.path.join(path,indir+"/{0}".format(infile))
-        #        try:
-        #            inputData = etree.parse(xxi)
-        #        except:
-        #            self.logger.error('File not found: ' + xxi)
-        #            raise 
-        #        r = inputData.getroot()
-        #        if r.tag == "Workflow":
-        #            element = WorkFlow(r) 
-        #        else:
-        #            self.logger.critical('Loading Workflows: no workflow in file ' + xxi)
-        #        item = QtGui.QListWidgetItem(element.name)
-        #        item.WaNo = element
-        #        self.addItem(item)
+
         for element in workflows:
             item = QtGui.QListWidgetItem(element.name)
             item.WaNo = element

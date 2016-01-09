@@ -8,6 +8,13 @@ from .WaNoRegistrySelection import WaNoRegistrySelection
 from .WFEditorWidgets import WFEWaNoListWidget, WFEListWidget, WFEWorkflowistWidget
 
 class WFEditor(QWidget):
+    _controls = [
+            ("ForEach", "ctrl_img/ForEach.png"),
+            ("If", "ctrl_img/If.png"),
+            ("Parallel", "ctrl_img/Parallel.png"),
+            ("While", "ctrl_img/While.png")
+        ]
+
     def __init_ui(self):
         self.wanoEditor = WaNoEditor(self) # make this first to enable logging
         self.wanoEditor.setSizePolicy(QSizePolicy.Expanding,QSizePolicy.Expanding)
@@ -36,9 +43,8 @@ class WFEditor(QWidget):
         self.setLayout(layout)
 
         self.wanoListWidget = WFEWaNoListWidget(self)
-        self.ctrlListWidget = WFEListWidget(self)
+        self.ctrlListWidget = WFEListWidget(self, self._controls)
         self.workflowListWidget = WFEWorkflowistWidget(self)
-        
         
         leftPanel.addWidget(QLabel('Nodes'))
         leftPanel.addWidget(self.wanoListWidget)
@@ -64,11 +70,9 @@ class WFEditor(QWidget):
     def update_saved_workflows_list(self, workflows):
         self.workflowListWidget.update_list(workflows)
 
-
     def update_registries(self, registries, selected=0):
         self.registrySelection.update_registries(registries, index=selected)
 
-    
     def deactivateWidget(self):
         if self.lastActive != None:
             self.lastActive.setColor(Qt.lightGray)

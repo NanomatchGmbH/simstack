@@ -10,7 +10,6 @@ from .Constants import SETTING_KEYS
 
 
 class WFEditorApplication(QObject):
-    
     def _save_registries(self, registriesList):
         self._logger.debug("Saving UNICORE registries.")
 
