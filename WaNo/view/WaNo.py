@@ -10,7 +10,7 @@ from __future__ import absolute_import
 import logging
 from   lxml import etree
 
-from WaNo.WaNoWidgets import *
+from .WaNoWidgets import *
 
 class WaNoElementFactory:
     factories = {}
