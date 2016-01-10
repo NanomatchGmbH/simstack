@@ -2,6 +2,7 @@ import logging
 import os
 
 from PySide.QtCore import QObject
+
 from   lxml import etree
 
 from WaNo.view import WFViewManager
@@ -74,15 +75,19 @@ class WFEditorApplication(QObject):
 
         wanoRep = WaNoRepository()
         wanos = []
-
         files = [f for f in os.listdir(wano_repo_path) if f.endswith(".xml")]
         
         for infile in files:
             name = infile.split(".")[0]
             xxi = os.path.join(wano_repo_path, wano_repo_path+"/{0}".format(infile))
+            icon_path,_ = os.path.splitext(xxi)
+            icon_path += ".png"
             element = wanoRep.parse_xml_file(xxi) 
 
-            wanos.append((name, element))
+            wano_icon_path = ""
+            if os.path.isfile(icon_path):
+                wano_icon_path = icon_path
+            wanos.append((name, element, wano_icon_path))
 
         return wanos
 

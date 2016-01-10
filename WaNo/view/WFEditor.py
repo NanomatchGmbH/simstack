@@ -1,4 +1,5 @@
 import logging
+import os
 from PySide.QtGui import QWidget, QSizePolicy, QLabel, QSplitter, QHBoxLayout, \
         QTabWidget
 from PySide.QtCore import Qt, Signal
@@ -72,8 +73,19 @@ class WFEditor(QWidget):
         
         self.lastActive = None
 
+    def _convert_ctrl_icon_paths_to_absolute(self):
+        script_path=os.path.dirname(os.path.realpath(__file__))
+
+        for i in range(len(self._controls)):
+            self._controls[i] =(self._controls[i][0], os.path.join(script_path,"..",self._controls[i][1]))
+
+        import pprint
+
+        pprint.pprint(self._controls)
+
     def __init__(self, parent=None):
         super(WFEditor, self).__init__(parent)
+        self._convert_ctrl_icon_paths_to_absolute()
         self.logger = logging.getLogger('WFELOG')
         self.__init_ui()
         self.registrySelection.registrySelectionChanged.connect(self.registry_changed)
