@@ -5,10 +5,10 @@ pyura.Manager
 from __future__ import print_function
 from __future__ import absolute_import
 from __future__ import division
-from pyura.helpers import is_in_list, check_safety
-from pyura.Constants import URIs, ErrorCodes
-from pyura.ServerPrimitive import ServerPrimitive
-from pyura.Connection import Connection
+from .helpers import is_in_list, check_safety
+from .Constants import URIs, ErrorCodes
+from .ServerPrimitive import ServerPrimitive
+from .Connection import Connection
 
 class Manager(object):
     """Abstract class that represents a common interface for a Manager.

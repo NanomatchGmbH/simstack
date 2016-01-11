@@ -1,17 +1,17 @@
 from __future__ import print_function
 from __future__ import absolute_import
 from __future__ import division
-from pyura.helpers import check_safety
+from .helpers import check_safety
 import types
-from pyura.Connection import Connection
+from .Connection import Connection
 import logging
-from pyura.AuthProvider import AuthProvider
-from pyura.User import User
+from .AuthProvider import AuthProvider
+from .User import User
 import inspect
-from pyura.JobManager import JobManager
-from pyura.StorageManager import StorageManager
-from pyura.SiteManager import SiteManager
-from pyura.Constants import ErrorCodes
+from .JobManager import JobManager
+from .StorageManager import StorageManager
+from .SiteManager import SiteManager
+from .Constants import ErrorCodes
 
 class Registry:
     """Representation of a Unicore Registry.
