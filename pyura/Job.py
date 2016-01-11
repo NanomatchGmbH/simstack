@@ -5,12 +5,12 @@ pyura.Job
 from __future__ import print_function
 from __future__ import absolute_import
 from __future__ import division
-from pyura.ServerPrimitive import ServerPrimitive
+from .ServerPrimitive import ServerPrimitive
 from functools import wraps
-from pyura.Constants import URIs, JobStatus, ResourceStatus, ErrorCodes
-from pyura.helpers import get_enum_by_str, check_safety, convert_date_time
+from .Constants import URIs, JobStatus, ResourceStatus, ErrorCodes
+from .helpers import get_enum_by_str, check_safety, convert_date_time
 from datetime import datetime
-from pyura.Exceptions import *
+from .Exceptions import *
 
 class Job(ServerPrimitive):
     """This class represents an Unicore Job.

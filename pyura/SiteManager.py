@@ -1,9 +1,9 @@
 from __future__ import print_function
 from __future__ import absolute_import
 from __future__ import division
-from pyura.Manager import Manager
-from pyura.Constants import URIs, JSONKeys, ErrorCodes
-from pyura.Site import Site
+from .Manager import Manager
+from .Constants import URIs, JSONKeys, ErrorCodes
+from .Site import Site
 
 
 #TODO
