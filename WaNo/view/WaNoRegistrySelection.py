@@ -1,8 +1,21 @@
-from PySide.QtGui import QWidget, QComboBox, QLabel, QHBoxLayout
+from PySide.QtGui import QWidget, QComboBox, QLabel, QHBoxLayout, QPixmap
 from PySide.QtCore import Signal, Slot
+
+from enum import Enum
 
 
 class WaNoRegistrySelection(QWidget):
+    class CONNECTION_STATES(Enum):
+        connected = 0
+        connecting = 1
+        disconnected = 2
+
+    __icons = [
+            'WaNo/Media/icons/cs-xlet-error.svg',
+            'WaNo/Media/icons/cs-xlet-error.svg',
+            'WaNo/Media/icons/cs-xlet-error.svg',
+        ]
+
     registrySelectionChanged = Signal(int, name='registrySelectionChanged')
 
     def select_registry(self, index):
@@ -17,15 +30,11 @@ class WaNoRegistrySelection(QWidget):
         self.__emit_signal = True
 
     def __update_status(self):
-        self.isConnectedIcon.setStyleSheet(
-                "background-color: %s; " \
-                "font-weight: bold; " \
-                "font-size: 20px;" % ['red', 'green'][self.is_connected]
-            );
+        p = QPixmap(self.__icons[self.__status.value])
+        self.isConnectedIcon.setPixmap(p.scaled(self.isConnectedIcon.size()))
 
-
-    def setStatus(self, is_connected):
-        self.is_connected = is_connected
+    def setStatus(self, status):
+        self.__status = status
         self.__update_status()
 
     def __init_ui(self, parent):
@@ -49,6 +58,6 @@ class WaNoRegistrySelection(QWidget):
     def __init__(self, parent):
         super(WaNoRegistrySelection, self).__init__(parent)
         self.__init_ui(parent)
-        self.setStatus(False)
+        self.setStatus(WaNoRegistrySelection.CONNECTION_STATES.disconnected)
         self.__emit_signal = True
         self.__connect_signals()
