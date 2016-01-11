@@ -131,7 +131,6 @@ class AbstractSettings(object):
     
     #Set Value actually creates the entry:
     def set_value(self,valuename,value):
-        print("set_value: %s, type: %s" % (value, type(value)))
         splitname = [x for x in \
                 map(self._cast_string_to_correct_type, valuename.split("."))]
         current_dict = self.settings_container
@@ -158,12 +157,10 @@ class AbstractSettings(object):
                     if key < len(current_dict):
                         current_dict = current_dict[key]
                     elif isinstance(current_dict, list) and key == len(current_dict):
-                        print("will be added, all save")
                         break
                     else: # key > len(current_dict)
                         raise IndexError("Out of range")
                 else:
-                    print("foo...: type: %s, key: %s" % (str(type(current_dict)), str(key)))
                     break
 
         current_dict = self.settings_container
@@ -172,20 +169,14 @@ class AbstractSettings(object):
             if isinstance(key, str) and not key in current_dict:
                 if isinstance(nextkey, str):
                     current_dict[key] = {}
-                    print("setting key %s to {}" % str(key))
                 elif isinstance(nextkey, int):
                     current_dict[key] = []
-                    print("setting key %s to []" % str(key))
             elif isinstance(key, int) and key == len(current_dict):
-                print("lenght: %d" % len(current_dict))
                 if isinstance(nextkey, str):
                     current_dict.append({})
-                    print("appending {}")
                 elif isinstance(nextkey, int):
                     current_dict.append([])
-                    print("appending []")
             else:
-                print("do nothing")
                 pass
 
             current_dict = current_dict[key]
@@ -267,7 +258,6 @@ class AbstractSettings(object):
                 if isinstance(value, dict) or isinstance(value, list):
                     self._recursive_load(value, new_keystr)
                 else:
-                    print("Setting %s to %s" % (new_keystr, str(value)))
                     self.set_value(new_keystr, value)
         else:
             raise RuntimeError("Parsing error: key: %s, load: %s" % \

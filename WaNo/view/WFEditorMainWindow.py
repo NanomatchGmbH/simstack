@@ -55,17 +55,16 @@ class WFEditorMainWindow(QtGui.QMainWindow):
         self.__init_ui()
 
     def action_openSettingsDialog(self):
-        print("emitting signal")
         self.open_registry_settings.emit()
 
     def open_dialog_registry_settings(self, current_registries):
         dialog = WaNoUnicoreSettings(current_registries)
 
         if (dialog.exec_()):
-            print("success: %s" % str(dialog.get_settings()))
             self.save_registries.emit(dialog.get_settings())
         else:
-            print("fail")
+            #print("fail")
+            pass
         
     def action_newFile(self):
         self.new_file.emit()

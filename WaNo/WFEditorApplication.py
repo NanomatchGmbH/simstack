@@ -58,7 +58,6 @@ class WFEditorApplication(QObject):
         self._update_saved_registries()
 
     def _on_open_registry_settings(self):
-        print("open_registry_settings")
         self._view_manager.open_dialog_registry_settings(
                 self.__settings.get_value(SETTING_KEYS['registries'])
             )
@@ -75,7 +74,6 @@ class WFEditorApplication(QObject):
     #                                                                          #
     ############################################################################
     def __load_wanos_from_repo(self, wano_repo_path):
-        print("loading WaNos from %s." % wano_repo_path)
         self._logger.debug("loading WaNos from %s." % wano_repo_path)
 
         wanoRep = WaNoRepository()
@@ -98,7 +96,6 @@ class WFEditorApplication(QObject):
 
 
     def __load_saved_workflows(self, workflow_path):
-        print("loading Workflows from %s." % workflow_path)
         self._logger.debug("loading Workflows from %s." % workflow_path)
 
         files = [f for f in os.listdir(workflow_path) if f.endswith(".xml")]

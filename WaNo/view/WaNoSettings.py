@@ -33,7 +33,6 @@ class WaNoRegistrySettings(QWidget):
             self.__password.setEchoMode(QLineEdit.EchoMode.PasswordEchoOnEdit)
 
     def __on_default_set(self):
-        print("__on_default_set")
         self.default_set.emit(self.__cb_default.isChecked())
 
     def __connect_signals(self):
@@ -219,10 +218,8 @@ class WaNoUnicoreSettings(QDialog):
         tabWidget = self.__tabs.widget(index)
         if not self.__ignore_default_signal:
             self.__ignore_default_signal = True
-            print("index: %d Count: %d" % (index, self.__tabs.count()))
             for i in [x for x in range(1, self.__tabs.count()) if x != index]:
                 t = self.__tabs.widget(i)
-                print("%d : %s" % (i, str(t)))
                 t.set_default(False)
             self.__ignore_default_signal = False
 
@@ -231,9 +228,7 @@ class WaNoUnicoreSettings(QDialog):
             raise RuntimeError("WaNoUnicoreSettings not initialized correctly")
 
         if not config is None and len(config) > 0:
-            print("config: %s %d" % (str(config), len(config)))
             for i, registry in enumerate(config):
-                print("  %d, %s" % (i, str(registry)))
                 tabWidget = self.__add_tab(registry['name'], i)
                 tabWidget.set_fields(
                         registry['name'],

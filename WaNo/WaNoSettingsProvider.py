@@ -20,6 +20,5 @@ class WaNoSettingsProvider(AbstractSettings):
 
         for valuename,default,explanation in defaults:
             #self._add_default(valuename,default,explanation)
-            print("default: %s, type: %s" % (default, type(default)))
             self.set_value(valuename, default)
 

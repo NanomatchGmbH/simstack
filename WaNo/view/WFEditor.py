@@ -79,9 +79,9 @@ class WFEditor(QWidget):
         for i in range(len(self._controls)):
             self._controls[i] =(self._controls[i][0], os.path.join(script_path,"..",self._controls[i][1]))
 
-        import pprint
+        #import pprint
 
-        pprint.pprint(self._controls)
+        #pprint.pprint(self._controls)
 
     def __init__(self, parent=None):
         super(WFEditor, self).__init__(parent)
