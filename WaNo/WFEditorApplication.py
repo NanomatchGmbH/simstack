@@ -1,3 +1,8 @@
+from __future__ import division
+from __future__ import print_function
+from __future__ import unicode_literals
+from __future__ import absolute_import
+
 import logging
 import os
 
@@ -6,9 +11,9 @@ from PySide.QtCore import QObject
 from   lxml import etree
 
 from WaNo.view import WFViewManager
-from .WaNoRepository import WaNoRepository
-from .WaNoGitRevision import get_git_revision
-from .Constants import SETTING_KEYS
+from WaNo.WaNoRepository import WaNoRepository
+from WaNo.WaNoGitRevision import get_git_revision
+from WaNo.Constants import SETTING_KEYS
 
 
 class WFEditorApplication(QObject):
