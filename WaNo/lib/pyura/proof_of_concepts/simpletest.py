@@ -1,5 +1,5 @@
 #!/usr/bin/env python2
-from __future__ import print_function
+
 
 # Basic setup (URL etc)
 
@@ -7,7 +7,9 @@ import requests
 import json
 import time
 
+requests.packages.urllib3.disable_warnings()
 base = "https://int-nanomatchcluster.int.kit.edu:8080/NANO-SITE/rest/core"
+#base = "https://localhost:12345/NANO-SITE/rest/core"
 print("Accessing REST API at ", base)
 
 #
@@ -66,7 +68,7 @@ headers = {'Accept': 'application/json'}
 r = requests.get(jobURL, headers=headers, auth=credentials, verify=False)
 jobList = r.json()
 print(json.dumps(jobList, indent=4))
-exit()
+#exit()
 
 # Do stage in here
 
@@ -86,6 +88,29 @@ print(r.status_code)
 #    print("Submitted new job at", jobURL)
 
 # end job start
+
+#
+# Run an Application Job
+#
+app={'ApplicationName': "Date"}
+headers = {'content-type': 'application/json'}
+r = requests.post(base + "/jobs", data=json.dumps(app), headers=headers, auth=credentials, verify=False)
+print(r.status_code)
+if r.status_code != 201:
+    print("Error submitting Application job:", end=' ')
+else:
+    jobURL = r.headers['Location']
+    print("Submitted new Application job at", jobURL)
+
+
+
+#get Job Info:
+headers = {'Accept': 'application/json'}
+r = requests.get(jobURL, headers=headers, auth=credentials, verify=False)
+jobList = r.json()
+print(json.dumps(jobList, indent=4))
+
+
 
 #
 # List our jobs (and their properties)

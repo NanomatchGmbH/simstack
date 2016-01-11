@@ -1,22 +1,26 @@
 from __future__ import print_function
+from __future__ import absolute_import
+from __future__ import division
+
 import unittest
+import logging
 
-class PyuraTests(unittest.TestCase):
-    def setup(self):
-        print("This function will be called before each test")
-    
-    def teardown(self):
-        print("This function will be called after each test")
+from JobManagerTestSuite import JobManagerTestSuite
+from UnittestBundledTests import Bundle, BundleRunner
+from ConnectionTestSuite import ConnectionTestSuite
 
-    @classmethod
-    def setup_class(cls):
-        print("This method is called before all tests")
+verbosity=0
 
-    def test_enum(self):
-        from pyura.Constants import Constants as uc
-        assert(uc.JobStatus.QUEUED != uc.JobStatus.FAILED)
 
-    @classmethod
-    def teardown_class(cls):
-        print("Called at the end")
-        
+if __name__ == '__main__':
+    logging.basicConfig()
+    logger = logging.getLogger('pyura')
+    #logger.setLevel(10)
+    suites = []
+
+    suites.append(Bundle('Connection')\
+            .add_suite(ConnectionTestSuite.get_test_suite()))
+    #suites.append(Bundle('Job / JobManager')\
+    #        .add_suite(JobManagerTestSuite.get_test_suite()))
+
+    BundleRunner(verbosity=verbosity).run(suites)
