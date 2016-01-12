@@ -1,5 +1,5 @@
-from PySide.QtGui import QWidget, QComboBox, QLabel, QHBoxLayout, QPixmap
-from PySide.QtCore import Signal, Slot
+from PySide.QtGui import QWidget, QComboBox, QPushButton, QHBoxLayout, QPixmap, QIcon
+from PySide.QtCore import Signal, Slot, QSize
 
 from enum import Enum
 
@@ -10,13 +10,20 @@ class WaNoRegistrySelection(QWidget):
         connecting = 1
         disconnected = 2
 
+    __text = [
+            "Disconnect",
+            "[Connecting]",
+            "Connect",
+        ]
     __icons = [
-            'WaNo/Media/icons/cs-xlet-error.svg',
-            'WaNo/Media/icons/cs-xlet-error.svg',
+            'WaNo/Media/icons/cs-xlet-running.svg',
+            'WaNo/Media/icons/cs-xlet-update.svg',
             'WaNo/Media/icons/cs-xlet-error.svg',
         ]
 
-    registrySelectionChanged = Signal(int, name='registrySelectionChanged')
+    registrySelectionChanged    = Signal(int, name='registrySelectionChanged')
+    disconnect_registry          = Signal(name='disconnectRegistry')
+    connect_registry             = Signal(int, name='connectRegistry')
 
     def select_registry(self, index):
         self.registryComboBox.setCurrentIndex(index)
@@ -31,17 +38,22 @@ class WaNoRegistrySelection(QWidget):
 
     def __update_status(self):
         p = QPixmap(self.__icons[self.__status.value])
-        self.isConnectedIcon.setPixmap(p.scaled(self.isConnectedIcon.size()))
+        buttonIcon = QIcon(p)
+        self.isConnectedIcon.setIcon(buttonIcon)
+        self.isConnectedIcon.setText(self.__text[self.__status.value])
 
     def setStatus(self, status):
         self.__status = status
         self.__update_status()
 
     def __init_ui(self, parent):
+        button_height = 20
         self.registryComboBox   = QComboBox(self)
-        self.isConnectedIcon    = QLabel(self)
+        self.isConnectedIcon    = QPushButton(self)
+        self.isConnectedIcon.resize(self.isConnectedIcon.sizeHint())
 
-        self.isConnectedIcon.setFixedSize(20, 20)
+        self.isConnectedIcon.setFixedSize(100, button_height)
+        self.isConnectedIcon.setIconSize(QSize(button_height, button_height))
 
         layout = QHBoxLayout(self)
         layout.addWidget(self.registryComboBox)
@@ -52,7 +64,14 @@ class WaNoRegistrySelection(QWidget):
         if self.__emit_signal:
             self.registrySelectionChanged.emit(index)
 
+    def __on_button_clicked(self):
+        if self.__status == self.CONNECTION_STATES.connected:
+            self.disconnect_registry.emit()
+        elif self.__status == self.CONNECTION_STATES.disconnected:
+            self.connect_registry.emit(self.registryComboBox.currentIndex())
+
     def __connect_signals(self):
+        self.isConnectedIcon.clicked.connect(self.__on_button_clicked)
         self.registryComboBox.currentIndexChanged.connect(self.__on_selection_changed)
 
     def __init__(self, parent):

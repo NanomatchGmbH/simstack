@@ -71,7 +71,13 @@ class WFEditorApplication(QObject):
                     "%s.%d.name" % (SETTING_KEYS['registries'], index)
                 )
             )
-        #TODO
+        self._reconnect_unicore(index)
+
+    def _on_registry_connect(self, index):
+        self._connect_unicore(index)
+
+    def _on_registry_disconnect(self):
+        self._disconnect_unicore()
 
     ############################################################################
     #                                                                          #
@@ -264,13 +270,14 @@ class WFEditorApplication(QObject):
     ############################################################################
     def __start(self):
         self._view_manager.show_mainwindow()
-
         self._update_all()
 
     def _connect_signals(self):
         self._view_manager.save_registries.connect(self._on_save_registries)
         self._view_manager.open_registry_settings.connect(self._on_open_registry_settings)
         self._view_manager.registry_changed.connect(self._on_registry_changed)
+        self._view_manager.disconnect_registry.connect(self._on_registry_disconnect)
+        self._view_manager.connect_registry.connect(self._on_registry_connect)
 
     def __init__(self, settings):
         super(WFEditorApplication, self).__init__()

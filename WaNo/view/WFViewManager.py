@@ -6,9 +6,12 @@ from PySide.QtCore import Signal, QObject
 from .MessageDialog import MessageDialog
 
 class WFViewManager(QObject):
+    REGISTRY_CONNECTION_STATES = WFEditor.REGISTRY_CONNECTION_STATES
     save_registries         = Signal(list, name="SaveRegistries")
     open_registry_settings  = Signal(name="OpenRegistrySettings")
     registry_changed        = Signal(int, name="RegistryChanged")
+    disconnect_registry     = Signal(name='disconnectRegistry')
+    connect_registry        = Signal(int, name='connectRegistry')
 
     def _show_message(self, msg_type, msg):
         MessageDialog(msg_type, msg)
@@ -52,6 +55,9 @@ class WFViewManager(QObject):
     def update_saved_workflows_list(self, workflows):
         self._editor.update_saved_workflows_list(workflows)
 
+    def set_registry_connection_status(self, status):
+        self._editor.set_registry_connection_status(status)
+
     def open_new_workflow(self):
         #TODO
         pass
@@ -73,6 +79,8 @@ class WFViewManager(QObject):
         self._mainwindow.save_registries.connect(self.save_registries)
         self._mainwindow.open_registry_settings.connect(self.open_registry_settings)
         self._editor.registry_changed.connect(self.registry_changed)
+        self._editor.connect_registry.connect(self.connect_registry)
+        self._editor.disconnect_registry.connect(self.disconnect_registry)
 
     def __init__(self):
         super(WFViewManager, self).__init__()

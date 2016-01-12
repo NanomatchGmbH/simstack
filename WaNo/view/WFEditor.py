@@ -11,6 +11,8 @@ from .WFEditorWidgets import WFEWaNoListWidget, WFEListWidget, WFEWorkflowistWid
 from .WFEditorLogTab import LogTab
 
 class WFEditor(QWidget):
+    REGISTRY_CONNECTION_STATES = WaNoRegistrySelection.CONNECTION_STATES
+
     _controls = [
             ("ForEach", "ctrl_img/ForEach.png"),
             ("If", "ctrl_img/If.png"),
@@ -19,6 +21,9 @@ class WFEditor(QWidget):
         ]
 
     registry_changed        = Signal(int, name="RegistryChanged")
+    disconnect_registry     = Signal(name='disconnectRegistry')
+    connect_registry        = Signal(int, name='connectRegistry')
+
 
     def __build_infobox(self):
         infobox = QTabWidget(self)
@@ -83,12 +88,17 @@ class WFEditor(QWidget):
 
         #pprint.pprint(self._controls)
 
+    def _connect_signals(self):
+        self.registrySelection.registrySelectionChanged.connect(self.registry_changed)
+        self.registrySelection.connect_registry.connect(self.connect_registry)
+        self.registrySelection.disconnect_registry.connect(self.disconnect_registry)
+
     def __init__(self, parent=None):
         super(WFEditor, self).__init__(parent)
         self._convert_ctrl_icon_paths_to_absolute()
         self.logger = logging.getLogger('WFELOG')
         self.__init_ui()
-        self.registrySelection.registrySelectionChanged.connect(self.registry_changed)
+        self._connect_signals()
 
     def update_wano_list(self, wanos):
         self.wanoListWidget.update_list(wanos)
@@ -98,6 +108,9 @@ class WFEditor(QWidget):
 
     def update_registries(self, registries, selected=0):
         self.registrySelection.update_registries(registries, index=selected)
+
+    def set_registry_connection_status(self, status):
+        self.registrySelection.setStatus(status)
 
     def deactivateWidget(self):
         if self.lastActive != None:
