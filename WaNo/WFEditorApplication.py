@@ -10,6 +10,9 @@ from PySide.QtCore import QObject
 
 from   lxml import etree
 
+from WaNo.lib.pyura.pyura import UnicoreAPI, HTTPBasicAuthProvider
+from WaNo.lib.pyura.pyura import ErrorCodes as UnicoreErrorCodes
+
 from WaNo.view import WFViewManager
 from WaNo.WaNoRepository import WaNoRepository
 from WaNo.WaNoGitRevision import get_git_revision
@@ -125,6 +128,110 @@ class WFEditorApplication(QObject):
                     self._logger.critical('Loading Workflows: no workflow in file ' + xxi)
         return workflows
 
+    ############################################################################
+    #                              unicore                                     #
+    ############################################################################
+
+    # no_status_update shuld be set to true if there are multiple successive calls
+    # that all would individually update the connection status.
+    # This avoids flickering of the icon.
+    def _disconnect_unicore(self, no_status_update=False):
+        self._logger.info("Disconnecting from registry")
+        if not self._unicore is None:
+            #TODO currently, a connection is not maintained in pyura
+            #self._unicore.disconnected()
+            self._unicore = None
+            self._logger.debug("Disconnected from registry")
+            if not no_status_update:
+                self._set_unicore_disconnected()
+
+    def _connect_unicore(self, index, no_status_update=False):
+        success = False
+
+        idx = self._get_default_registry() \
+                if index is None or index < 0 else index
+        registry    = self._get_registry_by_index(idx)
+
+        self._logger.info("Connecting to registry '%s'." % \
+                registry[SETTING_KEYS['registry.name']]
+            )
+
+        if self._unicore is None:
+            auth_provider = HTTPBasicAuthProvider(
+                    registry[SETTING_KEYS['registry.username']],
+                    registry[SETTING_KEYS['registry.password']]
+                )
+            self._unicore = UnicoreAPI.add_registry(
+                    registry[SETTING_KEYS['registry.baseURI']],
+                    auth_provider
+                )
+            error, status = self._unicore.connect()
+            if error == UnicoreErrorCodes.NO_ERROR and status == 200:
+                success = True
+                self._logger.info("Connected.")
+            else:
+                self._logger.error("Failed to connect to registry: %d, %s" % \
+                            (status, str(error))
+                        )
+                self._view_manager.show_error(
+                        "Failed to connect to registry '%s'\n"\
+                        "Connection returned status %d" % \
+                        (registry[SETTING_KEYS['registry.name']], status)
+                    )
+        else:
+            raise RuntimeError("Registry must be disconnected first.")
+
+        if not no_status_update:
+            if success:
+                self._set_unicore_connected()
+            else:
+                self._set_unicore_disconnected()
+        return success
+
+    def _reconnect_unicore(self, registry_index):
+        self._logger.info("Reconnecting to Unicore Registry.")
+        self._set_unicore_connecting()
+        # quietly disconnect
+        self._disconnect_unicore(no_status_update = True)
+
+        success = self._connect_unicore(registry_index)
+
+
+    ############################################################################
+    #                             helpers                                      #
+    ############################################################################
+    def _set_unicore_disconnected(self):
+        self._view_manager.set_registry_connection_status(
+                self._view_manager.REGISTRY_CONNECTION_STATES.disconnected
+            )
+    def _set_unicore_connected(self):
+        self._view_manager.set_registry_connection_status(
+                self._view_manager.REGISTRY_CONNECTION_STATES.connected
+            )
+    def _set_unicore_connecting(self):
+        self._view_manager.set_registry_connection_status(
+                self._view_manager.REGISTRY_CONNECTION_STATES.connecting
+            )
+
+    def _get_registry_by_index(self, index):
+        query_str = "%s.%d" % (SETTING_KEYS['registries'], index)
+        return self.__settings.get_value(query_str)
+
+    def _get_default_registry(self):
+        default = 0
+        registries = self.__settings.get_value(SETTING_KEYS['registries'])
+
+        for i, r in enumerate(registries):
+            if r[SETTING_KEYS['registry.is_default']]:
+                default = i
+                break
+
+        return default
+
+    def _get_registry_names(self):
+        registries = self.__settings.get_value(SETTING_KEYS['registries'])
+        return [r[SETTING_KEYS['registry.name']] for r in registries]
+
 
     ############################################################################
     #                             update                                       #
@@ -142,15 +249,8 @@ class WFEditorApplication(QObject):
         self._view_manager.update_saved_workflows_list(workflows)
 
     def _update_saved_registries(self):
-        default = 0
-        regList = []
-
-        registries = self.__settings.get_value(SETTING_KEYS['registries'])
-
-        for i, r in enumerate(registries):
-            regList.append(r[SETTING_KEYS['registry.name']])
-            if r[SETTING_KEYS['registry.is_default']]:
-                default = i
+        default = self._get_default_registry()
+        regList = self._get_registry_names()
 
         self._view_manager.update_registries(regList, selected=default)
 
@@ -180,6 +280,8 @@ class WFEditorApplication(QObject):
         self._view_manager  = WFViewManager()
         self._unicore       = None # TODO pyura API
         # TODO model
+
+        UnicoreAPI.init()
 
         self._connect_signals()
 
