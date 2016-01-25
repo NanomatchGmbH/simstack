@@ -1,7 +1,7 @@
 import logging
 import os
 from PySide.QtGui import QWidget, QSizePolicy, QLabel, QSplitter, QHBoxLayout, \
-        QTabWidget
+        QTabWidget, QTreeView
 from PySide.QtCore import Qt, Signal
 
 from .WaNoEditorWidget import WaNoEditor
@@ -9,6 +9,7 @@ from .WFEditorPanel import WFTabsWidget
 from .WaNoRegistrySelection import WaNoRegistrySelection
 from .WFEditorWidgets import WFEWaNoListWidget, WFEListWidget, WFEWorkflowistWidget
 from .WFEditorLogTab import LogTab
+from .WFRemoteFileSystem import WFRemoteFileSystem
 
 class WFEditor(QWidget):
     REGISTRY_CONNECTION_STATES = WaNoRegistrySelection.CONNECTION_STATES
@@ -23,6 +24,7 @@ class WFEditor(QWidget):
     registry_changed        = Signal(int, name="RegistryChanged")
     disconnect_registry     = Signal(name='disconnectRegistry')
     connect_registry        = Signal(int, name='connectRegistry')
+    request_fs_model_update = Signal(str, name="requestRemoteFileSystemModelUpdate")
 
 
     def __build_infobox(self):
@@ -46,13 +48,17 @@ class WFEditor(QWidget):
 
         infobox = self.__build_infobox()
 
+        fileTreePanel = QSplitter(Qt.Horizontal)
+        fileTreePanel.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Expanding)
+
         leftPanel = QSplitter(Qt.Vertical)
         leftPanel.setSizePolicy(QSizePolicy.Fixed,QSizePolicy.Expanding)
 
         rightPanel = QSplitter(Qt.Vertical)
         rightPanel.setSizePolicy(QSizePolicy.Fixed,QSizePolicy.Expanding)
                 
-        layout = QHBoxLayout()       
+        layout = QHBoxLayout()
+        layout.addWidget(fileTreePanel)
         layout.addWidget(leftPanel)
         layout.addWidget(self.workflowWidget)
         layout.addWidget(rightPanel)
@@ -64,6 +70,9 @@ class WFEditor(QWidget):
         self.wanoListWidget = WFEWaNoListWidget(self)
         self.ctrlListWidget = WFEListWidget(self, self._controls)
         self.workflowListWidget = WFEWorkflowistWidget(self)
+
+        self.remoteFileTree = WFRemoteFileSystem(self)
+        fileTreePanel.addWidget(self.remoteFileTree)
         
         leftPanel.addWidget(QLabel('Nodes'))
         leftPanel.addWidget(self.wanoListWidget)
@@ -92,6 +101,7 @@ class WFEditor(QWidget):
         self.registrySelection.registrySelectionChanged.connect(self.registry_changed)
         self.registrySelection.connect_registry.connect(self.connect_registry)
         self.registrySelection.disconnect_registry.connect(self.disconnect_registry)
+        self.remoteFileTree.request_model_update.connect(self.request_fs_model_update)
 
     def __init__(self, parent=None):
         super(WFEditor, self).__init__(parent)
@@ -108,6 +118,9 @@ class WFEditor(QWidget):
 
     def update_registries(self, registries, selected=0):
         self.registrySelection.update_registries(registries, index=selected)
+
+    def update_filesystem_model(self, path, files):
+        self.remoteFileTree.update_file_tree_node(path, files)
 
     def set_registry_connection_status(self, status):
         self.registrySelection.setStatus(status)

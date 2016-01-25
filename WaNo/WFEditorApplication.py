@@ -79,6 +79,28 @@ class WFEditorApplication(QObject):
     def _on_registry_disconnect(self):
         self._disconnect_unicore()
 
+    def _on_fs_model_update_request(self, path):
+        self._logger.debug("Querying %s from Unicore Registry" % path)
+        print("Querying %s from Unicore Registry" % path)
+        ok = True
+        if self._unicore is None:
+            self._view_manager.show_error("No registry selected.")
+            ok = False
+        #TODO implement in pyura upstream....
+        #if not self._unicore.is_connected:
+        #    self._view_manager.show_error("Registry not connected.")
+        #    ok = False
+        if ok:
+            storage_manager = self._unicore.get_storage_manager()
+            storage_manager.update_list()
+            if path == "":
+                files = [s.get_id() for s in storage_manager.get_list()]
+            else:
+                files = storage_manager.get_file_list(path=path)
+            files = [s.get_id() for s in storage_manager.get_list()]
+            self._view_manager.update_filesystem_model(path, files)
+
+
     ############################################################################
     #                                                                          #
     ############################################################################
@@ -278,6 +300,7 @@ class WFEditorApplication(QObject):
         self._view_manager.registry_changed.connect(self._on_registry_changed)
         self._view_manager.disconnect_registry.connect(self._on_registry_disconnect)
         self._view_manager.connect_registry.connect(self._on_registry_connect)
+        self._view_manager.request_fs_model_update.connect(self._on_fs_model_update_request)
 
     def __init__(self, settings):
         super(WFEditorApplication, self).__init__()

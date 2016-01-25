@@ -12,6 +12,7 @@ class WFViewManager(QObject):
     registry_changed        = Signal(int, name="RegistryChanged")
     disconnect_registry     = Signal(name='disconnectRegistry')
     connect_registry        = Signal(int, name='connectRegistry')
+    request_fs_model_update = Signal(str, name="requestRemoteFileSystemModelUpdate")
 
     def _show_message(self, msg_type, msg):
         MessageDialog(msg_type, msg)
@@ -65,6 +66,9 @@ class WFViewManager(QObject):
     def update_registries(self, registries, selected):
         self._editor.update_registries(registries, selected)
 
+    def update_filesystem_model(self, path, files):
+        self._editor.update_filesystem_model(path, files)
+
     def test(self):
         print("WFViewManager")
         self.open_registry_settings.emit()
@@ -81,6 +85,7 @@ class WFViewManager(QObject):
         self._editor.registry_changed.connect(self.registry_changed)
         self._editor.connect_registry.connect(self.connect_registry)
         self._editor.disconnect_registry.connect(self.disconnect_registry)
+        self._editor.request_fs_model_update.connect(self.request_fs_model_update)
 
     def __init__(self):
         super(WFViewManager, self).__init__()
