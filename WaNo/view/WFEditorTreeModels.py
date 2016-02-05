@@ -121,6 +121,16 @@ class DataTreeModel(QAbstractItemModel):
             self.endRemoveRows()
         return result
 
+    def removeSubRows(self, index):
+        result = False
+        if index.isValid:
+            node = self.getNodeByIndex(index)
+            result = self.removeRows(0, len(node), index)
+        return result
+
+
+
+
     def clear(self):
         rootIndex = QModelIndex()
         
