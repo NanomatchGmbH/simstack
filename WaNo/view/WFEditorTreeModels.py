@@ -255,6 +255,13 @@ class WFEFileSystemModel(DataTreeModel):
     def createNode(self, data, parent=None):
         return WFEFileSystemEntry(data, parent)
 
+    def filePath(self, index):
+        path = None
+        if index.isValid():
+            node = self.getNodeByIndex(index)
+            path = node.getPath()
+        return path
+
 
 ###############################################################################
 ###############################################################################
