@@ -28,16 +28,17 @@ class WFRemoteFileSystem(QWidget):
 
     def update_file_tree_node(self, path, subelements):
         print("new file tree nodes for path: %s:\n%s" % (path, subelements))
+        filePath = path if not path == '' else 'none'
 
-        if path in self.__current_requests:
-            index   = self.__current_requests[path]
+        if filePath in self.__current_requests:
+            index   = self.__current_requests[filePath]
 
             self.__fs_model.removeSubRows(index)
             # remove request
-            self.__current_requests.pop(path)
+            self.__current_requests.pop(filePath)
             print(subelements)
         else:
-            print("path '%s' not in current_requests." % path)
+            print("Path '%s' not in current_requests." % filePath)
 
 #TODO obsolete
     #def __get_valid_element(self, model_index):
@@ -59,9 +60,23 @@ class WFRemoteFileSystem(QWidget):
 
     #TODO rename
     def __got_request(self, model_index):
-        if model_index.isValid():
+        ok = False
+        index = None
+
+        if model_index is None:
+            filePath = 'none'
+            index = QModelIndex()
+            ok = True
+        elif not model_index is None and not model_index.isValid():
             filePath = self.__fs_model.filePath(model_index)
-            self.__current_requests.update( {filePath: model_index} )
+            index = model_index
+            ok = True
+
+
+
+        if ok:
+            self.__current_requests.update( {filePath: index} )
+            print("current_requests: %s" % self.__current_requests)
 
             print("Emitting request for %s." % filePath)
             self.request_model_update.emit(filePath)
@@ -70,7 +85,7 @@ class WFRemoteFileSystem(QWidget):
             #TODO remove
 
     def __reload(self):
-        self.request_model_update.emit('')
+        self.__got_request(None)
 
     def __connect_signals(self):
         self.__fileTree.doubleClicked.connect(self.__got_request)
