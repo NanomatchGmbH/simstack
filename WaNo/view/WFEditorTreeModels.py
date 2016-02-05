@@ -124,8 +124,9 @@ class DataTreeModel(QAbstractItemModel):
     def clear(self):
         rootIndex = QModelIndex()
         
-        #TODO signals
-        self.removeRows(0, len(self._root), rootIndex)
+        self.beginResetModel()
+        self._removeRows(0, len(self._root), rootIndex, emitSignals=False)
+        self.endResetModel()
 
 
 
