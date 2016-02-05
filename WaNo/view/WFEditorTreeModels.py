@@ -218,8 +218,11 @@ class WFEFileSystemEntry(DataNode):
     def getAbsolutePath(self):
         return self._data['abspath']
 
-    def getText(self):
+    def getPath(self):
         return self._data['path']
+
+    def getText(self):
+        return self.getPath()
 
     def getIconType(self):
         rv = self._data['data_type'] 
