@@ -12,10 +12,6 @@ class AbstractWanoView(object):
     def __init__(self, *args, **kwargs):
         self.model = None
 
-    def onChanged(self, *args, **kwargs):
-        if self.model is not None:
-            self.model.view_changed(*args, **kwargs)
-
     def model_changed(self, *args, **kwargs):
         self.init_from_model()
 
@@ -26,14 +22,18 @@ class AbstractWanoView(object):
     def set_model(self, model):
         self.model = model
         model.set_view(self)
-        # self.init_from_model()
+
+    """
+    Disables editing of element
+    """
+    @abc.abstractmethod
+    def set_enabled(self,enabled):
+        pass
 
 
 class AbstractWanoQTView(AbstractWanoView):
     def __init__(self, *args, **kwargs):
         super(AbstractWanoQTView, self).__init__(*args, **kwargs)
-        import pprint
-        pprint.pprint(kwargs)
         if "model" in kwargs:
             model = kwargs['model']
             parent = model.get_parent()

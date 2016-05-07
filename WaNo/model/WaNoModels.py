@@ -15,7 +15,7 @@ except ImportError as e:
 from WaNo.model.AbstractWaNoModel import AbstractWanoModel
 import WaNo.WaNoFactory
 from lxml import etree
-
+import copy
 
 class WaNoModelDictLike(AbstractWanoModel):
     def __init__(self, *args, **kwargs):
@@ -25,8 +25,6 @@ class WaNoModelDictLike(AbstractWanoModel):
 
         for child in self.xml:
             model = WaNo.WaNoFactory.WaNoFactory.get_objects(child, self, self)
-            print("XML.tag %s" % self.xml.tag)
-            # view.set_model(model)
             self.wano_dict[child.tag] = model
 
     def __getitem__(self, item):
@@ -50,6 +48,9 @@ class WaNoModelDictLike(AbstractWanoModel):
     def set_data(self, wano_dict):
         self.wano_dict = wano_dict
 
+    def wanos(self):
+        return self.wano_dict.values()
+
 
 class WaNoModelListLike(AbstractWanoModel):
     def __init__(self, *args, **kwargs):
@@ -67,6 +68,24 @@ class WaNoModelListLike(AbstractWanoModel):
             # view.set_model(model)
             self.wano_list.append(model)
 
+    def __getitem__(self, item):
+        return self.wano_list[item]
+
+    def wanos(self):
+        return self.wano_list
+
+class MultipleOfModel(WaNoModelListLike):
+    def __init__(self, *args, **kwargs):
+        super(WaNoModelListLike,self).__init__(*args,**kwargs)
+        self.style = "multibutton;%s" %self.style
+
+    def add_entry(self):
+        assert(len(self.wano_list) > 0)
+        self.wano_list.append(copy.copy(self.wano_list[0]))
+
+    def remove_entry(self):
+        if len(self.wano_list) >= 2:
+            self.wano_list.pop()
 
 # This is the parent class and grandfather. Children have to be unique, no lists here
 class WaNoModelRoot(WaNoModelDictLike):
@@ -85,7 +104,7 @@ class WaNoModelRoot(WaNoModelDictLike):
 class WaNoItemFloatModel(AbstractWanoModel):
     def __init__(self, *args, **kwargs):
         super(WaNoItemFloatModel, self).__init__(*args, **kwargs)
-        self.myfloat = 15.0
+        self.myfloat = float(kwargs['xml'].text)
 
     def get_data(self):
         return self.myfloat
@@ -96,6 +115,36 @@ class WaNoItemFloatModel(AbstractWanoModel):
     def __getitem__(self, item):
         return None
 
-    def onChanged(self, *args, **kwargs):
-        pass
-        # self.controller.model_changed(*args,**kwargs)
+
+class WaNoItemBoolModel(AbstractWanoModel):
+    def __init__(self, *args, **kwargs):
+        super(WaNoItemBoolModel, self).__init__(*args, **kwargs)
+        bool_as_text = kwargs['xml'].text
+        if bool_as_text.lower() == "true":
+            self.mybool = True
+        else:
+            self.mybool = False
+
+    def get_data(self):
+        return self.mybool
+
+    def set_data(self, data):
+        self.mybool = float(data)
+
+    def __getitem__(self, item):
+        return None
+
+
+class WaNoItemStringModel(AbstractWanoModel):
+    def __init__(self, *args, **kwargs):
+        super(WaNoItemStringModel, self).__init__(*args, **kwargs)
+        self.mystring = kwargs['xml'].text
+
+    def get_data(self):
+        return self.mystring
+
+    def set_data(self, data):
+        self.mystring = float(data)
+
+    def __getitem__(self, item):
+        return None

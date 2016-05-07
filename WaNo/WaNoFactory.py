@@ -35,18 +35,23 @@ class WaNoFactory(object):
         for vgh in cls.postregisterlist:
             vgh.init()
 
-
         del cls.postregisterlist[:]
 
     @classmethod
     def get_objects(cls, xml, root_model, parent_model):
         from WaNo.model.AbstractWaNoModel import WaNoNotImplementedError
-        from WaNo.model.WaNoModels import WaNoItemFloatModel, WaNoModelListLike
-        from WaNo.view.WaNoViews import WaNoItemFloatView, WaNoBoxView
+        from WaNo.model.WaNoModels import WaNoItemFloatModel, WaNoModelListLike,\
+            WaNoItemStringModel, WaNoItemBoolModel, WaNoModelDictLike
+        from WaNo.view.WaNoViews import WaNoItemFloatView, WaNoBoxView, WaNoItemStringView, \
+            WaNoItemBoolView, WaNoItemFileView
 
         wano_list = {
             "WaNoFloat": (WaNoItemFloatModel, WaNoItemFloatView),
-            "WaNoBox": (WaNoModelListLike, WaNoBoxView)
+            "WaNoString": (WaNoItemStringModel, WaNoItemStringView),
+            "WaNoListBox": (WaNoModelListLike, WaNoBoxView),
+            "WaNoDictBox": (WaNoModelDictLike, WaNoBoxView),
+            "WaNoBool": (WaNoItemBoolModel, WaNoItemBoolView),
+            "WaNoFile": (WaNoItemStringModel,WaNoItemFileView)
         }
 
         if xml.tag not in wano_list:

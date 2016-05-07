@@ -28,11 +28,6 @@ class AbstractWanoModel(object):
     def get_parent(self):
         return self.parent
 
-    # I'm not sure whether we actually require the set method
-    # @abc.abstractmethod
-    def __setitem__(self, key, item):
-        raise NotImplementedError("I don't think this method is needed")
-
     # To access Wanomodels belonging to this one:
     # <Box>
     #   <Float name="me" />
@@ -47,13 +42,6 @@ class AbstractWanoModel(object):
     def __getitem__(self, key):
         pass
 
-    def onChanged(self, *args, **kwargs):
-        if self.view is not None:
-            self.view.model_changed(*args, **kwargs)
-
-    def view_changed(self, *args, **kwargs):
-        pass
-
     def set_view(self, view):
         self.view = view
 
@@ -61,10 +49,10 @@ class AbstractWanoModel(object):
     def get_data(self):
         pass
 
-    @abc.abstractmethod
-    def set_data(self, data):
-        pass
-
     # This method constructs all children after both view and model have been constructed
     def construct_children(self):
+        pass
+
+    @abc.abstractmethod
+    def render(self):
         pass
