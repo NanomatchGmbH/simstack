@@ -22,6 +22,7 @@ class Example(QtGui.QWidget):
 
         wifv = WanoQtViewRoot(qt_parent=None)
         wifm = WaNoModelRoot.construct_from_wano("DFT.xml", rootview=wifv)
+        self.wifm = wifm
         wifm.set_view(wifv)
         wifv.set_model(wifm)
         wifm.construct_children()
@@ -46,7 +47,11 @@ class Example(QtGui.QWidget):
 def main():
     app = QtGui.QApplication(sys.argv)
     ex = Example()
-    sys.exit(app.exec_())
+
+    app.exec_()
+    ex.wifm.update_xml()
+    ex.wifm.save_xml("Newdft.xml")
+    sys.exit(0)
 
 
 if __name__ == '__main__':

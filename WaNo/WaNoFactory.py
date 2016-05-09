@@ -41,9 +41,10 @@ class WaNoFactory(object):
     def get_objects(cls, xml, root_model, parent_model):
         from WaNo.model.AbstractWaNoModel import WaNoNotImplementedError
         from WaNo.model.WaNoModels import WaNoItemFloatModel, WaNoModelListLike,\
-            WaNoItemStringModel, WaNoItemBoolModel, WaNoModelDictLike
+            WaNoItemStringModel, WaNoItemBoolModel, WaNoModelDictLike, WaNoChoiceModel, \
+            MultipleOfModel
         from WaNo.view.WaNoViews import WaNoItemFloatView, WaNoBoxView, WaNoItemStringView, \
-            WaNoItemBoolView, WaNoItemFileView
+            WaNoItemBoolView, WaNoItemFileView, WaNoChoiceView, MultipleOfView
 
         wano_list = {
             "WaNoFloat": (WaNoItemFloatModel, WaNoItemFloatView),
@@ -51,7 +52,9 @@ class WaNoFactory(object):
             "WaNoListBox": (WaNoModelListLike, WaNoBoxView),
             "WaNoDictBox": (WaNoModelDictLike, WaNoBoxView),
             "WaNoBool": (WaNoItemBoolModel, WaNoItemBoolView),
-            "WaNoFile": (WaNoItemStringModel,WaNoItemFileView)
+            "WaNoFile": (WaNoItemStringModel, WaNoItemFileView),
+            "WaNoChoice": (WaNoChoiceModel, WaNoChoiceView),
+            "WaNoMultipleOf": (MultipleOfModel,MultipleOfView)
         }
 
         if xml.tag not in wano_list:
@@ -63,7 +66,5 @@ class WaNoFactory(object):
             cls.postregisterlist.append(vgh)
             m = model(root_model=root_model, parent_model=parent_model, xml=xml)
             vgh.set_model(m)
-
             m.construct_children()
-
             return m

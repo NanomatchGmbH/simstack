@@ -6,14 +6,11 @@ from __future__ import unicode_literals
 from __future__ import absolute_import
 
 import abc
-
+import copy
 
 class AbstractWanoView(object):
     def __init__(self, *args, **kwargs):
         self.model = None
-
-    def model_changed(self, *args, **kwargs):
-        self.init_from_model()
 
     @abc.abstractmethod
     def init_from_model(self):
@@ -38,6 +35,7 @@ class AbstractWanoQTView(AbstractWanoView):
             model = kwargs['model']
             parent = model.get_parent()
             self.qt_parent = parent.view.get_widget()
+        self.actual_widget = None
 
     @abc.abstractmethod
     def get_widget(self):
@@ -45,3 +43,4 @@ class AbstractWanoQTView(AbstractWanoView):
 
     def set_model(self, model):
         super(AbstractWanoQTView, self).set_model(model)
+

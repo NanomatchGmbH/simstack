@@ -6,7 +6,7 @@ from __future__ import unicode_literals
 from __future__ import absolute_import
 
 import abc
-
+import copy
 
 class WaNoNotImplementedError(Exception):
     pass
@@ -14,7 +14,7 @@ class WaNoNotImplementedError(Exception):
 
 class AbstractWanoModel(object):
     def __init__(self, *args, **kwargs):
-        # self.view = None
+        self.view = None
         self.root_model = None
         if "root_model" in kwargs:
             self.root_model = kwargs["root_model"]
@@ -49,10 +49,14 @@ class AbstractWanoModel(object):
     def get_data(self):
         pass
 
-    # This method constructs all children after both view and model have been constructed
-    def construct_children(self):
-        pass
-
     @abc.abstractmethod
     def render(self):
         pass
+
+    @abc.abstractmethod
+    def update_xml(self):
+        pass
+
+    def construct_children(self):
+        pass
+
