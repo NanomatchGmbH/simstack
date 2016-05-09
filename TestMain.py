@@ -11,6 +11,7 @@ from WaNo.model.WaNoModels import WaNoModelRoot
 from WaNo.view.WaNoViews import WanoQtViewRoot
 from WaNo.WaNoFactory import WaNoFactory
 
+import yaml
 
 class Example(QtGui.QWidget):
     def __init__(self):
@@ -51,6 +52,7 @@ def main():
     app.exec_()
     ex.wifm.update_xml()
     ex.wifm.save_xml("Newdft.xml")
+    print(yaml.dump(ex.wifm))
     sys.exit(0)
 
 
