@@ -2,6 +2,7 @@ from .WFEditorMainWindow import WFEditorMainWindow
 from .WFEditor import WFEditor
 
 from PySide.QtCore import Signal, QObject
+from PySide.QtGui import QMessageBox
 
 from .MessageDialog import MessageDialog
 
@@ -69,6 +70,12 @@ class WFViewManager(QObject):
     def update_filesystem_model(self, path, files):
         self._editor.update_filesystem_model(path, files)
 
+    def exit(self):
+        if QMessageBox.question(None, '', "Are you sure you want to quit?",
+                                QMessageBox.Yes | QMessageBox.No,
+                                QMessageBox.No) == QMessageBox.Yes:
+            self._mainwindow.exit()
+
     def test(self):
         print("WFViewManager")
         self.open_registry_settings.emit()
@@ -78,6 +85,7 @@ class WFViewManager(QObject):
         self._mainwindow.save.connect(self.open_dialog_save_workflow)
         self._mainwindow.save_as.connect(self.open_dialog_save_workflow_as)
         self._mainwindow.new_file.connect(self.open_new_workflow)
+        self._mainwindow.exit_client.connect(self.exit)
 
         # Forwarded signals
         self._mainwindow.save_registries.connect(self.save_registries)

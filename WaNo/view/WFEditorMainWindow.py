@@ -14,6 +14,7 @@ class WFEditorMainWindow(QtGui.QMainWindow):
     save_as             = Signal(name="SaveAs")
     save_registries     = Signal(list, name="SaveRegistries")
     open_registry_settings = Signal(name="OpenRegistrySettings")
+    exit_client         = Signal(name="ExitClient")
    
     def __init_ui(self,parent=None):
         self.setWindowIcon(QtGui.QIcon('./WaNo/Media/Logo_Nanomatch.png'))
@@ -54,6 +55,9 @@ class WFEditorMainWindow(QtGui.QMainWindow):
         self.wfEditor = editor
         self.__init_ui()
 
+    def exit(self):
+        self.close()
+
     def action_openSettingsDialog(self):
         self.open_registry_settings.emit()
 
@@ -82,7 +86,7 @@ class WFEditorMainWindow(QtGui.QMainWindow):
         self.infoLabel.setText("Invoked <b>File|Print</b>")
 
     def action_close(self):
-        self.close()
+        self.exit_client.emit()
 
     def action_about(self):
         self.infoLabel.setText("Invoked <b>Help|About</b>")
