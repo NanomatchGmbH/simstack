@@ -5,7 +5,7 @@ from __future__ import print_function
 from __future__ import unicode_literals
 from __future__ import absolute_import
 
-from WaNo.view.AbstractWaNoView import AbstractWanoQTView
+from WaNo.view.AbstractWaNoView import AbstractWanoQTView, AbstractWanoView
 from PySide import QtGui, QtCore
 
 class GroupBoxWithButton(QtGui.QGroupBox):
@@ -95,12 +95,15 @@ class MultipleOfView(AbstractWanoQTView):
             self.vbox.addWidget(line)
         line.deleteLater()
 
+class EmptyView(AbstractWanoView):
+    def __init__(self,*args,**kwargs):
+        super(EmptyView,self).__init__(*args,**kwargs)
 
 class WaNoBoxView(AbstractWanoQTView):
     def __init__(self, *args, **kwargs):
         super(WaNoBoxView, self).__init__(*args, **kwargs)
         #self.actual_widget = QtGui.QWidget(self.qt_parent)
-        self.actual_widget = QtGui.QGroupBox(self.qt_parent)
+        self.actual_widget = QtGui.QGroupBox(parent=self.qt_parent)
         #self.actual_widget = GroupBoxWithButton(self.qt_parent)
         self.actual_widget.setStyleSheet("""
         QGroupBox {
@@ -114,8 +117,6 @@ class WaNoBoxView(AbstractWanoQTView):
             padding: 0 3px 0 3px;
         }
         """)
-
-
         #self.actual_widget.setCheckable(True)
         self.vbox = QtGui.QVBoxLayout()
         self.actual_widget.setLayout(self.vbox)
@@ -128,22 +129,58 @@ class WaNoBoxView(AbstractWanoQTView):
         for model in self.model.wanos():
             self.vbox.addWidget(model.view.get_widget())
 
+class WaNoItemIntView(AbstractWanoQTView):
+    def __init__(self, *args, **kwargs):
+        super(WaNoItemIntView, self).__init__(*args, **kwargs)
+        """ Widget code here """
+        self.actual_widget = QtGui.QWidget(self.qt_parent)
+        hbox = QtGui.QHBoxLayout()
+        self.actual_widget.setLayout(hbox)
+        self.spinner = QtGui.QSpinBox()
+        # self.line_edit = QtGui.QLineEdit()
+        self.spinner.setValue(0)
+        self.spinner.setMaximum(9999)
+        self.spinner.setMinimum(-9999)
+        self.label = QtGui.QLabel("ABC")
+        hbox.addWidget(self.label)
+        hbox.addStretch()
+        hbox.addWidget(self.spinner)
+        # hbox.addWidget(self.line_edit)
+
+        self.spinner.valueChanged.connect(self.value_changed)
+        """ Widget code end """
+
+    def get_widget(self):
+        return self.actual_widget
+
+    def init_from_model(self):
+        self.spinner.setValue(self.model.get_data())
+        self.label.setText(self.model.name)
+
+    def value_changed(self,value):
+        self.model.set_data(value)
+
 
 class WaNoItemFloatView(AbstractWanoQTView):
     def __init__(self, *args, **kwargs):
         super(WaNoItemFloatView, self).__init__(*args, **kwargs)
         """ Widget code here """
         self.actual_widget = QtGui.QWidget(self.qt_parent)
-        vbox = QtGui.QHBoxLayout()
+        hbox = QtGui.QHBoxLayout()
+        self.actual_widget.setLayout(hbox)
         self.spinner = QtGui.QDoubleSpinBox()
         # self.line_edit = QtGui.QLineEdit()
         self.spinner.setValue(0.0)
+        self.spinner.setMaximum(9999.9)
+        self.spinner.setMinimum(-9999.9)
+        self.spinner.setSingleStep(1.0)
+
         self.label = QtGui.QLabel("ABC")
-        vbox.addWidget(self.label)
-        vbox.addStretch()
-        vbox.addWidget(self.spinner)
-        # vbox.addWidget(self.line_edit)
-        self.actual_widget.setLayout(vbox)
+        hbox.addWidget(self.label)
+        hbox.addStretch()
+        hbox.addWidget(self.spinner)
+        # hbox.addWidget(self.line_edit)
+
         self.spinner.valueChanged.connect(self.value_changed)
         """ Widget code end """
 
@@ -162,14 +199,14 @@ class WaNoItemBoolView(AbstractWanoQTView):
         super(WaNoItemBoolView, self).__init__(*args, **kwargs)
         """ Widget code here """
         self.actual_widget = QtGui.QWidget(self.qt_parent)
-        vbox = QtGui.QHBoxLayout()
+        hbox = QtGui.QHBoxLayout()
+        self.actual_widget.setLayout(hbox)
         self.checkbox = QtGui.QCheckBox()
         self.label = QtGui.QLabel("ABC")
-        vbox.addWidget(self.label)
-        vbox.addStretch()
-        vbox.addWidget(self.checkbox)
-        # vbox.addWidget(self.line_edit)
-        self.actual_widget.setLayout(vbox)
+        hbox.addWidget(self.label)
+        hbox.addStretch()
+        hbox.addWidget(self.checkbox)
+        # hbox.addWidget(self.line_edit)
         self.checkbox.stateChanged.connect(self.state_changed)
         """ Widget code end """
 
@@ -214,20 +251,11 @@ class WaNoItemStringView(AbstractWanoQTView):
     def line_edited(self):
         self.model.set_data(self.lineedit.text())
 
-class WaNoItemListView(AbstractWanoQTView):
-    def __init__(self, *args, **kwargs):
-        super(WaNoItemListView, self).__init__(*args, **kwargs)
-
-    def init_from_model(self):
-        self.actual_widget = QtGui.QWidget(self.qt_parent)
-        self.hbox = QtGui.QHBoxLayout()
-        self.actual_widget.setLayout(self.hbox)
-
 
 class WanoQtViewRoot(AbstractWanoQTView):
     def __init__(self, *args, **kwargs):
         super(WanoQtViewRoot, self).__init__(*args, **kwargs)
-        self.actual_widget = QtGui.QWidget()
+        self.actual_widget = QtGui.QWidget(parent=self.qt_parent)
         self.vbox = QtGui.QVBoxLayout()
         self.actual_widget.setLayout(self.vbox)
 
@@ -243,21 +271,21 @@ class WaNoItemFileView(AbstractWanoQTView):
         super(WaNoItemFileView, self).__init__(*args, **kwargs)
         """ Widget code here """
         self.actual_widget = QtGui.QWidget(self.qt_parent)
-        vbox = QtGui.QHBoxLayout()
-        self.lineedit = QtGui.QLineEdit()
-        self.label = QtGui.QLabel("ABC")
-        self.openfilebutton = QtGui.QPushButton("",self.actual_widget)
+        hbox = QtGui.QHBoxLayout()
+        self.lineedit = QtGui.QLineEdit(parent=self.actual_widget)
+        self.label = QtGui.QLabel("ABC",parent=self.actual_widget)
+        self.openfilebutton = QtGui.QPushButton("",parent=self.actual_widget)
 
         self.openfilebutton.setIcon(QtGui.QFileIconProvider().icon(QtGui.QFileIconProvider.File))
-        self.openwfbutton = QtGui.QPushButton("",self.actual_widget)
+        self.openwfbutton = QtGui.QPushButton("",parent=self.actual_widget)
         self.openwfbutton.setIcon(QtGui.QFileIconProvider().icon(QtGui.QFileIconProvider.Network))
-        vbox.addWidget(self.label)
-        vbox.addStretch()
-        vbox.addWidget(self.lineedit)
-        vbox.addWidget(self.openfilebutton)
-        vbox.addWidget(self.openwfbutton)
+        hbox.addWidget(self.label)
+        hbox.addStretch()
+        hbox.addWidget(self.lineedit)
+        hbox.addWidget(self.openfilebutton)
+        hbox.addWidget(self.openwfbutton)
         self.openfilebutton.clicked.connect(self.showLocalDialog)
-        self.actual_widget.setLayout(vbox)
+        self.actual_widget.setLayout(hbox)
         self.lineedit.editingFinished.connect(self.line_edited)
         """ Widget code end """
 

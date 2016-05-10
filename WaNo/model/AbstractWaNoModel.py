@@ -49,9 +49,9 @@ class AbstractWanoModel(object):
     def get_data(self):
         pass
 
-    @abc.abstractmethod
-    def render(self):
+    def render(self, rendered_wano, path):
         pass
+
 
     @abc.abstractmethod
     def update_xml(self):

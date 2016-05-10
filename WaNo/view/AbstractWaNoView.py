@@ -35,6 +35,8 @@ class AbstractWanoQTView(AbstractWanoView):
             model = kwargs['model']
             parent = model.get_parent()
             self.qt_parent = parent.view.get_widget()
+        if "qt_parent" in kwargs:
+            self.qt_parent = kwargs["qt_parent"]
         self.actual_widget = None
 
     @abc.abstractmethod

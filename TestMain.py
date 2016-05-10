@@ -11,18 +11,24 @@ from WaNo.model.WaNoModels import WaNoModelRoot
 from WaNo.view.WaNoViews import WanoQtViewRoot
 from WaNo.WaNoFactory import WaNoFactory
 
-import yaml
-
 class Example(QtGui.QWidget):
-    def __init__(self):
+    def __init__(self,wanofile):
         super(Example, self).__init__()
-
+        self.wanofile = wanofile
         self.initUI()
 
     def initUI(self):
+        scroller = QtGui.QScrollArea(parent=self)
+        scroller.setSizePolicy(QtGui.QSizePolicy.Expanding,QtGui.QSizePolicy.Expanding)
+        scroller.setWidgetResizable(True)
+        container_widget = QtGui.QWidget(parent=scroller)
+        container_widget.setSizePolicy(QtGui.QSizePolicy.Expanding,QtGui.QSizePolicy.Expanding)
+        self.setSizePolicy(QtGui.QSizePolicy.Expanding,QtGui.QSizePolicy.Expanding)
 
-        wifv = WanoQtViewRoot(qt_parent=None)
-        wifm = WaNoModelRoot.construct_from_wano("DFT.xml", rootview=wifv)
+        container_layout = QtGui.QVBoxLayout()
+
+        wifv = WanoQtViewRoot(qt_parent=container_widget)
+        wifm = WaNoModelRoot.construct_from_wano(self.wanofile, rootview=wifv)
         self.wifm = wifm
         wifm.set_view(wifv)
         wifv.set_model(wifm)
@@ -30,29 +36,34 @@ class Example(QtGui.QWidget):
         WaNoFactory.build_views()
         wifv.init_from_model()
 
-        hbox = QtGui.QHBoxLayout()
-        hbox.addStretch(1)
-        hbox.addWidget(wifv.get_widget())
-
+        #hbox = QtGui.QHBoxLayout()
+        #hbox.addStretch(1)
+        container_layout.addWidget(wifv.get_widget())
+        submit_push = QtGui.QPushButton("Submit", parent=container_widget)
+        submit_push.clicked.connect(wifm.render)
+        container_layout.addWidget(submit_push)
+        container_widget.setLayout(container_layout)
+        scroller.setWidget(container_widget)
+        #scroller.setSizePolicy()
         vbox = QtGui.QVBoxLayout()
-        vbox.addStretch(1)
-        vbox.addLayout(hbox)
+        vbox.addWidget(scroller)
 
+        #vbox.addStretch(1)
         self.setLayout(vbox)
-
-        self.setGeometry(300, 300, 300, 150)
+        self.setGeometry(300, 300, 460, 700)
         self.setWindowTitle('Buttons')
         self.show()
 
 
 def main():
     app = QtGui.QApplication(sys.argv)
-    ex = Example()
-
+    wanofile = sys.argv[1]
+    ex = Example(wanofile)
     app.exec_()
     ex.wifm.update_xml()
-    ex.wifm.save_xml("Newdft.xml")
-    print(yaml.dump(ex.wifm))
+    outfile = "%s_edited.xml"%wanofile.split('.')[0]
+
+    ex.wifm.save_xml(outfile)
     sys.exit(0)
 
 
