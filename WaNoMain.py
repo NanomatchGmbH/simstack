@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 import ctypes
 import signal
 import platform
