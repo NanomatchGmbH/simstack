@@ -20,6 +20,7 @@ import copy
 from PySide import QtCore
 import yaml
 import os
+import shutil
 
 from jinja2 import Template, FileSystemLoader, Environment
 
@@ -266,22 +267,24 @@ class WaNoModelRoot(WaNoModelDictLike):
             return my_dict
         else:
             #print("%s %s" % (path, parent.get_data()))
-            return parent.get_data()
+            return parent.get_rendered_wano_data()
 
     def wano_walker_render_pass(self, rendered_wano, parent = None, path = ""):
         if (parent == None):
             parent = self
-
+        #print(type(parent))
         if hasattr(parent,'items') and hasattr(parent,'listlike'):
+            my_list = []
             for key, wano in parent.items():
                 mypath = copy.copy(path)
                 if mypath == "":
                     mypath = "%s" % (key)
                 else:
                     mypath = "%s.%s" % (mypath, key)
-                self.wano_walker_render_pass(rendered_wano,parent=wano, path=mypath)
-
+                my_list.append(self.wano_walker_render_pass(rendered_wano,parent=wano, path=mypath))
+            return my_list
         elif hasattr(parent,'items'):
+            my_dict = {}
             for key,wano in parent.items():
                 mypath = copy.copy(path)
                 if hasattr(wano,"name"):
@@ -292,7 +295,8 @@ class WaNoModelRoot(WaNoModelDictLike):
                     mypath="%s" %(key)
                 else:
                     mypath = "%s.%s" % (mypath, key)
-                self.wano_walker_render_pass(rendered_wano,parent=wano,path=mypath)
+                my_dict[key] = self.wano_walker_render_pass(rendered_wano,parent=wano, path=mypath)
+            return my_dict
         else:
             # We should avoid merging and splitting. It's useless, we only need splitpath anyways
             splitpath=path.split(".")
@@ -315,16 +319,11 @@ class WaNoModelRoot(WaNoModelDictLike):
             with open(outfile,'w') as outfile:
                 outfile.write(template.render(wano = rendered_wano))
 
-
-
-
-
     def render(self):
         #We do two render passes in case values depend on each other
         rendered_wano = self.wano_walker()
-        self.wano_walker_render_pass(rendered_wano)
-        #We do two render passes, in case the rendering reset some values:
-        rendered_wano = self.wano_walker()
+        # We do two render passes, in case the rendering reset some values:
+        rendered_wano = self.wano_walker_render_pass(rendered_wano)
         self.exec_command = Template(self.exec_command).render(wano = rendered_wano)
         self.mock_submission(rendered_wano)
 
@@ -422,10 +421,15 @@ class WaNoItemFileModel(AbstractWanoModel):
     def __repr__(self):
         return repr(self.mystring)
 
+    def get_rendered_wano_data(self):
+        return self.logical_name
+
     def render(self, rendered_wano, path):
-        self.logical_name = Template(self.logical_name).render(wano=rendered_wano, path=path)
+        rendered_logical_name = Template(self.logical_name).render(wano=rendered_wano, path=path)
         #Upload and copy
-        self.mystring = self.logical_name
+        destdir = os.path.join("Staging",rendered_logical_name)
+        shutil.copy(self.mystring,destdir)
+        return rendered_logical_name
 
 
 class WaNoItemStringModel(AbstractWanoModel):

@@ -42,6 +42,12 @@ class AbstractWanoModel(object):
     def __getitem__(self, key):
         pass
 
+    # Upon rendering the model might provide data different in comparison to the displayed one
+    # (For example: the rendered wano only contains the logical filename and not local PC filename
+    # By default however get_rendered_wano_data == get_data
+    def get_rendered_wano_data(self):
+        return self.get_data()
+
     def set_view(self, view):
         self.view = view
 
@@ -50,7 +56,7 @@ class AbstractWanoModel(object):
         pass
 
     def render(self, rendered_wano, path):
-        pass
+        return self.get_rendered_wano_data()
 
 
     @abc.abstractmethod
