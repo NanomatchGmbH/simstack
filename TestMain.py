@@ -40,7 +40,7 @@ class Example(QtGui.QWidget):
         #hbox.addStretch(1)
         container_layout.addWidget(wifv.get_widget())
         submit_push = QtGui.QPushButton("Submit", parent=container_widget)
-        submit_push.clicked.connect(wifm.render)
+        submit_push.clicked.connect(self.render_slot)
         container_layout.addWidget(submit_push)
         container_widget.setLayout(container_layout)
         scroller.setWidget(container_widget)
@@ -54,6 +54,12 @@ class Example(QtGui.QWidget):
         self.setWindowTitle('Buttons')
         self.show()
 
+    def render_slot(self):
+        try:
+            return self.wifm.render()
+        except Exception as e:
+            a = QtGui.QMessageBox.critical(None, 'Error!', "Error during rendering, error was: %s" %e, QtGui.QMessageBox.Abort)
+
 
 def main():
     app = QtGui.QApplication(sys.argv)
@@ -62,7 +68,6 @@ def main():
     app.exec_()
     ex.wifm.update_xml()
     outfile = "%s_edited.xml"%wanofile.split('.')[0]
-
     ex.wifm.save_xml(outfile)
     sys.exit(0)
 
