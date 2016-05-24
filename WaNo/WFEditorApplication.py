@@ -7,16 +7,18 @@ import logging
 import os
 
 from PySide.QtCore import QObject
+from PySide import QtCore,QtGui
 
 from   lxml import etree
 
+from WaNo import WaNoFactory
 from WaNo.lib.pyura.pyura import UnicoreAPI, HTTPBasicAuthProvider
 from WaNo.lib.pyura.pyura import ErrorCodes as UnicoreErrorCodes
 
 from WaNo.view import WFViewManager
-from WaNo.WaNoRepository import WaNoRepository
 from WaNo.WaNoGitRevision import get_git_revision
 from WaNo.Constants import SETTING_KEYS
+from WaNo.view.WaNoViews import WanoQtViewRoot
 
 
 class WFEditorApplication(QObject):
@@ -107,37 +109,42 @@ class WFEditorApplication(QObject):
     def __load_wanos_from_repo(self, wano_repo_path):
         self._logger.debug("loading WaNos from %s." % wano_repo_path)
 
-        wanoRep = WaNoRepository()
-        wanos = []
-        files = [f for f in os.listdir(wano_repo_path) if f.endswith(".xml")]
-        
-        for infile in files:
-            name = infile.split(".")[0]
-            xxi = os.path.join(wano_repo_path, wano_repo_path+"/{0}".format(infile))
-            icon_path,_ = os.path.splitext(xxi)
-            icon_path += ".png"
-            element = wanoRep.parse_xml_file(xxi) 
+        self.wanos=[]
 
-            wano_icon_path = ""
-            if os.path.isfile(icon_path):
-                wano_icon_path = icon_path
-            wanos.append((name, element, wano_icon_path))
+        for folder in os.listdir(wano_repo_path):
+            fullpath = os.path.join(wano_repo_path, folder)
+            if os.path.isdir(fullpath):
+                name = folder
+                iconname= "%s.png" % folder
+                xmlname = "%s.xml" % folder
 
-        return wanos
+                xmlpath = os.path.join(fullpath,xmlname)
+                iconpath=os.path.join(fullpath,iconname)
+                if not os.path.isfile(xmlpath):
+                    # Might be a random folder
+                    continue
+                if not os.path.isfile(iconpath):
+                    icon = QtGui.QFileIconProvider().icon(QtGui.QFileIconProvider.Computer)
+                    wano_icon = icon.pixmap(icon.actualSize(QtCore.QSize(128, 128)))
+                else:
+                    wano_icon = QtGui.QIcon(iconpath)
+
+                self.wanos.append((name,fullpath,xmlpath,wano_icon))
+
+        return self.wanos
 
 
     def __load_saved_workflows(self, workflow_path):
         self._logger.debug("loading Workflows from %s." % workflow_path)
+        workflows = []
+        return workflows
+        #TODO: Implement tomorrow
 
         files = [f for f in os.listdir(workflow_path) if f.endswith(".xml")]
-        workflows = []
-
         for infile in files:
-            xxi = os.path.join(workflow_path, infile)
-            parsed = False
-
             try:
-                inputData = etree.parse(xxi)
+                pass
+                #parse workflow model
             except Exception as e:
                 self._logger.error(
                         "Error when trying to parse file '%s'\n\n%s" % \
@@ -147,13 +154,7 @@ class WFEditorApplication(QObject):
                         "Error when trying to parse file '%s'\n\n%s" % \
                             (xxi, e)
                     )
-            if parsed:
-                r = inputData.getroot()
-                if r.tag == "Workflow":
-                    element = WorkFlow(r)
-                    workflows.append(element)
-                else:
-                    self._logger.critical('Loading Workflows: no workflow in file ' + xxi)
+                self._logger.critical('Loading Workflows: no workflow in file ' + xxi)
         return workflows
 
     ############################################################################
@@ -265,10 +266,10 @@ class WFEditorApplication(QObject):
     #                             update                                       #
     ############################################################################
     def _update_wanos(self):
-        wanos = self.__load_wanos_from_repo(
+        self.__load_wanos_from_repo(
                 self.__settings.get_value(SETTING_KEYS['wanoRepo'])
             )
-        self._view_manager.update_wano_list(wanos)
+        self._view_manager.update_wano_list(self.wanos)
 
     def _update_workflow_list(self):
         workflows = self.__load_saved_workflows(
@@ -316,6 +317,7 @@ class WFEditorApplication(QObject):
         self._view_manager  = WFViewManager()
         self._unicore       = None # TODO pyura API
         # TODO model
+        self.wanos = []
 
         UnicoreAPI.init()
 

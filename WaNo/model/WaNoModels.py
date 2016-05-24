@@ -70,6 +70,7 @@ class WaNoModelDictLike(AbstractWanoModel):
         for wano in self.wano_dict.values():
             wano.update_xml()
 
+
 class WaNoChoiceModel(AbstractWanoModel):
     def __init__(self, *args, **kwargs):
         super(WaNoChoiceModel,self).__init__(*args,**kwargs)
@@ -104,9 +105,6 @@ class WaNoChoiceModel(AbstractWanoModel):
             if self.chosen == myid:
                 child.attrib["chosen"] = "True"
 
-
-
-
 class WaNoModelListLike(AbstractWanoModel):
     def __init__(self, *args, **kwargs):
         super(WaNoModelListLike, self).__init__(*args, **kwargs)
@@ -131,7 +129,7 @@ class WaNoModelListLike(AbstractWanoModel):
         return enumerate(self.wano_list)
 
     def wanos(self):
-        return self.wano_list
+        return enumerate(self.wano_list)
 
     def update_xml(self):
         for wano in self.wano_list:

@@ -12,8 +12,6 @@ import logging
 import PySide.QtCore as QtCore
 import PySide.QtGui  as QtGui
 
-from .WaNo import WaNo
-
 
 class WaNoEditor(QtGui.QTabWidget):
     changedFlag = False

@@ -111,6 +111,7 @@ class WFEditor(QWidget):
         self._connect_signals()
 
     def update_wano_list(self, wanos):
+        self.wanos = wanos
         self.wanoListWidget.update_list(wanos)
 
     def update_saved_workflows_list(self, workflows):

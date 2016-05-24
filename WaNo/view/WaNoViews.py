@@ -99,6 +99,20 @@ class EmptyView(AbstractWanoView):
     def __init__(self,*args,**kwargs):
         super(EmptyView,self).__init__(*args,**kwargs)
 
+class WaNoGroupView(AbstractWanoQTView):
+    def __init__(self, *args, **kwargs):
+        super(WaNoGroupView, self).__init__(*args, **kwargs)
+        self.actual_widget = QtGui.QWidget(self.qt_parent)
+        self.vbox = QtGui.QVBoxLayout()
+        self.actual_widget.setLayout(self.vbox)
+
+    def get_widget(self):
+        return self.actual_widget
+
+    def init_from_model(self):
+        for model in self.model.wanos():
+            self.vbox.addWidget(model.view.get_widget())
+
 class WaNoBoxView(AbstractWanoQTView):
     def __init__(self, *args, **kwargs):
         super(WaNoBoxView, self).__init__(*args, **kwargs)
@@ -350,3 +364,20 @@ class WaNoChoiceView(AbstractWanoQTView):
         return self.actual_widget
 
 
+class WaNoTabView(AbstractWanoQTView):
+    def __init__(self, *args, **kwargs):
+        super(WaNoTabView, self).__init__(*args, **kwargs)
+        """ Widget code here """
+        self.actual_widget = QtGui.QTabWidget(self.qt_parent)
+        """" Widget code end """
+
+    def init_from_model(self):
+
+        for key, model in self.model.wanos():
+
+            self.actual_widget.addTab(model.view.get_widget(),model.name)
+
+
+
+    def get_widget(self):
+        return self.actual_widget

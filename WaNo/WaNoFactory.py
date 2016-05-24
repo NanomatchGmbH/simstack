@@ -24,6 +24,20 @@ class ViewGeneratorHelper(object):
         self.view.init_from_model()
 
 
+def wano_constructor_helper(folder,container_widget):
+    from WaNo.model.WaNoModels import WaNoModelRoot
+    from WaNo.view.WaNoViews import WanoQtViewRoot
+    wifv = WanoQtViewRoot(qt_parent=container_widget)
+    wanofile = ""
+    wifm = WaNoModelRoot.construct_from_wano(wanofile, rootview=wifv)
+    wifm.set_view(wifv)
+    wifv.set_model(wifm)
+    wifm.construct_children()
+    WaNoFactory.build_views()
+    wifv.init_from_model()
+    icon = ""
+    return wifv,wifm,icon
+
 class WaNoFactory(object):
     postregisterlist = []
 
@@ -44,18 +58,22 @@ class WaNoFactory(object):
             WaNoItemStringModel, WaNoItemBoolModel, WaNoModelDictLike, WaNoChoiceModel, \
             MultipleOfModel, WaNoItemFileModel, WaNoItemIntModel
         from WaNo.view.WaNoViews import WaNoItemFloatView, WaNoBoxView, WaNoItemStringView, \
-            WaNoItemBoolView, WaNoItemFileView, WaNoChoiceView, MultipleOfView, WaNoItemIntView
+            WaNoItemBoolView, WaNoItemFileView, WaNoChoiceView, MultipleOfView, WaNoItemIntView,\
+            WaNoTabView, WaNoGroupView
 
         wano_list = {
             "WaNoFloat": (WaNoItemFloatModel, WaNoItemFloatView),
             "WaNoInt": (WaNoItemIntModel, WaNoItemIntView),
             "WaNoString": (WaNoItemStringModel, WaNoItemStringView),
             "WaNoListBox": (WaNoModelListLike, WaNoBoxView),
+            "WaNoBox": (WaNoModelDictLike, WaNoBoxView),
             "WaNoDictBox": (WaNoModelDictLike, WaNoBoxView),
+            "WaNoGroup": (WaNoModelDictLike, WaNoGroupView),
             "WaNoBool": (WaNoItemBoolModel, WaNoItemBoolView),
             "WaNoFile": (WaNoItemFileModel, WaNoItemFileView),
             "WaNoChoice": (WaNoChoiceModel, WaNoChoiceView),
-            "WaNoMultipleOf": (MultipleOfModel,MultipleOfView)
+            "WaNoMultipleOf": (MultipleOfModel,MultipleOfView),
+            "WaNoTabs": (WaNoModelListLike,WaNoTabView)
         }
 
         if xml.tag not in wano_list:

@@ -11,20 +11,23 @@ from   lxml import etree
 import PySide.QtCore as QtCore
 import PySide.QtGui  as QtGui
 
-from .WaNo import WaNo,WorkFlow
+import WaNo.WaNoFactory as WaNoFactory
+
 
 def mapClassToTag(name):
     xx = name.replace('Widget','')
     return xx[2:]
     
 widgetColors = {'MainEditor' : '#F5FFF5' , 'Control': '#EBFFD6' , 'Base': '#F5FFEB' ,
-                'WaNo' : '#FF00FF' }
-
+               'WaNo' : '#FF00FF', 'ButtonColor':'#D4FF7F' }
+#widgetColors = {'MainEditor': '#77B395', 'Control': '#003C1D', 'Base': '#28774F',
+#                'WaNo': '#28536C', 'ButtonColor': '#477087'}
 
     
-class WFWaNoWidget(QtGui.QPushButton):
+class WFWaNoWidget(QtGui.QToolButton):
     def __init__(self, text, wano, parent=None):
-        super(WFWaNoWidget, self).__init__(text,parent)        
+        #super(WFWaNoWidget, self).__init__(text,parent)
+        super(WFWaNoWidget, self).__init__(parent)
         self.logger = logging.getLogger('WFELOG')
         self.moved  = False
         #
@@ -32,34 +35,40 @@ class WFWaNoWidget(QtGui.QPushButton):
         #
         lvl = self.logger.getEffectiveLevel() # switch off too many infos
         self.logger.setLevel(logging.ERROR)
-        xml = wano.xml()
-        if xml.tag == 'WaNo':
-            self.wano   = WaNo(xml)
-            self.isWorkFlow = False
-        elif xml.tag == 'WorkFlow':
-            self.wano = WorkFlow(xml)
-            self.isWorkFlow = True
-        else:
-            self.logger.critical(__name__ + ' Do not know how to make WFWaNoWidger from ' + xml.tag)
-        
+
         self.logger.setLevel(lvl)
-        
-        self.setStyleSheet("background: NONE") # + widgetColors['WaNo'])
-        self.setAutoFillBackground(True)
-        self.setColor(QtCore.Qt.lightGray)
+        stylesheet ="""
+        background-color: %s;
+        border: 3px solid black;
+        border-radius: 12px;
+        color: black;
+        font-size: 24px;
+        padding: 4px;
+        padding-left: 6px;
+        padding-right: 6px;
+        icon-size: 64px;
+
+        """ %widgetColors["ButtonColor"]
+        self.setStyleSheet(stylesheet) # + widgetColors['WaNo'])
+        self.setToolButtonStyle(QtCore.Qt.ToolButtonTextUnderIcon)
+        self.setText(text)
+        self.setIcon(wano[3])
+        #self.setAutoFillBackground(True)
+        #self.setColor(QtCore.Qt.lightGray)
+        self.wano = None
+        self.wano_instance = None
   
     def parentElementList(self):
         return self.parent().buttons
     
     def placeElements(self):
         pass
-    
+
     def setColor(self,color):
         p = QtGui.QPalette()
         p.setColor(QtGui.QPalette.Button,color)
         self.setPalette(p)
-       
-       
+
     def parse(self,r):
         self.wano = WaNo(r)
         
@@ -77,21 +86,27 @@ class WFWaNoWidget(QtGui.QPushButton):
             drag = QtGui.QDrag(self)
             drag.setMimeData(mimeData)
             drag.setHotSpot(e.pos() - self.rect().topLeft())
-            self.move( e.globalPos() );
+            self.move( e.globalPos() )
             dropAction = drag.start(QtCore.Qt.MoveAction)
 
     def clear(self):
         pass 
-    
+
+    def construct_wano(self):
+        self.wano_model,self.wano_view = WaNoFactory.wano_constructor_helper(self.wano[0],self)
+
+
     def mouseDoubleClickEvent(self,e):
-        if self.wano is not None:
+        if self.wano_instance is not None:
             self.parent().openWaNoEditor(self) # pass the widget to remember it
+        else:
+            self.construct_wano()
     
     def gatherExports(self,wano,varExp,filExp,waNoNames):
         if wano == self.wano:
             return True
-        if self.wano != None:
-            self.wano.gatherExports(varExp,filExp,waNoNames)
+        if self.wano is not None:
+            self.wano_instance.gatherExports(varExp,filExp,waNoNames)
         return False
     
 class WFBaseWidget(QtGui.QFrame):
@@ -125,7 +140,7 @@ class WFBaseWidget(QtGui.QFrame):
             self.children().remove(element)
             self.placeElements()
             if len(self.buttons) == 0 and \
-               hasattr(self.parent(),'removePanel'):  # maybe remove the whole widget ?
+                hasattr(self.parent,'removePanel'):  # maybe remove the whole widget ?
                 self.parent().removePanel(self)
         except IndexError:
             print ("Removing Element ",element.text()," from WFBaseWidget",self.text())
@@ -279,8 +294,11 @@ class WFBaseWidget(QtGui.QFrame):
                 btn.show()
             else:
                 if hasattr(item,'WaNo'):
+                    print("here1")
+                    print(item.WaNo)
                     btn = WFWaNoWidget(text,item.WaNo,self)
                 else:
+                    print("here2")
                     btn = WFWaNoWidget(text,None,self)
                 btn.move(e.pos())
                 btn.show()
@@ -606,7 +624,7 @@ class WFControlWidget(QtGui.QFrame):
             drag = QtGui.QDrag(self)
             drag.setMimeData(mimeData)
             drag.setHotSpot(e.pos() - self.rect().topLeft())
-            self.move( e.globalPos() );
+            self.move(e.globalPos())
             dropAction = drag.start(QtCore.Qt.MoveAction)
 
 class WFWhileWidget(WFControlWidget):
