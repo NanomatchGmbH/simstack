@@ -24,19 +24,17 @@ class ViewGeneratorHelper(object):
         self.view.init_from_model()
 
 
-def wano_constructor_helper(folder,container_widget):
+def wano_constructor_helper(wanofile,container_widget):
     from WaNo.model.WaNoModels import WaNoModelRoot
     from WaNo.view.WaNoViews import WanoQtViewRoot
     wifv = WanoQtViewRoot(qt_parent=container_widget)
-    wanofile = ""
     wifm = WaNoModelRoot.construct_from_wano(wanofile, rootview=wifv)
     wifm.set_view(wifv)
     wifv.set_model(wifm)
     wifm.construct_children()
     WaNoFactory.build_views()
     wifv.init_from_model()
-    icon = ""
-    return wifv,wifm,icon
+    return wifm,wifv
 
 class WaNoFactory(object):
     postregisterlist = []
