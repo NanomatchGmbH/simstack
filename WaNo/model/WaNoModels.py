@@ -51,9 +51,6 @@ class WaNoModelDictLike(AbstractWanoModel):
     def __iter__(self):
         return iter(self.wano_dict)
 
-    def items(self):
-        return self.wano_dict.items()
-
     def get_data(self):
         return self.wano_dict
 
