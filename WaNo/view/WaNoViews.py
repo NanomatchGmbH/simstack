@@ -132,6 +132,7 @@ class WaNoBoxView(AbstractWanoQTView):
         }
         """)
         #self.actual_widget.setCheckable(True)
+        #self.actual_widget.setSizePolicy(QtGui.QSizePolicy.Expanding,QtGui.QSizePolicy.Expanding)
         self.vbox = QtGui.QVBoxLayout()
         self.actual_widget.setLayout(self.vbox)
 
@@ -142,6 +143,7 @@ class WaNoBoxView(AbstractWanoQTView):
         self.actual_widget.setTitle(self.model.name)
         for model in self.model.wanos():
             self.vbox.addWidget(model.view.get_widget())
+
 
 class WaNoItemIntView(AbstractWanoQTView):
     def __init__(self, *args, **kwargs):
@@ -159,6 +161,8 @@ class WaNoItemIntView(AbstractWanoQTView):
         hbox.addWidget(self.label)
         hbox.addStretch()
         hbox.addWidget(self.spinner)
+        #self.actual_widget.setSizePolicy(QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Expanding)
+        #self.actual_widget.setSizePolicy(QtGui.QSizePolicy.Fixed, QtGui.QSizePolicy.Fixed)
         # hbox.addWidget(self.line_edit)
 
         self.spinner.valueChanged.connect(self.value_changed)
@@ -188,14 +192,23 @@ class WaNoItemFloatView(AbstractWanoQTView):
         self.spinner.setMaximum(9999.9)
         self.spinner.setMinimum(-9999.9)
         self.spinner.setSingleStep(1.0)
-
+        #self.actual_widget.setSizePolicy(QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Expanding)
+        #self.actual_widget.setSizePolicy(QtGui.QSizePolicy.Minimum, QtGui.QSizePolicy.Minimum)
         self.label = QtGui.QLabel("ABC")
+        #self.label.setSizePolicy(QtGui.QSizePolicy.Fixed, QtGui.QSizePolicy.Fixed
+        #self.label.setSizePolicy(QtGui.QSizePolicy.Minimum, QtGui.QSizePolicy.Minimum)
         hbox.addWidget(self.label)
         hbox.addStretch()
         hbox.addWidget(self.spinner)
         # hbox.addWidget(self.line_edit)
 
         self.spinner.valueChanged.connect(self.value_changed)
+        print(self.actual_widget.minimumSize())
+
+        print(self.spinner.sizeHint())
+
+        #self.spinner.setMinimumSize(self.spinner.sizeHint())
+        #self.spinner.setSizePolicy(QtGui.QSizePolicy.Minimum, QtGui.QSizePolicy.Minimum)
         """ Widget code end """
 
     def get_widget(self):
@@ -204,6 +217,9 @@ class WaNoItemFloatView(AbstractWanoQTView):
     def init_from_model(self):
         self.spinner.setValue(self.model.get_data())
         self.label.setText(self.model.name)
+        #self.model.root_model.view.actual_widget.viewport().update_geometry()
+        #self.model.root_model.view.actual_widget.viewport().update()
+        #self.model.root_model.view.actual_widget.update()
 
     def value_changed(self,value):
         self.model.set_data(value)
@@ -221,6 +237,9 @@ class WaNoItemBoolView(AbstractWanoQTView):
         hbox.addStretch()
         hbox.addWidget(self.checkbox)
         # hbox.addWidget(self.line_edit)
+
+        #self.actual_widget.setSizePolicy(QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Expanding)
+
         self.checkbox.stateChanged.connect(self.state_changed)
         """ Widget code end """
 
@@ -269,9 +288,20 @@ class WaNoItemStringView(AbstractWanoQTView):
 class WanoQtViewRoot(AbstractWanoQTView):
     def __init__(self, *args, **kwargs):
         super(WanoQtViewRoot, self).__init__(*args, **kwargs)
-        self.actual_widget = QtGui.QWidget(parent=self.qt_parent)
+
+        scroll = QtGui.QScrollArea(parent=self.qt_parent)
+        scroll.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOn)
+        scroll.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarAsNeeded)
+        scroll.setWidgetResizable(True)
+        me = QtGui.QWidget(parent=scroll)
+        scroll.setWidget(me)
+        #scroll.resize(460,700)
+        self.actual_widget =scroll
         self.vbox = QtGui.QVBoxLayout()
-        self.actual_widget.setLayout(self.vbox)
+        #me.setMinimumSize(QtCore.QSize(900, 900))
+        me.setLayout(self.vbox)
+
+        #me.setSizePolicy(QtGui.QSizePolicy.Minimum, QtGui.QSizePolicy.Minimum)
 
     def get_widget(self):
         return self.actual_widget
@@ -279,6 +309,8 @@ class WanoQtViewRoot(AbstractWanoQTView):
     def init_from_model(self):
         for key, model in self.model.wano_dict.items():
             self.vbox.addWidget(model.view.get_widget())
+        self.actual_widget.viewport().update()
+        self.actual_widget.update()
 
 class WaNoItemFileView(AbstractWanoQTView):
     def __init__(self, *args, **kwargs):
@@ -301,6 +333,9 @@ class WaNoItemFileView(AbstractWanoQTView):
         self.openfilebutton.clicked.connect(self.showLocalDialog)
         self.actual_widget.setLayout(hbox)
         self.lineedit.editingFinished.connect(self.line_edited)
+        print(self.actual_widget.minimumSize())
+
+        #self.actual_widget.setSizePolicy(QtGui.QSizePolicy.Fixed, QtGui.QSizePolicy.Fixed)
         """ Widget code end """
 
     def showLocalDialog(self):
@@ -345,6 +380,7 @@ class WaNoChoiceView(AbstractWanoQTView):
         """)
         self.buttons = []
         self.bg.buttonClicked[int].connect(self.onButtonClicked)
+        ##self.actual_widget.setSizePolicy(QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Expanding)
         """" Widget code end """
 
     def init_from_model(self):

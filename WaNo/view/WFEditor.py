@@ -133,14 +133,13 @@ class WFEditor(QWidget):
        
         
     def openWaNoEditor(self,wanoWidget,varExports,fileExports,waNoNames):
-        if self.wanoEditor.init(wanoWidget.wano,varExports,fileExports,waNoNames):
+        if self.wanoEditor.init(wanoWidget.wano_view,varExports,fileExports,waNoNames):
             wanoWidget.setColor(Qt.green)
             self.lastActive = wanoWidget
     
     def openWorkFlow(self,workFlow):
         self.workflowWidget.openWorkFlow(workFlow)
-        
-     
+
         
     def SizeHint(self):
         s = QSize()

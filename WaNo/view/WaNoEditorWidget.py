@@ -69,6 +69,7 @@ class WaNoEditor(QtGui.QTabWidget):
             ret = self.closeAction() # save is taken care inside
             if ret == QtGui.QMessageBox.Cancel: 
                 return False
+
         if len(self.activeTabs) > 1:
             self.editor.deactivateWidget()
             self.clear()
@@ -77,6 +78,7 @@ class WaNoEditor(QtGui.QTabWidget):
         WaNoEditor.changedFlag=False
         self.setMinimumWidth(400)
 
+        """
         hasElements = len(wano.elements) > 0
         if wano.preScript is not None:
             tab = ScriptTab(wano.preScript,importSelection)
@@ -99,7 +101,12 @@ class WaNoEditor(QtGui.QTabWidget):
             self.tabWidget.setCurrentIndex(2)
         else:
             self.tabWidget.setCurrentIndex(1)
-        
+
+        """
+        print(self.wano)
+        self.tabWidget.addTab(self.wano.get_widget(),self.wano.model.name)
+
+
         return True
        
     def deleteClose(self):

@@ -26,13 +26,9 @@ widgetColors = {'MainEditor' : '#F5FFF5' , 'Control': '#EBFFD6' , 'Base': '#F5FF
     
 class WFWaNoWidget(QtGui.QToolButton):
     def __init__(self, text, wano, parent=None):
-        #super(WFWaNoWidget, self).__init__(text,parent)
         super(WFWaNoWidget, self).__init__(parent)
         self.logger = logging.getLogger('WFELOG')
-        self.moved  = False
-        #
-        #  here we make a deep copy of the WaNo, but deep copy does not work. Do it via XMLK
-        #
+        self.moved = False
         lvl = self.logger.getEffectiveLevel() # switch off too many infos
         self.logger.setLevel(logging.ERROR)
 
@@ -55,8 +51,9 @@ class WFWaNoWidget(QtGui.QToolButton):
         self.setIcon(wano[3])
         #self.setAutoFillBackground(True)
         #self.setColor(QtCore.Qt.lightGray)
-        self.wano = None
-        self.wano_instance = None
+        self.wano = wano
+        self.wano_model = None
+        self.wano_view = None
   
     def parentElementList(self):
         return self.parent().buttons
@@ -68,9 +65,6 @@ class WFWaNoWidget(QtGui.QToolButton):
         p = QtGui.QPalette()
         p.setColor(QtGui.QPalette.Button,color)
         self.setPalette(p)
-
-    def parse(self,r):
-        self.wano = WaNo(r)
         
     def xml(self):
         if self.text() != "Start":
@@ -93,14 +87,13 @@ class WFWaNoWidget(QtGui.QToolButton):
         pass 
 
     def construct_wano(self):
-        self.wano_model,self.wano_view = WaNoFactory.wano_constructor_helper(self.wano[0],self)
+        self.wano_model,self.wano_view = WaNoFactory.wano_constructor_helper(self.wano[2],self)
 
 
     def mouseDoubleClickEvent(self,e):
-        if self.wano_instance is not None:
-            self.parent().openWaNoEditor(self) # pass the widget to remember it
-        else:
+        if self.wano_model is None:
             self.construct_wano()
+        self.parent().openWaNoEditor(self)  # pass the widget to remember it
     
     def gatherExports(self,wano,varExp,filExp,waNoNames):
         if wano == self.wano:
@@ -146,16 +139,16 @@ class WFBaseWidget(QtGui.QFrame):
             print ("Removing Element ",element.text()," from WFBaseWidget",self.text())
   
     def openWaNoEditor(self,wanoWidget):
-        if wanoWidget.isWorkFlow:
-            print ("open Workflow")
-            self.editor.openWorkFlow(wanoWidget.wano)
-        else:
-            varEx = {}
-            filEx = {}
-            waNoNames = []
-            if not self.gatherExports(wanoWidget.wano,varEx,filEx,waNoNames):
-                self.logger.error("Error gathering exports for Wano:",wanoWidget.name)
-            self.editor.openWaNoEditor(wanoWidget,varEx,filEx,waNoNames)
+        #if wanoWidget.isWorkFlow:
+        #    print ("open Workflow")
+        #    self.editor.openWorkFlow(wanoWidget.wano)
+        #else:
+        varEx = {}
+        filEx = {}
+        waNoNames = []
+        #if not self.gatherExports(wanoWidget.wano,varEx,filEx,waNoNames):
+        #    self.logger.error("Error gathering exports for Wano:",wanoWidget.name)
+        self.editor.openWaNoEditor(wanoWidget,varEx,filEx,waNoNames)
         
     def sizeHint(self):
         if self.topWidget:            
@@ -452,8 +445,8 @@ class WFTabsWidget(QtGui.QTabWidget):
             print ("Could not Parse Workflow in ",fileName)
         WFWorkflowWidget.changedFlag = False
 
-    def sizeHint(self):
-        return QtCore.QSize(500,500)
+    #def sizeHint(self):
+    #    return QtCore.QSize(500,500)
 
 
 #
