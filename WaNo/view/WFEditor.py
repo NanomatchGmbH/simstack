@@ -24,7 +24,17 @@ class WFEditor(QWidget):
     registry_changed        = Signal(int, name="RegistryChanged")
     disconnect_registry     = Signal(name='disconnectRegistry')
     connect_registry        = Signal(int, name='connectRegistry')
-    request_fs_model_update = Signal(str, name="requestRemoteFileSystemModelUpdate")
+
+    request_job_list_update     = Signal(name="requestJobListUpdate")
+    request_worflow_list_update = Signal(name="requestWorkflowListUpdate")
+    request_job_update          = Signal(str, name="requestJobUpdate")
+    request_worflow_update      = Signal(str, name="requestWorkflowUpdate")
+    request_directory_update    = Signal(str, name="requestDirectoryUpdate")
+    download_file               = Signal(str, name="downloadFile")
+    upload_file_to              = Signal(str, name="uploadFile")
+    delete_file                 = Signal(str, name="deleetFile")
+    delete_job                  = Signal(str, name="deleetJob")
+
 
 
     def __build_infobox(self):
@@ -91,7 +101,7 @@ class WFEditor(QWidget):
         script_path=os.path.dirname(os.path.realpath(__file__))
 
         for i in range(len(self._controls)):
-            self._controls[i] =(self._controls[i][0], os.path.join(script_path,"..",self._controls[i][1]))
+            self._controls[i] = (self._controls[i][0], os.path.join(script_path,"..",self._controls[i][1]))
 
         #import pprint
 
@@ -101,7 +111,16 @@ class WFEditor(QWidget):
         self.registrySelection.registrySelectionChanged.connect(self.registry_changed)
         self.registrySelection.connect_registry.connect(self.connect_registry)
         self.registrySelection.disconnect_registry.connect(self.disconnect_registry)
-        self.remoteFileTree.request_model_update.connect(self.request_fs_model_update)
+
+        self.remoteFileTree.request_job_list_update.connect(self.request_job_list_update)
+        self.remoteFileTree.request_worflow_list_update.connect(self.request_worflow_list_update)
+        self.remoteFileTree.request_job_update.connect(self.request_job_update)
+        self.remoteFileTree.request_worflow_update.connect(self.request_worflow_update)
+        self.remoteFileTree.request_directory_update.connect(self.request_directory_update)
+        self.remoteFileTree.download_file.connect(self.download_file)
+        self.remoteFileTree.upload_file_to.connect(self.upload_file_to)
+        self.remoteFileTree.delete_job.connect(self.delete_job)
+        self.remoteFileTree.delete_file.connect(self.delete_file)
 
     def __init__(self, parent=None):
         super(WFEditor, self).__init__(parent)
@@ -121,6 +140,12 @@ class WFEditor(QWidget):
 
     def update_filesystem_model(self, path, files):
         self.remoteFileTree.update_file_tree_node(path, files)
+
+    def update_job_list(self, jobs):
+        self.remoteFileTree.update_job_list(jobs)
+
+    def update_workflow_list(self, wfs):
+        self.remoteFileTree.update_workflow_list(wfs)
 
     def set_registry_connection_status(self, status):
         self.registrySelection.setStatus(status)

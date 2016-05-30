@@ -79,26 +79,147 @@ class WFEditorApplication(QObject):
     def _on_registry_disconnect(self):
         self._disconnect_unicore()
 
-    def _on_fs_model_update_request(self, path):
-        self._logger.debug("Querying %s from Unicore Registry" % path)
-        print("Querying %s from Unicore Registry" % path)
+    #FIXME remove
+    def fake_storage_manager_get_list(self):
+        print("fake_storage_manager_get_list")
+        return [Storage('timo_Home'), Storage('Foo')]
+
+    #FIXME remove
+    def fake_storage_manager_get_file_list(storage_id, path):
+        l = ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m",
+                "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z"]
+        import random
+        random.shuffle(l)
+        return [''.join(l[:random.randint(0,len(l))]) for i in range(0, random.randint(0, 6))]
+
+
+    def _on_fs_job_list_update_request(self):
+        self._logger.debug("Querying jobs from Unicore Registry")
         ok = True
-        if self._unicore is None:
-            self._view_manager.show_error("No registry selected.")
-            ok = False
-        #TODO implement in pyura upstream....
-        #if not self._unicore.is_connected:
-        #    self._view_manager.show_error("Registry not connected.")
-        #    ok = False
+        files = []
+        #TODO factor out tests
         if ok:
+            #TODO use job manager?!
+            job_manager = self._unicore.get_job_manager()
+            job_manager.update_list()
+            files = [{
+                        'id': s.get_id(),
+                        'name': s.get_id(),
+                        'type': 'j',
+                        'path': s.get_working_dir()
+                    } for s in job_manager.get_list()]
+            print("jobs:\n\n\n\n%s\n\n\n" % job_manager.get_list())
+            print("Got files: %s" % files)
+            self._view_manager.update_job_list(files)
+
+    def _on_fs_worflow_list_update_request(self):
+        self._logger.debug("Querying workflows from Unicore Registry")
+        ok = True
+        files = []
+        #TODO factor out tests
+        if ok:
+            files = [{'id': s, 'name': 'wf_%s' % s, 'type': 'w', 'path': s} \
+                    for s in range(1, 10)]
+            self._view_manager.update_workflow_list(files)
+            print("Got files: %s" % files)
+
+    def _extract_storage_path(self, path):
+        storage = None
+        querypath = ''
+        splitted = [p for p in path.split('/') if not p is None and p != ""]
+
+        if len(splitted) >= 1:
+            storage   = splitted[0]
+        if len(splitted) >= 2:
+            querypath = '/'.join(splitted[1:]) if len(splitted) > 1 else ''
+
+        return (storage, querypath)
+
+    def _on_fs_job_update_request(self, path):
+        self._logger.debug("Querying %s from Unicore Registry" % path)
+        ok = True
+        files = []
+        #TODO factor out tests
+
+        storage, querypath = self._extract_storage_path(path)
+
+        if ok and not storage is None:
+            #TODO use job manager?!
             storage_manager = self._unicore.get_storage_manager()
             storage_manager.update_list()
-            if path == "":
-                files = [s.get_id() for s in storage_manager.get_list()]
-            else:
-                files = storage_manager.get_file_list(path=path)
-            files = [s.get_id() for s in storage_manager.get_list()]
+            print("Requesting %s:%s" % (storage, querypath))
+            files = storage_manager.get_file_list(
+                    storage_id=storage, path=querypath)
             self._view_manager.update_filesystem_model(path, files)
+            print("Got files: %s" % files)
+
+    def _on_fs_worflow_update_request(self, path):
+        self._logger.debug("Querying %s from Unicore Registry" % path)
+        # TODO
+        print("wf update requested...")
+
+    def _on_fs_directory_update_request(self, path):
+        self._logger.debug("Querying %s from Unicore Registry" % path)
+        # TODO
+        self._on_fs_job_update_request(path)
+
+    def __on_download_update(self, uri, localdest, progress, total):
+        print("\t%6.2f (%6.2f / %6.2f)\t%s" % (progress / total * 100., progress,
+            total, uri))
+
+    def __on_upload_update(self, uri, localfile, progress, total):
+        print("\t%6.2f (%6.2f / %6.2f)\t%s" % (progress / total * 100., progress,
+            total, uri))
+        if progress / total * 100. >= 100.:
+            print("requesting update for %s" % uri)
+            self._on_fs_job_update_request(uri)
+
+
+    def _on_fs_download(self, from_path, to_path):
+        storage, path = self._extract_storage_path(from_path)
+
+        storage_manager = self._unicore.get_storage_manager()
+
+        #TODO do in future/Thread
+        status, err = storage_manager.get_file(
+                path,
+                to_path,
+                storage_id=storage,
+                callback=self.__on_download_update)
+        print("status: %s, err: %s" % (status, err))
+
+    def _on_fs_upload(self, local_file, dest_dir):
+        storage, path = self._extract_storage_path(dest_dir)
+        storage_manager = self._unicore.get_storage_manager()
+        remote_filepath = os.path.join(path, os.path.basename(local_file))
+
+        #TODO do in future/Thread
+        print("uploading '%s' to %s:%s" % (local_file, storage, path))
+        status, err, json = storage_manager.upload_file(
+                local_file,
+                remote_filename=remote_filepath,
+                storage_id=storage,
+                callback=self.__on_upload_update)
+        print("status: %s, err: %s, json: %s" % (status, err, json))
+        #TODO request update when done
+
+    def _on_fs_delete_file(self, filename):
+        storage, path = self._extract_storage_path(filename)
+        storage_manager = self._unicore.get_storage_manager()
+
+        print("deleting %s:%s" % (storage, path))
+        if not path is None and not path == "":
+            status, err = storage_manager.delete_file(path, storage_id=storage)
+            print("delete: status: %s, err: %s" % (status, err))
+
+    def _on_fs_delete_job(self, job):
+        job, path = self._extract_storage_path(job)
+        job_manager = self._unicore.get_job_manager()
+
+        print("deleting job: %s" % job)
+        if path is None or path == "":
+            status, err = job_manager.delete(job=job)
+            print("delete: status: %s, err: %s" % (status, err))
 
 
     ############################################################################
@@ -306,7 +427,16 @@ class WFEditorApplication(QObject):
         self._view_manager.registry_changed.connect(self._on_registry_changed)
         self._view_manager.disconnect_registry.connect(self._on_registry_disconnect)
         self._view_manager.connect_registry.connect(self._on_registry_connect)
-        self._view_manager.request_fs_model_update.connect(self._on_fs_model_update_request)
+
+        self._view_manager.request_job_list_update.connect(self._on_fs_job_list_update_request)
+        self._view_manager.request_worflow_list_update.connect(self._on_fs_worflow_list_update_request)
+        self._view_manager.request_job_update.connect(self._on_fs_job_update_request)
+        self._view_manager.request_worflow_update.connect(self._on_fs_worflow_update_request)
+        self._view_manager.request_directory_update.connect(self._on_fs_directory_update_request)
+        self._view_manager.download_file_to.connect(self._on_fs_download)
+        self._view_manager.upload_file.connect(self._on_fs_upload)
+        self._view_manager.delete_job.connect(self._on_fs_delete_job)
+        self._view_manager.delete_file.connect(self._on_fs_delete_file)
 
     def __init__(self, settings):
         super(WFEditorApplication, self).__init__()

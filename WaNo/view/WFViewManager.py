@@ -2,7 +2,7 @@ from .WFEditorMainWindow import WFEditorMainWindow
 from .WFEditor import WFEditor
 
 from PySide.QtCore import Signal, QObject
-from PySide.QtGui import QMessageBox
+from PySide.QtGui import QMessageBox, QFileDialog
 
 from .MessageDialog import MessageDialog
 
@@ -13,7 +13,16 @@ class WFViewManager(QObject):
     registry_changed        = Signal(int, name="RegistryChanged")
     disconnect_registry     = Signal(name='disconnectRegistry')
     connect_registry        = Signal(int, name='connectRegistry')
-    request_fs_model_update = Signal(str, name="requestRemoteFileSystemModelUpdate")
+    request_job_list_update     = Signal(name="requestJobListUpdate")
+    request_worflow_list_update = Signal(name="requestWorkflowListUpdate")
+    request_job_update          = Signal(str, name="requestJobUpdate")
+    request_worflow_update      = Signal(str, name="requestWorkflowUpdate")
+    request_directory_update    = Signal(str, name="requestDirectoryUpdate")
+    download_file_to            = Signal(str, str, name="downloadFileTo")
+    upload_file                 = Signal(str, str, name="uploadFile")
+    delete_file                 = Signal(str, name="deleetFile")
+    delete_job                  = Signal(str, name="deleetJob")
+
 
     def _show_message(self, msg_type, msg):
         MessageDialog(msg_type, msg)
@@ -70,6 +79,12 @@ class WFViewManager(QObject):
     def update_filesystem_model(self, path, files):
         self._editor.update_filesystem_model(path, files)
 
+    def update_job_list(self, jobs):
+        self._editor.update_job_list(jobs)
+
+    def update_workflow_list(self, wfs):
+        self._editor.update_workflow_list(wfs)
+
     def exit(self):
         if QMessageBox.question(None, '', "Are you sure you want to quit?",
                                 QMessageBox.Yes | QMessageBox.No,
@@ -79,7 +94,30 @@ class WFViewManager(QObject):
     def test(self):
         print("WFViewManager")
         self.open_registry_settings.emit()
-        
+
+    def _on_file_download(self, filepath):
+        save_to = QFileDialog.getSaveFileName(
+                self._editor,
+                'Download File',
+                '',
+                selectedFilter=''
+                )
+        if save_to:
+            print(save_to)
+            print("Save file to: %s." % save_to[0])
+            self.download_file_to.emit(filepath, save_to[0])
+
+    def _on_file_upload(self, dirpath):
+        upload = QFileDialog.getOpenFileName(
+                self._editor,
+                'Select file for upload',
+                '',
+                selectedFilter=''
+                )
+        if upload:
+            print(upload)
+            self.upload_file.emit(upload[0], dirpath)
+ 
     def _connect_signals(self):
         self._mainwindow.open_file.connect(self.open_dialog_open_workflow)
         self._mainwindow.save.connect(self.open_dialog_save_workflow)
@@ -93,7 +131,16 @@ class WFViewManager(QObject):
         self._editor.registry_changed.connect(self.registry_changed)
         self._editor.connect_registry.connect(self.connect_registry)
         self._editor.disconnect_registry.connect(self.disconnect_registry)
-        self._editor.request_fs_model_update.connect(self.request_fs_model_update)
+
+        self._editor.request_job_list_update.connect(self.request_job_list_update)
+        self._editor.request_worflow_list_update.connect(self.request_worflow_list_update)
+        self._editor.request_job_update.connect(self.request_job_update)
+        self._editor.request_worflow_update.connect(self.request_worflow_update)
+        self._editor.request_directory_update.connect(self.request_directory_update)
+        self._editor.download_file.connect(self._on_file_download)
+        self._editor.upload_file_to.connect(self._on_file_upload)
+        self._editor.delete_job.connect(self.delete_job)
+        self._editor.delete_file.connect(self.delete_file)
 
     def __init__(self):
         super(WFViewManager, self).__init__()

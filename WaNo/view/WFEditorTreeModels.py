@@ -278,7 +278,159 @@ class WFEFileSystemModel(DataTreeModel):
         for c in [self.index(r, 0, parent) for r in range(0, len(node))]:
             childNode = self.getNodeByIndex(c)
             self.subelementsToText(c, newPrefix)
-            
+
+class WFEUnicoreFileSystemEntry(WFEFileSystemEntry):
+    def __init__(self, data, parent=None):
+        super(WFEUnicoreFileSystemEntry, self).__init__(data, parent)
+
+    def getName(self):
+        return self._data['name'] if self._data['name'] != "" \
+                else self._data['id']
+
+    def getID(self):
+        return self._data['id']
+
+    @staticmethod
+    def createData(id, name, path, abspath, data_type=None):
+        return {
+                'id'        : id,
+                'name'      : name,
+                'abspath'   : abspath,
+                'path'      : path,
+                'data_type' : data_type
+            }
+
+class WFEUnicoreRemoteFileSystemModel(WFEFileSystemModel):
+    DATA_TYPE_FILE          = DATA_TYPE.FILE
+    DATA_TYPE_DIRECTORY     = DATA_TYPE.DIRECTORY
+    DATA_TYPE_UNKNOWN       = DATA_TYPE.UNKNOWN
+    DATA_TYPE_LOADING       = DATA_TYPE.LOADING
+    DATA_TYPE_JOB           = DATA_TYPE.SEPARATOR1
+    DATA_TYPE_WORKFLOW      = DATA_TYPE.SEPARATOR2
+    HEADER_TYPE_JOB         = DATA_TYPE.SEPARATOR3
+    HEADER_TYPE_WORKFLOW    = DATA_TYPE.SEPARATOR4
+
+    def __init__(self, parent=None):
+        super(WFEUnicoreRemoteFileSystemModel, self).__init__(parent)
+        print("WFEUnicoreRemoteFileSystemModel")
+        self._add_headers()
+
+    def createNode(self, data, parent=None):
+        return WFEUnicoreFileSystemEntry(data, parent)
+
+
+    def _getDecorationIcon(self, index):
+        icon = super(WFEUnicoreRemoteFileSystemModel, self)._getDecorationIcon(index)
+        if icon is None:
+            node = self.getNodeByIndex(index)
+            icon_type = node.getIconType()
+            if icon_type == self.DATA_TYPE_JOB:
+                icon = QFileIconProvider().icon(QFileIconProvider.Computer)
+            elif icon_type == self.DATA_TYPE_WORKFLOW:
+                icon = QFileIconProvider().icon(QFileIconProvider.Desktop)
+            elif icon_type == self.HEADER_TYPE_JOB:
+                icon = QFileIconProvider().icon(QFileIconProvider.Trashcan)
+            elif icon_type == self.HEADER_TYPE_WORKFLOW:
+                icon = QFileIconProvider().icon(QFileIconProvider.Drive)
+        return icon
+
+    def _recursive_find_parent(self, index, parent_types):
+        rv      = None
+        has_parent_type = False
+        if not index is None and index.isValid():
+            parent  = index.parent()
+            node    = self.getNodeByIndex(index)
+
+            for t in parent_types:
+                if t == node.getDataType():
+                    has_parent_type = True
+                    break
+
+            if has_parent_type:
+                rv = parent
+            else:
+                rv = self._recursive_find_parent(parent, parent_type)
+
+        return rv
+
+    def get_id(self, index):
+        node = self.getNodeByIndex(index)
+        t = None
+        if not node is None:
+            t = node.getID()
+        return t
+
+    def get_type(self, index):
+        node = self.getNodeByIndex(index)
+        t = None
+        if not node is None:
+            t = node.getDataType()
+        return t
+
+    def get_abspath(self, index):
+        node = self.getNodeByIndex(index)
+        abspath = None
+        if not node is None:
+            abspath = node.getAbsolutePath()
+        return abspath
+
+
+    def get_headers(self, index):
+        return self._recursive_find_parent(
+                index, [self.HEADER_TYPE_WORKFLOW, self.HEADER_TYPE_JOB])
+
+    def get_category_parent(self, index):
+        return self._recursive_find_parent(
+                index, [self.DATA_TYPE_WORKFLOW, self.DATA_TYPE_JOB])
+
+    def get_parent_job(self, index):
+        return self._recursive_find_parent(index, [self.DATA_TYPE_JOB])
+
+    def get_parent_workflow(self, index):
+        return self._recursive_find_parent(index, [self.DATA_TYPE_WORKFLOW])
+
+    def _add_headers(self):
+        new = [
+                WFEFileSystemEntry.createData(
+                        "Workflows",
+                        'abs',
+                        self.HEADER_TYPE_WORKFLOW),
+                WFEFileSystemEntry.createData(
+                        "Jobs",
+                        'abs',
+                        self.HEADER_TYPE_JOB)
+            ]
+        rv = self.insertDataRows(
+                0,
+                new,
+                QModelIndex()       # insert at highest level
+            )
+
+    def clear(self):
+        super(WFEUnicoreRemoteFileSystemModel, self).clear()
+        self._add_headers()
+
+    def get_separator_indices(self):
+        indices = []
+        for i in range(0, len(self._root)):
+            indices.append(self.index(i, 0))
+        return indices
+
+    def loading(self, index, text="Loading"):
+        if not index.isValid():
+            print("not index.isValid()")
+            self.clear()
+            for i in range(0, len(self._root)):
+
+                child = self.index(i, 0)
+                child_node = self.getNodeByIndex(child)
+                super(WFEUnicoreRemoteFileSystemModel, self).loading(
+                        child, text="Loading")
+        else:
+            self.removeSubRows(index)
+
+
+
 #app = QApplication(sys.argv)
 #model = WFEFileSystemModel()
 #node = model.addNode(WFEFileSystemEntry.createData("test", "full/test", DATA_TYPE.DIRECTORY))
