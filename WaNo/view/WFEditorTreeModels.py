@@ -19,6 +19,11 @@ class DATA_TYPE(Enum):
     FILE        = 0
     DIRECTORY   = 1
     UNKNOWN     = 2
+    LOADING     = 3
+    SEPARATOR1  = 4
+    SEPARATOR2  = 5
+    SEPARATOR3  = 6
+    SEPARATOR4  = 7
 
 class DataNode(object):
     def __init__(self, data, parent=None):
@@ -40,7 +45,8 @@ class DataNode(object):
         self._children.append(child)
        
     def childAtRow(self, row):
-        return self._children[row]
+        return self._children[row] if row >= 0 and row < len(self._children) \
+                else None
    
     def rowOfChild(self, child):       
         for i, item in enumerate(self._children):
@@ -87,8 +93,8 @@ class DataTreeModel(QAbstractItemModel):
     def insertDataRows(self, row, data_rows, parent):
         parentNode = self.getNodeByIndex(parent)
         added = False
-        if not node is None:
-            self.beginInsertRows(parent, row, row + len(data_rows) - 1)
+        if not parentNode is None:
+            self.beginInsertRows(parent, row, row + len(data_rows))
             for data_row in data_rows:
                 self.addNode(data_row, parentNode)
             self.endInsertRows()
@@ -102,6 +108,10 @@ class DataTreeModel(QAbstractItemModel):
         parentNode = self.getNodeByIndex(parentIndex)
         for i in range(row + count - 1, row - 1, -1):
             child = parentNode.childAtRow(i)
+
+            if child is None:
+                continue
+
             childLength = len(child)
             if len(child) > 0:
                 childIndex = self.index(row, count, parentIndex)
@@ -146,8 +156,10 @@ class DataTreeModel(QAbstractItemModel):
         # getNodeByIndex is robust. We don't need to check if parent is valid.
         node = self.getNodeByIndex(parent)
 
-        if row < len(node):
-            childAtPosition = self.createIndex(row, column, node.childAtRow(row))
+        if row < len(node) and row >= 0:
+            child = node.childAtRow(row)
+            if not child is None:
+                childAtPosition = self.createIndex(row, column, child)
         else:
             # return invalid index
             childAtPosition = QModelIndex()
@@ -161,12 +173,12 @@ class DataTreeModel(QAbstractItemModel):
         if index.column() == 0:
             if role == Qt.DecorationRole:
                 rv = self._getDecorationIcon(index)
-                print("decoration: %s" % rv)
+                #print("decoration: %s" % rv)
             elif role == Qt.TextAlignmentRole:
-                print("text align")
+                #print("text align")
                 rv = Qt.AlignTop | Qt.AlignLeft
             elif role == Qt.DisplayRole:
-                print("text")
+                #print("text")
                 node = self.getNodeByIndex(index)
                 rv = node.getText() if node != self._root else ""
         return rv
@@ -224,11 +236,15 @@ class WFEFileSystemEntry(DataNode):
     def getText(self):
         return self.getPath()
 
-    def getIconType(self):
+    def getDataType(self):
         rv = self._data['data_type'] 
         if rv is None:
             rv = DATA_TYPE.DIRECTORY if len(self) > 0 else DATA_TYPE.FILE
+            self._data['data_type'] = rv
         return rv
+
+    def getIconType(self):
+        return self.getDataType()
 
     @staticmethod
     def createData(path, abspath, data_type=None):
@@ -241,6 +257,17 @@ class WFEFileSystemEntry(DataNode):
 class WFEFileSystemModel(DataTreeModel):
     def __init__(self, parent=None):
         super(WFEFileSystemModel, self).__init__(parent)
+        self.rowsInserted.connect(self.print_rowsInserted)
+
+    def print_rowsInserted(self, index, fromIndex, toIndex):
+        print("\n\nInsertedSignal for child %s of %s, %d, %d" % \
+                ("(invalid)" if not index.isValid() \
+                        else index.internalPointer().getText(),
+                    index.parent(),
+                    fromIndex,
+                    toIndex
+                )
+            )
 
     def _getDecorationIcon(self, index):
         node = self.getNodeByIndex(index)
@@ -250,6 +277,8 @@ class WFEFileSystemModel(DataTreeModel):
             icon = QFileIconProvider().icon(QFileIconProvider.File)
         elif icon_type == DATA_TYPE.DIRECTORY:
             icon = QFileIconProvider().icon(QFileIconProvider.Folder)
+        elif icon_type == DATA_TYPE.LOADING:
+            icon = QFileIconProvider().icon(QFileIconProvider.File)
         return icon
 
     def createNode(self, data, parent=None):
@@ -262,6 +291,17 @@ class WFEFileSystemModel(DataTreeModel):
             path = node.getPath()
         return path
 
+    def loading(self, index, text="Loading"):
+        self.removeSubRows(index)
+        #new = [WFEFileSystemEntry.createData(text, 'abs', DATA_TYPE.LOADING) for i in range(1, 5)]
+        new = [WFEFileSystemEntry.createData(text, 'abs', DATA_TYPE.LOADING)]
+        rv = self.insertDataRows(
+                0,
+                new,
+                index
+            )
+
+        print("insertDataRows: %s" % rv)
 
 ###############################################################################
 ###############################################################################
@@ -428,6 +468,7 @@ class WFEUnicoreRemoteFileSystemModel(WFEFileSystemModel):
                         child, text="Loading")
         else:
             self.removeSubRows(index)
+        
 
 
 
