@@ -58,9 +58,6 @@ class WFEditor(QWidget):
 
         infobox = self.__build_infobox()
 
-        fileTreePanel = QSplitter(Qt.Horizontal)
-        fileTreePanel.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Expanding)
-
         leftPanel = QSplitter(Qt.Vertical)
         leftPanel.setSizePolicy(QSizePolicy.Fixed,QSizePolicy.Expanding)
 
@@ -68,7 +65,6 @@ class WFEditor(QWidget):
         rightPanel.setSizePolicy(QSizePolicy.Fixed,QSizePolicy.Expanding)
                 
         layout = QHBoxLayout()
-        layout.addWidget(fileTreePanel)
         layout.addWidget(leftPanel)
         layout.addWidget(self.workflowWidget)
         layout.addWidget(rightPanel)
@@ -82,7 +78,6 @@ class WFEditor(QWidget):
         self.workflowListWidget = WFEWorkflowistWidget(self)
 
         self.remoteFileTree = WFRemoteFileSystem(self)
-        fileTreePanel.addWidget(self.remoteFileTree)
         
         leftPanel.addWidget(QLabel('Nodes'))
         leftPanel.addWidget(self.wanoListWidget)
@@ -91,8 +86,13 @@ class WFEditor(QWidget):
         leftPanel.addWidget(QLabel('Controls'))
         leftPanel.addWidget(self.ctrlListWidget)
 
+        self.settingsAndFilesTabs = QTabWidget()
+        self.settingsAndFilesTabs.setTabsClosable(False)
+        self.settingsAndFilesTabs.addTab(self.wanoEditor, "WaNo Settings")
+        self.settingsAndFilesTabs.addTab(self.remoteFileTree, "File System")
+
         rightPanel.addWidget(self.registrySelection)
-        rightPanel.addWidget(self.wanoEditor)
+        rightPanel.addWidget(self.settingsAndFilesTabs)
         rightPanel.addWidget(infobox)
         
         self.lastActive = None
