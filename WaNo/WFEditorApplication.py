@@ -49,6 +49,10 @@ class WFEditorApplication(QObject):
                     registry['password']
                 )
             self.__settings.set_value(
+                    "%s.%s" % (settings_path, SETTING_KEYS['registry.workflows']),
+                    registry['workflows']
+                )
+            self.__settings.set_value(
                     "%s.%s" % (settings_path, SETTING_KEYS['registry.is_default']),
                     registry['default']
                 )

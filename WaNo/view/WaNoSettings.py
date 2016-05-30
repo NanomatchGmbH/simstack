@@ -23,6 +23,9 @@ class WaNoRegistrySettings(QWidget):
     def get_default(self):
         return self.__cb_default.isChecked()
 
+    def get_workflows(self):
+        return self.__workflows.text()
+
     def __on_title_edited(self):
         self.title_edited.emit(str(self.__registryName.text()))
 
@@ -47,16 +50,20 @@ class WaNoRegistrySettings(QWidget):
         self.__label_baseUri        = QLabel(self)
         self.__label_username       = QLabel(self)
         self.__label_password       = QLabel(self)
+        self.__label_workflows      = QLabel(self)
 
         self.__label_registryName.setText("<b>Registry Name</b>")
         self.__label_baseUri.setText("<b>Base URI</b>")
         self.__label_username.setText("<b>Username</b>")
         self.__label_password.setText("<b>Password</b>")
+        self.__label_workflows.setText("<b>Workflow Link</b>")
 
         self.__registryName = QLineEdit(self)
         self.__baseUri      = QLineEdit(self)
         self.__username     = QLineEdit(self)
         self.__password     = QLineEdit(self)
+        self.__workflows    = QLineEdit(self)
+
         self.__password.setEchoMode(QLineEdit.EchoMode.PasswordEchoOnEdit)
 
         self.__cb_show_password = QCheckBox(self)
@@ -71,23 +78,26 @@ class WaNoRegistrySettings(QWidget):
         grid.addWidget(self.__label_baseUri     , 1, 0)
         grid.addWidget(self.__label_username    , 2, 0)
         grid.addWidget(self.__label_password    , 3, 0)
+        grid.addWidget(self.__label_workflows   , 4, 0)
 
         grid.addWidget(self.__registryName,         0, 1 )
         grid.addWidget(self.__baseUri,              1, 1 )
         grid.addWidget(self.__username,             2, 1 )
         grid.addWidget(self.__password,             3, 1 )
         grid.addWidget(self.__cb_show_password,     3, 2 )
+        grid.addWidget(self.__workflows,            4, 1 )
 
         self.setLayout(grid)
 
     def set_default(self, is_default):
         self.__cb_default.setChecked(is_default)
 
-    def set_fields(self, name, uri, user, password, is_default):
+    def set_fields(self, name, uri, user, password, workflows, is_default):
         self.__registryName.setText(name)
         self.__baseUri.setText(uri)
         self.__username.setText(user)
         self.__password.setText(password)
+        self.__workflows.setText(workflows)
         self.set_default(is_default)
 
     def __init__(self):
@@ -148,18 +158,21 @@ class WaNoUnicoreSettings(QDialog):
                         tabWidget.get_uri(),
                         tabWidget.get_user(),
                         tabWidget.get_password(),
+                        tabWidget.get_workflows(),
                         tabWidget.get_default()
                     )
                 )
 
         return registries
 
-    def __build_registry_settings(self, name, uri, user, password, default):
+    def __build_registry_settings(self, name, uri, user, password, workflows,
+            default):
         return {
                 'name': name,
                 'baseURI': uri,
                 'username': user,
                 'password': password,
+                'workflows': workflows,
                 'default': default
             }
 
@@ -235,6 +248,7 @@ class WaNoUnicoreSettings(QDialog):
                         registry['baseURI'],
                         registry['username'],
                         registry['password'],
+                        registry['workflows'] if 'workflows' in registry else '',
                         registry['is_default']
                     )
 
