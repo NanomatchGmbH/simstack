@@ -18,6 +18,9 @@ from WaNo.WaNoRepository import WaNoRepository
 from WaNo.WaNoGitRevision import get_git_revision
 from WaNo.Constants import SETTING_KEYS
 
+#TODO remove, testing only
+from WaNo.lib.pyura.pyura import Storage
+
 
 class WFEditorApplication(QObject):
     ############################################################################
@@ -318,13 +321,20 @@ class WFEditorApplication(QObject):
                     registry[SETTING_KEYS['registry.baseURI']],
                     auth_provider
                 )
+            wfs = registry[SETTING_KEYS['registry.workflows']]
+            if not wfs is None and wfs != "":
+                if not self._unicore.set_workflow_base_uri(wfs):
+                    self._logger.error("Could not set workflow uri.")
+                else:
+                    self._logger.info("foo")
             error, status = self._unicore.connect()
-            if error == UnicoreErrorCodes.NO_ERROR and status == 200:
+
+            if error == UnicoreErrorCodes.NO_ERROR: #TODO check if _unicore.is_connected.
                 success = True
                 self._logger.info("Connected.")
             else:
-                self._logger.error("Failed to connect to registry: %d, %s" % \
-                            (status, str(error))
+                self._logger.error("Failed to connect to registry: %s, %s" % \
+                            (str(status), str(error))
                         )
                 self._view_manager.show_error(
                         "Failed to connect to registry '%s'\n"\

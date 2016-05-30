@@ -5,6 +5,7 @@ SETTING_KEYS = {
         'registry.username'     : 'username',
         'registry.baseURI'      : 'baseURI',
         'registry.password'     : 'password',
+        'registry.workflows'    : 'workflows',
         'registry.is_default'   : 'is_default',
 
         'wanoRepo'              : 'WaNo_Repository_Path',
