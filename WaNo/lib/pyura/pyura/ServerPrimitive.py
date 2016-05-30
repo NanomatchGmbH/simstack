@@ -2,8 +2,8 @@ from __future__ import print_function
 from __future__ import absolute_import
 from __future__ import division
 from functools import wraps
-from pyura.Constants import ErrorCodes
-from pyura.Exceptions import DeletedResourceRequested
+from .Constants import ErrorCodes
+from .Exceptions import DeletedResourceRequested
 
 class ServerPrimitive(object):
     """Abstract class that represents a common interface for a Unicore

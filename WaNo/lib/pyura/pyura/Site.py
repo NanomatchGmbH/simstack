@@ -1,12 +1,12 @@
 from __future__ import print_function
 from __future__ import absolute_import
 from __future__ import division
-from pyura.ServerPrimitive import ServerPrimitive
-from pyura.Application import Application
+from .ServerPrimitive import ServerPrimitive
+from .Application import Application
 from datetime import datetime
-from pyura.helpers import get_enum_by_str, check_safety, convert_date_time
-from pyura.Constants import URIs, ResourceStatus
-from pyura.ClusterResource import ClusterResources
+from .helpers import get_enum_by_str, check_safety, convert_date_time
+from .Constants import URIs, ResourceStatus
+from .ClusterResource import ClusterResources
 
 class Site(ServerPrimitive):
     """Represents an Unicore Server Site.

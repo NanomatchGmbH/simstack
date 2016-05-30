@@ -1,12 +1,12 @@
 from __future__ import print_function
 from __future__ import absolute_import
 from __future__ import division
-from pyura.helpers import check_safety, decode_json
+from .helpers import check_safety, decode_json
 import types
 from requests import Session
 from requests import exceptions as reqexcept
-from pyura.Constants import ErrorCodes, HTTPStatusCodes
-from pyura.AuthProvider import AuthProvider
+from .Constants import ErrorCodes, HTTPStatusCodes
+from .AuthProvider import AuthProvider
 import json
 import os
 import logging
