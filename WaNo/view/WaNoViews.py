@@ -203,9 +203,10 @@ class WaNoItemFloatView(AbstractWanoQTView):
         # hbox.addWidget(self.line_edit)
 
         self.spinner.valueChanged.connect(self.value_changed)
-        print(self.actual_widget.minimumSize())
 
-        print(self.spinner.sizeHint())
+        #print(self.actual_widget.minimumSize())
+
+        #print(self.spinner.sizeHint())
 
         #self.spinner.setMinimumSize(self.spinner.sizeHint())
         #self.spinner.setSizePolicy(QtGui.QSizePolicy.Minimum, QtGui.QSizePolicy.Minimum)
@@ -333,7 +334,7 @@ class WaNoItemFileView(AbstractWanoQTView):
         self.openfilebutton.clicked.connect(self.showLocalDialog)
         self.actual_widget.setLayout(hbox)
         self.lineedit.editingFinished.connect(self.line_edited)
-        print(self.actual_widget.minimumSize())
+        #print(self.actual_widget.minimumSize())
 
         #self.actual_widget.setSizePolicy(QtGui.QSizePolicy.Fixed, QtGui.QSizePolicy.Fixed)
         """ Widget code end """
@@ -366,6 +367,7 @@ class WaNoChoiceView(AbstractWanoQTView):
         self.bg = QtGui.QButtonGroup(self.qt_parent)
         self.vbox = QtGui.QVBoxLayout(self.actual_widget)
         self.actual_widget.setLayout(self.vbox)
+
         self.actual_widget.setStyleSheet("""
         QGroupBox {
             border: 1px solid gray;

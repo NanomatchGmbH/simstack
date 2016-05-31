@@ -32,11 +32,7 @@ class WaNoEditor(QtGui.QTabWidget):
 
     @QtCore.Slot(int)
     def closeTab(self,myid):
-        #Log tab stays open:
-        if myid == 0:
-            return
-        else:
-            self.removeTab(myid)
+        self.removeTab(myid)
 
     def paintEvent(self, event):
         super(WaNoEditor, self).paintEvent(event)
@@ -60,7 +56,7 @@ class WaNoEditor(QtGui.QTabWidget):
         logger.debug("WaNo has changed")
         WaNoEditor.changedFlag=True
 
-    def init(self, wano, exportedFiles, exportedVars, importSelection):
+    def init(self, wano):
         # first, close all open tabs
         self.clear()
 
@@ -77,37 +73,18 @@ class WaNoEditor(QtGui.QTabWidget):
         self.wano = wano
         WaNoEditor.changedFlag=False
         self.setMinimumWidth(400)
-
-        """
-        hasElements = len(wano.elements) > 0
-        if wano.preScript is not None:
-            tab = ScriptTab(wano.preScript,importSelection)
-            if hasElements:
-                self.tabWidget.addTab(tab, "Preprocessor")
-            else:
-                self.tabWidget.addTab(tab, "Script")
-            self.activeTabs.append(tab)
-        
-        if hasElements:
-            tab = WaNoItemEditor(wano,importSelection)
-            self.tabWidget.addTab(tab, "Items")
-            self.activeTabs.append(tab)
-            
-            if wano.postScript is not None:
-                tab = ScriptTab(wano.postScript,[]) # no imports in postprocessor
-                self.tabWidget.addTab(tab, "Postpocessor")
-                self.activeTabs.append(tab)
-        
-            self.tabWidget.setCurrentIndex(2)
-        else:
-            self.tabWidget.setCurrentIndex(1)
-
-        """
-        print(self.wano)
         self.tabWidget.addTab(self.wano.get_widget(),self.wano.model.name)
-
-
         return True
+
+    def remove_if_open(self,wano_view):
+        for i in range(0,self.tabWidget.count()):
+            if wano_view.get_widget() is self.tabWidget.widget(i):
+                self.closeTab(i)
+            else:
+                print(type(wano_view))
+                print(type(self.tabWidget.widget(i).widget()))
+
+
        
     def deleteClose(self):
         if WaNoEditor.changedFlag:

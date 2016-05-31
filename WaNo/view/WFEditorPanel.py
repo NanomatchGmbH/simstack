@@ -54,6 +54,7 @@ class WFWaNoWidget(QtGui.QToolButton):
         self.wano = wano
         self.wano_model = None
         self.wano_view = None
+        self.constructed = False
   
     def parentElementList(self):
         return self.parent().buttons
@@ -68,9 +69,19 @@ class WFWaNoWidget(QtGui.QToolButton):
         
     def xml(self):
         if self.text() != "Start":
-            return self.wano.xml() 
-   
+            return self.wano.xml()
+
+    def close(self):
+        print(type(self.parent()))
+        print("Closing")
+        self.parent().remove(self)
+        pass
+
+
     def mouseMoveEvent(self, e):
+    #def mouseReleaseEvent(self,e):
+        #print(e)
+        print("here")
         if self.text() == "Start":
             e.ignore()
             return
@@ -87,7 +98,10 @@ class WFWaNoWidget(QtGui.QToolButton):
         pass 
 
     def construct_wano(self):
-        self.wano_model,self.wano_view = WaNoFactory.wano_constructor_helper(self.wano[2],self)
+        if not self.constructed:
+            self.wano_model,self.wano_view = WaNoFactory.wano_constructor_helper(self.wano[2],self)
+            self.constructed = True
+
 
 
     def mouseDoubleClickEvent(self,e):
@@ -129,6 +143,7 @@ class WFBaseWidget(QtGui.QFrame):
     def removeElement(self,element):
         # remove element both from the buttons and child list
         try:
+            element.close()
             self.buttons.remove(element)
             self.children().remove(element)
             self.placeElements()
@@ -139,17 +154,29 @@ class WFBaseWidget(QtGui.QFrame):
             print ("Removing Element ",element.text()," from WFBaseWidget",self.text())
   
     def openWaNoEditor(self,wanoWidget):
-        #if wanoWidget.isWorkFlow:
-        #    print ("open Workflow")
-        #    self.editor.openWorkFlow(wanoWidget.wano)
-        #else:
-        varEx = {}
-        filEx = {}
-        waNoNames = []
-        #if not self.gatherExports(wanoWidget.wano,varEx,filEx,waNoNames):
-        #    self.logger.error("Error gathering exports for Wano:",wanoWidget.name)
-        self.editor.openWaNoEditor(wanoWidget,varEx,filEx,waNoNames)
-        
+        self.editor.openWaNoEditor(wanoWidget)
+        self.get_wano_variables()
+
+    def get_wano_variables(self):
+        paths = []
+        for button in self.buttons:
+            #make sure everything is constructed at this point:
+            #NOP for already constructed
+                #if button.
+            button.construct_wano()
+        for button in self.buttons:
+            paths.extend(button.wano_model.wano_walker_paths())
+
+        if not self.topWidget:
+            paths.extend(self.parent().get_wano_variables())
+        else:
+            print(paths)
+        return paths
+
+
+
+
+
     def sizeHint(self):
         if self.topWidget:            
             s = QtCore.QSize(self.width(),self.height()) 
@@ -162,7 +189,11 @@ class WFBaseWidget(QtGui.QFrame):
         for e in self.buttons:
             if e.text() != "Start":
                 ee.append(e.xml())
-        return ee 
+        return ee
+
+    def remove(self,element):
+        print("wff,remove")
+        self.editor.remove(element)
             
     def placeElementPosition(self,element):
         # this function computes the position of the next button
@@ -206,7 +237,11 @@ class WFBaseWidget(QtGui.QFrame):
         else:
             if self.embeddedIn is not None:
                 self.embeddedIn.recPlaceElements()    
-    
+
+    def relayout(self):
+        ypos = max(self.placeOwnButtons(), self.parent.height())
+        self.setFixedHeight(ypos)
+
     def placeOwnButtons(self):
         dims = self.geometry()
         ypos = self.elementSkip/2
@@ -412,6 +447,11 @@ class WFTabsWidget(QtGui.QTabWidget):
             wf.sourceWF.isOpen = False
             self.tabWidget.removeTab(e)
 
+    def relayout(self):
+        #currentwidget is scroll
+        self.currentWidget().widget().relayout()
+
+
 
     def saveFile(self,fileName):
         xml = self.wf.xml(os.path.basename(fileName).split('.')[0])
@@ -458,6 +498,7 @@ class WFFileName:
         self.name    = "Untitled"
         self.ext     = 'xml'
     def fullName(self):
+        #Fix this with os.path.
         return self.dirName + '/' + self.name + '.' + self.ext
     
 class WFWorkflowWidget(WFBaseWidget):
@@ -478,8 +519,11 @@ class WFWorkflowWidget(WFBaseWidget):
                               background-attachment: fixed;
                               background-position: center;  """
         self.background_drawn = True
+        script_path = os.path.dirname(os.path.realpath(__file__))
+        media_path = os.path.join(script_path,"..","Media")
 
-        self.setStyleSheet(self.style_sheet_without_background % "background-image: url('./WaNo/Media/Logo_NanoMatch200.png') ;")
+        imagepath = os.path.join(media_path,"Logo_NanoMatch200.png")
+        self.setStyleSheet(self.style_sheet_without_background % "background-image: url(%s) ;" %imagepath)
           
         self.setMinimumWidth(400)
         self.setFrameStyle(QtGui.QFrame.WinPanel | QtGui.QFrame.Sunken)
@@ -517,7 +561,23 @@ class WFControlWidget(QtGui.QFrame):
       
         
         self.setFrameStyle(QtGui.QFrame.Panel)
-        self.setStyleSheet("background: " + widgetColors['Control'])
+        self.setStyleSheet("""
+                           QFrame {
+                            border: 2px solid green;
+                            border-radius: 4px;
+                            padding: 2px;
+                            }
+                                QPushButton {
+                                 background-color: %s
+                             }
+                             QPushButton:hover {
+                                 background-color: %s;
+
+                             }
+
+                           background: %s "
+                           """ % (widgetColors['ButtonColor'],widgetColors['Control'],widgetColors['Control'])
+                           )
         self.setAcceptDrops(True)
         self.isVisible = True     # the subwidget are is visible
         self.layout    = QtGui.QVBoxLayout()
@@ -656,8 +716,10 @@ class WFForEachWidget(WFControlWidget):
         b = QtGui.QPushButton(self.myName)
         b.clicked.connect(self.toggleVisible)
         self.topLineLayout.addWidget(b)   
-        self.topLineLayout.addWidget(QtGui.QLineEdit('name'))
-        self.topLineLayout.addWidget(QtGui.QLineEdit('list'))
+        self.topLineLayout.addWidget(QtGui.QLineEdit('Variable Name'))
+
+        self.list_of_variables = QtGui.QLineEdit('list')
+        self.topLineLayout.addWidget(self.list_of_variables)
         return 1
 
 

@@ -16,6 +16,7 @@ class AbstractWanoModel(object):
     def __init__(self, *args, **kwargs):
         self.view = None
         self.root_model = None
+        self.is_wano = True
         if "root_model" in kwargs:
             self.root_model = kwargs["root_model"]
         # The root view has to be set explicitly, otherwise nobody has a parent.

@@ -232,6 +232,36 @@ class WaNoModelRoot(WaNoModelDictLike):
         with open(filename,'w') as outfile:
             outfile.write(etree.tostring(self.full_xml,pretty_print=True).decode("utf-8"))
 
+    def wano_walker_paths(self,parent = None, path = "" , output = []):
+        if (parent == None):
+            parent = self
+        if hasattr(parent,'items') and hasattr(parent,'listlike'):
+            my_list = []
+            for key, wano in parent.items():
+                mypath = copy.copy(path)
+                if mypath == "":
+                    mypath = "%s" % (key)
+                else:
+                    mypath = "%s.%s" % (mypath, key)
+                self.wano_walker_paths(parent=wano, path=mypath,output=output)
+        elif hasattr(parent,'items'):
+
+            for key,wano in parent.items():
+                mypath = copy.copy(path)
+                if hasattr(wano,"name"):
+                    #Actual dict
+                    key = wano.name
+                #else list
+                if mypath == "":
+                    mypath="%s" %(key)
+                else:
+                    mypath = "%s.%s" % (mypath, key)
+                self.wano_walker_paths(parent=wano,path=mypath,output=output)
+        else:
+            #print("%s %s" % (path, parent.get_data()))
+            output.append((path,type(parent)))
+        return output
+
     def wano_walker(self, parent = None, path = ""):
         if (parent == None):
             parent = self
@@ -321,8 +351,6 @@ class WaNoModelRoot(WaNoModelDictLike):
         rendered_wano = self.wano_walker_render_pass(rendered_wano)
         self.exec_command = Template(self.exec_command).render(wano = rendered_wano)
         self.mock_submission(rendered_wano)
-
-
 
 
 class WaNoItemFloatModel(AbstractWanoModel):

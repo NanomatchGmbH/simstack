@@ -46,22 +46,35 @@ class WFEditor(QWidget):
 
         self.registrySelection = WaNoRegistrySelection(self)
 
-        infobox = self.__build_infobox()
+        #infobox = self.__build_infobox()
 
-        fileTreePanel = QSplitter(Qt.Horizontal)
-        fileTreePanel.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Expanding)
+        self.fileTreePanel = QSplitter(Qt.Horizontal)
+        self.fileTreePanel.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Expanding)
 
         leftPanel = QSplitter(Qt.Vertical)
-        leftPanel.setSizePolicy(QSizePolicy.Fixed,QSizePolicy.Expanding)
+        leftPanel.setSizePolicy(QSizePolicy.Maximum,QSizePolicy.Expanding)
+        leftPanel.setMaximumWidth(150)
+        leftPanel.setMinimumWidth(150)
 
         rightPanel = QSplitter(Qt.Vertical)
         rightPanel.setSizePolicy(QSizePolicy.Fixed,QSizePolicy.Expanding)
-                
+
+
         layout = QHBoxLayout()
-        layout.addWidget(fileTreePanel)
+        #hbox_splitter = QSplitter(Qt.Horizontal)
+        #layout.addWidget(self.fileTreePanel)
         layout.addWidget(leftPanel)
         layout.addWidget(self.workflowWidget)
         layout.addWidget(rightPanel)
+        """
+        hbox_splitter.addWidget(leftPanel)
+        hbox_splitter.setStretchFactor(0,2)
+        hbox_splitter.addWidget(self.workflowWidget)
+        hbox_splitter.setStretchFactor(1, 4)
+        hbox_splitter.addWidget(rightPanel)
+        hbox_splitter.setStretchFactor(2, 2)
+        layout.addWidget(hbox_splitter)
+        """
         #layout.addStretch(1)
          
         #self.mainPanels = layout  
@@ -72,18 +85,34 @@ class WFEditor(QWidget):
         self.workflowListWidget = WFEWorkflowistWidget(self)
 
         self.remoteFileTree = WFRemoteFileSystem(self)
-        fileTreePanel.addWidget(self.remoteFileTree)
-        
-        leftPanel.addWidget(QLabel('Nodes'))
+        self.fileTreePanel.addWidget(self.remoteFileTree)
+        nodelabel = QLabel('Nodes')
+        #0
+        leftPanel.addWidget(nodelabel)
+        leftPanel.setStretchFactor(0, 0)
+        #1
         leftPanel.addWidget(self.wanoListWidget)
-        leftPanel.addWidget(QLabel('Workflows'))      
+        leftPanel.setStretchFactor(1, 1)
+        #2
+        leftPanel.addWidget(QLabel('Workflows'))
+        leftPanel.setStretchFactor(2, 0)
+        #3
         leftPanel.addWidget(self.workflowListWidget)
+        leftPanel.setStretchFactor(3, 1)
+        #4
         leftPanel.addWidget(QLabel('Controls'))
+        leftPanel.setStretchFactor(4, 0)
+        #5
         leftPanel.addWidget(self.ctrlListWidget)
+        leftPanel.setStretchFactor(5, 1)
+
 
         rightPanel.addWidget(self.registrySelection)
+        rightPanel.setStretchFactor(0, 0)
         rightPanel.addWidget(self.wanoEditor)
-        rightPanel.addWidget(infobox)
+        rightPanel.setStretchFactor(1, 1)
+
+        #rightPanel.addWidget(infobox)
         
         self.lastActive = None
 
@@ -102,6 +131,9 @@ class WFEditor(QWidget):
         self.registrySelection.connect_registry.connect(self.connect_registry)
         self.registrySelection.disconnect_registry.connect(self.disconnect_registry)
         self.remoteFileTree.request_model_update.connect(self.request_fs_model_update)
+
+    def resizeEvent(self, *args, **kwargs):
+        self.workflowWidget.relayout()
 
     def __init__(self, parent=None):
         super(WFEditor, self).__init__(parent)
@@ -132,15 +164,18 @@ class WFEditor(QWidget):
             self.lastActive = None
        
         
-    def openWaNoEditor(self,wanoWidget,varExports,fileExports,waNoNames):
-        if self.wanoEditor.init(wanoWidget.wano_view,varExports,fileExports,waNoNames):
+    def openWaNoEditor(self,wanoWidget):
+        if self.wanoEditor.init(wanoWidget.wano_view):
             wanoWidget.setColor(Qt.green)
             self.lastActive = wanoWidget
     
     def openWorkFlow(self,workFlow):
         self.workflowWidget.openWorkFlow(workFlow)
 
-        
+    def remove(self,wfwanowidget):
+        self.wanoEditor.remove_if_open(wfwanowidget.wano_view)
+
+    """
     def SizeHint(self):
         s = QSize()
         if self.wanoEditor == None:
@@ -149,6 +184,7 @@ class WFEditor(QWidget):
             s.setWidth(800)
         s.setHeight(600)
         return s
+    """
     
     def clear(self):
         self.workflowWidget.clear()
