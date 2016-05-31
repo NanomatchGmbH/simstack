@@ -1,17 +1,21 @@
+#!/usr/bin/env python
+
 import ctypes
 import signal
 import platform
 import logging
 import sys
 import yaml
-from PySide.QtGui import QApplication
+from PySide.QtGui import QApplication,QDesktopServices
 from PySide.QtCore import QTimer
 from os import path
+import os
 
 from WaNo import WFEditorApplication
 from WaNo import WaNoSettingsProvider
 
-SETTINGS_FILE = "settings.yaml"
+_SETTINGS_DIR="NanoMatch"
+_SETTINGS_FILE="clientsettings.yml"
 
 editor = None
 
@@ -33,7 +37,14 @@ if __name__ == '__main__':
     logging.basicConfig(filename='wfeditor.log',filemode='w',level=logging.INFO)
     logger = logging.getLogger('WFELOG')
 
+    SETTINGS_FOLDER = QDesktopServices.storageLocation(QDesktopServices.DataLocation)
+    SETTINGS_FOLDER = path.dirname(SETTINGS_FOLDER)
+    SETTINGS_FOLDER = path.join(SETTINGS_FOLDER,_SETTINGS_DIR)
 
+    if not path.isdir(SETTINGS_FOLDER):
+        os.makedirs(SETTINGS_FOLDER)
+    SETTINGS_FILE = path.join(SETTINGS_FOLDER,_SETTINGS_FILE)
+    print(SETTINGS_FILE)
     settings = WaNoSettingsProvider(SETTINGS_FILE)
     if path.exists(SETTINGS_FILE):
         with open(SETTINGS_FILE, 'r') as infile:

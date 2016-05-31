@@ -1,4 +1,6 @@
-from PySide.QtGui import QWidget, QComboBox, QPushButton, QHBoxLayout, QPixmap, QIcon
+from PySide.QtGui import QWidget, QComboBox, QPushButton, QHBoxLayout, QPixmap, QIcon, \
+    QSizePolicy
+
 from PySide.QtCore import Signal, Slot, QSize
 
 from enum import Enum
@@ -50,7 +52,7 @@ class WaNoRegistrySelection(QWidget):
         button_height = 20
         self.registryComboBox   = QComboBox(self)
         self.isConnectedIcon    = QPushButton(self)
-        self.isConnectedIcon.resize(self.isConnectedIcon.sizeHint())
+        #self.isConnectedIcon.resize(self.isConnectedIcon.sizeHint())
 
         self.isConnectedIcon.setFixedSize(100, button_height)
         self.isConnectedIcon.setIconSize(QSize(button_height, button_height))
@@ -58,7 +60,8 @@ class WaNoRegistrySelection(QWidget):
         layout = QHBoxLayout(self)
         layout.addWidget(self.registryComboBox)
         layout.addWidget(self.isConnectedIcon)
-        self.resize(self.sizeHint())
+        self.setLayout(layout)
+        #self.resize(self.sizeHint())
 
     def __on_selection_changed(self, index):
         if self.__emit_signal:
@@ -76,6 +79,7 @@ class WaNoRegistrySelection(QWidget):
 
     def __init__(self, parent):
         super(WaNoRegistrySelection, self).__init__(parent)
+        self.setSizePolicy(QSizePolicy.Minimum,QSizePolicy.Minimum)
         self.__init_ui(parent)
         self.setStatus(WaNoRegistrySelection.CONNECTION_STATES.disconnected)
         self.__emit_signal = True
