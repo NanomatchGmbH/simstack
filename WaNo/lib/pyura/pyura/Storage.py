@@ -1,7 +1,7 @@
 from __future__ import print_function
 from __future__ import absolute_import
 from __future__ import division
-from pyura.ServerPrimitive import ServerPrimitive
+from .ServerPrimitive import ServerPrimitive
 from functools import wraps
 
 class Storage(ServerPrimitive):
