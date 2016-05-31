@@ -280,3 +280,35 @@ BASE:
     }
 }
 
+
+
+WORKFLOWS https://int-nanomatchcluster.int.kit.edu:8080/NANOFLOW/rest/wf/workflows
+{
+    "workflows": [
+        "https://int-nanomatchcluster.int.kit.edu:8080/NANOFLOW/rest/wf/workflows/535973eb-dff2-4ebd-9a7d-69382accffca",
+        "https://int-nanomatchcluster.int.kit.edu:8080/NANOFLOW/rest/wf/workflows/4745f132-61cf-4ea1-98d9-29c19fe9cd5f"
+    ]
+}
+
+WORKFLOW:
+{
+    "submissionTime": "2016-05-18T16:43:46+0200",
+    "_links": {
+        "self": {
+            "href": "https://int-nanomatchcluster.int.kit.edu:8080/NANOFLOW/rest/wf/workflows/4745f132-61cf-4ea1-98d9-29c19fe9cd5f"
+        },
+        "action:abort": {
+            "href": "https://int-nanomatchcluster.int.kit.edu:8080/NANOFLOW/rest/wf/workflows/4745f132-61cf-4ea1-98d9-29c19fe9cd5f/actions/abort",
+            "description": "Abort"
+        }
+    },
+    "owner": "1.2.840.113549.1.9.1=#161b74696d6f2e737472756e6b40706172746e65722e6b69742e656475,CN=Presentation,OU=PRESENTATION,O=Nanomatch-Presentation,ST=BW,C=DE",
+    "currentTime": "2016-05-22T18:01:12+0200",
+    "storageEPR": "https://int-nanomatchcluster.int.kit.edu:8080/NANO-SITE/services/StorageManagement?res=7b844140-8e91-4ef5-9c06-f1a9bcf750ff",
+    "status": "SUCCESSFUL",
+    "name": "Parameterizer submitted at 2016-05-18 16-43-44",
+    "terminationTime": "2016-05-28T16:43:46+0200",
+    "resourceStatus": "READY",
+    "acl": []
+}
+

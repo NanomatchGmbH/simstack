@@ -5,11 +5,11 @@ pyura.JobManager
 from __future__ import print_function
 from __future__ import absolute_import
 from __future__ import division
-from .Manager import Manager
-from .Constants import URIs, JSONKeys, ErrorCodes
-from .Job import Job
-from .helpers import check_safety
-from .StorageManager import StorageManager
+from pyura.Manager import Manager
+from pyura.Constants import URIs, JSONKeys, ErrorCodes
+from pyura.Job import Job
+from pyura.helpers import check_safety
+from pyura.StorageManager import StorageManager
 
 #TODO
 # * move _get_id upwards into Manager

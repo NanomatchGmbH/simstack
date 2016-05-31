@@ -50,7 +50,11 @@ class StorageManager(Manager):
                 and JSONKeys['storage_file_list'] in json
         ):
             for f in json[JSONKeys['storage_file_list']]:
-                files.append(f)
+                files.append({
+                        'name': f,
+                        'path': f,
+                        'type': 'd' if f[-1] == '/' else 'f'
+                    })
 
         return files
 
@@ -155,7 +159,7 @@ class StorageManager(Manager):
                     and not remote_filename is None
                     ) else path.basename(local_file)
 
-            uri = URIs['storage_file_upload'] % (id, remote_filename)
+            uri = URIs['storage_file_upload'] % (id, filename)
 
             #data = open(local_file, 'rb').read()
             #status, err, json = self.con.put_data(uri, data)

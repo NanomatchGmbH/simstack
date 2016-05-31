@@ -56,6 +56,10 @@ URIs = {
         'sites_delete':             'sites/%s',
         'sites_single_site':        'sites/%s',
         'sites_query_jobs':         'sites/%s/jobs',
+
+        'workflow_list':            'workflows',
+        'workflow_abort':           'workflows/%s',
+        'workflow_sigle_workflow':  'workflows/%s/actions/abort',
         }
 #URIs.__doc__ = """List of REST resource paths"""
 
@@ -74,6 +78,19 @@ JSONKeys = {
         'storage_file_list':    'children',
 
         'sites_list':           'sites',
+
+        'workflow_list':        'workflows',
+
+        'registry_client_info':             'client',
+        'registry_link_list':               '_links',
+        'registry_link_factories':          'factories',
+        'registry_link_jobs':               'jobs',
+        'registry_link_registries':         'registries',
+        'registry_link_sites':              'sites',
+        'registry_link_storagefactories':   'storagefactories',
+        'registry_link_storages':           'storages',
+        'registry_link_transfers':          'transfers',
+
         }
 #JSONKeys.__doc__ = """List of JSON key words in the REST API."""
 
@@ -195,6 +212,15 @@ class ErrorCodes(_AutoEnum):
     FILE_IO_ERROR               = ""
     REMOTE_FILE_NOT_FOUND       = ""
     RESOURCE_DOES_NOT_EXIST     = ""
+
+class ConnectionState(_AutoEnum):
+    CONNECTED       = ""
+    CONNECTING      = ""
+    DISCONNECTED    = ""
+    DISCONNECTING   = ""
+    NOT_SETUP       = ""
+    INVALID         = ""
+
 
 HTTPStatusCodes = _HTTPStatusCodes
 

@@ -1,5 +1,5 @@
 """
-pyura.Job
+pyura.Workflow
 ~~~~~~~~~
 """
 from __future__ import print_function
@@ -12,8 +12,8 @@ from .helpers import get_enum_by_str, check_safety, convert_date_time
 from datetime import datetime
 from .Exceptions import *
 
-class Job(ServerPrimitive):
-    """This class represents an Unicore Job.
+class Workflow(ServerPrimitive):
+    """This class represents an Unicore Workflow.
     """
 
     def _set_status(self, status):
@@ -26,18 +26,18 @@ class Job(ServerPrimitive):
             check_safety([(resource_status, ResourceStatus)])
             self.resource_status = resource_status
 
-    def _set_working_dir(self, working_dir):
+    def _set_storage_id(self, storage_id):
         """Sets the id of the Storage that represents the working directory
 
         Args:
-            working_dir (str): the storage id 
+            storage_id (str): the storage id 
         """
-        if (not working_dir is None):
-            check_safety([(working_dir, str)])
-            self.working_dir = working_dir
+        if (not storage_id is None):
+            check_safety([(storage_id, str)])
+            self.storage_id = storage_id
 
     def _set_current_time(self, current_time):
-        """Sets the time when the properties of this job were updated.
+        """Sets the time when the properties of this workflow were updated.
 
         Args:
             current_time (str): the time of update
@@ -61,35 +61,15 @@ class Job(ServerPrimitive):
             check_safety([(acl, str)])
             self.acl = acl
 
-    def _set_queue(self, queue):
-        if (not queue is None):
-            check_safety([(queue, str)])
-            self.queue = queue
-
-    def _set_parent_tss(self, parent_tss):
-        """Sets the id of the Site this job is/was run on
-
-        Args:
-            parent_tss (str): the site id 
-        """
-        if (not parent_tss is None):
-            check_safety([(parent_tss, str)])
-            self.parent_tss = parent_tss
-
     def _set_owner_dn(self, owner_dn):
         if (not owner_dn is None):
             check_safety([(owner_dn, str)])
             self.owner_dn = owner_dn
 
-    def _set_exit_code(self, exit_code):
-        if (not exit_code is None):
-            check_safety([(exit_code, str)])
-            self.exit_code = exit_code
-
-    def _set_status_msg(self, status_msg):
-        if (not status_msg is None):
-            check_safety([(status_msg, str)])
-            self.status_msg = status_msg
+    def _set_name(self, name):
+        if (not name is None):
+            check_safety([(name, str)])
+            self.name = name
 
     def update_from_json(self, json):
         # Documented in parent class.
@@ -97,45 +77,40 @@ class Job(ServerPrimitive):
         self._set_resource_status(
             get_enum_by_str(ResourceStatus, json['resourceStatus'])
         )
-        self._set_working_dir(json['_links']['workingDirectory']['href'].split('/')[-1])
+        self._set_storage_id(json['storageEPR'].split('=')[-1])
         #TODO rename request time
         self._set_current_time(convert_date_time(json['currentTime']))
         self._set_termination_time(convert_date_time(json['terminationTime']))
         self._set_submission_time(convert_date_time(json['submissionTime']))
         #TODO self._set_acl()
-        self._set_queue(json['queue'])
-        self._set_parent_tss(json['_links']['parentTSS']['href'].split('/')[-1])
         self._set_owner_dn(json['owner'])
-        self._set_status_msg(json['statusMessage'])
-
-        if 'exitCode' in json:
-            self._set_exit_code(json['exitCode'])
+        self._set_name(json['name'])
 
     def update(self):
         # Documented in parent class.
-        self._update(URIs['job_sigle_job'])
+        self._update(URIs['workflow_sigle_workflow'])
 
     @ServerPrimitive._check_init
     def get_status(self):
-        """Returns the :class:`Constants.JobStatus` of this job.
+        """Returns the :class:`Constants.JobStatus` of this workflow.
 
         This method will query the information from the remote server if
         necessary. Therefore, this method might not return immediately.
         
         Returns:
-            status (:class:`Constants.JobStatus`):  status of this job.
+            status (:class:`Constants.JobStatus`):  status of this workflow.
         """
         return self.status
 
     @ServerPrimitive._check_init
     def get_resource_status(self):
-        """Returns the :class:`Constants.ResourceStatus` of this job.
+        """Returns the :class:`Constants.ResourceStatus` of this workflow.
 
         This method will query the information from the remote server if
         necessary. Therefore, this method might not return immediately.
         
         Returns:
-            status (:class:`Constants.ResourceStatus`):  status of this job.
+            status (:class:`Constants.ResourceStatus`):  status of this workflow.
         """
         return self.resource_status
 
@@ -156,7 +131,7 @@ class Job(ServerPrimitive):
 
     @ServerPrimitive._check_init
     def get_current_time(self):
-        """Returns the time when the properties of this job were updated.
+        """Returns the time when the properties of this workflow were updated.
 
         This method will query the information from the remote server if
         necessary. Therefore, this method might not return immediately.
@@ -168,19 +143,19 @@ class Job(ServerPrimitive):
 
     @ServerPrimitive._check_init
     def get_termination_time(self):
-        """Returns the time when this job terminated.
+        """Returns the time when this workflow terminated.
 
         This method will query the information from the remote server if
         necessary. Therefore, this method might not return immediately.
         
         Returns:
-            termination_time: the time when this job terminated.
+            termination_time: the time when this workflow terminated.
         """
         return self.termination_time
 
     @ServerPrimitive._check_init
     def get_acl(self):
-        """Returns the ACLs of this job.
+        """Returns the ACLs of this workflow.
 
         This method will query the information from the remote server if
         necessary. Therefore, this method might not return immediately.
@@ -189,137 +164,66 @@ class Job(ServerPrimitive):
                 yet fully implemented.
         
         Returns:
-            acl: the ACLs of this job
+            acl: the ACLs of this workflow
         """
         return self.acl
 
     @ServerPrimitive._check_init
-    def get_queue(self):
-        """Returns the queue this job is currently listed in.
-
-        This method will query the information from the remote server if
-        necessary. Therefore, this method might not return immediately.
-        
-        Returns:
-            queue: the queue this job is currently listed in.
-        """
-        return self.queue
-
-    @ServerPrimitive._check_init
-    def get_parent_tss(self):
-        """Returns the id of the Site this job is/was run on.
-
-        Using the returned id, a site object can be requested from the
-        :class:`SiteManager.SiteManager`.
-
-        This method will query the information from the remote server if
-        necessary. Therefore, this method might not return immediately.
-        
-        Returns:
-            parent_tss: the site id
-        """
-        return self.parent_tss
-
-    @ServerPrimitive._check_init
     def get_owner_dn(self):
-        """Returns the DN (distinguished name) of the user owning this job.
+        """Returns the DN (distinguished name) of the user owning this workflow.
 
         This method will query the information from the remote server if
         necessary. Therefore, this method might not return immediately.
         
         Returns:
-            dn (str): the DN of the user owning this job.
+            dn (str): the DN of the user owning this workflow.
         """
         return self.owner_dn
 
     @ServerPrimitive._check_init
     def get_submission_time(self):
-        """Returns the submission time of this job.
+        """Returns the submission time of this workflow.
 
         This method will query the information from the remote server if
         necessary. Therefore, this method might not return immediately.
         
         Returns:
-            submission_time: the time this job has been submitted.
+            submission_time: the time this workflow has been submitted.
         """
         return self.submission_time
 
     @ServerPrimitive._check_init
-    def get_exit_code(self):
-        """Returns the exit code returned after the job execution.
-        
-            .. note:: The returned exit code is only valid,
-                if Job.get_status() returns
-                either Constants.JobStatus.FAILED
-                or Constants.JobStatus.SUCCESSFUL.
-                Otherwise, the job has not been executed (at all) and the exit
-                code does not have any meaning.
-
-        This method will query the information from the remote server if
-        necessary. Therefore, this method might not return immediately.
-        
-        
-        Returns:
-            exit_code: the exit code
-        """
-        return self.exit_code
-
-    @ServerPrimitive._check_init
-    def get_status_msg(self):
-        """Returns the status message of this job.
-        
-        This message for example contains further information on errors.
+    def get_name(self):
+        """Returns the name of this workflow.
 
         This method will query the information from the remote server if
         necessary. Therefore, this method might not return immediately.
         
         Returns:
-            status_msg (str): the status message.
+            name: the name of this workflow.
         """
-        return self.status_msg
-
-    def get_imports(self):
-        """Returns the :class:`JobManager.Imports` assigned to this job.
-
-        Returns:
-            imports (:class:`JobManager.Imports`): the imports assigned
-            to this job.
-        """
-        return self.imports
-
-    def imports_require_upload(self):
-        """Checks if any (at least one) of the imports assigned to this job
-        requires a file upload before the job execution can be started on the
-        server.
-
-        Returns:
-            true, if a file upload is required.
-        """
-        to_upload = self.imports.get_imports_to_upload()
-        return ((to_upload != []), to_upload)
+        return self.name
 
     def _reset_init(self):
         """This method is required to reset the state variable that indicates
-        if the properties of this Job instance have been fetched from the
+        if the properties of this Workflow instance have been fetched from the
         Server recently.
-        This should only be reset by the JobManager in cases where a change of
-        the job probperties is expected.
+        This should only be reset by the WorkflowManager in cases where a change of
+        the workflow probperties is expected.
         """
         self.init               = False
 
     #@ServerPrimitive._check_init
     def __repr__(self):
         return "id: %s, time: %s, status: %s, working_dir: %s." % (
-                self.id,
+                self.id, 
                 self.current_time,
                 self.status,
                 self.working_dir)
 
-    def __init__(self, id, connection, imports=[]):
-        super(Job, self).__init__(id)
+    def __init__(self, id, connection):
+        super(Workflow, self).__init__(id)
         self.con                = connection #TODO move into superclass
-        self.imports            = imports
-        self.exit_code          = None
         self.init               = False
         self.status             = None
         self.resource_status    = None
@@ -327,10 +231,8 @@ class Job(ServerPrimitive):
         self.current_time       = None
         self.termination_time   = None
         self.acl                = None
-        self.queue              = None
-        self.parent_tss         = None
         self.owner_dn           = None
         self.submission_time    = None
-        self.status_msg         = None
+        self.name               = None
 
 

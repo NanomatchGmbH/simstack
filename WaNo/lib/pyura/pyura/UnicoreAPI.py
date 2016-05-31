@@ -1,8 +1,8 @@
 from __future__ import print_function
 from __future__ import absolute_import
 from __future__ import division
-from .Registry import Registry
-from .AuthProvider import AuthProvider
+from pyura.Registry import Registry
+from pyura.AuthProvider import AuthProvider
 import logging
 
 _registries = []

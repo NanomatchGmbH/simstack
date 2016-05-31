@@ -5,7 +5,7 @@ from .helpers import check_safety, decode_json
 import types
 from requests import Session
 from requests import exceptions as reqexcept
-from .Constants import ErrorCodes, HTTPStatusCodes
+from .Constants import ErrorCodes, HTTPStatusCodes, JSONKeys
 from .AuthProvider import AuthProvider
 import json
 import os
@@ -29,7 +29,8 @@ class ChunkedUpload(object):
     .. important:: Do not instantiate directly.
     """
     # from http://stackoverflow.com/a/13911048
-    def __init__(self, filename, chunksize=1024, callback=None):
+    def __init__(self, uri, filename, chunksize=1024, callback=None):
+        self.dest       = uri
         self.filename   = filename
         self.chunksize  = chunksize
         self.callback   = callback
@@ -45,7 +46,8 @@ class ChunkedUpload(object):
                 self.readsofar += len(data)
                 #percent = self.readsofar * 1e2 / self.totalsize
                 if not self.callback is None:
-                    self.callback(self.readsofar, self.totalsize)
+                    self.callback(self.dest, self.filename,
+                            self.readsofar, self.totalsize)
                 yield data
 
     def __len__(self):
@@ -119,6 +121,7 @@ class Connection:
             self.logger.debug('Exception: %s' , str(e))
             err = ErrorCodes.CONN_ERROR
         except Exception as e:
+            print("Exception: %s" % str(e))
             self.logger.debug('Exception (unknown): %s' , str(e))
             err = ErrorCodes.UNKONWN_EXCPTION
 
@@ -351,11 +354,13 @@ class Connection:
         This method has an optional parameter for a callback function, that
         will be called every time a chunk of the file has been uploaded.
         This can be used to refresh a progress bar, for example.
-        The callback must have two parameters, the first one will be the
-        amount of data uploaded so far, the second will be the total size of
-        the file: ::
 
-            def callback(read_so_far, total_filesize):
+        The callback will be called on any progress of the download. It will be
+        called with the given uri and localfile as the first two parameters.
+        The third parameter is the amount of data uploaded so far,
+        the second will be the total size of the file: ::
+
+            def callback(uri, localfile, uriread_so_far, total_filesize):
                 # update progress bar.
 
         Args:
@@ -377,7 +382,7 @@ class Connection:
         """
         full_uri = "%s/%s" % (self.base_uri, uri)
 
-        it = ChunkedUpload(localfile, callback=callback)
+        it = ChunkedUpload(uri, localfile, callback=callback)
         args = {'stream': True}
         err, resp       = self._put(full_uri, IterableToFileAdapter(it),
                 CONST_HEADERS_PUT_FILE, args)
@@ -484,19 +489,15 @@ class Connection:
             self._is_connected = True
             status_code, err, respjson = self.open_json_uri('')
 
-            if (err == ErrorCodes.NO_ERROR 
-                    and Connection._http_status_is_success(status_code)
-                ):
-                if (not self.user_callback is None and 'client' in respjson):
-                    self.user_callback(respjson['client'])
-            elif (err == ErrorCodes.NOT_CONNECTED):
+            if (err == ErrorCodes.NOT_CONNECTED):
                 self._is_connected = False
                 self.logger.error('Connection could not be established.')
-            else:
+            elif (err != ErrorCodes.NOT_CONNECTED \
+                    and err != ErrorCodes.NO_ERROR):
                 self._is_connected = False
                 self.logger.error('Connection got error: ErrorCode: %s', str(err))
 
-        return (err, status_code)
+        return (err, status_code, respjson)
 
     def send_files(self, uri, files):
         self.logger.info('send_files')
@@ -520,9 +521,10 @@ class Connection:
     def get_file(self, uri, localdest, callback=None):
         """ Downloads a file from the given url to a local file.
 
-        The callback will be called on any progress of the download, the first
-        parameter will be the already downloaded data in bytes, the second the
-        total file size.
+        The callback will be called on any progress of the download. It will be
+        called with the given uri and localdest as the first two parameters.
+        The third parameter is the already downloaded data in bytes, the fourth
+        the total file size.
         This function **must not** block!
         Also note that the amount of downloaded data might exceed the file size
         for the last chunk of data.
@@ -561,6 +563,7 @@ class Connection:
                                 chunk_count += 1
                                 if not callback is None:
                                         callback(
+                                            uri, localdest,
                                             min(chunk_count * chunk_size, size),
                                             size
                                         )
@@ -572,6 +575,7 @@ class Connection:
                 except Exception as e:
                     self.logger.error('Uexpected exception when writing to %s: %s',
                             localdest, str(e))
+                    print("Exception: %s" % str(e))
                     err = ErrorCodes.UNKONWN_EXCPTION
             else:
                 self.logger.error('Failed to get data stream from %s: %s' \
@@ -617,22 +621,11 @@ class Connection:
     def get_auth_provider_hash(self):
         return self.auth_provider.get_hash()
     
-    def _set_user_callback(self, callback):
-        self.logger.info('_set_user_callback')
-
-        if (not callback is None):
-        #TODO type <bound method Registry._user_callback of <Registry.Registry instance at 0x7f55c2422320>>
-        #    check_safety([(callback, types.FunctionType)])
-            self.user_callback = callback
-        else:
-            self.user_callback = None
-
-    def __init__(self, base_uri=None, auth_provider=None, user_callback=None):
+    def __init__(self, base_uri=None, auth_provider=None):
         self.logger = logging.getLogger('pyura')
         self.logger.info('Initializing Connection')
 
         self.set_base_uri(base_uri)
         self.set_auth_provider(auth_provider)
-        self._set_user_callback(user_callback)
         self.session = None
         self._is_connected = False

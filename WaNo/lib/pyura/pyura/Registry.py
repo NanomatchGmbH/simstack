@@ -3,7 +3,7 @@ from __future__ import absolute_import
 from __future__ import division
 from .helpers import check_safety
 import types
-from .Connection import Connection
+from .ConnectionManager import ConnectionManager
 import logging
 from .AuthProvider import AuthProvider
 from .User import User
@@ -11,7 +11,7 @@ import inspect
 from .JobManager import JobManager
 from .StorageManager import StorageManager
 from .SiteManager import SiteManager
-from .Constants import ErrorCodes
+from .Constants import ErrorCodes, ConnectionState
 
 class Registry:
     """Representation of a Unicore Registry.
@@ -38,7 +38,7 @@ class Registry:
         Args:
             auth_provider: the authentication provider.
         """
-        self.con.set_auth_provider(auth_provider)
+        self.auth_provider     = auth_provider
     
     def set_base_uri(self, base_uri):
         """Sets the base URI of the Unicore Server.
@@ -49,8 +49,22 @@ class Registry:
         Args:
             base_uri (str): the base uri of the server.
         """
-        self.con.set_base_uri(base_uri)
+        self.base_uri = base_uri
 
+
+    def _set_managers(self):
+        self.job_manager        = JobManager(self.connection_manager.get_job_connection())
+        self.storage_manager    = StorageManager(self.connection_manager.get_storage_connection())
+        self.site_manager       = SiteManager(self.connection_manager.get_site_connection())
+
+    def _unset_managers(self):
+        #TODO do not setup Managers here, they need their respective connection.
+        self.job_manager        = None
+        self.storage_manager    = None
+        self.site_manager       = None
+
+        self.logger.info('Registry set up.')
+        
 
     #TODO more listener/callback functions:
     # * connected()
@@ -62,6 +76,12 @@ class Registry:
     # in the function.
     # 
     #    def set_connection_listener():
+
+    def set_workflow_base_uri(self, uri):
+        if not uri is None and uri != "":
+            self.connection_manager.set_workflow_base_uri(uri)
+            return True
+        return False
 
     def connect(self, callback=None):
         """Connects to the Registry.
@@ -87,14 +107,22 @@ class Registry:
         err = ErrorCodes.NO_ERROR
         sc = 200
 
+        # set registry base uri again, just to be shure not to miss any changes.
+        self.connection_manager.set_registry_base_uri(self.base_uri)
+
         #TODO check connection state
-        err, sc = self.con.connect()
-        #TODO
+        err, con_status = self.connection_manager.connect(
+                self.auth_provider, self._user_callback)
+
         if (not callback is None):
             check_safety([(callback, types.FunctionType)])
-            self._inspector(callback, err, sc)
+            self._inspector(callback, error_code, status_code)
+            callback(error_code=err, status_code=con_status)
 
-        return (err, sc)
+        if err == ErrorCodes.NO_ERROR and con_status == ConnectionState.CONNECTED:
+            self._set_managers()
+
+        return (err, con_status)
         
     def update(self, callback=None):
         """Updates all managers.
@@ -129,7 +157,7 @@ class Registry:
         pass
 
     def get_base_uri(self):
-        return self.con.get_base_uri()
+        return self.connection_manager.get_registry_base_uri()
 
     def get_auth_provider_hash(self):
         return self.con.get_auth_provider_hash()
@@ -180,14 +208,9 @@ class Registry:
     def __init__(self, base_uri=None, auth_provider=None):
         self.logger = logging.getLogger('pyura')
 
-        self.con = Connection(user_callback=self._user_callback)
-        self.set_base_uri(base_uri)
-        self.set_auth_provider(auth_provider)
-        self.job_manager = JobManager(self.con) 
-        self.storage_manager = StorageManager(self.con)
-        self.site_manager = SiteManager(self.con)
-
-        self.logger.info('Registry set up.')
+        self.base_uri           = base_uri
+        self.connection_manager = ConnectionManager(base_uri=base_uri)
+        self.auth_provider      = auth_provider
 
     def __str__(self):
-        return self.con.base_uri
+        return self.base_uri
