@@ -13,6 +13,7 @@ import PySide.QtGui  as QtGui
 
 import WaNo.WaNoFactory as WaNoFactory
 
+from WaNo.lib.MultiselectDropDownList import MultiselectDropDownList
 
 def mapClassToTag(name):
     xx = name.replace('Widget','')
@@ -23,7 +24,68 @@ widgetColors = {'MainEditor' : '#F5FFF5' , 'Control': '#EBFFD6' , 'Base': '#F5FF
 #widgetColors = {'MainEditor': '#77B395', 'Control': '#003C1D', 'Base': '#28774F',
 #                'WaNo': '#28536C', 'ButtonColor': '#477087'}
 
-    
+
+class WFModel(object):
+    def __init__(self, *args, **kwargs):
+        """
+         Workflow:
+            Root:
+              [ Element, Workflow, ControlElement ]
+            ControlElement:
+              [ Element, Workflow, ControlElement ]
+
+        Every Element is a folder
+         WorkflowName
+            - Element-uuid
+            - Workflow-uuid
+            - ControlElement-uuid
+
+        These are copies of the current wanos or workflows
+        """
+        self.wftree = None
+        # Name of the saved folder
+        self.foldername = None
+        #Few Use Cases
+        """
+            Workflow containing Workflow:
+            What happens if the (inner) workflow-base changes?
+            The encapsulated workflow does not change. We might want to do that later, but not now.
+
+            In other words:
+            When an element is drawn into the workflow, a copy of the
+                WaNo, Workflow, ControlElement is made
+                & a unique Name + uuid is assigned
+            When the element is closed, or the workflow is submitted, these are written to disk using the UUID
+            WaNos are completely copied once they are instanced.
+
+            Data Format
+            OrderedDict
+            Name -> Object
+            Here name is uuidname
+            Displayname should be Saved in Object
+        """
+
+    def save_to_disk(self,foldername):
+        pass
+
+    def read_from_disk(self,foldername):
+
+        pass
+
+    def iterate_over_elements(self):
+        for key,value in self.wftree:
+            yield key,value
+
+
+
+
+class WFController(object):
+    pass
+
+class WFView(object):
+    pass
+
+
 class WFWaNoWidget(QtGui.QToolButton):
     def __init__(self, text, wano, parent=None):
         super(WFWaNoWidget, self).__init__(parent)
@@ -31,18 +93,21 @@ class WFWaNoWidget(QtGui.QToolButton):
         self.moved = False
         lvl = self.logger.getEffectiveLevel() # switch off too many infos
         self.logger.setLevel(logging.ERROR)
-
+        self.is_wano = True
         self.logger.setLevel(lvl)
         stylesheet ="""
+        QToolButton
+        {
         background-color: %s;
-        border: 3px solid black;
-        border-radius: 12px;
-        color: black;
-        font-size: 24px;
-        padding: 4px;
-        padding-left: 6px;
-        padding-right: 6px;
-        icon-size: 64px;
+            border: 3px solid black;
+            border-radius: 12px;
+            color: black;
+            font-size: 24px;
+            padding: 4px;
+            padding-left: 6px;
+            padding-right: 6px;
+            icon-size: 64px;
+            }
 
         """ %widgetColors["ButtonColor"]
         self.setStyleSheet(stylesheet) # + widgetColors['WaNo'])
@@ -79,8 +144,6 @@ class WFWaNoWidget(QtGui.QToolButton):
 
 
     def mouseMoveEvent(self, e):
-    #def mouseReleaseEvent(self,e):
-        #print(e)
         print("here")
         if self.text() == "Start":
             e.ignore()
@@ -101,7 +164,6 @@ class WFWaNoWidget(QtGui.QToolButton):
         if not self.constructed:
             self.wano_model,self.wano_view = WaNoFactory.wano_constructor_helper(self.wano[2],self)
             self.constructed = True
-
 
 
     def mouseDoubleClickEvent(self,e):
@@ -155,7 +217,6 @@ class WFBaseWidget(QtGui.QFrame):
   
     def openWaNoEditor(self,wanoWidget):
         self.editor.openWaNoEditor(wanoWidget)
-        self.get_wano_variables()
 
     def get_wano_variables(self):
         paths = []
@@ -163,14 +224,14 @@ class WFBaseWidget(QtGui.QFrame):
             #make sure everything is constructed at this point:
             #NOP for already constructed
                 #if button.
-            button.construct_wano()
+            if button.is_wano:
+                button.construct_wano()
         for button in self.buttons:
-            paths.extend(button.wano_model.wano_walker_paths())
+            if button.is_wano:
+                paths.extend(button.wano_model.wano_walker_paths())
 
         if not self.topWidget:
             paths.extend(self.parent().get_wano_variables())
-        else:
-            print(paths)
         return paths
 
 
@@ -559,7 +620,7 @@ class WFControlWidget(QtGui.QFrame):
         self.logger = logging.getLogger('WFELOG')
         self.editor = editor
       
-        
+        self.is_wano = False
         self.setFrameStyle(QtGui.QFrame.Panel)
         self.setStyleSheet("""
                            QFrame {
@@ -602,6 +663,11 @@ class WFControlWidget(QtGui.QFrame):
         
         self.setLayout(self.layout)
         self.show()
+
+    def get_wano_variables(self):
+        pass
+    def construct_wano(self):
+        pass
     
     def clear(self):
         for w in self.wf:
@@ -717,10 +783,23 @@ class WFForEachWidget(WFControlWidget):
         b.clicked.connect(self.toggleVisible)
         self.topLineLayout.addWidget(b)   
         self.topLineLayout.addWidget(QtGui.QLineEdit('Variable Name'))
-
-        self.list_of_variables = QtGui.QLineEdit('list')
+        self.list_of_variables = QtGui.QLineEdit('')
         self.topLineLayout.addWidget(self.list_of_variables)
+        self.open_variables = MultiselectDropDownList(self,text="Import")
+        self.open_variables.itemSelectionChanged.connect(self.onItemSelectionChange)
+        self.open_variables.connect_workaround(self._load_variables)
+        self.topLineLayout.addWidget(self.open_variables)
         return 1
+
+    def _load_variables(self):
+        parent = self.parent()
+        while not parent.topWidget:
+            parent = parent.parent()
+        vars = parent.get_wano_variables()
+        self.open_variables.set_items(vars)
+
+    def onItemSelectionChange(self):
+        self.list_of_variables.setText(" ".join(self.open_variables.get_selection()))
 
 
 class WFParallelWidget(WFControlWidget):
