@@ -52,6 +52,7 @@ class MultiselectDropDownList(QToolButton):
             (QColor, QIcon or QPixmap) or strings
     """
     def set_items(self, items):
+        self._list.clear()
         for item in items:
             if isinstance(item, tuple):
                 lwi = QListWidgetItem(item[0])
@@ -64,6 +65,9 @@ class MultiselectDropDownList(QToolButton):
                         an icon (QColor, QIcon or QPixmap) or string.")
 
 
+    def connect_workaround(self,function):
+        self.qmenu.aboutToShow.connect(function)
+
     """Constructs a MultiselectDropDownList.
 
     Args:
@@ -74,12 +78,15 @@ class MultiselectDropDownList(QToolButton):
     def __init__(self, parent, text="", autoset_text=False):
         QToolButton.__init__(self)
         self.setPopupMode(QToolButton.MenuButtonPopup)
-        self.setMenu(QMenu(self))
+        self.qmenu = QMenu(self)
+        self.setMenu(self.qmenu)
         self.text = text
         self.setText(self.text)
 
         self._list = QListWidget(self)
         self._list.setSelectionMode(QAbstractItemView.ExtendedSelection)
+
+
 
         if autoset_text:
             self._list.itemSelectionChanged.connect(self._on_selection_change)
