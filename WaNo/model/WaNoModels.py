@@ -422,6 +422,7 @@ class WaNoItemBoolModel(AbstractWanoModel):
         else:
             self.xml.text = "False"
 
+
 class WaNoItemFileModel(AbstractWanoModel):
     def __init__(self, *args, **kwargs):
         super(WaNoItemFileModel, self).__init__(*args, **kwargs)
@@ -453,6 +454,33 @@ class WaNoItemFileModel(AbstractWanoModel):
         destdir = os.path.join("Staging",rendered_logical_name)
         shutil.copy(self.mystring,destdir)
         return rendered_logical_name
+
+
+class WaNoItemScriptFileModel(WaNoItemFileModel):
+    def __init__(self,*args,**kwargs):
+        #Careful: we explicitly DONT Call the init of WaNoItemFileModel here. but the one from AbstractWaNoModel!
+        super(WaNoItemFileModel,self).__init__(*args,**kwargs)
+        self.xml = kwargs['xml']
+        self.mystring = self.xml.text
+        self.logical_name = self.mystring
+
+    def get_path(self):
+        root_dir = self.root_model.wano_dir_root
+        return os.path.join(root_dir, self.mystring)
+
+    def save_text(self,text):
+        with open(self.get_path(),'w') as outfile:
+            outfile.write(text)
+
+    def get_as_text(self):
+        fullpath = self.get_path()
+        content = ""
+        try:
+            with open(fullpath,'r') as infile:
+                content = infile.read()
+            return content
+        except FileNotFoundError:
+            return ""
 
 
 class WaNoItemStringModel(AbstractWanoModel):

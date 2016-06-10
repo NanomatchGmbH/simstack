@@ -259,6 +259,44 @@ class WaNoItemBoolView(AbstractWanoQTView):
             self.model.set_data(False)
 
 
+class WaNoScriptView(AbstractWanoQTView):
+    def __init__(self, *args, **kwargs):
+        super(WaNoScriptView,self).__init__(*args,**kwargs)
+        print("HERE")
+        """ Widget code here """
+        self.actual_widget = QtGui.QWidget(self.qt_parent)
+        vbox = QtGui.QVBoxLayout()
+        self.actual_widget.setLayout(vbox)
+        self.menubar = QtGui.QWidget()
+        hbox = QtGui.QHBoxLayout()
+        self.menubar.setLayout(hbox)
+        self.combobox = QtGui.QComboBox()
+        self.combobox.addItem("Python")
+        self.combobox.addItem("Bash")
+        self.combobox.addItem("Perl")
+        self.savebutton = QtGui.QPushButton(QtGui.QIcon.fromTheme("document-save"),"")
+        self.savebutton.clicked.connect(self.on_save)
+        hbox.addWidget(self.savebutton)
+        hbox.addStretch()
+        hbox.addWidget(self.combobox)
+
+        vbox.addWidget(self.menubar)
+        self.textedit = QtGui.QTextEdit()
+        vbox.addWidget(self.textedit)
+        """ Widget code end """
+
+    def get_widget(self):
+        return self.actual_widget
+
+    def init_from_model(self):
+        text = self.model.get_as_text()
+        self.textedit.setText(text)
+
+    def on_save(self):
+        self.model.save_text(self.textedit.toPlainText())
+
+
+
 class WaNoItemStringView(AbstractWanoQTView):
     def __init__(self, *args, **kwargs):
         super(WaNoItemStringView, self).__init__(*args, **kwargs)

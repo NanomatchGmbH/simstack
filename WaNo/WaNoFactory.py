@@ -54,10 +54,10 @@ class WaNoFactory(object):
         from WaNo.model.AbstractWaNoModel import WaNoNotImplementedError
         from WaNo.model.WaNoModels import WaNoItemFloatModel, WaNoModelListLike,\
             WaNoItemStringModel, WaNoItemBoolModel, WaNoModelDictLike, WaNoChoiceModel, \
-            MultipleOfModel, WaNoItemFileModel, WaNoItemIntModel
+            MultipleOfModel, WaNoItemFileModel, WaNoItemIntModel, WaNoItemScriptFileModel
         from WaNo.view.WaNoViews import WaNoItemFloatView, WaNoBoxView, WaNoItemStringView, \
             WaNoItemBoolView, WaNoItemFileView, WaNoChoiceView, MultipleOfView, WaNoItemIntView,\
-            WaNoTabView, WaNoGroupView
+            WaNoTabView, WaNoGroupView, WaNoScriptView
 
         wano_list = {
             "WaNoFloat": (WaNoItemFloatModel, WaNoItemFloatView),
@@ -71,6 +71,7 @@ class WaNoFactory(object):
             "WaNoFile": (WaNoItemFileModel, WaNoItemFileView),
             "WaNoChoice": (WaNoChoiceModel, WaNoChoiceView),
             "WaNoMultipleOf": (MultipleOfModel,MultipleOfView),
+            "WaNoScript": (WaNoItemScriptFileModel, WaNoScriptView),
             "WaNoTabs": (WaNoModelListLike,WaNoTabView)
         }
 
