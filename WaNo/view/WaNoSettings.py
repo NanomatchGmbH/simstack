@@ -278,7 +278,7 @@ class WaNoUnicoreSettings(QDialog):
         layout.addWidget(self.__btn_cancel)
         self.setLayout(layout)
 
-        self.setMinimumSize(300, 300)
+        self.setMinimumSize(420, 420)
 
     def __init__(self, config):
         super(WaNoUnicoreSettings, self).__init__()
