@@ -293,6 +293,99 @@ class WFEditorApplication(QObject):
             if not no_status_update:
                 self._set_unicore_disconnected()
 
+    def _test_wf_submit(self):
+        wf_manager = self._unicore.get_workflow_manager()
+        err, status, wf = wf_manager.create('test_storage')
+        print("err: %s, status: %s, wf_manager: %s" % (err, status, wf))
+        if not wf is None and not wf == '':
+            print("\n\nsending xml\n\n")
+            xml = '<s:Workflow xmlns:s="http://www.chemomentum.org/workflow/simple"' + \
+                '          xmlns:jsdl="http://schemas.ggf.org/jsdl/2005/11/jsdl">' + \
+                '' + \
+                '  <s:Documentation>' + \
+                '    <s:Comment>Simple diamond graph</s:Comment>' + \
+                '  </s:Documentation>' + \
+                '' + \
+                '  <s:Activity Id="date1" Type="JSDL">' + \
+                '   <s:JSDL>' + \
+                '      <jsdl:JobDescription>' + \
+                '        <jsdl:Application>' + \
+                '          <jsdl:ApplicationName>Date</jsdl:ApplicationName>' + \
+                '          <jsdl:ApplicationVersion>1.0</jsdl:ApplicationVersion>' + \
+                '        </jsdl:Application>' + \
+                '       <jsdl:DataStaging>' + \
+                '         <jsdl:FileName>stdout</jsdl:FileName>' + \
+                '         <jsdl:CreationFlag>overwrite</jsdl:CreationFlag>' + \
+                '         <jsdl:Target>' + \
+                '           <jsdl:URI>c9m:${WORKFLOW_ID}/date1.out</jsdl:URI>' + \
+                '         </jsdl:Target>' + \
+                '         </jsdl:DataStaging>' + \
+                '      </jsdl:JobDescription>' + \
+                '    </s:JSDL>' + \
+                '   </s:Activity>' + \
+                '' + \
+                '  <Activity Id="split" Type="Split"/>' + \
+                '' + \
+                '  <s:Activity Id="date2a" Type="JSDL">' + \
+                '   <s:JSDL>' + \
+                '      <jsdl:JobDescription>' + \
+                '        <jsdl:Application>' + \
+                '         <jsdl:ApplicationName>Date</jsdl:ApplicationName>' + \
+                '        </jsdl:Application>' + \
+                '       <jsdl:DataStaging>' + \
+                '         <jsdl:FileName>stdout</jsdl:FileName>' + \
+                '         <jsdl:CreationFlag>overwrite</jsdl:CreationFlag>' + \
+                '         <jsdl:Target>' + \
+                '           <jsdl:URI>c9m:${WORKFLOW_ID}/date2a.out</jsdl:URI>' + \
+                '         </jsdl:Target>' + \
+                '         </jsdl:DataStaging>' + \
+                '      </jsdl:JobDescription>' + \
+                '    </s:JSDL>' + \
+                '   </s:Activity>' + \
+                '' + \
+                '  <s:Activity Id="date2b" Type="JSDL">' + \
+                '   <s:JSDL>' + \
+                '      <jsdl:JobDescription>' + \
+                '        <jsdl:Application>' + \
+                '         <jsdl:ApplicationName>Date</jsdl:ApplicationName>' + \
+                '        </jsdl:Application>' + \
+                '       <jsdl:DataStaging>' + \
+                '         <jsdl:FileName>stdout</jsdl:FileName>' + \
+                '         <jsdl:CreationFlag>overwrite</jsdl:CreationFlag>' + \
+                '         <jsdl:Target>' + \
+                '           <jsdl:URI>c9m:${WORKFLOW_ID}/date2b.out</jsdl:URI>' + \
+                '         </jsdl:Target>' + \
+                '         </jsdl:DataStaging>' + \
+                '      </jsdl:JobDescription>' + \
+                '    </s:JSDL>' + \
+                '   </s:Activity>' + \
+                '' + \
+                '  <s:Activity Id="date3" Type="JSDL">' + \
+                '   <s:JSDL>' + \
+                '      <jsdl:JobDescription>' + \
+                '        <jsdl:Application>' + \
+                '         <jsdl:ApplicationName>Date</jsdl:ApplicationName>' + \
+                '        </jsdl:Application>' + \
+                '       <jsdl:DataStaging>' + \
+                '         <jsdl:FileName>stdout</jsdl:FileName>' + \
+                '         <jsdl:CreationFlag>overwrite</jsdl:CreationFlag>' + \
+                '         <jsdl:Target>' + \
+                '           <jsdl:URI>c9m:${WORKFLOW_ID}/date3.out</jsdl:URI>' + \
+                '         </jsdl:Target>' + \
+                '         </jsdl:DataStaging>' + \
+                '      </jsdl:JobDescription>' + \
+                '    </s:JSDL>' + \
+                '   </s:Activity>' + \
+                '' + \
+                '  <s:Transition Id="date1-split" From="date1" To="split"/>' + \
+                '  <s:Transition Id="split-date2a" From="split" To="date2a"/>' + \
+                '  <s:Transition Id="split-date2b" From="split" To="date2b"/>' + \
+                '  <s:Transition Id="date2b-date3" From="date2b" To="date3"/>' + \
+                '  <s:Transition Id="date2a-date3" From="date2a" To="date3"/>' + \
+                '' + \
+                '</s:Workflow>'
+            wf_manager.run(wf.split('/')[-1], xml)
+
     def _connect_unicore(self, index, no_status_update=False):
         success = False
 
@@ -324,6 +417,8 @@ class WFEditorApplication(QObject):
             if error == UnicoreErrorCodes.NO_ERROR: #TODO check if _unicore.is_connected.
                 success = True
                 self._logger.info("Connected.")
+                print("#############\n#############")
+                self._test_wf_submit()
             else:
                 self._logger.error("Failed to connect to registry: %s, %s" % \
                             (str(status), str(error))
