@@ -122,6 +122,7 @@ class WFViewManager(QObject):
         self._mainwindow.open_file.connect(self.open_dialog_open_workflow)
         self._mainwindow.save.connect(self.open_dialog_save_workflow)
         self._mainwindow.save_as.connect(self.open_dialog_save_workflow_as)
+        self._mainwindow.run.connect(self._editor.run)
         self._mainwindow.new_file.connect(self.open_new_workflow)
         self._mainwindow.exit_client.connect(self.exit)
 

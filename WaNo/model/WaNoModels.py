@@ -33,7 +33,7 @@ class WaNoModelDictLike(AbstractWanoModel):
         self.xml = kwargs["xml"]
 
         for child in self.xml:
-            model = WaNo.WaNoFactory.WaNoFactory.get_objects(child, self, self)
+            model = WaNo.WaNoFactory.WaNoFactory.get_objects(child, self.root_model, self)
             self.wano_dict[child.attrib['name']] = model
 
     def __getitem__(self, item):
@@ -152,7 +152,7 @@ class MultipleOfModel(AbstractWanoModel):
     def parse_one_child(self,child):
         wano_temp_dict = collections.OrderedDict()
         for cchild in child:
-            model = WaNo.WaNoFactory.WaNoFactory.get_objects(cchild, self, self)
+            model = WaNo.WaNoFactory.WaNoFactory.get_objects(cchild, self.root_model, self)
             wano_temp_dict[cchild.attrib['name']] = model
         return wano_temp_dict
 
@@ -207,6 +207,7 @@ class WaNoModelRoot(WaNoModelDictLike):
         self.root_model = self
         self.full_xml = kwargs['xml']
         kwargs['xml'] = self.full_xml.find("WaNoRoot")
+        kwargs["root_model"] = self.root_model
         super(WaNoModelRoot, self).__init__(*args, **kwargs)
         self.exec_command = self.full_xml.find("WaNoExecCommand").text
         self.input_files = []
@@ -229,6 +230,8 @@ class WaNoModelRoot(WaNoModelDictLike):
         return modelroot
 
     def save_xml(self,filename):
+        print("Writing to ",filename)
+        self.wano_dir_root = os.path.dirname(filename)
         with open(filename,'w') as outfile:
             outfile.write(etree.tostring(self.full_xml,pretty_print=True).decode("utf-8"))
 
@@ -327,11 +330,13 @@ class WaNoModelRoot(WaNoModelDictLike):
             splitpath=path.split(".")
             return parent.render(rendered_wano,splitpath)
 
-    def mock_submission(self,rendered_wano):
-        with open("Staging/rendered_wano.yml",'w') as outfile:
+    def prepare_files_submission(self,rendered_wano, basefolder):
+        render_wano_filename = os.path.join(basefolder,"rendered_wano.yml")
+        with open(render_wano_filename,'w') as outfile:
             outfile.write(yaml.dump(rendered_wano,default_flow_style=False))
 
-        with open("Staging/submit_command.sh", 'w') as outfile:
+        submit_script_filename = os.path.join(basefolder,"submit_command.sh")
+        with open(submit_script_filename, 'w') as outfile:
             outfile.write(self.exec_command)
 
         template_loader = FileSystemLoader(searchpath="/")
@@ -340,7 +345,7 @@ class WaNoModelRoot(WaNoModelDictLike):
         for remote_file,local_file in self.input_files:
             comp_filename = os.path.join(self.wano_dir_root,local_file)
             template = template_env.get_template(comp_filename)
-            outfile = os.path.join("Staging",remote_file)
+            outfile = os.path.join(basefolder,remote_file)
             with open(outfile,'w') as outfile:
                 outfile.write(template.render(wano = rendered_wano))
 
@@ -350,7 +355,12 @@ class WaNoModelRoot(WaNoModelDictLike):
         # We do two render passes, in case the rendering reset some values:
         rendered_wano = self.wano_walker_render_pass(rendered_wano)
         self.exec_command = Template(self.exec_command).render(wano = rendered_wano)
-        self.mock_submission(rendered_wano)
+        return rendered_wano
+
+    def render_and_write_input_files(self,basefolder):
+        rendered_wano = self.render()
+        self.prepare_files_submission(rendered_wano, basefolder)
+
 
 
 class WaNoItemFloatModel(AbstractWanoModel):
@@ -451,7 +461,7 @@ class WaNoItemFileModel(AbstractWanoModel):
     def render(self, rendered_wano, path):
         rendered_logical_name = Template(self.logical_name).render(wano=rendered_wano, path=path)
         #Upload and copy
-        destdir = os.path.join("Staging",rendered_logical_name)
+        destdir = os.path.join(self.root_model.wano_dir_root,rendered_logical_name)
         shutil.copy(self.mystring,destdir)
         return rendered_logical_name
 

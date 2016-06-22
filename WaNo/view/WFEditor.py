@@ -1,7 +1,7 @@
 import logging
 import os
 from PySide.QtGui import QWidget, QSizePolicy, QLabel, QSplitter, QHBoxLayout, \
-        QTabWidget, QTreeView
+            QTabWidget, QTreeView
 from PySide.QtCore import Qt, Signal
 
 from .WaNoEditorWidget import WaNoEditor
@@ -130,6 +130,8 @@ class WFEditor(QWidget):
         
         self.lastActive = None
 
+
+
     def _convert_ctrl_icon_paths_to_absolute(self):
         script_path=os.path.dirname(os.path.realpath(__file__))
 
@@ -164,6 +166,7 @@ class WFEditor(QWidget):
         self.logger = logging.getLogger('WFELOG')
         self.__init_ui()
         self._connect_signals()
+        self.resizeEvent()
 
     def update_wano_list(self, wanos):
         self.wanos = wanos
@@ -228,6 +231,9 @@ class WFEditor(QWidget):
     def saveAs(self):
         self.workflowWidget.saveAs()
         self.workflowListWidget.update()
+
+    def run(self):
+        self.workflowWidget.run()
         
     def loadFile(self,fileName):
         self.workflowWidget.loadFile(fileName)

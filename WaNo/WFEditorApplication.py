@@ -22,7 +22,7 @@ from WaNo.view.WaNoViews import WanoQtViewRoot
 
 #TODO remove, testing only
 from WaNo.lib.pyura.pyura import Storage
-
+from collections import namedtuple
 
 class WFEditorApplication(QObject):
     ############################################################################
@@ -257,32 +257,23 @@ class WFEditorApplication(QObject):
                 else:
                     wano_icon = QtGui.QIcon(iconpath)
 
-                self.wanos.append((name,fullpath,xmlpath,wano_icon))
+                self.wanos.append([name,fullpath,xmlpath,wano_icon])
 
         return self.wanos
-
 
     def __load_saved_workflows(self, workflow_path):
         self._logger.debug("loading Workflows from %s." % workflow_path)
         workflows = []
-        return workflows
-        #TODO: Implement tomorrow
-
-        files = [f for f in os.listdir(workflow_path) if f.endswith(".xml")]
-        for infile in files:
-            try:
-                pass
-                #parse workflow model
-            except Exception as e:
-                self._logger.error(
-                        "Error when trying to parse file '%s'\n\n%s" % \
-                            (xxi, e)
-                    )
-                self._view_manager.show_error(
-                        "Error when trying to parse file '%s'\n\n%s" % \
-                            (xxi, e)
-                    )
-                self._logger.critical('Loading Workflows: no workflow in file ' + xxi)
+        for directory in os.listdir(workflow_path):
+            fulldir = os.path.join(workflow_path,directory)
+            if not os.path.isdir(fulldir):
+                continue
+            xmlpath = os.path.join(fulldir,directory) + ".xml"
+            if os.path.isfile(xmlpath):
+                #print(xmlpath)
+                returnclass = namedtuple("workflowlistentry","name,workflow")
+                wf = returnclass(name=directory,workflow=fulldir)
+                workflows.append(wf)
         return workflows
 
     ############################################################################
@@ -412,6 +403,9 @@ class WFEditorApplication(QObject):
             )
         self._view_manager.update_saved_workflows_list(workflows)
 
+    def update_workflow_list(self):
+        self._update_workflow_list()
+
     def _update_saved_registries(self):
         default = self._get_default_registry()
         regList = self._get_registry_names()
@@ -452,6 +446,15 @@ class WFEditorApplication(QObject):
         self._view_manager.upload_file.connect(self._on_fs_upload)
         self._view_manager.delete_job.connect(self._on_fs_delete_job)
         self._view_manager.delete_file.connect(self._on_fs_delete_file)
+
+    def upload_filelist(self,filelist):
+        pass
+
+    def submit_workflow(self,workflowfile):
+        pass
+
+    def submit_job(self,job):
+        pass
 
     def __init__(self, settings):
         super(WFEditorApplication, self).__init__()

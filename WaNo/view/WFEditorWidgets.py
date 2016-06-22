@@ -12,6 +12,7 @@ import PySide.QtCore as QtCore
 import PySide.QtGui  as QtGui
 
 
+
 class WFEListWidget(QtGui.QListWidget):
     def __init__(self, parent=None, controls=[]):
         super(WFEListWidget, self).__init__(parent) 
@@ -35,6 +36,7 @@ class WFEWaNoListWidget(QtGui.QListWidget):
         self.setDragEnabled(True)
         self.myHeight = 10
 
+
     def update_list(self, wanos):
         self.clear()
         for wano in wanos:
@@ -55,14 +57,18 @@ class WFEWorkflowistWidget(QtGui.QListWidget):
         self.logger = logging.getLogger('WFEOG')
         self.setDragEnabled(True)
         self.myHeight = 10
+        self.itemDoubleClicked.connect(self.openWf)
+
+    def openWf(self,pressedItem):
+        self.parent().parent().openWorkFlow(pressedItem.workflow)
 
     def update_list(self, workflows):
         self.clear()
-        path = os.path.dirname(os.path.realpath(__file__))
 
         for element in workflows:
             item = QtGui.QListWidgetItem(element.name)
-            item.WaNo = element
+
+            item.workflow = element
             self.addItem(item)
         self.myHeight = self.count()*10
         self.sortItems()
