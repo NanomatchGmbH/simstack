@@ -45,7 +45,7 @@ if __name__ == '__main__':
         os.makedirs(SETTINGS_FOLDER)
     SETTINGS_FILE = path.join(SETTINGS_FOLDER,_SETTINGS_FILE)
     print(SETTINGS_FILE)
-    settings = WaNoSettingsProvider(SETTINGS_FILE)
+    settings = WaNoSettingsProvider.get_instance(SETTINGS_FILE)
     if path.exists(SETTINGS_FILE):
         with open(SETTINGS_FILE, 'r') as infile:
             settings.load_from_dict(yaml.load(infile))
