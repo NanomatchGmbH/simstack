@@ -15,6 +15,7 @@ class WFEditorMainWindow(QtGui.QMainWindow):
     save_registries     = Signal(list, name="SaveRegistries")
     open_registry_settings = Signal(name="OpenRegistrySettings")
     exit_client         = Signal(name="ExitClient")
+    run                 = Signal(name="Run")
    
     def __init_ui(self,parent=None):
         self.setWindowIcon(QtGui.QIcon('./WaNo/Media/Logo_Nanomatch.png'))
@@ -31,6 +32,7 @@ class WFEditorMainWindow(QtGui.QMainWindow):
         self.fileMenu.addAction(self.exitAct)
         
         self.runMenu = self.menuBar().addMenu("&Run")
+        self.runMenu.addAction(self.runAct)
 
         self.settingsMenu = self.menuBar().addAction(
                 QtGui.QAction(
@@ -97,6 +99,9 @@ class WFEditorMainWindow(QtGui.QMainWindow):
     def action_aboutWFE(self):
         self.infoLabel.setText("Invoked <b>Help|About Qt</b>")
 
+    def action_run(self):
+        self.run.emit()
+
     def _createActions(self):
         self.newAct = QtGui.QAction("&New", self,
                 shortcut=QtGui.QKeySequence.New,
@@ -121,6 +126,8 @@ class WFEditorMainWindow(QtGui.QMainWindow):
         self.exitAct = QtGui.QAction("E&xit", self, shortcut="Ctrl+Q",
                 statusTip="Exit the application", triggered=self.action_close)
 
+        self.runAct = QtGui.QAction("R&un", self, shortcut="Ctrl+R",
+                statusTip="Run the currently active Workflow", triggered=self.action_run)
 
         self.aboutAct = QtGui.QAction("&Help", self,
                 statusTip="Show the application's Help box",
