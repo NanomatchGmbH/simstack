@@ -129,13 +129,18 @@ class WFEditorApplication(QObject):
     def _on_fs_worflow_list_update_request(self):
         self._logger.debug("Querying workflows from Unicore Registry")
         ok = True
-        files = []
+        workflows = []
         #TODO factor out tests
         if ok:
-            files = [{'id': s, 'name': 'wf_%s' % s, 'type': 'w', 'path': s} \
-                    for s in range(1, 10)]
-            self._view_manager.update_workflow_list(files)
-            print("Got files: %s" % files)
+            wf_manager = self._unicore.get_workflow_manager()
+            wf_manager.update_list()
+            workflows = [{
+                    'id': s.get_id(),
+                    'name': s.get_name(),
+                    'type': 'w',
+                    'path': s.get_working_dir()
+                    } for s in wf_manager.get_list()]
+            self._view_manager.update_workflow_list(workflows)
 
     def _extract_storage_path(self, path):
         storage = None
