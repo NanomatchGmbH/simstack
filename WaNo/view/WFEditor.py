@@ -233,7 +233,7 @@ class WFEditor(QWidget):
         self.workflowListWidget.update()
 
     def run(self):
-        self.workflowWidget.run()
-        
+        return self.workflowWidget.run()
+
     def loadFile(self,fileName):
         self.workflowWidget.loadFile(fileName)

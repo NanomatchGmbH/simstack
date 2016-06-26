@@ -25,6 +25,16 @@ def copytree(src, dst, symlinks=False, ignore=None):
         else:
             shutil.copy2(s, d)
 
+
+def filewalker(basedir):
+    for root,dirs,files in os.walk(basedir):
+        if len(files) > 0:
+            for mf in files:
+                fullpath = os.path.join(root,mf)
+                if os.path.isfile(fullpath):
+                    yield fullpath
+
+
 class NodeContainer(object):
     def __init__(self):
         self._subnodes = []

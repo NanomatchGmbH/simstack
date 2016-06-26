@@ -8,6 +8,8 @@ import os
 import logging
 import shutil
 import uuid
+from enum import Enum
+
 from   lxml import etree
 
 import PySide.QtCore as QtCore
@@ -265,6 +267,10 @@ class WFWaNoWidget(QtGui.QToolButton):
             self.wano_instance.gatherExports(varExp,filExp,waNoNames)
         return False
 
+class SubmitType(Enum):
+    SINGLE_WANO = 1,
+    WORKFLOW = 1
+
 class WFModel(object):
     def __init__(self, *args, **kwargs):
         """
@@ -360,6 +366,17 @@ class WFModel(object):
         except OSError:
             pass
 
+        if len(self.elements) == 1:
+            ele = self.elements[0]
+            if ele.is_wano:
+                wano_dir = os.path.join(jobdir, ele.uuid)
+                try:
+                    os.makedirs(wano_dir)
+                except OSError:
+                    pass
+                ele.render(jobdir)
+                return SubmitType.SINGLE_WANO,wano_dir
+
         swffile = os.path.join(submitdir,"simpleswf.swf")
         with open(swffile, 'w') as out:
             for myid,ele in enumerate(self.elements):
@@ -370,6 +387,7 @@ class WFModel(object):
                     pass
                 ele.render(jobdir)
                 out.write(ele.uuid + "\n")
+        return SubmitType.WORKFLOW,submitdir
 
     def move_element_to_position(self, element, new_position):
         old_index = self.elements.index(element)
@@ -841,7 +859,8 @@ class WFTabsWidget(QtGui.QTabWidget):
         print ("mark as changed")
 
     def run(self):
-        self.currentWidget().widget().model.render()
+        jobtype,directory = self.currentWidget().widget().model.render()
+        return jobtype,directory
 
     def save(self):
         if self.curFile.name == 'Untitled':

@@ -5,6 +5,7 @@ from __future__ import absolute_import
 
 import logging
 import os
+import shlex
 
 from PySide.QtCore import QObject
 from PySide import QtCore,QtGui
@@ -12,12 +13,16 @@ from PySide import QtCore,QtGui
 from   lxml import etree
 
 from WaNo import WaNoFactory
+from WaNo.lib.FileSystemTree import filewalker
 from WaNo.lib.pyura.pyura import UnicoreAPI, HTTPBasicAuthProvider
 from WaNo.lib.pyura.pyura import ErrorCodes as UnicoreErrorCodes
+
+from WaNo.lib.pyura.pyura import JobManager
 
 from WaNo.view import WFViewManager
 from WaNo.WaNoGitRevision import get_git_revision
 from WaNo.Constants import SETTING_KEYS
+from WaNo.view.WFEditorPanel import SubmitType
 from WaNo.view.WaNoViews import WanoQtViewRoot
 
 #TODO remove, testing only
@@ -300,7 +305,7 @@ class WFEditorApplication(QObject):
         if not wf is None and not wf == '':
             print("\n\nsending xml\n\n")
             xml = '<s:Workflow xmlns:s="http://www.chemomentum.org/workflow/simple"' + \
-                '          xmlns:jsdl="http://schemas.ggf.org/jsdl/2005/11/jsdl">' + \
+                '          xmlns:jsdl="http://schemas.ggf.org/jsdl/2005/11/jsdl" Id="TestWorkflow" >' + \
                 '' + \
                 '  <s:Documentation>' + \
                 '    <s:Comment>Simple diamond graph</s:Comment>' + \
@@ -418,7 +423,39 @@ class WFEditorApplication(QObject):
                 success = True
                 self._logger.info("Connected.")
                 print("#############\n#############")
-                self._test_wf_submit()
+                #self._test_wf_submit()
+
+                """
+                job_manager = reg.get_job_manager()
+                if (job_manager is None):
+                    logger.error("job tests: did NOT get job manager")
+                else:
+                    logger.info("job tests: got job manager")
+
+                    job_manager.update_list()
+                    jobs = job_manager.get_list()
+                    logger.info("job tests: got %d jobs." % len(jobs))
+                    ## init all objects. Do not output anything, this will spam the log anyway...
+                    # for job in jobs:
+                    #    try:
+                    #        a = job.get_owner_dn()
+                    #    except:
+                    #        # This should not happen when the REST API Bugs are fixed
+                    #        pass
+                    logger.info("job tests: job infos:")
+                    for job in jobs:
+                        owner = None
+                        try:
+                            owner = job.get_owner_dn()
+                        except:
+                            # This should not happen when the REST API Bugs are fixed
+                            pass
+                        logger.info("   job %s from %s" % (str(job.get_id()), owner))
+
+                    err, newjob = job_manager.create('/bin/echo',
+                                                     arguments=['hallo, welt', '$FOO'],
+                                                     environment=["FOO=bar"])
+                    """
             else:
                 self._logger.error("Failed to connect to registry: %s, %s" % \
                             (str(status), str(error))
@@ -437,6 +474,43 @@ class WFEditorApplication(QObject):
             else:
                 self._set_unicore_disconnected()
         return success
+
+    def _run(self):
+        editor = self._view_manager.get_editor()
+        jobtype,directory = editor.run()
+        if jobtype == SubmitType.SINGLE_WANO:
+            print("Running", directory)
+            self.run_job(directory)
+        else:
+            print("Running Workflows not yet implemented")
+            #self.editor.execute_workflow(directory)
+
+    def run_job(self, wano_dir):
+        job_manager = self._unicore.get_job_manager()
+        imports = JobManager.Imports()
+        storage_manager = self._unicore.get_storage_manager()
+        execfile = os.path.join(wano_dir,"submit_command.sh")
+        for filename in filewalker(wano_dir):
+            relpath = os.path.relpath(filename,wano_dir)
+            imports.add_import(filename,relpath)
+
+        contents = ""
+        with open(execfile) as com:
+            contents = com.readline()
+
+        splitcont = shlex.split(contents)
+
+        com = splitcont[0]
+        arguments = splitcont[1:]
+
+        err, newjob = job_manager.create(com,
+                                         arguments=arguments,
+                                         imports = imports,
+                                         environment=[])
+
+        job_manager.upload_imports(newjob,storage_manager)
+        wd = newjob.get_working_dir()
+        job_manager.start(newjob)
 
     def _reconnect_unicore(self, registry_index):
         self._logger.info("Reconnecting to Unicore Registry.")
@@ -531,6 +605,7 @@ class WFEditorApplication(QObject):
         self._view_manager.registry_changed.connect(self._on_registry_changed)
         self._view_manager.disconnect_registry.connect(self._on_registry_disconnect)
         self._view_manager.connect_registry.connect(self._on_registry_connect)
+        self._view_manager.run_clicked.connect(self._run)
 
         self._view_manager.request_job_list_update.connect(self._on_fs_job_list_update_request)
         self._view_manager.request_worflow_list_update.connect(self._on_fs_worflow_list_update_request)
@@ -542,14 +617,6 @@ class WFEditorApplication(QObject):
         self._view_manager.delete_job.connect(self._on_fs_delete_job)
         self._view_manager.delete_file.connect(self._on_fs_delete_file)
 
-    def upload_filelist(self,filelist):
-        pass
-
-    def submit_workflow(self,workflowfile):
-        pass
-
-    def submit_job(self,job):
-        pass
 
     def __init__(self, settings):
         super(WFEditorApplication, self).__init__()

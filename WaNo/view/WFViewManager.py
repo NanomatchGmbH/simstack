@@ -13,6 +13,7 @@ class WFViewManager(QObject):
     registry_changed        = Signal(int, name="RegistryChanged")
     disconnect_registry     = Signal(name='disconnectRegistry')
     connect_registry        = Signal(int, name='connectRegistry')
+    run_clicked             = Signal(name='runClicked')
     request_job_list_update     = Signal(name="requestJobListUpdate")
     request_worflow_list_update = Signal(name="requestWorkflowListUpdate")
     request_job_update          = Signal(str, name="requestJobUpdate")
@@ -122,7 +123,7 @@ class WFViewManager(QObject):
         self._mainwindow.open_file.connect(self.open_dialog_open_workflow)
         self._mainwindow.save.connect(self.open_dialog_save_workflow)
         self._mainwindow.save_as.connect(self.open_dialog_save_workflow_as)
-        self._mainwindow.run.connect(self._editor.run)
+        self._mainwindow.run.connect(self.run_clicked)
         self._mainwindow.new_file.connect(self.open_new_workflow)
         self._mainwindow.exit_client.connect(self.exit)
 
@@ -142,6 +143,9 @@ class WFViewManager(QObject):
         self._editor.upload_file_to.connect(self._on_file_upload)
         self._editor.delete_job.connect(self.delete_job)
         self._editor.delete_file.connect(self.delete_file)
+
+    def get_editor(self):
+        return self._editor
 
     def __init__(self):
         super(WFViewManager, self).__init__()
