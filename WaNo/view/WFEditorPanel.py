@@ -931,7 +931,9 @@ class WFTabsWidget(QtGui.QTabWidget):
         return index, scroll, model, view
 
     def openWorkFlow(self,workFlow):
-        if self.get_index(workFlow.name) < 0:
+        index = self.get_index(workFlow.name)
+        if index >= 0:
+            self.setCurrentIndex(index)
             return
 
         index, scroll, model, view = self.openNewWorkFlow()
