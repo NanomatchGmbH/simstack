@@ -118,8 +118,10 @@ class WFEditor(QWidget):
 
         self.settingsAndFilesTabs = QTabWidget()
         self.settingsAndFilesTabs.setTabsClosable(False)
-        self.settingsAndFilesTabs.addTab(self.wanoEditor, "WaNo Settings")
-        self.settingsAndFilesTabs.addTab(self.remoteFileTree, "Jobs && Workflows")
+        self.wanoSettingsTab = self.settingsAndFilesTabs.addTab(
+                self.wanoEditor, "WaNo Settings")
+        self.fileSystemTab = self.settingsAndFilesTabs.addTab(
+                self.remoteFileTree, "Jobs && Workflows")
 
         rightPanel.addWidget(self.registrySelection)
         rightPanel.setStretchFactor(0, 0)
@@ -167,6 +169,8 @@ class WFEditor(QWidget):
         self.__init_ui()
         self._connect_signals()
         self.resizeEvent()
+        self.wanoSettingsTab    = 0
+        self.fileSystemTab      = 0
 
     def update_wano_list(self, wanos):
         self.wanos = wanos
@@ -198,6 +202,7 @@ class WFEditor(QWidget):
         
     def openWaNoEditor(self,wanoWidget):
         if self.wanoEditor.init(wanoWidget.wano_view):
+            self.settingsAndFilesTabs.setCurrentIndex(self.wanoSettingsTab)
             wanoWidget.setColor(Qt.green)
             self.lastActive = wanoWidget
     
