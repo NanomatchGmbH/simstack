@@ -821,6 +821,7 @@ class WFTabsWidget(QtGui.QTabWidget):
 
         self.addTab(scroll, self.curFile.name)
         self.relayout()
+        self.currentChanged.connect(self._tab_changed)
 
         ####bb = self.tabBar().tabButton(0, QtGui.QTabBar.RightSide)
         ####bb.resize(0, 0)
@@ -905,14 +906,19 @@ class WFTabsWidget(QtGui.QTabWidget):
 
         return False
 
+    def _tab_changed(self):
+        self.relayout()
+
     def openWorkFlow(self,workFlow):
         if self.is_open(workFlow.name):
             return
 
         scroll, model,view = self.newEmptyWF()
         model.read_from_disk(workFlow.workflow)
-        view.relayout()
         self.addTab(scroll,workFlow.name)
+        view.relayout()
+        self.relayout()
+        self.setCurrentIndex(self.count() - 1)
 
     def closeTab(self,e):
         # this works recursively
