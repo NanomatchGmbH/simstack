@@ -831,7 +831,7 @@ class WFTabsWidget(QtGui.QTabWidget):
         #####self.setMinimumSize(self.wf.width()+25,600) # widget with scrollbar
         self.editor = parent
 
-        scroll,_,_ = self.newEmptyWF()
+        scroll,_,_ = self.createNewEmptyWF()
 
         self.addTab(scroll, self.curFile.name)
         self.relayout()
@@ -839,7 +839,7 @@ class WFTabsWidget(QtGui.QTabWidget):
 
         ####bb = self.tabBar().tabButton(0, QtGui.QTabBar.RightSide)
         ####bb.resize(0, 0)
-    def newEmptyWF(self):
+    def createNewEmptyWF(self):
         scroll = QtGui.QScrollArea(self)
         wf_model = WFModel(editor=self.editor)
         wf = WorkflowView(qt_parent=scroll)
@@ -923,16 +923,22 @@ class WFTabsWidget(QtGui.QTabWidget):
     def _tab_changed(self):
         self.relayout()
 
+    def openNewWorkFlow(self):
+        scroll, model,view = self.createNewEmptyWF()
+        self.addTab(scroll, self.curFile.name)
+        index = self.count() - 1
+        self.setCurrentIndex(index)
+        return index, scroll, model, view
+
     def openWorkFlow(self,workFlow):
         if self.is_open(workFlow.name):
             return
 
-        scroll, model,view = self.newEmptyWF()
+        index, scroll, model, view = self.openNewWorkFlow()
+        self.setTabText(index, workFlow.name)
         model.read_from_disk(workFlow.workflow)
-        self.addTab(scroll,workFlow.name)
         view.relayout()
         self.relayout()
-        self.setCurrentIndex(self.count() - 1)
 
     def closeTab(self,e):
         # this works recursively
@@ -942,6 +948,8 @@ class WFTabsWidget(QtGui.QTabWidget):
         self.removeTab(e)
 
     def relayout(self):
+        if self.count() == 0:
+            self.openNewWorkFlow()
         self.currentWidget().widget().relayout()
 
     # Executed everytime the widget is shown / hidden, etc.
