@@ -923,24 +923,21 @@ class WFTabsWidget(QtGui.QTabWidget):
     def _tab_changed(self):
         self.relayout()
 
-    def openNewWorkFlow(self):
-        scroll, model,view = self.createNewEmptyWF()
-        self.addTab(scroll, self.curFile.name)
-        index = self.count() - 1
-        self.setCurrentIndex(index)
-        return index, scroll, model, view
-
     def openWorkFlow(self,workFlow):
-        index = self.get_index(workFlow.name)
+        index   = self.get_index(workFlow.name) if not workFlow is None else -1
+        name    = self.curFile.name
         if index >= 0:
             self.setCurrentIndex(index)
             return
 
-        index, scroll, model, view = self.openNewWorkFlow()
-        self.setTabText(index, workFlow.name)
-        model.read_from_disk(workFlow.workflow)
+        scroll, model, view = self.createNewEmptyWF()
+        if not workFlow is None:
+            name = workFlow.name
+            model.read_from_disk(workFlow.workflow)
+        self.addTab(scroll, name)
         view.relayout()
         self.relayout()
+        self.setCurrentIndex(self.count()-1)
 
     def closeTab(self,e):
         # this works recursively
@@ -951,7 +948,7 @@ class WFTabsWidget(QtGui.QTabWidget):
 
     def relayout(self):
         if self.count() == 0:
-            self.openNewWorkFlow()
+            self.openWorkFlow(None)
         self.currentWidget().widget().relayout()
 
     # Executed everytime the widget is shown / hidden, etc.
