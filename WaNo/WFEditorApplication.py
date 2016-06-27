@@ -182,6 +182,10 @@ class WFEditorApplication(QObject):
         # TODO
         self._on_fs_job_update_request(path)
 
+    def _on_saved_workflows_update_request(self, path):
+        self._update_workflow_list()
+
+
     def __on_download_update(self, uri, localdest, progress, total):
         print("\t%6.2f (%6.2f / %6.2f)\t%s" % (progress / total * 100., progress,
             total, uri))
@@ -627,6 +631,7 @@ class WFEditorApplication(QObject):
         self._view_manager.request_job_update.connect(self._on_fs_job_update_request)
         self._view_manager.request_worflow_update.connect(self._on_fs_worflow_update_request)
         self._view_manager.request_directory_update.connect(self._on_fs_directory_update_request)
+        self._view_manager.request_saved_workflows_update.connect(self._on_saved_workflows_update_request)
         self._view_manager.download_file_to.connect(self._on_fs_download)
         self._view_manager.upload_file.connect(self._on_fs_upload)
         self._view_manager.delete_job.connect(self._on_fs_delete_job)

@@ -35,6 +35,8 @@ class WFEditor(QWidget):
     delete_file                 = Signal(str, name="deleetFile")
     delete_job                  = Signal(str, name="deleetJob")
 
+    workflow_saved              = Signal(bool, str, name="WorkflowSaved")
+
 
 
     def __build_infobox(self):
@@ -158,6 +160,8 @@ class WFEditor(QWidget):
         self.remoteFileTree.upload_file_to.connect(self.upload_file_to)
         self.remoteFileTree.delete_job.connect(self.delete_job)
         self.remoteFileTree.delete_file.connect(self.delete_file)
+
+        self.workflowWidget.workflow_saved.connect(self.workflow_saved)
 
     def resizeEvent(self, *args, **kwargs):
         self.workflowWidget.relayout()

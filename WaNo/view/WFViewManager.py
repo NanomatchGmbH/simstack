@@ -19,6 +19,7 @@ class WFViewManager(QObject):
     request_job_update          = Signal(str, name="requestJobUpdate")
     request_worflow_update      = Signal(str, name="requestWorkflowUpdate")
     request_directory_update    = Signal(str, name="requestDirectoryUpdate")
+    request_saved_workflows_update = Signal(str, name="requestSavedWorkflowsUpdate")
     download_file_to            = Signal(str, str, name="downloadFileTo")
     upload_file                 = Signal(str, str, name="uploadFile")
     delete_file                 = Signal(str, name="deleetFile")
@@ -118,6 +119,12 @@ class WFViewManager(QObject):
         if upload:
             print(upload)
             self.upload_file.emit(upload[0], dirpath)
+
+    def _on_workflow_saved(self, success, folder):
+        if not success:
+            self.show_error("Could not save Workflow to folder\n%s" % folder)
+        else:
+            self.request_saved_workflows_update.emit(folder)
  
     def _connect_signals(self):
         self._mainwindow.open_file.connect(self.open_dialog_open_workflow)
@@ -143,6 +150,7 @@ class WFViewManager(QObject):
         self._editor.upload_file_to.connect(self._on_file_upload)
         self._editor.delete_job.connect(self.delete_job)
         self._editor.delete_file.connect(self.delete_file)
+        self._editor.workflow_saved.connect(self._on_workflow_saved)
 
     def get_editor(self):
         return self._editor

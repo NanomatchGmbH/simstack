@@ -232,8 +232,14 @@ class WaNoModelRoot(WaNoModelDictLike):
     def save_xml(self,filename):
         print("Writing to ",filename)
         self.wano_dir_root = os.path.dirname(filename)
-        with open(filename,'w') as outfile:
-            outfile.write(etree.tostring(self.full_xml,pretty_print=True).decode("utf-8"))
+        success = False
+        try:
+            with open(filename,'w') as outfile:
+                outfile.write(etree.tostring(self.full_xml,pretty_print=True).decode("utf-8"))
+            success = True
+        except Exception as e:
+            print(e)
+        return success
 
     def wano_walker_paths(self,parent = None, path = "" , output = []):
         if (parent == None):

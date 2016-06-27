@@ -14,6 +14,7 @@ from   lxml import etree
 
 import PySide.QtCore as QtCore
 import PySide.QtGui  as QtGui
+from PySide.QtCore import Signal
 
 import WaNo.WaNoFactory as WaNoFactory
 from WaNo.WaNoSettingsProvider import WaNoSettingsProvider
@@ -210,16 +211,21 @@ class WFWaNoWidget(QtGui.QToolButton):
         try:
             os.makedirs(outfolder)
         except OSError:
-            pass
+            self.logger.error("Failed to create folder: %s." % outfolder)
+            return False
 
         print(self.wano[1],outfolder)
         if outfolder != self.wano[1]:
-            copytree(self.wano[1],outfolder)
+            try:
+                copytree(self.wano[1],outfolder)
+            except Exception as e:
+                self.logger.error("Failed to copy tree: %s." % str(e))
+                return False
 
         self.wano[1] = outfolder
         self.wano[2] = os.path.join(outfolder,self.wano[0]) + ".xml"
         self.wano_model.update_xml()
-        self.wano_model.save_xml(self.wano[2])
+        return self.wano_model.save_xml(self.wano[2])
 
     def render(self,basefolder):
         myfolder = os.path.join(basefolder,self.uuid)
@@ -317,6 +323,7 @@ class WFModel(object):
         pass
 
     def save_to_disk(self,foldername):
+        success = False
         self.wf_name = os.path.basename(foldername)
         self.foldername = foldername
         settings = WaNoSettingsProvider.get_instance()
@@ -329,15 +336,20 @@ class WFModel(object):
             pass
 
         root = etree.Element("root")
+        #TODO revert changes in filesystem in case instantiate_in_folder fails
         for myid,ele in enumerate(self.elements):
             subxml = ele.get_xml()
             subxml.attrib["id"] = str(myid)
-            ele.instantiate_in_folder(foldername)
+            success = ele.instantiate_in_folder(foldername)
             root.append(subxml)
+            if not success:
+                break
 
-        xml_path = mydir + ".xml"
-        with open(xml_path,'w') as outfile:
-            outfile.write(etree.tostring(root,encoding="unicode",pretty_print=True))
+        if success:
+            xml_path = mydir + ".xml"
+            with open(xml_path,'w') as outfile:
+                outfile.write(etree.tostring(root,encoding="unicode",pretty_print=True))
+        return success
 
     def read_from_disk(self,foldername):
         self.foldername = foldername
@@ -799,6 +811,8 @@ class WFBaseWidget(QtGui.QFrame):
         return self.myName
 
 class WFTabsWidget(QtGui.QTabWidget):
+    workflow_saved = Signal(bool, str, name="WorkflowSaved")
+
     def __init__(self, parent):
         super(WFTabsWidget, self).__init__(parent)
 
@@ -938,10 +952,11 @@ class WFTabsWidget(QtGui.QTabWidget):
 
     def saveFile(self,folder):
         #widget is scroll
-        self.currentWidget().widget().model.save_to_disk(folder)
+        success = self.currentWidget().widget().model.save_to_disk(folder)
         #self.wf_model.save_to_disk(folder)
         self.setTabText(self.currentIndex(),os.path.basename(folder))
         print (type(self.editor.parent()))
+        self.workflow_saved.emit(success, folder)
 
     def loadFile(self,fileName):
         #missing workflow instantiation
