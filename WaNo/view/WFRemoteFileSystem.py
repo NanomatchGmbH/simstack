@@ -52,29 +52,31 @@ class WFRemoteFileSystem(QWidget):
 
         if filePath in self.__current_requests:
             index   = self.__current_requests[filePath]
-            subelements.sort(key=lambda k: k['name'])
-            i=subelements[0]
-            print("i(id=%s): %s" % (i['id'] if 'id' in i else '', i))
-            entries = [WFEUnicoreFileSystemEntry.createData(
-                    i['id'] if 'id' in i else i['name'],
-                    i['name'],
-                    os.path.basename(
-                        i['name'][:-1] if i['name'].endswith('/') else i['name']
-                    ),
-                    "%s/%s" % (
-                        path if i['type'] == 'f' or i['type'] == 'd' else '',
-                        i['path']),
-                    FSModel.DATA_TYPE_FILE if i['type'] == 'f' \
-                            else FSModel.DATA_TYPE_DIRECTORY if i['type'] == 'd' \
-                            else FSModel.DATA_TYPE_JOB if i['type'] == 'j' \
-                            else FSModel.DATA_TYPE_WORKFLOW if i['type'] == 'w' \
-                            else FSModel.DATA_TYPE_UNKNOWN
-                    ) for i in subelements]
-
             self.__fs_model.removeSubRows(index)
-            self.__fs_model.insertDataRows(0, entries, index)
             # remove request
             self.__current_requests.pop(filePath)
+
+            if not subelements is None and len(subelements) > 0:
+                subelements.sort(key=lambda k: k['name'])
+                i=subelements[0]
+                print("i(id=%s): %s" % (i['id'] if 'id' in i else '', i))
+                entries = [WFEUnicoreFileSystemEntry.createData(
+                        i['id'] if 'id' in i else i['name'],
+                        i['name'],
+                        os.path.basename(
+                            i['name'][:-1] if i['name'].endswith('/') else i['name']
+                        ),
+                        "%s/%s" % (
+                            path if i['type'] == 'f' or i['type'] == 'd' else '',
+                            i['path']),
+                        FSModel.DATA_TYPE_FILE if i['type'] == 'f' \
+                                else FSModel.DATA_TYPE_DIRECTORY if i['type'] == 'd' \
+                                else FSModel.DATA_TYPE_JOB if i['type'] == 'j' \
+                                else FSModel.DATA_TYPE_WORKFLOW if i['type'] == 'w' \
+                                else FSModel.DATA_TYPE_UNKNOWN
+                        ) for i in subelements]
+
+                self.__fs_model.insertDataRows(0, entries, index)
             print(subelements)
         else:
             print("Path '%s' not in current_requests." % filePath)
