@@ -295,9 +295,14 @@ class WFEditorApplication(QObject):
     # This avoids flickering of the icon.
     def _disconnect_unicore(self, no_status_update=False):
         self._logger.info("Disconnecting from registry")
+        if not no_status_update:
+            self._set_unicore_connecting()
+
         if not self._unicore is None:
             #TODO currently, a connection is not maintained in pyura
             #self._unicore.disconnected()
+            UnicoreAPI.remove_registry(self._unicore)
+            self._unicore.disconnect()
             self._unicore = None
             self._logger.debug("Disconnected from registry")
             if not no_status_update:
@@ -398,6 +403,8 @@ class WFEditorApplication(QObject):
 
     def _connect_unicore(self, index, no_status_update=False):
         success = False
+        if not no_status_update:
+            self._set_unicore_connecting()
 
         idx = self._get_default_registry() \
                 if index is None or index < 0 else index
@@ -416,6 +423,8 @@ class WFEditorApplication(QObject):
                     registry[SETTING_KEYS['registry.baseURI']],
                     auth_provider
                 )
+
+        if not self._unicore is None and not self._unicore.is_connected():
             wfs = registry[SETTING_KEYS['registry.workflows']]
             if not wfs is None and wfs != "":
                 if not self._unicore.set_workflow_base_uri(wfs):
@@ -467,9 +476,10 @@ class WFEditorApplication(QObject):
                         )
                 self._view_manager.show_error(
                         "Failed to connect to registry '%s'\n"\
-                        "Connection returned status %d" % \
-                        (registry[SETTING_KEYS['registry.name']], status)
+                        "Connection returned status: %s." % \
+                        (registry[SETTING_KEYS['registry.name']], str(status.name))
                     )
+                self._unicore = None
         else:
             raise RuntimeError("Registry must be disconnected first.")
 
