@@ -119,7 +119,7 @@ class WFEditor(QWidget):
         self.settingsAndFilesTabs = QTabWidget()
         self.settingsAndFilesTabs.setTabsClosable(False)
         self.settingsAndFilesTabs.addTab(self.wanoEditor, "WaNo Settings")
-        self.settingsAndFilesTabs.addTab(self.remoteFileTree, "Jobs & Workflows")
+        self.settingsAndFilesTabs.addTab(self.remoteFileTree, "Jobs && Workflows")
 
         rightPanel.addWidget(self.registrySelection)
         rightPanel.setStretchFactor(0, 0)
