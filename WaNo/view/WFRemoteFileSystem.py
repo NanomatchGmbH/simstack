@@ -1,4 +1,4 @@
-from PySide.QtGui import QWidget, QTreeView, QVBoxLayout, QLabel, QPushButton, \
+from PySide.QtGui import QWidget, QTreeView, QVBoxLayout, QPushButton, \
         QAbstractItemView, QMenu, QCursor
 from PySide.QtCore import Signal, QModelIndex, Qt
 #from ..lib.FileSystemTree import FileSystemModel, FileSystemElement
@@ -27,16 +27,12 @@ class WFRemoteFileSystem(QWidget):
     def __init_ui(self):
         layout      = QVBoxLayout(self)
 
-        label       = QLabel("File System")
-        selection   = QLabel("Placeholder for Display selection.")
-
         self.__fileTree.setModel(self.__fs_model)
+        self.__fileTree.setHeaderHidden(True)
         self.__fileTree.setSelectionBehavior(QAbstractItemView.SelectRows)
         self.__fileTree.setContextMenuPolicy(Qt.CustomContextMenu)
         self.__btn_reload.setText("Reload")
 
-        layout.addWidget(label)
-        layout.addWidget(selection)
         layout.addWidget(self.__fileTree)
         layout.addWidget(self.__btn_reload)
 
