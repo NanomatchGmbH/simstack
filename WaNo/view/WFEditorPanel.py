@@ -913,12 +913,12 @@ class WFTabsWidget(QtGui.QTabWidget):
             self.clear()
             self.loadFile(fileName)
 
-    def is_open(self,name):
+    def get_index(self,name):
         for i in range(0,self.count()):
             if self.tabText(i) == name:
-                return True
+                return i
 
-        return False
+        return -1
 
     def _tab_changed(self):
         self.relayout()
@@ -931,7 +931,7 @@ class WFTabsWidget(QtGui.QTabWidget):
         return index, scroll, model, view
 
     def openWorkFlow(self,workFlow):
-        if self.is_open(workFlow.name):
+        if self.get_index(workFlow.name) < 0:
             return
 
         index, scroll, model, view = self.openNewWorkFlow()
