@@ -118,7 +118,7 @@ class WFEditorApplication(QObject):
             job_manager.update_list()
             files = [{
                         'id': s.get_id(),
-                        'name': s.get_id(),
+                        'name': s.get_name(),
                         'type': 'j',
                         'path': s.get_working_dir()
                     } for s in job_manager.get_list()]
