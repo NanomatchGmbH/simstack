@@ -327,28 +327,40 @@ class WaNoItemStringView(AbstractWanoQTView):
 class WanoQtViewRoot(AbstractWanoQTView):
     def __init__(self, *args, **kwargs):
         super(WanoQtViewRoot, self).__init__(*args, **kwargs)
+        self.init_to_scroller()
 
+    def init_to_scroller(self):
         scroll = QtGui.QScrollArea(parent=self.qt_parent)
-        scroll.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOn)
+        scroll.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarAsNeeded)
         scroll.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarAsNeeded)
         scroll.setWidgetResizable(True)
         me = QtGui.QWidget(parent=scroll)
         scroll.setWidget(me)
-        #scroll.resize(460,700)
-        self.actual_widget =scroll
+        # scroll.resize(460,700)
+        self.actual_widget = scroll
         self.vbox = QtGui.QVBoxLayout()
-        #me.setMinimumSize(QtCore.QSize(900, 900))
+        # me.setMinimumSize(QtCore.QSize(900, 900))
         me.setLayout(self.vbox)
 
-        #me.setSizePolicy(QtGui.QSizePolicy.Minimum, QtGui.QSizePolicy.Minimum)
+    def init_without_scroller(self):
+        me = QtGui.QWidget(parent=self.qt_parent)
+        self.vbox = QtGui.QVBoxLayout()
+        me.setLayout(self.vbox)
+        self.actual_widget = me
 
     def get_widget(self):
         return self.actual_widget
 
     def init_from_model(self):
+
+        from WaNo.view.WaNoViews import WaNoTabView
         for key, model in self.model.wano_dict.items():
+
+            if isinstance(model.view,WaNoTabView):
+                self.init_without_scroller()
+
             self.vbox.addWidget(model.view.get_widget())
-        self.actual_widget.viewport().update()
+        #self.actual_widget.viewport().update()
         self.actual_widget.update()
 
 class WaNoItemFileView(AbstractWanoQTView):
@@ -449,10 +461,13 @@ class WaNoTabView(AbstractWanoQTView):
 
     def init_from_model(self):
 
-        for key, model in self.model.wanos():
-
-            self.actual_widget.addTab(model.view.get_widget(),model.name)
-
+        for key, model in self.model.items():
+            scroll = QtGui.QScrollArea(parent=self.actual_widget)
+            scroll.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarAsNeeded)
+            scroll.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarAsNeeded)
+            scroll.setWidgetResizable(True)
+            scroll.setWidget(model.view.get_widget())
+            self.actual_widget.addTab(scroll,model.name)
 
 
     def get_widget(self):

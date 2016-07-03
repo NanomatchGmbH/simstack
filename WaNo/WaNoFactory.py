@@ -72,7 +72,7 @@ class WaNoFactory(object):
             "WaNoChoice": (WaNoChoiceModel, WaNoChoiceView),
             "WaNoMultipleOf": (MultipleOfModel,MultipleOfView),
             "WaNoScript": (WaNoItemScriptFileModel, WaNoScriptView),
-            "WaNoTabs": (WaNoModelListLike,WaNoTabView)
+            "WaNoTabs": (WaNoModelDictLike,WaNoTabView)
         }
 
         if xml.tag not in wano_list:

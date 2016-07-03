@@ -57,6 +57,9 @@ class WaNoModelDictLike(AbstractWanoModel):
     def set_data(self, wano_dict):
         self.wano_dict = wano_dict
 
+    def items(self):
+        return self.wano_dict.items()
+
     def wanos(self):
         return self.wano_dict.values()
 
@@ -303,7 +306,7 @@ class WaNoModelRoot(WaNoModelDictLike):
             #print("%s %s" % (path, parent.get_data()))
             return parent.get_rendered_wano_data()
 
-    def wano_walker_render_pass(self, rendered_wano, parent = None, path = ""):
+    def wano_walker_render_pass(self, rendered_wano, parent = None, path = "",submitdir=""):
         if (parent == None):
             parent = self
         #print(type(parent))
@@ -315,7 +318,7 @@ class WaNoModelRoot(WaNoModelDictLike):
                     mypath = "%s" % (key)
                 else:
                     mypath = "%s.%s" % (mypath, key)
-                my_list.append(self.wano_walker_render_pass(rendered_wano,parent=wano, path=mypath))
+                my_list.append(self.wano_walker_render_pass(rendered_wano,parent=wano, path=mypath,submitdir=submitdir))
             return my_list
         elif hasattr(parent,'items'):
             my_dict = {}
@@ -329,12 +332,12 @@ class WaNoModelRoot(WaNoModelDictLike):
                     mypath="%s" %(key)
                 else:
                     mypath = "%s.%s" % (mypath, key)
-                my_dict[key] = self.wano_walker_render_pass(rendered_wano,parent=wano, path=mypath)
+                my_dict[key] = self.wano_walker_render_pass(rendered_wano,parent=wano, path=mypath, submitdir=submitdir)
             return my_dict
         else:
             # We should avoid merging and splitting. It's useless, we only need splitpath anyways
             splitpath=path.split(".")
-            return parent.render(rendered_wano,splitpath)
+            return parent.render(rendered_wano,splitpath, submitdir=submitdir)
 
     def prepare_files_submission(self,rendered_wano, basefolder):
         render_wano_filename = os.path.join(basefolder,"rendered_wano.yml")
@@ -355,16 +358,16 @@ class WaNoModelRoot(WaNoModelDictLike):
             with open(outfile,'w') as outfile:
                 outfile.write(template.render(wano = rendered_wano))
 
-    def render(self):
+    def render_wano(self,submitdir):
         #We do two render passes in case values depend on each other
         rendered_wano = self.wano_walker()
         # We do two render passes, in case the rendering reset some values:
-        rendered_wano = self.wano_walker_render_pass(rendered_wano)
+        rendered_wano = self.wano_walker_render_pass(rendered_wano,submitdir=submitdir)
         self.exec_command = Template(self.exec_command).render(wano = rendered_wano)
         return rendered_wano
 
     def render_and_write_input_files(self,basefolder):
-        rendered_wano = self.render()
+        rendered_wano = self.render_wano(basefolder)
         self.prepare_files_submission(rendered_wano, basefolder)
 
 
@@ -464,10 +467,12 @@ class WaNoItemFileModel(AbstractWanoModel):
     def get_rendered_wano_data(self):
         return self.logical_name
 
-    def render(self, rendered_wano, path):
+    def render(self, rendered_wano, path, submitdir):
         rendered_logical_name = Template(self.logical_name).render(wano=rendered_wano, path=path)
         #Upload and copy
-        destdir = os.path.join(self.root_model.wano_dir_root,rendered_logical_name)
+        print(submitdir)
+        destdir = os.path.join(submitdir,rendered_logical_name)
+        print("Copying",self.root_model.wano_dir_root,rendered_logical_name,destdir)
         shutil.copy(self.mystring,destdir)
         return rendered_logical_name
 

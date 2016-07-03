@@ -56,7 +56,7 @@ class AbstractWanoModel(object):
     def get_data(self):
         pass
 
-    def render(self, rendered_wano, path):
+    def render(self, rendered_wano, path, submitdir):
         return self.get_rendered_wano_data()
 
 

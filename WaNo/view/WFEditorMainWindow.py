@@ -50,7 +50,7 @@ class WFEditorMainWindow(QtGui.QMainWindow):
         message = "Welcome to the Nanomatch Workflow Editor"
         self.statusBar().showMessage(message)
         
-        self.setWindowTitle("Nanomatch Workflow Editor (C) 2015")
+        self.setWindowTitle("Nanomatch Workflow Editor (C) 2016")
    
     def __init__(self, editor, parent=None):
         super(WFEditorMainWindow, self).__init__(parent)
