@@ -5,7 +5,7 @@ from __future__ import print_function
 from __future__ import unicode_literals
 from __future__ import absolute_import
 
-import sys
+import sys,os
 from PySide import QtGui, QtCore
 from WaNo.model.WaNoModels import WaNoModelRoot
 from WaNo.view.WaNoViews import WanoQtViewRoot
@@ -51,15 +51,18 @@ class Example(QtGui.QWidget):
         #vbox.addStretch(1)
         self.setLayout(vbox)
         self.setGeometry(300, 300, 460, 700)
-        self.setWindowTitle('Buttons')
+        self.setWindowTitle('WaNoTest')
         self.show()
 
     def render_slot(self):
         try:
-            return self.wifm.render()
+            try:
+                os.makedirs("Submitted")
+            except OSError as e:
+                pass
+            return self.wifm.render_and_write_input_files("Submitted")
         except Exception as e:
             a = QtGui.QMessageBox.critical(None, 'Error!', "Error during rendering, error was: %s" %e, QtGui.QMessageBox.Abort)
-
 
 def main():
     app = QtGui.QApplication(sys.argv)
