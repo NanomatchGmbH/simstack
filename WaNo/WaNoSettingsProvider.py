@@ -24,6 +24,18 @@ class WaNoSettingsProvider(AbstractSettings):
             cls.instance = WaNoSettingsProvider(settings_file)
         return cls.instance
 
+    #just a convenience accessor:
+    def get_path_settings(self):
+        settings = {
+            "wanoRepo" : self.get_value(SETTING_KEYS['wanoRepo']),
+            "workflows": self.get_value(SETTING_KEYS['workflows'])
+        }
+        return settings
+
+    def set_path_settings(self,pathsettings):
+        self.set_value(SETTING_KEYS['wanoRepo'],pathsettings["wanoRepo"])
+        self.set_value(SETTING_KEYS['workflows'], pathsettings["workflows"])
+
     def _set_defaults(self):
         defaults = [
                 (SETTING_KEYS['registries'], [], "List of registries."),
