@@ -9,7 +9,9 @@ from .MessageDialog import MessageDialog
 class WFViewManager(QObject):
     REGISTRY_CONNECTION_STATES = WFEditor.REGISTRY_CONNECTION_STATES
     save_registries         = Signal(list, name="SaveRegistries")
+    save_paths = Signal(dict,name="SavePaths")
     open_registry_settings  = Signal(name="OpenRegistrySettings")
+    open_path_settings = Signal(name="OpenPathSettings")
     registry_changed        = Signal(int, name="RegistryChanged")
     disconnect_registry     = Signal(name='disconnectRegistry')
     connect_registry        = Signal(int, name='connectRegistry')
@@ -61,6 +63,9 @@ class WFViewManager(QObject):
 
     def open_dialog_registry_settings(self, current_registries):
         self._mainwindow.open_dialog_registry_settings(current_registries)
+
+    def open_dialog_path_settings(self,pathsettings):
+        self._mainwindow.open_dialog_path_settings(pathsettings)
 
     def update_wano_list(self, wanos):
         self._editor.update_wano_list(wanos)
@@ -136,7 +141,9 @@ class WFViewManager(QObject):
 
         # Forwarded signals
         self._mainwindow.save_registries.connect(self.save_registries)
+        self._mainwindow.save_paths.connect(self.save_paths)
         self._mainwindow.open_registry_settings.connect(self.open_registry_settings)
+        self._mainwindow.open_path_settings.connect(self.open_path_settings)
         self._editor.registry_changed.connect(self.registry_changed)
         self._editor.connect_registry.connect(self.connect_registry)
         self._editor.disconnect_registry.connect(self.disconnect_registry)

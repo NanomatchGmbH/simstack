@@ -5,7 +5,8 @@ from __future__ import unicode_literals
 import PySide.QtGui  as QtGui
 from PySide.QtCore import Signal
 
-from .WaNoSettings import WaNoUnicoreSettings
+from .WaNoSettings import WaNoUnicoreSettings, WaNoPathSettings
+
 
 class WFEditorMainWindow(QtGui.QMainWindow):
     new_file            = Signal(name="NewFile")
@@ -13,7 +14,9 @@ class WFEditorMainWindow(QtGui.QMainWindow):
     save                = Signal(name="Save")
     save_as             = Signal(name="SaveAs")
     save_registries     = Signal(list, name="SaveRegistries")
+    save_paths          = Signal(dict,name="SavePaths")
     open_registry_settings = Signal(name="OpenRegistrySettings")
+    open_path_settings = Signal(name="OpenPathSettings")
     exit_client         = Signal(name="ExitClient")
     run                 = Signal(name="Run")
    
@@ -34,14 +37,9 @@ class WFEditorMainWindow(QtGui.QMainWindow):
         self.runMenu = self.menuBar().addMenu("&Run")
         self.runMenu.addAction(self.runAct)
 
-        self.settingsMenu = self.menuBar().addAction(
-                QtGui.QAction(
-                    "&Configuration",
-                    self,
-                    statusTip="Open Settings",
-                    triggered=self.action_openSettingsDialog
-                )
-            )
+        self.settingsMenu = self.menuBar().addMenu("&Configuration")
+        self.settingsMenu.addAction(self.configServAct)
+        self.settingsMenu.addAction(self.configPathSettingsAct)
         
         self.helpMenu = self.menuBar().addMenu("&Help")
         self.helpMenu.addAction(self.aboutAct)
@@ -50,7 +48,7 @@ class WFEditorMainWindow(QtGui.QMainWindow):
         message = "Welcome to the Nanomatch Workflow Editor"
         self.statusBar().showMessage(message)
         
-        self.setWindowTitle("Nanomatch Workflow Editor (C) 2016")
+        self.setWindowTitle("Workflow Editor (C) 2016")
    
     def __init__(self, editor, parent=None):
         super(WFEditorMainWindow, self).__init__(parent)
@@ -63,6 +61,9 @@ class WFEditorMainWindow(QtGui.QMainWindow):
     def action_openSettingsDialog(self):
         self.open_registry_settings.emit()
 
+    def action_openPathSettingsDialog(self):
+        self.open_path_settings.emit()
+
     def open_dialog_registry_settings(self, current_registries):
         dialog = WaNoUnicoreSettings(current_registries)
 
@@ -70,6 +71,13 @@ class WFEditorMainWindow(QtGui.QMainWindow):
             self.save_registries.emit(dialog.get_settings())
         else:
             #print("fail")
+            pass
+
+    def open_dialog_path_settings(self,pathsettings):
+        dialog = WaNoPathSettings(parent=self,pathsettings=pathsettings)
+        if (dialog.exec_()):
+            self.save_paths.emit(dialog.get_settings())
+        else:
             pass
         
     def action_newFile(self):
@@ -136,6 +144,14 @@ class WFEditorMainWindow(QtGui.QMainWindow):
         self.aboutWFEAct = QtGui.QAction("About &WorkflowEditor", self,
                 statusTip="About the Nanomatch Workflow Editor",
                 triggered=self.action_aboutWFE)
-        
+
+        self.configServAct = QtGui.QAction("&Servers", self,
+                statusTip="Configure Servers",
+                triggered=self.action_openSettingsDialog)
+
+        self.configPathSettingsAct = QtGui.QAction("&Paths", self,
+               statusTip="Configure Paths",
+               triggered=self.action_openPathSettingsDialog)
+
         self.aboutWFEAct.triggered.connect(QtGui.qApp.aboutQt)
         

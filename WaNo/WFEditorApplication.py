@@ -74,10 +74,19 @@ class WFEditorApplication(QObject):
         # update registry list
         self._update_saved_registries()
 
+    def _on_save_paths(self,path_dict):
+        self.__settings.set_path_settings(path_dict)
+        self.__settings.save()
+        self.update_workflow_list()
+        self._update_wanos()
+
     def _on_open_registry_settings(self):
         self._view_manager.open_dialog_registry_settings(
                 self.__settings.get_value(SETTING_KEYS['registries'])
             )
+
+    def _on_open_path_settings(self):
+        self._view_manager.open_dialog_path_settings(self.__settings.get_path_settings())
 
     def _on_registry_changed(self, index):
         self._logger.info("Registry changed to '%s'." % \
@@ -620,7 +629,9 @@ class WFEditorApplication(QObject):
 
     def _connect_signals(self):
         self._view_manager.save_registries.connect(self._on_save_registries)
+        self._view_manager.save_paths.connect(self._on_save_paths)
         self._view_manager.open_registry_settings.connect(self._on_open_registry_settings)
+        self._view_manager.open_path_settings.connect(self._on_open_path_settings)
         self._view_manager.registry_changed.connect(self._on_registry_changed)
         self._view_manager.disconnect_registry.connect(self._on_registry_disconnect)
         self._view_manager.connect_registry.connect(self._on_registry_connect)
