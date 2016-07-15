@@ -353,6 +353,9 @@ class WaNoModelRoot(WaNoModelDictLike):
 
         for remote_file,local_file in self.input_files:
             comp_filename = os.path.join(self.wano_dir_root,local_file)
+            if not os.path.exists(comp_filename):
+                print("File <%s> not found on disk, please check for spaces before or after the filename."%comp_filename)
+                raise OSError("File <%s> not found on disk, please check for spaces before or after the filename."%comp_filename)
             template = template_env.get_template(comp_filename)
             outfile = os.path.join(basefolder,remote_file)
             with open(outfile,'w') as outfile:
