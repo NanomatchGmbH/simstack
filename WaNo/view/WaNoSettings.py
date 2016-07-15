@@ -1,7 +1,84 @@
 from PySide.QtGui import QDialog, QLabel, QGridLayout, QLineEdit, QPushButton, \
         QTabWidget, QWidget, QVBoxLayout, QHBoxLayout, QCheckBox, QTabBar, \
-        QToolButton
-from PySide.QtCore import Signal, QSignalMapper
+        QToolButton, QFileIconProvider, QFileDialog
+from PySide.QtCore import Signal, QSignalMapper, QDir
+
+
+class WaNoPathSettings(QDialog):
+    def __init__(self,pathsettings,parent):
+        self.pathsettings = pathsettings
+        print(self.pathsettings)
+        super(WaNoPathSettings,self).__init__(parent=parent)
+        self.__init_ui()
+
+    def __showLocalDialogWaNo(self):
+        self.__showLocalDialogHelper(self.wanopath)
+
+    def __showLocalDialogWorkflow(self):
+        self.__showLocalDialogHelper(self.workflowpath)
+
+    def __showLocalDialogHelper(self, qlineedit):
+        dirname = QFileDialog.getExistingDirectory(self, 'Choose Directory', QDir.homePath())
+        if dirname:
+            qlineedit.setText(dirname)
+
+    def get_settings(self):
+        rdict = {"wanoRepo" : self.wanopath.text(),
+                 "workflows": self.workflowpath.text()
+                 }
+        return rdict
+
+    def __init_ui(self):
+        self.setWindowTitle("Select Paths")
+        layout = QVBoxLayout()
+        upper = QWidget(parent = self)
+        lower = QWidget(parent=self)
+
+        upperlayout = QGridLayout(self)
+
+        upperlayout.addWidget(QLabel("Workflow Workspace"),0, 0)
+        upperlayout.addWidget(QLabel("WaNo Repository"), 1, 0)
+        self.workflowpath = QLineEdit("Workflow Path")
+        self.workflowpath.setText(self.pathsettings["workflows"])
+        self.wanopath = QLineEdit("WaNo Path")
+        self.wanopath.setText(self.pathsettings["wanoRepo"])
+
+        upperlayout.addWidget(self.workflowpath, 0, 1)
+        upperlayout.addWidget(self.wanopath, 1, 1)
+
+        self.workflowpicker = QPushButton("")
+        self.workflowpicker.setIcon(QFileIconProvider().icon(QFileIconProvider.Folder))
+        self.workflowpicker.pressed.connect(self.__showLocalDialogWorkflow)
+
+        self.wanopicker = QPushButton("")
+        self.wanopicker.setIcon(QFileIconProvider().icon(QFileIconProvider.Folder))
+        self.wanopicker.pressed.connect(self.__showLocalDialogWaNo)
+
+        upperlayout.addWidget(self.workflowpicker, 0, 2)
+        upperlayout.addWidget(self.wanopicker, 1, 2)
+
+        upper.setLayout(upperlayout)
+
+        lowerlayout = QHBoxLayout()
+        self.cancel = QPushButton("Cancel")
+        self.save = QPushButton("Save")
+        self.cancel.clicked.connect(self._on_cancel)
+        self.save.clicked.connect(self._on_save)
+        lowerlayout.addWidget(self.cancel)
+        lowerlayout.addWidget(self.save)
+
+        lower.setLayout(lowerlayout)
+
+        layout.addWidget(upper)
+        layout.addWidget(lower)
+
+        self.setLayout(layout)
+
+    def _on_save(self):
+        self.accept()
+
+    def _on_cancel(self):
+        self.reject()
 
 
 class WaNoRegistrySettings(QWidget):
