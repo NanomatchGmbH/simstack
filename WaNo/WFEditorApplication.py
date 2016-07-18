@@ -27,12 +27,14 @@ from WaNo.UnicoreConnector import UnicoreConnector
 from WaNo.view.WFEditorPanel import SubmitType
 from WaNo.view.WaNoViews import WanoQtViewRoot
 
+from WaNo.lib.CallableQThread import QThreadCallback
+
 #TODO remove, testing only
 from WaNo.lib.pyura.pyura import Storage
 from collections import namedtuple
 
-class WFEditorApplication(QObject):
-    connect_registry = Signal(str, str, str, dict, name="ConnectRegistry")
+class WFEditorApplication(QThreadCallback):
+    connect_registry = Signal(str, str, str, object, dict, name="ConnectRegistry")
 
     ############################################################################
     #                               Slots                                      #
@@ -298,6 +300,23 @@ class WFEditorApplication(QObject):
         return workflows
 
     ############################################################################
+    #                       unicore  callbacks                                 #
+    ############################################################################
+    @QThreadCallback.callback
+    def _cb_connect(self, base_uri, err, status):
+        print("cb_connect@WFEditorApplication: err=%s, status=%s" % (str(err), str(status)))
+        #TODO debug only
+        import platform
+        import ctypes
+        import threading
+        from PySide.QtCore import QThread
+        if platform.system() == "Linux":
+            self._logger.debug("Unicore Thread ID (WFEditorApplication): %d\t%d\t%s" % \
+                    (threading.current_thread().ident,
+                    ctypes.CDLL('libc.so.6').syscall(186),
+                    str(QThread.currentThreadId())))
+
+    ############################################################################
     #                              unicore                                     #
     ############################################################################
     # no_status_update shuld be set to true if there are multiple successive calls
@@ -443,6 +462,7 @@ class WFEditorApplication(QObject):
                 registry[SETTING_KEYS['registry.username']],
                 registry[SETTING_KEYS['registry.password']],
                 registry[SETTING_KEYS['registry.baseURI']],
+                self._cb_connect,
                 UnicoreConnector.create_connect_args(
                         wf_uri = registry[SETTING_KEYS['registry.workflows']]
                     )

@@ -5,7 +5,6 @@ from __future__ import absolute_import
 
 import logging
 import threading
-from functools import wraps
 from enum import Enum
 
 
@@ -38,6 +37,7 @@ class UnicoreWorker(TPCThread):
                     ctypes.CDLL('libc.so.6').syscall(186)))
 
         err, status = self.registry.connect()
+        callback(base_uri, err, status)
 
     #TODO remove, debug only
     def start(self):
@@ -83,10 +83,6 @@ class UnicoreConnector(CallableQThread):
     def cb_worker_exit(self, base_uri):
         pass
 
-    @CallableQThread.callback
-    def cb_connect(err, status):
-        print("cb_connect: err=%s, status=%s" % (str(err), str(status)))
-
     @staticmethod
     def create_connect_args(auth_type=_AUTH_TYPES.HTTP, wf_uri=None):
         return {'auth_type': auth_type,
@@ -94,7 +90,8 @@ class UnicoreConnector(CallableQThread):
             }
 
     #@Slot(str, str, str, dict, name="ConnectRegistry")
-    def connect_registry(self, username, password, base_uri, con_settings=None):
+    def connect_registry(self, username, password, base_uri, callback=None,
+            con_settings=None):
         # TODO what if con_settings is None?
 
         #TODO debug only
@@ -133,7 +130,7 @@ class UnicoreConnector(CallableQThread):
 
         self.workers[base_uri] = {'worker': worker, 'registry': registry}
 
-        worker.connect(self.cb_connect, username, password,
+        worker.connect(callback, username, password,
                 base_uri, con_settings=None)
 
     def run(self):
