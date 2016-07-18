@@ -262,41 +262,48 @@ class WFEditorApplication(QObject):
 
         self.wanos=[]
 
-        for folder in os.listdir(wano_repo_path):
-            fullpath = os.path.join(wano_repo_path, folder)
-            if os.path.isdir(fullpath):
-                name = folder
-                iconname= "%s.png" % folder
-                xmlname = "%s.xml" % folder
+        try:
+            for folder in os.listdir(wano_repo_path):
+                fullpath = os.path.join(wano_repo_path, folder)
+                if os.path.isdir(fullpath):
+                    name = folder
+                    iconname= "%s.png" % folder
+                    xmlname = "%s.xml" % folder
 
-                xmlpath = os.path.join(fullpath,xmlname)
-                iconpath=os.path.join(fullpath,iconname)
-                if not os.path.isfile(xmlpath):
-                    # Might be a random folder
-                    continue
-                if not os.path.isfile(iconpath):
-                    icon = QtGui.QFileIconProvider().icon(QtGui.QFileIconProvider.Computer)
-                    wano_icon = icon.pixmap(icon.actualSize(QtCore.QSize(128, 128)))
-                else:
-                    wano_icon = QtGui.QIcon(iconpath)
+                    xmlpath = os.path.join(fullpath,xmlname)
+                    iconpath=os.path.join(fullpath,iconname)
+                    if not os.path.isfile(xmlpath):
+                        # Might be a random folder
+                        continue
+                    if not os.path.isfile(iconpath):
+                        icon = QtGui.QFileIconProvider().icon(QtGui.QFileIconProvider.Computer)
+                        wano_icon = icon.pixmap(icon.actualSize(QtCore.QSize(128, 128)))
+                    else:
+                        wano_icon = QtGui.QIcon(iconpath)
 
-                self.wanos.append([name,fullpath,xmlpath,wano_icon])
+                    self.wanos.append([name,fullpath,xmlpath,wano_icon])
+        except OSError as e:
+            print("WaNo Directory not found")
 
         return self.wanos
 
     def __load_saved_workflows(self, workflow_path):
         self._logger.debug("loading Workflows from %s." % workflow_path)
         workflows = []
-        for directory in os.listdir(workflow_path):
-            fulldir = os.path.join(workflow_path,directory)
-            if not os.path.isdir(fulldir):
-                continue
-            xmlpath = os.path.join(fulldir,directory) + ".xml"
-            if os.path.isfile(xmlpath):
-                #print(xmlpath)
-                returnclass = namedtuple("workflowlistentry","name,workflow")
-                wf = returnclass(name=directory,workflow=fulldir)
-                workflows.append(wf)
+        try:
+            for directory in os.listdir(workflow_path):
+                fulldir = os.path.join(workflow_path,directory)
+                if not os.path.isdir(fulldir):
+                    continue
+                xmlpath = os.path.join(fulldir,directory) + ".xml"
+                if os.path.isfile(xmlpath):
+                    #print(xmlpath)
+                    returnclass = namedtuple("workflowlistentry","name,workflow")
+                    wf = returnclass(name=directory,workflow=fulldir)
+                    workflows.append(wf)
+        except OSError as e:
+            print("Workflow Directory not found")
+
         return workflows
 
     ############################################################################
