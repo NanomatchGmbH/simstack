@@ -13,7 +13,7 @@ class QThreadCallback(QObject):
 
     @Slot(object, object, object, name='pseudosignal')
     def pseudo_slot(self, function, args, kwargs):
-        function(*args, *kwargs)
+        function(*args, **kwargs)
 
     @classmethod
     def callback(cls, f):
