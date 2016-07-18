@@ -1,5 +1,5 @@
 import threading
-from queue import Queue
+from queue import Queue, Empty
 from functools import wraps
 
 class TPCThread(threading.Thread):
@@ -33,22 +33,15 @@ class TPCThread(threading.Thread):
                             block=True,
                             timeout=self.exit_timeout
                             )
-                except Queue.Empty:
+                except Empty:
                     pass
 
             if not command is None and not exit:
                     command(*args, **kwargs)
                     self.on_command_executed(command, args, kwargs)
                     self.command_queue.task_done()
-            try:
-                if not exit:
-                    command, args, kwargs = self.command_queue.get(
-                            block=True,
-                            timeout=self.exit_timeout
-                            )
-            except Queue.Empty:
-                if not exit:
-                    continue
+            elif exit:
+                break
 
         if not self.exit_callback is None:
             self.exit_callback[0](*self.exit_callback[1], *self.exit_callback[2])
