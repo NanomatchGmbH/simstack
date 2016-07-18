@@ -1,5 +1,6 @@
 import threading
 from queue import Queue
+from functools import wraps
 
 class TPCThread(threading.Thread):
     @classmethod
