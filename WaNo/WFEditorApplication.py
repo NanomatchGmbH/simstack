@@ -7,7 +7,7 @@ import logging
 import os
 import shlex
 
-from PySide.QtCore import QObject
+from PySide.QtCore import QObject, Signal
 from PySide import QtCore,QtGui
 
 from   lxml import etree
@@ -22,6 +22,8 @@ from WaNo.lib.pyura.pyura import JobManager
 from WaNo.view import WFViewManager
 from WaNo.WaNoGitRevision import get_git_revision
 from WaNo.Constants import SETTING_KEYS
+from WaNo.UnicoreState import UnicoreStateFactory
+from WaNo.UnicoreConnector import UnicoreConnector
 from WaNo.view.WFEditorPanel import SubmitType
 from WaNo.view.WaNoViews import WanoQtViewRoot
 
@@ -30,9 +32,14 @@ from WaNo.lib.pyura.pyura import Storage
 from collections import namedtuple
 
 class WFEditorApplication(QObject):
+    connect_registry = Signal(str, str, str, dict, name="ConnectRegistry")
+
     ############################################################################
     #                               Slots                                      #
     ############################################################################
+    def _on_unicore_error(self, base_uri, error):
+        self._logger.error("Unicore Error for '%s': %d." % (base_uri, error))
+
     def _on_save_registries(self, registriesList):
         self._logger.debug("Saving UNICORE registries.")
 
@@ -293,7 +300,6 @@ class WFEditorApplication(QObject):
     ############################################################################
     #                              unicore                                     #
     ############################################################################
-
     # no_status_update shuld be set to true if there are multiple successive calls
     # that all would individually update the connection status.
     # This avoids flickering of the icon.
@@ -427,6 +433,27 @@ class WFEditorApplication(QObject):
                     registry[SETTING_KEYS['registry.baseURI']],
                     auth_provider
                 )
+
+
+
+
+
+                #TODO insert new code here
+        self.connect_registry.emit(
+                registry[SETTING_KEYS['registry.username']],
+                registry[SETTING_KEYS['registry.password']],
+                registry[SETTING_KEYS['registry.baseURI']],
+                UnicoreConnector.create_connect_args(
+                        wf_uri = registry[SETTING_KEYS['registry.workflows']]
+                    )
+                )
+
+        return
+
+
+
+
+
 
         if not self._unicore is None and not self._unicore.is_connected():
             wfs = registry[SETTING_KEYS['registry.workflows']]
@@ -637,15 +664,45 @@ class WFEditorApplication(QObject):
         self._view_manager.delete_job.connect(self._on_fs_delete_job)
         self._view_manager.delete_file.connect(self._on_fs_delete_file)
 
+        self._unicore_connector.error.connect(self._on_unicore_error)
+
+        #self.connect_registry.connect(self._unicore_connector.connect_registry)
+
 
     def __init__(self, settings):
         super(WFEditorApplication, self).__init__()
+
         self.__settings     = settings
 
         self._logger        = logging.getLogger('WFELOG')
+        #TODO debug only
+        import sys
+        loglevel = logging.DEBUG
+        self._logger.setLevel(loglevel)
+        ch = logging.StreamHandler(sys.stdout)
+        ch.setLevel(loglevel)
+        self._logger.addHandler(ch)
+        ##### END TODO
+
+        #TODO debug only
+        import platform
+        import ctypes
+        import threading
+        if platform.system() == "Linux":
+            self._logger.debug("Gui Thread ID: %d\t%d" % \
+                    (threading.current_thread().ident,
+                    ctypes.CDLL('libc.so.6').syscall(186)))
+        ##### END TODO
+
+
         self._view_manager  = WFViewManager()
         self._unicore       = None # TODO pyura API
-        # TODO model
+
+        self._unicore_state = UnicoreStateFactory.get_instance()
+        self._unicore_connector = UnicoreConnector(self, None)
+        self._unicore_connector.start()
+
+	# TODO model
         self.wanos = []
 
         UnicoreAPI.init()
