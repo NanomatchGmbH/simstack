@@ -113,34 +113,35 @@ class UnicoreConnector(CallableQThread):
                     (threading.current_thread().ident,
                     ctypes.CDLL('libc.so.6').syscall(186),
                     str(QThread.currentThreadId())))
-        stime = 4
-        self.logger.debug("Going to sleep for %d sec. @connect_registry" % stime)
-        import time
-        time.sleep(stime)
-        self.logger.debug("Waking up again.")
         ##### END TODO
-
-
-        if base_uri in self.workers:
-            return
 
         auth_provider = self.get_authprovider(
                 con_settings['auth_type'], username, password)
         if auth_provider is None:
+            self.logger.error("Could not get auth provider.")
             self.error.emit(base_uri, UnicoreConnector.ERROR.AUTH_SETUP)
             return
 
-        #TODO add get_registry method to UnicoreAPI
-        registry = UnicoreAPI.add_registry(base_uri, auth_provider)
+        worker = None
+        registry = None
+        if base_uri in self.workers:
+            #TODO worker might has died. We should check this and recreate it.
+            worker = self.workers[base_uri]['worker']
+            #TODO add get_registry method to UnicoreAPI, since we might want to
+            # update the auth provider or something...
+            registry = self.workers[base_uri]['registry']
+        else:
+            registry = UnicoreAPI.add_registry(base_uri, auth_provider)
 
-        worker = UnicoreWorker(registry, self.logger)
-        worker.set_exit_callback(self.cb_worker_exit, base_uri)
+            worker = UnicoreWorker(registry, self.logger)
+            worker.set_exit_callback(self.cb_worker_exit, base_uri)
 
-        worker.start()
-        self.logger.debug("Started worker thread for '%s'." % base_uri)
+            worker.start()
+            self.logger.debug("Started worker thread for '%s'." % base_uri)
 
         self.workers[base_uri] = {'worker': worker, 'registry': registry}
 
+        self.logger.debug("Handing over to worker (%s)..." % str(worker))
         worker.connect(callback, username, password,
                 base_uri, con_settings=None)
 
