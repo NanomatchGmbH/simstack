@@ -37,7 +37,18 @@ class UnicoreWorker(TPCThread):
                     ctypes.CDLL('libc.so.6').syscall(186)))
 
         err, status = self.registry.connect()
-        callback(base_uri, err, status)
+        self.logger.debug("Unicore connect returns: %s, %s" % (str(err), str(status)))
+
+        cb_function = callback
+        args = (base_uri, err, status)
+        kwargs = {}
+
+        if isinstance(callback, tuple):
+            cb_function = callback[0]
+            args += callback[1]
+            kwargs = callback[2]
+
+        cb_function(*args, **kwargs)
 
     #TODO remove, debug only
     def start(self):
@@ -90,8 +101,8 @@ class UnicoreConnector(CallableQThread):
             }
 
     #@Slot(str, str, str, dict, name="ConnectRegistry")
-    def connect_registry(self, username, password, base_uri, callback=None,
-            con_settings=None):
+    def connect_registry(self, username, password, base_uri,
+            callback=(None, (), {}), con_settings=None):
         # TODO what if con_settings is None?
 
         #TODO debug only

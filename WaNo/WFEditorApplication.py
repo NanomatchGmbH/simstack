@@ -303,9 +303,9 @@ class WFEditorApplication(QThreadCallback):
     #                       unicore  callbacks                                 #
     ############################################################################
     @QThreadCallback.callback
-    def _cb_connect(self, base_uri, err, status):
-        print("cb_connect@WFEditorApplication: err=%s, status=%s" % (str(err), str(status)))
+    def _cb_connect(self, base_uri, error, status, registry=None):
         #TODO debug only
+        print("cb_connect@WFEditorApplication: err=%s, status=%s" % (str(error), str(status)))
         import platform
         import ctypes
         import threading
@@ -315,6 +315,29 @@ class WFEditorApplication(QThreadCallback):
                     (threading.current_thread().ident,
                     ctypes.CDLL('libc.so.6').syscall(186),
                     str(QThread.currentThreadId())))
+        ### END TODO
+
+        if registry is None:
+            self._logger.error("Callback did not get expected data.")
+            return
+
+        if error == UnicoreErrorCodes.NO_ERROR:
+            self._logger.info("Connected.")
+            connected = True
+            self._set_unicore_connected()
+        else:
+            self._logger.error("Failed to connect to registry: %s, %s" % \
+                        (str(status), str(error))
+                    )
+            self._view_manager.show_error(
+                    "Failed to connect to registry '%s'\n"\
+                    "Connection returned status: %s." % \
+                    (registry[SETTING_KEYS['registry.name']], str(status.name))
+                )
+            self._set_unicore_disconnected()
+
+        # TODO Status updates should be delegated to update method...
+        # can we manually trigger it / expire the timer?
 
     ############################################################################
     #                              unicore                                     #
@@ -462,7 +485,7 @@ class WFEditorApplication(QThreadCallback):
                 registry[SETTING_KEYS['registry.username']],
                 registry[SETTING_KEYS['registry.password']],
                 registry[SETTING_KEYS['registry.baseURI']],
-                self._cb_connect,
+                (self._cb_connect, (), {'registry': registry}),
                 UnicoreConnector.create_connect_args(
                         wf_uri = registry[SETTING_KEYS['registry.workflows']]
                     )
@@ -521,24 +544,9 @@ class WFEditorApplication(QThreadCallback):
                                                      arguments=['hallo, welt', '$FOO'],
                                                      environment=["FOO=bar"])
                     """
-            else:
-                self._logger.error("Failed to connect to registry: %s, %s" % \
-                            (str(status), str(error))
-                        )
-                self._view_manager.show_error(
-                        "Failed to connect to registry '%s'\n"\
-                        "Connection returned status: %s." % \
-                        (registry[SETTING_KEYS['registry.name']], str(status.name))
-                    )
-                self._unicore = None
         else:
             raise RuntimeError("Registry must be disconnected first.")
 
-        if not no_status_update:
-            if success:
-                self._set_unicore_connected()
-            else:
-                self._set_unicore_disconnected()
         return success
 
     def _run(self):
