@@ -1,7 +1,11 @@
 from PySide.QtGui import QWidget, QHBoxLayout, QPushButton, QProgressBar
 
-from WaNo.lib.DropDownWidgetButton import DropDownWidgetPushButton
-from WaNo.view.DownloadProgressWidget import DownloadProgressWidget
+try:
+    from .DropDownWidgetButton import DropDownWidgetPushButton
+    from .DownloadProgressWidget import DownloadProgressWidget
+except:
+    from DropDownWidgetButton import DropDownWidgetPushButton
+    from DownloadProgressWidget import DownloadProgressWidget
 
 class DownloadProgressMenuButton(DropDownWidgetPushButton):
     def __init__(self, parent, dlpw):
