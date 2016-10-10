@@ -95,15 +95,34 @@ class UnicoreStateFactory:
             self.values     = {}
             self.lists      = {}
 
+    class __Reader:
+        def get_dl_iterator(self):
+            return self._state.get_list_iterator('dls')
+
+        def __init__(self, state):
+            self._state = state
+
+    class __Writer:
+        def __init__(self, state):
+            self._state = state
+
     @classmethod
     def __setup_instance(instance):
         instance.add_list('dls')
     
     @classmethod
-    def get_instance(self):
+    def __get_instance(self):
         #TODO mutex lock this!
         if UnicoreStateFactory._instance is None:
                 UnicoreStateFactory._instance = UnicoreStateFactory.__UnicoreState()
                 UnicoreStateFactory.__setup_instance(UnicoreStateFactory._instance)
         return UnicoreStateFactory._instance
+
+    @classmethod
+    def get_reader():
+        return UnicoreStateFactory.__Reader(self.__get_instance())
+
+    @classmethod
+    def get_writer(self):
+        return UnicoreStateFactory.__Writer(self.__get_instance())
 
