@@ -14,10 +14,10 @@ from   lxml import etree
 
 from WaNo import WaNoFactory
 from WaNo.lib.FileSystemTree import filewalker
-from WaNo.lib.pyura.pyura import UnicoreAPI, HTTPBasicAuthProvider
-from WaNo.lib.pyura.pyura import ErrorCodes as UnicoreErrorCodes
+from pyura.pyura import UnicoreAPI, HTTPBasicAuthProvider
+from pyura.pyura import ErrorCodes as UnicoreErrorCodes
 
-from WaNo.lib.pyura.pyura import JobManager
+from pyura.pyura import JobManager
 
 from WaNo.view import WFViewManager
 from WaNo.WaNoGitRevision import get_git_revision
@@ -26,7 +26,7 @@ from WaNo.view.WFEditorPanel import SubmitType
 from WaNo.view.WaNoViews import WanoQtViewRoot
 
 #TODO remove, testing only
-from WaNo.lib.pyura.pyura import Storage
+from pyura.pyura import Storage
 from collections import namedtuple
 
 class WFEditorApplication(QObject):

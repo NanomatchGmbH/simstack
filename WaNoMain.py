@@ -1,15 +1,26 @@
 #!/usr/bin/env python
 
+from os import path
+import os
+import sys
+
+if __name__ == '__main__':
+    #In case pyura is hosted in the external directory, we append the path on our own
+    dir_path = os.path.dirname(os.path.realpath(__file__))
+    dir_path = path.join(dir_path,"external")
+
+    if not dir_path in sys.path:
+        sys.path.append(dir_path)
+
 import ctypes
 import signal
 import platform
 import logging
-import sys
+
 import yaml
 from PySide.QtGui import QApplication,QDesktopServices
 from PySide.QtCore import QTimer
-from os import path
-import os
+
 
 from WaNo import WFEditorApplication
 from WaNo import WaNoSettingsProvider
