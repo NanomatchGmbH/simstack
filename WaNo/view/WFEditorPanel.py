@@ -874,8 +874,12 @@ class WFTabsWidget(QtGui.QTabWidget):
         print ("mark as changed")
 
     def run(self):
+        name = self.tabText(self.currentIndex())
+        if name == "Untitled":
+            raise FileNotFoundError("Please save your workflow first")
+
         jobtype,directory = self.currentWidget().widget().model.render()
-        return jobtype,directory
+        return name,jobtype,directory
 
     def save(self):
         if self.curFile.name == 'Untitled':

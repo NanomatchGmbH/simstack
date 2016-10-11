@@ -512,15 +512,15 @@ class WFEditorApplication(QObject):
 
     def _run(self):
         editor = self._view_manager.get_editor()
-        jobtype,directory = editor.run()
+        name,jobtype,directory = editor.run()
         if jobtype == SubmitType.SINGLE_WANO:
             print("Running", directory)
-            self.run_job(directory)
+            self.run_job(directory,name)
         else:
             print("Running Workflows not yet implemented")
             #self.editor.execute_workflow(directory)
 
-    def run_job(self, wano_dir):
+    def run_job(self, wano_dir,name):
         job_manager = self._unicore.get_job_manager()
         imports = JobManager.Imports()
         storage_manager = self._unicore.get_storage_manager()
@@ -541,7 +541,9 @@ class WFEditorApplication(QObject):
         err, newjob = job_manager.create(com,
                                          arguments=arguments,
                                          imports = imports,
-                                         environment=[])
+                                         environment=[],
+                                         name=name
+                                         )
 
         job_manager.upload_imports(newjob,storage_manager)
         wd = newjob.get_working_dir()

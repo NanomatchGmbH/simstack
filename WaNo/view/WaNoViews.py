@@ -191,6 +191,7 @@ class WaNoItemFloatView(AbstractWanoQTView):
         self.spinner.setValue(0.0)
         self.spinner.setMaximum(9999.9)
         self.spinner.setMinimum(-9999.9)
+        self.spinner.setDecimals(3)
         self.spinner.setSingleStep(1.0)
         #self.actual_widget.setSizePolicy(QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Expanding)
         #self.actual_widget.setSizePolicy(QtGui.QSizePolicy.Minimum, QtGui.QSizePolicy.Minimum)
