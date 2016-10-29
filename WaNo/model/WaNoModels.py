@@ -24,6 +24,8 @@ import shutil
 
 from jinja2 import Template, FileSystemLoader, Environment
 
+from pyura.pyura.WorkflowXMLConverter import JSDLtoXML
+
 
 
 class WaNoModelDictLike(AbstractWanoModel):
@@ -63,6 +65,9 @@ class WaNoModelDictLike(AbstractWanoModel):
     def wanos(self):
         return self.wano_dict.values()
 
+    def get_type_str(self):
+        return None
+
     def __repr__(self):
         return repr(self.wano_dict)
 
@@ -88,6 +93,9 @@ class WaNoChoiceModel(AbstractWanoModel):
 
     def __getitem__(self, item):
         return None
+
+    def get_type_str(self):
+        return "String"
 
     def get_data(self):
         return self.choices[self.chosen]
@@ -124,6 +132,9 @@ class WaNoModelListLike(AbstractWanoModel):
 
     def __getitem__(self, item):
         return self.wano_list[item]
+
+    def get_type_str(self):
+        return None
 
     def items(self):
         return enumerate(self.wano_list)
@@ -174,6 +185,9 @@ class MultipleOfModel(AbstractWanoModel):
     def get_data(self):
         return self.list_of_dicts
 
+    def get_type_str(self):
+        return None
+
     def set_data(self, list_of_dicts):
         self.list_of_dicts = list_of_dicts
 
@@ -211,6 +225,7 @@ class WaNoModelRoot(WaNoModelDictLike):
         self.full_xml = kwargs['xml']
         kwargs['xml'] = self.full_xml.find("WaNoRoot")
         kwargs["root_model"] = self.root_model
+        self.parent_wf = kwargs["parent_wf"]
         super(WaNoModelRoot, self).__init__(*args, **kwargs)
         self.exec_command = self.full_xml.find("WaNoExecCommand").text
         self.input_files = []
@@ -223,13 +238,19 @@ class WaNoModelRoot(WaNoModelDictLike):
         for child in self.full_xml.findall("./WaNoOutputFiles/WaNoOutputFile"):
             self.output_files.append(child.text)
 
+    def get_type_str(self):
+        return None
+
+    def get_output_files(self):
+        return self.output_files
+
     @staticmethod
-    def construct_from_wano(filename, rootview):
+    def construct_from_wano(filename, rootview, parent_wf):
         parser = etree.XMLParser(remove_blank_text=True)
         tree = etree.ElementTree(file=filename,parser=parser)
         root = tree.getroot()
         wano_dir_root = os.path.dirname(os.path.realpath(filename))
-        modelroot = WaNoModelRoot(xml=root, view=rootview, parent_model=None, wano_dir_root=wano_dir_root)
+        modelroot = WaNoModelRoot(xml=root, view=rootview, parent_model=None, wano_dir_root=wano_dir_root,parent_wf = parent_wf)
         return modelroot
 
     def save_xml(self,filename):
@@ -271,7 +292,7 @@ class WaNoModelRoot(WaNoModelDictLike):
                 self.wano_walker_paths(parent=wano,path=mypath,output=output)
         else:
             #print("%s %s" % (path, parent.get_data()))
-            output.append((path,type(parent)))
+            output.append((path,parent.get_type_str()))
         return output
 
     def wano_walker(self, parent = None, path = ""):
@@ -306,7 +327,7 @@ class WaNoModelRoot(WaNoModelDictLike):
             #print("%s %s" % (path, parent.get_data()))
             return parent.get_rendered_wano_data()
 
-    def wano_walker_render_pass(self, rendered_wano, parent = None, path = "",submitdir=""):
+    def wano_walker_render_pass(self, rendered_wano, parent = None, path = "",submitdir="", flat_variable_list = None):
         if (parent == None):
             parent = self
         #print(type(parent))
@@ -318,7 +339,7 @@ class WaNoModelRoot(WaNoModelDictLike):
                     mypath = "%s" % (key)
                 else:
                     mypath = "%s.%s" % (mypath, key)
-                my_list.append(self.wano_walker_render_pass(rendered_wano,parent=wano, path=mypath,submitdir=submitdir))
+                my_list.append(self.wano_walker_render_pass(rendered_wano,parent=wano, path=mypath,submitdir=submitdir,flat_variable_list=flat_variable_list))
             return my_list
         elif hasattr(parent,'items'):
             my_dict = {}
@@ -332,12 +353,30 @@ class WaNoModelRoot(WaNoModelDictLike):
                     mypath="%s" %(key)
                 else:
                     mypath = "%s.%s" % (mypath, key)
-                my_dict[key] = self.wano_walker_render_pass(rendered_wano,parent=wano, path=mypath, submitdir=submitdir)
+                my_dict[key] = self.wano_walker_render_pass(rendered_wano,parent=wano, path=mypath, submitdir=submitdir,flat_variable_list=flat_variable_list)
             return my_dict
         else:
             # We should avoid merging and splitting. It's useless, we only need splitpath anyways
             splitpath=path.split(".")
-            return parent.render(rendered_wano,splitpath, submitdir=submitdir)
+            #path is complete here, return path
+            rendered_parent =  parent.render(rendered_wano,splitpath, submitdir=submitdir)
+            if flat_variable_list is not None:
+                rendered_parent_jsdl = rendered_parent
+                if parent.get_type_str() == "File":
+                    filename = parent.get_data()
+                    if parent.get_local():
+                        to_upload = os.path.join(submitdir, "jobs")
+                        cp = os.path.commonprefix([to_upload, filename])
+                        relpath = os.path.relpath(filename, cp)
+                        print("relpath was: %s"%relpath)
+                        filename= "c9m:${WORKFLOW_ID}/%s" % relpath
+                    else:
+                        filename = "c9m:${WORKFLOW_ID}/%s" % filename
+                    rendered_parent_jsdl = (rendered_parent,filename)
+
+                flat_variable_list.append((path,parent.get_type_str(),rendered_parent_jsdl))
+            return rendered_parent
+
 
     def prepare_files_submission(self,rendered_wano, basefolder):
         render_wano_filename = os.path.join(basefolder,"rendered_wano.yml")
@@ -361,18 +400,52 @@ class WaNoModelRoot(WaNoModelDictLike):
             with open(outfile,'w') as outfile:
                 outfile.write(template.render(wano = rendered_wano))
 
-    def render_wano(self,submitdir):
+    def flat_variable_list_to_jsdl(self,fvl,basedir,stageout_basedir):
+        files = []
+        print(fvl)
+        for (varname,type,var) in fvl:
+            jsdl = None
+            if type == "File":
+                if var[1].startswith("c9m:"):
+                    filejsdl = JSDLtoXML.xml_datastaging_from_source(filename=var[0], overwrite=False,source_uri=var[1])
+                else:
+                    filejsdl = JSDLtoXML.xml_datastaging_from_source(filename=var[0], overwrite=False,source_uri="%s/%s"%(basedir, var[0]))
+
+                files.append(filejsdl)
+            else:
+                #These should be NON posix arguments in the end
+                varname.replace(".","_")
+                #not yet done, TODO: TIMO!
+        #filejsdl = JSDLtoXML.xml_datastaging_from_source(filename="rendered_wano.yml", overwrite=False, source_uri="c9m:${WORKFLOW_ID}/%s/%s"%(stageout_basedir,"rendered_wano.yml"))
+        filejsdl = JSDLtoXML.xml_datastaging_from_source(filename="rendered_wano.yml", overwrite=False,
+                                                         source_uri="BFT:${STORAGE_ID}#%s/%s" % (
+                                                         stageout_basedir, "rendered_wano.yml"))
+        files.append(filejsdl)
+
+        for filename in self.output_files:
+            filejsdl = JSDLtoXML.xml_datastaging_to_target(filename=filename, overwrite=True,
+                                                           target_uri="c9m:${WORKFLOW_ID}/%s/%s"%(stageout_basedir,filename))
+            files.append(filejsdl)
+
+        xml_app = JSDLtoXML.xml_application(self.exec_command)
+        job_desc = JSDLtoXML.xml_job_description(self.name,xml_app,datastagings=files)
+        return job_desc
+        #print(etree.tostring(job_desc, pretty_print=True).decode("utf-8"))
+
+    def render_wano(self,submitdir,stageout_basedir=""):
         #We do two render passes in case values depend on each other
         rendered_wano = self.wano_walker()
         # We do two render passes, in case the rendering reset some values:
-        rendered_wano = self.wano_walker_render_pass(rendered_wano,submitdir=submitdir)
+        fvl = []
+        rendered_wano = self.wano_walker_render_pass(rendered_wano,submitdir=submitdir,flat_variable_list=fvl)
         self.exec_command = Template(self.exec_command).render(wano = rendered_wano)
-        return rendered_wano
+        jsdl = self.flat_variable_list_to_jsdl(fvl, submitdir,stageout_basedir)
+        return rendered_wano,jsdl
 
-    def render_and_write_input_files(self,basefolder):
-        rendered_wano = self.render_wano(basefolder)
+    def render_and_write_input_files(self,basefolder,stageout_basedir = ""):
+        rendered_wano,jsdl = self.render_wano(basefolder,stageout_basedir)
         self.prepare_files_submission(rendered_wano, basefolder)
-
+        return jsdl
 
 
 class WaNoItemFloatModel(AbstractWanoModel):
@@ -389,6 +462,9 @@ class WaNoItemFloatModel(AbstractWanoModel):
 
     def __getitem__(self, item):
         return None
+
+    def get_type_str(self):
+        return "Float"
 
     def update_xml(self):
         self.xml.text = str(self.myfloat)
@@ -411,6 +487,9 @@ class WaNoItemIntModel(AbstractWanoModel):
 
     def __getitem__(self, item):
         return None
+
+    def get_type_str(self):
+        return "Int"
 
     def update_xml(self):
         self.xml.text = str(self.myint)
@@ -435,6 +514,9 @@ class WaNoItemBoolModel(AbstractWanoModel):
     def set_data(self, data):
         self.mybool = data
 
+    def get_type_str(self):
+        return "Boolean"
+
     def __getitem__(self, item):
         return None
 
@@ -449,8 +531,16 @@ class WaNoItemFileModel(AbstractWanoModel):
     def __init__(self, *args, **kwargs):
         super(WaNoItemFileModel, self).__init__(*args, **kwargs)
         self.xml = kwargs['xml']
+        self.is_local_file = True
         self.mystring = kwargs['xml'].text
         self.logical_name = self.xml.attrib["logical_filename"]
+        if "local" in self.xml.attrib:
+            if self.xml.attrib["local"].lower() == "true":
+                self.is_local_file = True
+            else:
+                self.is_local_file = False
+        else:
+            self.xml.attrib["local"] = "True"
 
     def get_data(self):
         return self.mystring
@@ -460,6 +550,19 @@ class WaNoItemFileModel(AbstractWanoModel):
 
     def __getitem__(self, item):
         return None
+
+    def set_local(self,is_local):
+        self.is_local_file = is_local
+        if self.is_local_file:
+            self.xml.attrib["local"] = "True"
+        else:
+            self.xml.attrib["local"] = "False"
+
+    def get_local(self):
+        return self.is_local_file
+
+    def get_type_str(self):
+        return "File"
 
     def update_xml(self):
         self.xml.text = self.mystring
@@ -473,10 +576,11 @@ class WaNoItemFileModel(AbstractWanoModel):
     def render(self, rendered_wano, path, submitdir):
         rendered_logical_name = Template(self.logical_name).render(wano=rendered_wano, path=path)
         #Upload and copy
-        print(submitdir)
-        destdir = os.path.join(submitdir,rendered_logical_name)
-        print("Copying",self.root_model.wano_dir_root,rendered_logical_name,destdir)
-        shutil.copy(self.mystring,destdir)
+        #print(submitdir)
+        if self.is_local_file:
+            destdir = os.path.join(submitdir,rendered_logical_name)
+            print("Copying",self.root_model.wano_dir_root,rendered_logical_name,destdir)
+            shutil.copy(self.mystring,destdir)
         return rendered_logical_name
 
 
@@ -495,6 +599,9 @@ class WaNoItemScriptFileModel(WaNoItemFileModel):
     def save_text(self,text):
         with open(self.get_path(),'w') as outfile:
             outfile.write(text)
+
+    def get_type_str(self):
+        return "File"
 
     def get_as_text(self):
         fullpath = self.get_path()
@@ -521,6 +628,9 @@ class WaNoItemStringModel(AbstractWanoModel):
 
     def __getitem__(self, item):
         return None
+
+    def get_type_str(self):
+        return "String"
 
     def update_xml(self):
         self.xml.text = self.mystring

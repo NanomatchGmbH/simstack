@@ -5,6 +5,7 @@ from __future__ import print_function
 from __future__ import unicode_literals
 from __future__ import absolute_import
 
+from WaNo.lib.MultiselectDropDownList import MultiselectDropDownList
 from WaNo.view.AbstractWaNoView import AbstractWanoQTView, AbstractWanoView
 from PySide import QtGui, QtCore
 
@@ -375,14 +376,25 @@ class WaNoItemFileView(AbstractWanoQTView):
         self.openfilebutton = QtGui.QPushButton("",parent=self.actual_widget)
 
         self.openfilebutton.setIcon(QtGui.QFileIconProvider().icon(QtGui.QFileIconProvider.File))
+
+        """
         self.openwfbutton = QtGui.QPushButton("",parent=self.actual_widget)
         self.openwfbutton.setIcon(QtGui.QFileIconProvider().icon(QtGui.QFileIconProvider.Network))
+        self.openwfbutton.clicked.connect(self.showWFDialog)
+        """
+        #begin change
+        self.openwfbutton = MultiselectDropDownList(self, autoset_text= True)
+        self.openwfbutton.connect_workaround(self.load_wf_files)
+        self.openwfbutton.itemSelectionChanged.connect(self.on_wf_file_change)
+
+        #End of change
         hbox.addWidget(self.label)
         hbox.addStretch()
         hbox.addWidget(self.lineedit)
         hbox.addWidget(self.openfilebutton)
         hbox.addWidget(self.openwfbutton)
         self.openfilebutton.clicked.connect(self.showLocalDialog)
+
         self.actual_widget.setLayout(hbox)
         self.lineedit.editingFinished.connect(self.line_edited)
         #print(self.actual_widget.minimumSize())
@@ -395,9 +407,39 @@ class WaNoItemFileView(AbstractWanoQTView):
         self.lineedit.setText(fname)
         self.line_edited()
 
+    """
     def showWFDialog(self):
-        pass
-        # after this is implemented, call line_edited()
+        wf = self.model.root_model.parent_wf
+        importable_files = wf.assemble_files()
+    """
+
+    def load_wf_files(self):
+        wf = self.model.root_model.parent_wf
+        importable_files = wf.assemble_files()
+        self.openwfbutton.set_items(importable_files)
+        self.model.set_local(False)
+
+    def on_wf_file_change(self):
+        self.lineedit.setText(" ".join(self.openwfbutton.get_selection()))
+        self.line_edited()
+
+    """
+        self.open_variables = MultiselectDropDownList(self,text="Import")
+        self.open_variables.itemSelectionChanged.connect(self.onItemSelectionChange)
+        self.open_variables.connect_workaround(self._load_variables)
+        self.topLineLayout.addWidget(self.open_variables)
+        return 1
+
+    def _load_variables(self):
+        parent = self.parent()
+        while not parent.topWidget:
+            parent = parent.parent()
+        vars = parent.get_wano_variables()
+        self.open_variables.set_items(vars)
+
+    def onItemSelectionChange(self):
+        self.list_of_variables.setText(" ".join(self.open_variables.get_selection()))
+    """
 
     def get_widget(self):
         return self.actual_widget

@@ -6,6 +6,7 @@ from __future__ import absolute_import
 import logging
 import os
 import shlex
+import datetime
 
 from PySide.QtCore import QObject
 from PySide import QtCore,QtGui
@@ -339,6 +340,7 @@ class WFEditorApplication(QObject):
                 '' + \
                 '  <s:Documentation>' + \
                 '    <s:Comment>Simple diamond graph</s:Comment>' + \
+                '    <s:Name>TestWF</s:Name>' + \
                 '  </s:Documentation>' + \
                 '' + \
                 '  <s:Activity Id="date1" Type="JSDL">' + \
@@ -512,13 +514,48 @@ class WFEditorApplication(QObject):
 
     def _run(self):
         editor = self._view_manager.get_editor()
-        name,jobtype,directory = editor.run()
+        name,jobtype,directory,wf_xml = editor.run()
         if jobtype == SubmitType.SINGLE_WANO:
             print("Running", directory)
             self.run_job(directory,name)
         else:
-            print("Running Workflows not yet implemented")
+            #print("Running Workflows not yet implemented")
+            self.run_workflow(wf_xml,directory,name)
+            ### TODO, HERE TIMO!
+
             #self.editor.execute_workflow(directory)
+
+    def run_workflow(self,xml,directory,name):
+        wf_manager = self._unicore.get_workflow_manager()
+        storage_manager = self._unicore.get_storage_manager()
+        now = datetime.datetime.now()
+        nowstr = now.strftime("%Y-%m-%d %H:%M:%S")
+        submitname = "WF %s submitted at %s" %(name,nowstr )
+        storage = storage_manager.create(name=submitname)
+        storage_id = storage[1].get_id()
+        to_upload = os.path.join(directory,"jobs")
+
+        for filename in filewalker(to_upload):
+            cp = os.path.commonprefix([to_upload,filename])
+            relpath = os.path.relpath(filename,cp)
+            storage_manager.upload_file(filename, storage_id=storage_id, remote_filename=relpath)
+            #imports.add_import(filename,relpath)
+
+        storage_uri = storage_manager.get_base_uri()
+        err, status, wf = wf_manager.create(storage_id)
+        workflow_id = wf.split("/")[-1]
+        #exit(0)
+        storage_management_uri = storage_manager.get_storage_management_uri()
+
+        xmlstring = etree.tostring(xml,pretty_print=False).decode("utf-8").replace("${WORKFLOW_ID}",workflow_id)
+        xmlstring = xmlstring.replace("${STORAGE_ID}","%s%s"%(storage_management_uri,storage_id))
+
+        with open("wf.xml",'w') as wfo:
+            wfo.write(xmlstring)
+
+        print("err: %s, status: %s, wf_manager: %s" % (err, status, wf))
+        #### TIMO HERE
+        wf_manager.run(wf.split('/')[-1], xmlstring)
 
     def run_job(self, wano_dir,name):
         job_manager = self._unicore.get_job_manager()

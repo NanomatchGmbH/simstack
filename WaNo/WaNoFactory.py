@@ -24,11 +24,11 @@ class ViewGeneratorHelper(object):
         self.view.init_from_model()
 
 
-def wano_constructor_helper(wanofile,container_widget):
+def wano_constructor_helper(wanofile,container_widget,parent_wf):
     from WaNo.model.WaNoModels import WaNoModelRoot
     from WaNo.view.WaNoViews import WanoQtViewRoot
     wifv = WanoQtViewRoot(qt_parent=container_widget)
-    wifm = WaNoModelRoot.construct_from_wano(wanofile, rootview=wifv)
+    wifm = WaNoModelRoot.construct_from_wano(wanofile, rootview=wifv,parent_wf = parent_wf)
     wifm.set_view(wifv)
     wifv.set_model(wifm)
     wifm.construct_children()

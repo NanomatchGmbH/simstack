@@ -8,6 +8,10 @@ import os
 import logging
 import shutil
 import uuid
+
+from io import StringIO
+
+
 from enum import Enum
 
 from   lxml import etree
@@ -26,6 +30,8 @@ from collections import OrderedDict
 
 from WaNo.view.WFEditorWidgets import WFEWaNoListWidget, WFEListWidget
 from WaNo.lib.FileSystemTree import copytree
+
+from pyura.pyura.WorkflowXMLConverter import WFtoXML
 
 def mapClassToTag(name):
     xx = name.replace('Widget','')
@@ -141,7 +147,8 @@ class WFWaNoController(object):
 
 
 class WFWaNoWidget(QtGui.QToolButton):
-    def __init__(self, text, wano, parent=None):
+    def __init__(self, text, wano, parent):
+
         super(WFWaNoWidget, self).__init__(parent)
         self.logger = logging.getLogger('WFELOG')
         self.moved = False
@@ -149,6 +156,7 @@ class WFWaNoWidget(QtGui.QToolButton):
         self.logger.setLevel(logging.ERROR)
         self.is_wano = True
         self.logger.setLevel(lvl)
+        self.wf_model = parent.model
         stylesheet ="""
         QToolButton
         {
@@ -175,13 +183,12 @@ class WFWaNoWidget(QtGui.QToolButton):
         self.wano_model = None
         self.wano_view = None
         self.constructed = False
-        print(self.wano)
         self.newparent = self.parent()
         self.uuid = str(uuid.uuid4())
         self.construct_wano()
 
     @classmethod
-    def instantiate_from_folder(cls,folder,wanotype):
+    def instantiate_from_folder(cls,folder,wanotype, parent):
         iconpath = os.path.join(folder,wanotype) + ".png"
         if not os.path.isfile(iconpath):
             icon = QtGui.QFileIconProvider().icon(QtGui.QFileIconProvider.Computer)
@@ -189,7 +196,7 @@ class WFWaNoWidget(QtGui.QToolButton):
         else:
             wano_icon = QtGui.QIcon(iconpath)
         wano = [wanotype,folder,os.path.join(folder,wanotype) + ".xml", wano_icon]
-        return cls(text=wano[0], wano=wano, parent=None)
+        return cls(text=wano[0], wano=wano, parent=parent)
 
     def place_elements(self):
         pass
@@ -214,7 +221,7 @@ class WFWaNoWidget(QtGui.QToolButton):
             self.logger.error("Failed to create folder: %s." % outfolder)
             return False
 
-        print(self.wano[1],outfolder)
+        #print(self.wano[1],outfolder)
         if outfolder != self.wano[1]:
             try:
                 copytree(self.wano[1],outfolder)
@@ -227,9 +234,10 @@ class WFWaNoWidget(QtGui.QToolButton):
         self.wano_model.update_xml()
         return self.wano_model.save_xml(self.wano[2])
 
-    def render(self,basefolder):
-        myfolder = os.path.join(basefolder,self.uuid)
-        self.wano_model.render_and_write_input_files(myfolder)
+    def render(self,basefolder,stageout_basedir=""):
+        #myfolder = os.path.join(basefolder,self.uuid)
+        jsdl = self.wano_model.render_and_write_input_files(basefolder,stageout_basedir=stageout_basedir)
+        return jsdl
 
     def _target_tracker(self,event):
         self.newparent = event
@@ -258,7 +266,7 @@ class WFWaNoWidget(QtGui.QToolButton):
 
     def construct_wano(self):
         if not self.constructed:
-            self.wano_model,self.wano_view = WaNoFactory.wano_constructor_helper(self.wano[2],None)
+            self.wano_model,self.wano_view = WaNoFactory.wano_constructor_helper(self.wano[2],None,self.wf_model)
             self.constructed = True
 
     def mouseDoubleClickEvent(self,e):
@@ -295,8 +303,10 @@ class WFModel(object):
         These are copies of the current wanos or workflows
         """
         self.editor = kwargs['editor']
+        self.view = kwargs["view"]
         self.elements = [] # List of Elements,Workflows, ControlElements
         # Name of the saved folder
+        self.elementnames = []
         self.foldername = None
         #Few Use Cases
         """
@@ -319,8 +329,51 @@ class WFModel(object):
             #it doesn't have to be unique among workflow nesting.
         """
 
-    def render_to_simple_wf(self,filename):
-        pass
+    def element_to_name(self,element):
+        idx = self.elements.index(element)
+        return self.elementnames[idx]
+
+    def render_to_simple_wf(self,submitdir,jobdir):
+        activities = []
+        transitions = []
+        start = WFtoXML.xml_start()
+        activities.append(start)
+
+        fromid = start.attrib["Id"]
+        for myid, (ele, elename) in enumerate(zip(self.elements, self.elementnames)):
+
+            wano_dir = os.path.join(jobdir, self.element_to_name(ele))
+            try:
+                os.makedirs(wano_dir)
+            except OSError:
+                pass
+            jsdl = ele.render(wano_dir, stageout_basedir=elename)
+            jsdl_xml=WFtoXML.xml_jsdl(jsdl=jsdl)
+            toid = jsdl_xml.attrib["Id"]
+            transition = WFtoXML.xml_transition(From=fromid,To=toid)
+            transitions.append(transition)
+            activities.append(jsdl_xml)
+            fromid = toid
+            #out.write(ele.uuid + "\n")
+
+        wf = WFtoXML.xml_workflow(Transition=transitions,Activity=activities)
+        return wf
+
+
+    #this function assembles all files relative to the workflow root
+    #The files will be export to c9m:${WORKFLOW_ID}/the file name below
+    def assemble_files(self):
+        myfiles = []
+        for myid,(ele,name) in enumerate(zip(self.elements,self.elementnames)):
+            if ele.is_wano:
+                for file in ele.wano_model.get_output_files():
+                    fn = os.path.join(name,file)
+                    myfiles.append(fn)
+            else:
+                pass
+
+        return myfiles
+
 
     def save_to_disk(self,foldername):
         success = False
@@ -337,9 +390,10 @@ class WFModel(object):
 
         root = etree.Element("root")
         #TODO revert changes in filesystem in case instantiate_in_folder fails
-        for myid,ele in enumerate(self.elements):
+        for myid,(ele,name) in enumerate(zip(self.elements,self.elementnames)):
             subxml = ele.get_xml()
             subxml.attrib["id"] = str(myid)
+            subxml.attrib["name"] = name
             success = ele.instantiate_in_folder(foldername)
             root.append(subxml)
             if not success:
@@ -359,13 +413,16 @@ class WFModel(object):
         for child in root:
             if child.tag == "WaNo":
                 type = child.attrib["type"]
+                name = child.attrib["name"]
                 uuid = child.attrib["uuid"]
                 myid = int(child.attrib["id"])
                 #print(len(self.elements),myid)
                 assert (myid == len(self.elements))
                 wanofolder = os.path.join(foldername,"wanos",uuid)
-                widget = WFWaNoWidget.instantiate_from_folder(wanofolder, type)
+                widget = WFWaNoWidget.instantiate_from_folder(wanofolder, type, parent=self.view)
+                widget.setText(name)
                 self.elements.append(widget)
+                self.elementnames.append(name)
 
     def render(self):
         assert (self.foldername is not None)
@@ -381,43 +438,53 @@ class WFModel(object):
         if len(self.elements) == 1:
             ele = self.elements[0]
             if ele.is_wano:
-                wano_dir = os.path.join(jobdir, ele.uuid)
+                wano_dir = os.path.join(jobdir, self.elementnames[0])
                 try:
                     os.makedirs(wano_dir)
                 except OSError:
                     pass
-                ele.render(jobdir)
-                return SubmitType.SINGLE_WANO,wano_dir
+                ele.render(wano_dir)
+                return SubmitType.SINGLE_WANO,wano_dir,None
 
-        swffile = os.path.join(submitdir,"simpleswf.swf")
-        with open(swffile, 'w') as out:
-            for myid,ele in enumerate(self.elements):
-                wano_dir = os.path.join(jobdir,ele.uuid)
-                try:
-                    os.makedirs(wano_dir)
-                except OSError:
-                    pass
-                ele.render(jobdir)
-                out.write(ele.uuid + "\n")
-        return SubmitType.WORKFLOW,submitdir
+        wf_xml = self.render_to_simple_wf(submitdir,jobdir)
+
+        return SubmitType.WORKFLOW,submitdir,wf_xml
 
     def move_element_to_position(self, element, new_position):
         old_index = self.elements.index(element)
 
         if old_index != new_position:
             ele = self.elements.pop(old_index)
+            ele_name = self.elementnames.pop(old_index)
             if old_index < new_position:
                 new_position-=1
             self.elements.insert(new_position,ele)
+            self.elementnames.insert(new_position, ele_name)
+
+    def unique_name(self, oldbase):
+        base = oldbase
+        i = 1
+        while base in self.elementnames:
+            base = "%s_%d"%(oldbase,i)
+            i+=1
+        return base
 
     def add_element(self,element,pos = None):
         if pos is not None:
-            self.elements.insert(element,pos)
+            newname = self.unique_name(element.text())
+            if newname != element.text():
+                element.setText(newname)
+            self.elements.insert(pos,element)
+            print(element)
+            self.elementnames.insert(pos,newname)
         else:
             self.elements.append(element)
+            self.elementnames.append(element.text())
 
     def remove_element(self,element):
+        myid = self.elements.index(element)
         self.elements.remove(element)
+        del self.elementnames[myid]
 
     def openWaNoEditor(self,wanoWidget):
         self.editor.openWaNoEditor(wanoWidget)
@@ -426,7 +493,9 @@ class WFModel(object):
         # remove element both from the buttons and child list
         element.close()
         self.editor.remove(element)
+        myid = self.elements.index(element)
         self.elements.remove(element)
+        del self.elementnames[myid]
         element.deleteLater()
 
 
@@ -490,9 +559,9 @@ class WorkflowView(QtGui.QFrame):
             e.setParent(self)
             e.adjustSize()
             xpos = (dims.width() - e.width()) / 2
-            print("WIDTH ",e.width())
-            print("HEIGHT ", e.height())
-            print(xpos,ypos)
+            #print("WIDTH ",e.width())
+            #print("HEIGHT ", e.height())
+            #print(xpos,ypos)
             e.move(xpos, ypos)
             e.place_elements()
             ypos += e.height() + self.elementSkip
@@ -511,7 +580,7 @@ class WorkflowView(QtGui.QFrame):
         painter = QtGui.QPainter(self)
         painter.setBrush(QtGui.QBrush(QtCore.Qt.blue))
         sy = self.elementSkip
-        print(len(self.model.elements))
+        #print(len(self.model.elements))
         if len(self.model.elements)>1:
             e = self.model.elements[0]
             sx = e.pos().x() + e.width()/2
@@ -550,7 +619,8 @@ class WorkflowView(QtGui.QFrame):
             dropped = wfe.selectedItems()[0]
             wano = dropped.WaNo
             wd = WFWaNoWidget(wano[0],wano,self)
-            self.model.add_element(new_position,wd)
+            ##self.model.add_element(new_position,wd)
+            self.model.add_element(wd,new_position)
             #Show required for widgets added after
             wd.show()
 
@@ -576,7 +646,7 @@ class WorkflowView(QtGui.QFrame):
 class WFBaseWidget(QtGui.QFrame):
     def __init__(self, editor, parent=None):
         super(WFBaseWidget, self).__init__(parent)
-
+        print("here")
         self.setStyleSheet("background: " + widgetColors['Base'])
         self.logger = logging.getLogger('WFELOG')
         self.editor = editor
@@ -648,106 +718,8 @@ class WFBaseWidget(QtGui.QFrame):
         print("wff,remove")
         self.editor.remove(element)
 
-    """"
-    #Goes from the top to the bottom until the first element lies below the new one.
-    def placeElementPosition(self,element):
-        # this function computes the position of the next button
-        newb  = []
-        count = 0
-        element.show()
-        posHint = element.pos()
-
-        while len(self.buttons) > 0:
-            e    = self.buttons[0]
-            ypos = e.pos().y()+e.height()/2
-            if posHint.y() > ypos or count < 1:
-                newb.append(self.buttons.pop(0))
-                count += 1
-            else:
-                break
-        #
-        #  now add the new element
-        #
-        #print ("Placing Element: %-12s %4i %4i" % (element.text(),posHint.y(),element.height()))
-        newb.append(element)
-        #
-        # move rest of elments down
-        #
-        while len(self.buttons) > 0:
-            e = self.buttons.pop(0)
-            newb.append(e)
-        self.buttons = newb
-        self.placeElements()
-
-    def recPlaceElements(self):
-        # redo your own buttons and then do the parent
-        ypos = self.placeOwnButtons()
-        self.setFixedHeight(ypos+2.25*self.elementSkip)
-        self.update()
-        if not self.topWidget:
-            self.parent().recPlaceElements()
-        else:
-            if self.embeddedIn is not None:
-                self.embeddedIn.recPlaceElements()
-
-    def relayout(self):
-        ypos = max(self.placeOwnButtons(), self.parent.height())
-        self.setFixedHeight(ypos)
-
-    def placeOwnButtons(self):
-        dims = self.geometry()
-        ypos = self.elementSkip/2
-
-        for e in self.buttons:
-            xpos = (dims.width()-e.width())/2
-            e.move(xpos,ypos)
-            ypos += e.height() + self.elementSkip
-        return ypos
-
-
-    def placeElements(self):
-        ypos = self.placeOwnButtons()
-        if self.autoResize:
-            #print ("autores:",self.text(),ypos)
-            ypos = max(ypos,self.elementSkip) # all derived elements have a min wf size
-            self.setFixedHeight(ypos)
-            #self.parent().setFixedHeight(ypos+2.25*self.elementSkip)
-            if not self.topWidget:
-                self.parent().recPlaceElements()
-            else:
-                self.recPlaceElements()
-                if self.embeddedIn != None:
-                    #print ("resize  ",self.text(),ypos,self.height())
-                    hh = max(ypos,self.embeddedIn.height())
-                    self.embeddedIn.setFixedHeight(max(ypos,self.height()))
-                    self.embeddedIn.updateGeometry()
-
-    def paintEvent(self, event):
-        super(WFBaseWidget,self).paintEvent(event)
-        painter = QtGui.QPainter(self)
-        painter.setBrush(QtGui.QBrush(QtCore.Qt.blue))
-        sy = self.elementSkip
-        if len(self.buttons)>1:
-            e  = self.buttons[0]
-            sx = e.pos().x() + e.width()/2
-            sy = e.pos().y() + e.height()
-        for b in self.buttons[1:]:
-            ey  = b.pos().y()
-            line = QtCore.QLine(sx,sy,sx,ey)
-            painter.drawLine(line)
-            sy  = b.pos().y() + b.height()
-        painter.end()
-
-    def dragEnterEvent(self, e):
-        e.accept()
-
-    def dragLeaveEvent(self, e):
-        super(WFBaseWidget,self).dragLeaveEvent(e)
-        self.placeElements()
-        self.update()
-        e.accept()
-    """
     def dropEvent(self, e):
+
         super(WFBaseWidget,self).dropEvent(e)
         WFWorkflowWidget.hasChanged()
         position = e.pos()
@@ -841,8 +813,8 @@ class WFTabsWidget(QtGui.QTabWidget):
         ####bb.resize(0, 0)
     def createNewEmptyWF(self):
         scroll = QtGui.QScrollArea(self)
-        wf_model = WFModel(editor=self.editor)
         wf = WorkflowView(qt_parent=scroll)
+        wf_model = WFModel(editor=self.editor,view=wf)
         wf.set_model(wf_model)
         wf.init_from_model()
         scroll.setWidget(wf)
@@ -878,8 +850,8 @@ class WFTabsWidget(QtGui.QTabWidget):
         if name == "Untitled":
             raise FileNotFoundError("Please save your workflow first")
 
-        jobtype,directory = self.currentWidget().widget().model.render()
-        return name,jobtype,directory
+        jobtype,directory,workflow_xml = self.currentWidget().widget().model.render()
+        return name,jobtype,directory,workflow_xml
 
     def save(self):
         if self.curFile.name == 'Untitled':

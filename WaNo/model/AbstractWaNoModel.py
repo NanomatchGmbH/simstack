@@ -17,6 +17,7 @@ class AbstractWanoModel(object):
         self.view = None
         self.root_model = None
         self.is_wano = True
+        self.name = "unset"
         #if "root_model" in kwargs:
         self.root_model = kwargs["root_model"]
         # The root view has to be set explicitly, otherwise nobody has a parent.
@@ -25,6 +26,12 @@ class AbstractWanoModel(object):
         self.parent = kwargs['parent_model']
 
         self.name = kwargs['xml'].attrib["name"]
+
+    def set_name(self,new_name):
+        self.name = new_name
+
+    def get_name(self):
+        return self.name
 
     def get_parent(self):
         return self.parent
@@ -54,6 +61,10 @@ class AbstractWanoModel(object):
 
     @abc.abstractmethod
     def get_data(self):
+        pass
+
+    @abc.abstractmethod
+    def get_type_str(self):
         pass
 
     def render(self, rendered_wano, path, submitdir):
