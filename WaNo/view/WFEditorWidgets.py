@@ -75,4 +75,3 @@ class WFEWorkflowistWidget(QtGui.QListWidget):
 
     def sizeHint(self):
         return QtCore.QSize(100,max(self.myHeight,100))
-    
