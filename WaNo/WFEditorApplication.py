@@ -513,17 +513,28 @@ class WFEditorApplication(QObject):
         return success
 
     def _run(self):
-        editor = self._view_manager.get_editor()
-        name,jobtype,directory,wf_xml = editor.run()
+        name        = None
+        jobtype     = None
+        directory   = None
+        wf_xml      = None
+        editor      = self._view_manager.get_editor()
+        try:
+            name,jobtype,directory,wf_xml = editor.run()
+        except FileNotFoundError as e:
+            self._view_manager.show_error("Please save workflow before submit.")
+
         if jobtype == SubmitType.SINGLE_WANO:
             print("Running", directory)
             self.run_job(directory,name)
-        else:
+        elif jobtype == SubmitType.WORKFLOW:
             #print("Running Workflows not yet implemented")
             self.run_workflow(wf_xml,directory,name)
             ### TODO, HERE TIMO!
 
             #self.editor.execute_workflow(directory)
+        else:
+            # Error case...
+            pass
 
     def run_workflow(self,xml,directory,name):
         wf_manager = self._unicore.get_workflow_manager()
