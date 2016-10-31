@@ -2,10 +2,73 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
+import time
+
 import PySide.QtGui  as QtGui
 from PySide.QtCore import Signal
 
 from .WaNoSettings import WaNoUnicoreSettings, WaNoPathSettings
+from .ViewTimer import ViewTimer
+
+from PySide.QtCore import QMutex
+
+class StatusMessageManager:
+    def __sort(self):
+        """ Sorts by time of arrival, newest first.
+
+        Note:
+            self._list_lock must be held.
+        """
+        self._list.sort(key=lambda entry : entry[1])
+        self._list.reverse()
+
+    def update(self, elapsed_time):
+        self._list_lock.lock()
+        tmplist = []
+        stringlist = []
+        string = ""
+        for e in self._list:
+            time_left = e[2] - elapsed_time
+            if time_left > 0:
+                tmplist.append(e[:-1] + (time_left,))
+                stringlist.append(e[0])
+        self._list = tmplist
+
+        self._stringlist = stringlist
+        self.__set_text()
+
+        self._list_lock.unlock()
+
+    def __set_text(self):
+        """
+        Note:
+            self._list_lock must be held.
+        """
+        self._callback(', '.join(self._stringlist))
+
+    def stop(self):
+        self._timer.stop()
+
+    def add_message(self, message, duration=5):
+        arrival = time.time()
+
+        self._list_lock.lock()
+        self._list.append((message, arrival, duration))
+        self.__sort()
+
+        self._stringlist.insert(0, message)
+        self.__set_text()
+
+        self._list_lock.unlock()
+
+        self._timer.update_interval(duration)
+
+    def __init__(self, callback):
+        self._list = []
+        self._list_lock = QMutex(QMutex.NonRecursive)
+        self._callback = callback
+        self._timer = ViewTimer(self.update)
+        self._stringlist = []
 
 
 class WFEditorMainWindow(QtGui.QMainWindow):
@@ -47,6 +110,7 @@ class WFEditorMainWindow(QtGui.QMainWindow):
         
         message = "Welcome to the Nanomatch Workflow Editor"
         self.statusBar().showMessage(message)
+        self._status_manager = StatusMessageManager(self.statusBar().showMessage)
         
         self.setWindowTitle("Workflow Editor (C) 2016")
    
@@ -55,7 +119,11 @@ class WFEditorMainWindow(QtGui.QMainWindow):
         self.wfEditor = editor
         self.__init_ui()
 
+    def show_status_message(self, message, duration):
+        self._status_manager.add_message(message, duration)
+
     def exit(self):
+        self._status_manager.stop()
         self.close()
 
     def action_openSettingsDialog(self):
