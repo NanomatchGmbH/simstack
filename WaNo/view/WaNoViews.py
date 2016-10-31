@@ -415,7 +415,7 @@ class WaNoItemFileView(AbstractWanoQTView):
 
     def load_wf_files(self):
         wf = self.model.root_model.parent_wf
-        importable_files = wf.assemble_files()
+        importable_files = wf.assemble_files("")
         self.openwfbutton.set_items(importable_files)
         self.model.set_local(False)
 

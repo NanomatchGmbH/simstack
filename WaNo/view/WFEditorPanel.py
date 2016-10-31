@@ -465,7 +465,7 @@ class WFModel(object):
 
     #this function assembles all files relative to the workflow root
     #The files will be export to c9m:${WORKFLOW_ID}/the file name below
-    def assemble_files(self):
+    def assemble_files(self,path):
         myfiles = []
         for myid,(ele,name) in enumerate(zip(self.elements,self.elementnames)):
             if ele.is_wano:
