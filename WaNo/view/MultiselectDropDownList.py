@@ -1,9 +1,13 @@
 from PySide.QtGui import QToolButton, QFontMetrics, QListWidgetItem, QMenu, \
-        QListWidget, QAbstractItemView, QWidgetAction
+        QListWidget, QAbstractItemView, QWidgetAction, QFileIconProvider
 from PySide.QtCore import Qt, Signal
 
+try:
+    from .DropDownWidgetButton import DropDownWidgetPushButton
+except:
+    from DropDownWidgetButton import DropDownWidgetPushButton
 
-class MultiselectDropDownList(QToolButton):
+class MultiselectDropDownList(DropDownWidgetPushButton):
     itemSelectionChanged = Signal(name="itemSelectionChanged")
 
     def _on_selection_change(self):
@@ -66,7 +70,7 @@ class MultiselectDropDownList(QToolButton):
 
 
     def connect_workaround(self,function):
-        self.qmenu.aboutToShow.connect(function)
+        self._menu.aboutToShow.connect(function)
 
     """Constructs a MultiselectDropDownList.
 
@@ -76,40 +80,48 @@ class MultiselectDropDownList(QToolButton):
         autoset_text: if True, the text will be changed according to the selection
     """
     def __init__(self, parent, text="", autoset_text=False):
-        QToolButton.__init__(self)
-        self.setPopupMode(QToolButton.MenuButtonPopup)
-        self.qmenu = QMenu(self)
-        self.setMenu(self.qmenu)
+        super(MultiselectDropDownList, self).__init__(parent, text=text)
         self.text = text
-        self.setText(self.text)
 
         self._list = QListWidget(self)
         self._list.setSelectionMode(QAbstractItemView.ExtendedSelection)
-
-
 
         if autoset_text:
             self._list.itemSelectionChanged.connect(self._on_selection_change)
         else:
             self._list.itemSelectionChanged.connect(self.itemSelectionChanged)
 
-        action = QWidgetAction(self)
-        action.setDefaultWidget(self._list)
-
-        self.menu().addAction(action)
+        self.set_widget(self._list)
 
 if __name__ == '__main__':
     import sys
-    from PySide.QtGui import QWidget, QHBoxLayout, QApplication, QFileIconProvider
+    from PySide.QtGui import QWidget, QHBoxLayout, QApplication, QLabel, \
+            QFileIconProvider
     app = QApplication(sys.argv)
     window = QWidget()
 
     layout = QHBoxLayout(window)
 
-    mdl = MultiselectDropDownList(window, text="foooobar", autoset_text=True)
-    mdl.set_items(['foo', 'bar', ('abc', QFileIconProvider().icon(QFileIconProvider.Folder))]) 
-    mdl.select_items(['foo', 'abc'])
+    mdl_autoset = MultiselectDropDownList(window, text="foooobar", autoset_text=True)
+    mdl_autoset.set_items([
+        'foo',
+        'bar',
+        ('abc', QFileIconProvider().icon(QFileIconProvider.Folder))
+        ])
+    mdl_autoset.select_items(['foo', 'abc'])
 
+    mdl = MultiselectDropDownList(window, text="foooobar", autoset_text=False)
+    mdl.set_items([
+        'foo',
+        'bar',
+        'test',
+        ('abc', QFileIconProvider().icon(QFileIconProvider.Folder))
+        ])
+    mdl.select_items(['bar', 'test'])
+
+    layout.addWidget(QLabel("Autoset Text:"))
+    layout.addWidget(mdl_autoset)
+    layout.addWidget(QLabel("Without Autoset Text:"))
     layout.addWidget(mdl)
 
     window.resize(100, 60)
