@@ -5,7 +5,7 @@ from __future__ import print_function
 from __future__ import unicode_literals
 from __future__ import absolute_import
 
-from WaNo.lib.MultiselectDropDownList import MultiselectDropDownList
+from WaNo.view.MultiselectDropDownList import MultiselectDropDownList
 from WaNo.view.AbstractWaNoView import AbstractWanoQTView, AbstractWanoView
 from PySide import QtGui, QtCore
 
@@ -379,11 +379,11 @@ class WaNoItemFileView(AbstractWanoQTView):
 
         """
         self.openwfbutton = QtGui.QPushButton("",parent=self.actual_widget)
-        self.openwfbutton.setIcon(QtGui.QFileIconProvider().icon(QtGui.QFileIconProvider.Network))
         self.openwfbutton.clicked.connect(self.showWFDialog)
         """
         #begin change
-        self.openwfbutton = MultiselectDropDownList(self, autoset_text= True)
+        self.openwfbutton = MultiselectDropDownList(self, autoset_text=False)
+        self.openwfbutton.setIcon(QtGui.QFileIconProvider().icon(QtGui.QFileIconProvider.Network))
         self.openwfbutton.connect_workaround(self.load_wf_files)
         self.openwfbutton.itemSelectionChanged.connect(self.on_wf_file_change)
 

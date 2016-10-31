@@ -24,7 +24,7 @@ import WaNo.WaNoFactory as WaNoFactory
 from WaNo.WaNoSettingsProvider import WaNoSettingsProvider
 from WaNo.Constants import SETTING_KEYS
 
-from WaNo.lib.MultiselectDropDownList import MultiselectDropDownList
+from WaNo.view.MultiselectDropDownList import MultiselectDropDownList
 
 from collections import OrderedDict
 
