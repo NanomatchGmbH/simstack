@@ -11,6 +11,7 @@ import uuid
 
 from io import StringIO
 
+import abc
 
 from enum import Enum
 
@@ -222,7 +223,7 @@ class WFItemListInterface(object):
             if newname != element.text():
                 element.setText(newname)
             self.elements.insert(pos, element)
-            print(element)
+
             self.elementnames.insert(pos, newname)
         else:
             self.elements.append(element)
@@ -253,7 +254,7 @@ class WFItemModel(object):
 
     #this function assembles all files relative to the workflow root
     #The files will be export to c9m:${WORKFLOW_ID}/the file name below
-    def assemble_files(self):
+    def assemble_files(self,path):
         myfiles = []
         return myfiles
 
@@ -352,7 +353,7 @@ class SubWFModel(WFItemModel,WFItemListInterface):
             elif child.tag == "WFControl":
                 name = child.attrib["name"]
                 type = child.attrib["type"]
-                model,view = ControlFactory.construct(type,qt_parent=self.view,editor=self.editor)
+                model,view = ControlFactory.construct(type,qt_parent=self.view,logical_parent=self.view,editor=self.editor)
                 self.elements.append(view)
                 self.elementnames.append(name)
                 view.setText(name)
@@ -379,6 +380,72 @@ class SubWFModel(WFItemModel,WFItemListInterface):
             else:
                 root.append(ele.model.save_to_disk(my_foldername))
         return root
+
+
+class ForEachModel(WFItemModel):
+    def __init__(self,*args,**kwargs):
+        #super(ForEachModel,self).__init__(*args,**kwargs)
+        super(ForEachModel, self).__init__()
+        self.wf_root = kwargs["wf_root"]
+
+        self.is_wano = False
+        self.editor = kwargs['editor']
+        self.view = kwargs["view"]
+        self.subwfmodel, self.subwfview = ControlFactory.construct("SubWorkflow",editor=self.editor,qt_parent=self.view, logical_parent=self.view.logical_parent,wf_root = self.wf_root)
+        self.filelist = []
+        self.name = "ForEach"
+
+    def set_filelist(self,filelist):
+        self.filelist = filelist
+
+    def render_to_simple_wf(self,submitdir,jobdir,path = ""):
+
+        filesets = []
+        for myfile in self.filelist:
+            globalpath = "c9m:${WORKFLOW_ID}/%s/" % os.path.dirname(myfile)
+            basename = os.path.basename(myfile)
+            filesets.append(WFtoXML.xml_fileset(base=globalpath,include=basename,exclude=""))
+        swf = self.subwfmodel.render_to_simple_wf(submitdir,jobdir,path = path)
+        return WFtoXML.xml_subwfforeach(IteratorName=self.name,IterSet=filesets,SubWorkflow=swf)
+
+    def assemble_files(self,path):
+        myfiles = []
+        for otherfile in self.subwfmodel.assemble_files(path):
+            myfiles.append(os.path.join(path, self.view.text(), otherfile))
+        return myfiles
+
+    def save_to_disk(self, foldername):
+        attributes = {"name": self.view.text(), "type": "ForEach"}
+        root = etree.Element("WFControl", attrib=attributes)
+        my_foldername = foldername
+        # TODO revert changes in filesystem in case instantiate_in_folder fails
+        root.append(self.subwfmodel.save_to_disk(my_foldername))
+        filelist = etree.SubElement(root,"FileList")
+        for fn in self.filelist:
+            fxml = etree.SubElement(filelist, "File")
+            fxml.text = fn
+            filelist.append(fxml)
+        return root
+
+    def read_from_disk(self, full_foldername, xml_subelement):
+        #TODO: missing save filelist
+        #TODO: missing render
+        for child in xml_subelement:
+            if child.tag == "FileList":
+                for xml_ss in child:
+                    self.filelist.append(xml_ss.text)
+                print(self.filelist)
+                continue
+            if child.tag != "WFControl":
+                continue
+            if child.attrib["type"] != "SubWorkflow":
+                continue
+            #self.subwfmodel,self.subwfview = ControlFactory.construct("SubWorkflow", qt_parent=self.view, logical_parent=self.view,editor=self.editor,wf_root = self.wf_root)
+            name = child.attrib["name"]
+            type = child.attrib["type"]
+            self.subwfview.setText(name)
+            self.subwfmodel.read_from_disk(full_foldername=full_foldername,xml_subelement=child)
+
 
 
 class WFModel(object):
@@ -480,7 +547,7 @@ class WFModel(object):
 
 
     def save_to_disk(self,foldername):
-        success = False
+        success = True
         self.wf_name = os.path.basename(foldername)
         self.foldername = foldername
         settings = WaNoSettingsProvider.get_instance()
@@ -533,11 +600,13 @@ class WFModel(object):
             elif child.tag == "WFControl":
                 name = child.attrib["name"]
                 type = child.attrib["type"]
-                model, view = ControlFactory.construct(type, qt_parent=self.view, editor=self.editor)
+                model, view = ControlFactory.construct(type, qt_parent=self.view, logical_parent=self.view,editor=self.editor,wf_root = self)
                 self.elements.append(view)
                 self.elementnames.append(name)
                 view.setText(name)
+
                 model.read_from_disk(full_foldername=foldername, xml_subelement=child)
+        self.view.updateGeometry()
 
     def render(self):
         assert (self.foldername is not None)
@@ -616,7 +685,12 @@ class WFModel(object):
 
 class SubWorkflowView(QtGui.QFrame):
     def __init__(self, *args, **kwargs):
+        self.my_height = 50
+        self.my_width = 300
+        self.minimum_height = 50
+        self.minimum_width = 300
         self.is_wano = False
+        self.logical_parent = kwargs['logical_parent']
         parent = kwargs['qt_parent']
         super(SubWorkflowView, self).__init__(parent)
         self.setFrameStyle(QtGui.QFrame.Panel)
@@ -625,6 +699,7 @@ class SubWorkflowView(QtGui.QFrame):
                             border: 2px solid green;
                             border-radius: 4px;
                             padding: 2px;
+                            background: %s
                             }
                                 QPushButton {
                                  background-color: %s
@@ -634,8 +709,8 @@ class SubWorkflowView(QtGui.QFrame):
 
                              }
 
-                           background: %s "
-                           """ % (widgetColors['ButtonColor'],widgetColors['Control'],widgetColors['Control'])
+
+                           """ % (widgetColors['Control'],widgetColors['ButtonColor'],widgetColors['Control'])
                            )
         self.logger = logging.getLogger('WFELOG')
         self.setAcceptDrops(True)
@@ -644,7 +719,9 @@ class SubWorkflowView(QtGui.QFrame):
         self.model = None
         #self.setFrameStyle(QtGui.QFrame.WinPanel | QtGui.QFrame.Sunken)
         self.setMinimumWidth(300)
+        self.setMinimumWidth(100)
         self.dontplace = False
+        self.setSizePolicy(QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Expanding)
 
     def set_model(self,model):
         self.model = model
@@ -660,24 +737,46 @@ class SubWorkflowView(QtGui.QFrame):
 
     #Place elements places elements top down.
     def place_elements(self):
+        self.my_width = self.minimum_width
         self.adjustSize()
+
+
+        for e in self.model.elements:
+            self.my_width = max(self.my_width, e.width() + 50)
+
+        self.adjustSize()
+
         dims = self.geometry()
         ypos = self.elementSkip / 2
         for e in self.model.elements:
             e.setParent(self)
+
+
             e.adjustSize()
             xpos = (dims.width() - e.width()) / 2
+            #xpos = dims.width()/2.0
             e.move(xpos, ypos)
             e.place_elements()
             ypos += e.height() + self.elementSkip
 
-        #self.setFixedHeight(max(ypos,self.parent().height()))
+        self.my_height = ypos
         self.adjustSize()
+        #self.setFixedHeight(max(ypos,self.parent().height()))
         if not self.dontplace:
             self.dontplace = True
-            self.parent().place_elements()
+            self.logical_parent.place_elements()
         self.dontplace=False
+        #if (ypos < 50):
+        #    self.setFixedHeight(50)
+
         return ypos
+
+    def sizeHint(self):
+        return QtCore.QSize(max(self.minimum_width,self.my_width),max(self.my_height,self.minimum_height))
+
+    #def sizeHint(self):
+    #    print("SIZEHINT1")
+    #    return QtCore.QSize(500,500)
 
     def relayout(self):
         self.place_elements()
@@ -724,6 +823,9 @@ class SubWorkflowView(QtGui.QFrame):
         if type(e.source()) is WFWaNoWidget:
             self.model.move_element_to_position(e.source().model, new_position)
 
+        elif type(e.source()) is ForEachView:
+            self.model.move_element_to_position(e.source().model, new_position)
+
         elif type(e.source()) is WFEWaNoListWidget:
             wfe = e.source()
             dropped = wfe.selectedItems()[0]
@@ -736,7 +838,6 @@ class SubWorkflowView(QtGui.QFrame):
 
         elif type(e.source()) is WFEListWidget:
             print("Request to instantiate WFELW: %s" % e.source())
-
 
         else:
             print("Type %s not yet accepted by dropevent, please implement"%(e.source()))
@@ -866,6 +967,9 @@ class WorkflowView(QtGui.QFrame):
         if type(e.source()) is WFWaNoWidget:
             self.model.move_element_to_position(e.source().model, new_position)
 
+        elif type(e.source()) is ForEachView:
+            self.model.move_element_to_position(e.source(), new_position)
+
         elif type(e.source()) is WFEWaNoListWidget:
             wfe = e.source()
             dropped = wfe.selectedItems()[0]
@@ -880,7 +984,7 @@ class WorkflowView(QtGui.QFrame):
             wfe = e.source()
             dropped = wfe.selectedItems()[0]
             name = dropped.text()
-            model,view = ControlFactory.construct(name,qt_parent=self,editor=self.model.editor)
+            model,view = ControlFactory.construct(name,qt_parent=self,logical_parent=self,editor=self.model.editor,wf_root = self.model)
             self.model.add_element(view,new_position)
 
 
@@ -1191,7 +1295,7 @@ class WFTabsWidget(QtGui.QTabWidget):
         success = self.currentWidget().widget().model.save_to_disk(folder)
         #self.wf_model.save_to_disk(folder)
         self.setTabText(self.currentIndex(),os.path.basename(folder))
-        print (type(self.editor.parent()))
+        #print (type(self.editor.parent()))
         self.workflow_saved.emit(success, folder)
 
     def loadFile(self,fileName):
@@ -1264,6 +1368,176 @@ class WFWorkflowWidget(WFBaseWidget):
         logger.info("WorkFlow has changed")
         WFWorkflowWidget.changedFlag=True
 
+class WFControlWithTopMiddleAndBottom(QtGui.QFrame):
+    def __init__(self,*args,**kwargs):
+        parent = kwargs['qt_parent']
+        self.logical_parent = kwargs["logical_parent"]
+        super(WFControlWithTopMiddleAndBottom,self).__init__(parent)
+        #self.editor = kwargs["editor"]
+        self.set_style()
+        #TIMO: Try this off later, it's not required imho
+        self.setAcceptDrops(True)
+        self.model = None
+        self.vbox = QtGui.QVBoxLayout(self)
+        self.show()
+        self.setSizePolicy(QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Expanding)
+        self.initialized = False
+
+    def _mockline(self):
+        line = QtGui.QFrame(self)
+        line.setFrameShape(QtGui.QFrame.HLine)
+        line.setFrameShadow(QtGui.QFrame.Sunken)
+        line.setLineWidth(2)
+        return line
+
+    def fill_layout(self):
+        topwidget = self.get_top_widget()
+        if topwidget is not None:
+            self.vbox.addWidget(topwidget)
+        self.middlewidget = self.get_middle_widget()
+        if self.middlewidget is not None:
+            self.vbox.addWidget(self.middlewidget)
+        bottomlayout = self.get_bottom_layout()
+        if bottomlayout is not None:
+            self.vbox.addLayout(bottomlayout)
+
+    def init_from_model(self):
+        if not self.initialized:
+            self.fill_layout()
+            self.initialized = True
+        #self.setLayout(self.vbox)
+
+    @abc.abstractmethod
+    def place_elements(self):
+        pass
+
+    @abc.abstractmethod
+    def get_top_layout(self):
+        return None
+
+    @abc.abstractmethod
+    def get_middle_layout(self):
+        return None
+
+    @abc.abstractmethod
+    def get_bottom_layout(self):
+        return None
+
+    def set_style(self):
+        self.setFrameStyle(QtGui.QFrame.Panel)
+        self.setStyleSheet("""
+                           QFrame {
+                            border: 2px solid green;
+                            border-radius: 4px;
+                            padding: 2px;
+                            background: %s;
+                            }
+                                QPushButton {
+                                 background-color: %s
+                             }
+                             QPushButton:hover {
+                                 background-color: %s;
+
+                             }
+                           """ % ("#FFFFFF",widgetColors['ButtonColor'],widgetColors['Control'])
+                           #""" % (widgetColors['Control'],widgetColors['ButtonColor'],widgetColors['Control'])
+                           )
+
+    def set_model(self, model):
+        self.model = model
+
+    def text(self):
+        return self.model.name
+
+    def setText(self, text):
+        self.model.name = text
+
+
+class ForEachView(WFControlWithTopMiddleAndBottom):
+    def __init__(self,*args,**kwargs):
+        super(ForEachView,self).__init__(*args,**kwargs)
+        self.dontplace = False
+        self.is_wano = False
+
+    def get_top_widget(self):
+        self.topwidget = QtGui.QWidget()
+        self.topLineLayout = QtGui.QHBoxLayout()
+        self.topwidget.setLayout(self.topLineLayout)
+        #b.clicked.connect(self.toggleVisible)
+        self.topLineLayout.addWidget(QtGui.QLineEdit('Iterator Name'))
+        self.list_of_variables = QtGui.QLineEdit('')
+        self.topLineLayout.addWidget(self.list_of_variables)
+        self.open_variables = MultiselectDropDownList(self, text="Import")
+        self.open_variables.connect_workaround(self.load_wf_files)
+        self.open_variables.itemSelectionChanged.connect(self.on_wf_file_change)
+        #self.open_variables.itemSelectionChanged.connect(self.onItemSelectionChange)
+        #self.open_variables.connect_workaround(self._load_variables)
+        self.topLineLayout.addWidget(self.open_variables)
+        return self.topwidget
+
+    def init_from_model(self):
+        super(ForEachView,self).init_from_model()
+        self.list_of_variables.setText(" ".join(self.model.filelist))
+
+
+    def load_wf_files(self):
+        wf = self.model.wf_root
+        importable_files = wf.assemble_files("")
+        self.open_variables.set_items(importable_files)
+
+    def on_wf_file_change(self):
+        self.list_of_variables.setText(" ".join(self.open_variables.get_selection()))
+        self.line_edited()
+
+    def line_edited(self):
+        files = self.list_of_variables.text().split(" ")
+        self.model.set_filelist(files)
+
+    def get_middle_widget(self):
+        return self.model.subwfview
+
+
+    def sizeHint(self):
+        if self.model is not None:
+            size = self.model.subwfview.sizeHint() + QtCore.QSize(25,80)
+            if size.width() < 300:
+                size.setWidth(300)
+            return size
+        else:
+            return QtCore.QSize(200,100)
+
+    def place_elements(self):
+        if not self.dontplace:
+            if self.model is not None:
+                self.init_from_model()
+                self.dontplace = True
+                self.model.subwfview.place_elements()
+            self.adjustSize()
+        self.dontplace=False
+
+
+    def _target_tracker(self,event):
+        self.newparent = event
+
+    def mouseMoveEvent(self, e):
+        if e.buttons() != QtCore.Qt.LeftButton:
+            return
+
+        #self.parent().removeElement(self)
+        mimeData = QtCore.QMimeData()
+        self.drag = QtGui.QDrag(self)
+        self.drag.setMimeData(mimeData)
+        self.drag.setHotSpot(e.pos() - self.rect().topLeft())
+        #self.move(e.globalPos())
+        self.drag.targetChanged.connect(self._target_tracker)
+        self.newparent = self.parent()
+        dropAction = self.drag.start(QtCore.Qt.MoveAction)
+
+        #In case the target of the drop changed we are outside the workflow editor
+        #In that case we would like to remove ourselves
+        if (self.newparent != self.parent()):
+            self.parent().removeElement(self)
+
 
 class WFControlWidget(QtGui.QFrame):
     def __init__(self, editor, parent=None):
@@ -1287,11 +1561,13 @@ class WFControlWidget(QtGui.QFrame):
 
                              }
 
-                           background: %s "
+                           background: %s
                            """ % (widgetColors['ButtonColor'],widgetColors['Control'],widgetColors['Control'])
                            )
         self.setAcceptDrops(True)
-        self.isVisible = True     # the subwidget are is visible
+
+
+
         self.layout    = QtGui.QVBoxLayout()
         
         noPar=self.makeTopLine()
@@ -1417,6 +1693,9 @@ class WFIfWidget(WFControlWidget):
         self.topLineLayout.addWidget(QtGui.QLineEdit('condition'))
         return 2
 
+
+
+
 class WFForEachWidget(WFControlWidget):
     def __init__(self, editor,  parent=None):
         super(WFForEachWidget, self).__init__(editor,  parent)      
@@ -1513,7 +1792,7 @@ class WFParallelWidget(WFControlWidget):
 
 class ControlFactory(object):
     n_t_c = {
-        "ForEach" : (WFForEachWidget,None),
+        "ForEach" : (ForEachModel,ForEachView),
         "While" : (WFWhileWidget,None),
         "If": (WFIfWidget,None),
         "Parallel": (WFParallelWidget, None),
@@ -1524,12 +1803,10 @@ class ControlFactory(object):
         return cls.n_t_c[name]
 
     @classmethod
-    def construct(cls, name, qt_parent,editor):
+    def construct(cls, name, qt_parent, logical_parent, editor,wf_root):
         modelc,viewc = cls.name_to_class(name)
-        view = viewc(qt_parent=qt_parent)
-        model = modelc(editor=editor,view=view)
+        view = viewc(qt_parent=qt_parent, logical_parent = logical_parent)
+        model = modelc(editor=editor,view=view,wf_root = wf_root)
         view.set_model(model)
         view.init_from_model()
         return model,view
-
-

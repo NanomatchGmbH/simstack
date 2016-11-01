@@ -215,7 +215,8 @@ class WFEditor(QWidget):
         self.workflowWidget.openWorkFlow(workFlow)
 
     def remove(self,wfwanowidget):
-        self.wanoEditor.remove_if_open(wfwanowidget.wano_view)
+        if wfwanowidget.is_wano:
+            self.wanoEditor.remove_if_open(wfwanowidget.wano_view)
 
     """
     def SizeHint(self):
