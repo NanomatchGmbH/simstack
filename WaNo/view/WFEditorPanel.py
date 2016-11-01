@@ -181,7 +181,7 @@ class WFWaNoWidget(QtGui.QToolButton):
         return False
 
 class SubmitType(Enum):
-    SINGLE_WANO = 1,
+    SINGLE_WANO = 0
     WORKFLOW = 1
 
 class WFItemListInterface(object):

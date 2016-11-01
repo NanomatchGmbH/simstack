@@ -46,6 +46,9 @@ class WFViewManager(QObject):
     def show_mainwindow(self):
         self._mainwindow.show()
 
+    def show_status_message(self, message, duration=5):
+        self._mainwindow.show_status_message(message, duration)
+
     def clear_editor(self):
         self._editor.clear()
 
