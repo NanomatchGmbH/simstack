@@ -391,6 +391,7 @@ class ForEachModel(WFItemModel):
         self.is_wano = False
         self.editor = kwargs['editor']
         self.view = kwargs["view"]
+        self.itername = "ForEach"
         self.subwfmodel, self.subwfview = ControlFactory.construct("SubWorkflow",editor=self.editor,qt_parent=self.view, logical_parent=self.view.logical_parent,wf_root = self.wf_root)
         self.filelist = []
         self.name = "ForEach"
@@ -401,12 +402,15 @@ class ForEachModel(WFItemModel):
     def render_to_simple_wf(self,submitdir,jobdir,path = ""):
 
         filesets = []
+        muuid = str(uuid.uuid4())
+        muuid_body = "%s_body"%muuid
         for myfile in self.filelist:
             globalpath = "c9m:${WORKFLOW_ID}/%s/" % os.path.dirname(myfile)
             basename = os.path.basename(myfile)
             filesets.append(WFtoXML.xml_fileset(base=globalpath,include=basename,exclude=""))
         swf = self.subwfmodel.render_to_simple_wf(submitdir,jobdir,path = path)
-        return WFtoXML.xml_subwfforeach(IteratorName=self.name,IterSet=filesets,SubWorkflow=swf)
+        swf.attrib["Id"] = muuid_body
+        return WFtoXML.xml_subwfforeach(IteratorName=self.name,IterSet=filesets,SubWorkflow=swf,Id=muuid)
 
     def assemble_files(self,path):
         myfiles = []
@@ -425,6 +429,8 @@ class ForEachModel(WFItemModel):
             fxml = etree.SubElement(filelist, "File")
             fxml.text = fn
             filelist.append(fxml)
+        iter_xml = etree.SubElement(root,"IterName")
+        iter_xml.text = self.itername
         return root
 
     def read_from_disk(self, full_foldername, xml_subelement):
@@ -436,6 +442,10 @@ class ForEachModel(WFItemModel):
                     self.filelist.append(xml_ss.text)
                 print(self.filelist)
                 continue
+            if child.tag == "IterName":
+                print("Got ITERNAME",child.text)
+                self.itername = child.text
+                continue
             if child.tag != "WFControl":
                 continue
             if child.attrib["type"] != "SubWorkflow":
@@ -445,6 +455,7 @@ class ForEachModel(WFItemModel):
             type = child.attrib["type"]
             self.subwfview.setText(name)
             self.subwfmodel.read_from_disk(full_foldername=full_foldername,xml_subelement=child)
+
 
 
 
@@ -1452,7 +1463,7 @@ class WFControlWithTopMiddleAndBottom(QtGui.QFrame):
     def setText(self, text):
         self.model.name = text
 
-
+3
 class ForEachView(WFControlWithTopMiddleAndBottom):
     def __init__(self,*args,**kwargs):
         super(ForEachView,self).__init__(*args,**kwargs)
@@ -1464,7 +1475,9 @@ class ForEachView(WFControlWithTopMiddleAndBottom):
         self.topLineLayout = QtGui.QHBoxLayout()
         self.topwidget.setLayout(self.topLineLayout)
         #b.clicked.connect(self.toggleVisible)
-        self.topLineLayout.addWidget(QtGui.QLineEdit('Iterator Name'))
+        self.itername_widget = QtGui.QLineEdit('Iterator Name')
+        self.itername_widget.editingFinished.connect(self._on_line_edit)
+        self.topLineLayout.addWidget(self.itername_widget)
         self.list_of_variables = QtGui.QLineEdit('')
         self.topLineLayout.addWidget(self.list_of_variables)
         self.open_variables = MultiselectDropDownList(self, text="Import")
@@ -1478,7 +1491,10 @@ class ForEachView(WFControlWithTopMiddleAndBottom):
     def init_from_model(self):
         super(ForEachView,self).init_from_model()
         self.list_of_variables.setText(" ".join(self.model.filelist))
+        self.itername_widget.setText(self.model.itername)
 
+    def _on_line_edit(self):
+        self.model.itername = self.itername_widget.text()
 
     def load_wf_files(self):
         wf = self.model.wf_root
@@ -1495,7 +1511,6 @@ class ForEachView(WFControlWithTopMiddleAndBottom):
 
     def get_middle_widget(self):
         return self.model.subwfview
-
 
     def sizeHint(self):
         if self.model is not None:
