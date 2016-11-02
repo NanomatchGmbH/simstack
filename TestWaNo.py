@@ -6,6 +6,15 @@ from __future__ import unicode_literals
 from __future__ import absolute_import
 
 import sys,os
+
+if __name__ == '__main__':
+    #In case pyura is hosted in the external directory, we append the path on our own
+    dir_path = os.path.dirname(os.path.realpath(__file__))
+    dir_path = os.path.join(dir_path,"external")
+
+    if not dir_path in sys.path:
+        sys.path.append(dir_path)
+
 from PySide import QtGui, QtCore
 from WaNo.model.WaNoModels import WaNoModelRoot
 from WaNo.view.WaNoViews import WanoQtViewRoot
@@ -28,7 +37,7 @@ class Example(QtGui.QWidget):
         container_layout = QtGui.QVBoxLayout()
 
         wifv = WanoQtViewRoot(qt_parent=container_widget)
-        wifm = WaNoModelRoot.construct_from_wano(self.wanofile, rootview=wifv)
+        wifm = WaNoModelRoot.construct_from_wano(self.wanofile, rootview=wifv, parent_wf = None)
         self.wifm = wifm
         wifm.set_view(wifv)
         wifv.set_model(wifm)
@@ -36,8 +45,6 @@ class Example(QtGui.QWidget):
         WaNoFactory.build_views()
         wifv.init_from_model()
 
-        #hbox = QtGui.QHBoxLayout()
-        #hbox.addStretch(1)
         container_layout.addWidget(wifv.get_widget())
         submit_push = QtGui.QPushButton("Submit", parent=container_widget)
         submit_push.clicked.connect(self.render_slot)
