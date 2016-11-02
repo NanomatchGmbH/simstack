@@ -563,7 +563,8 @@ class WFEditorApplication(QObject):
         #exit(0)
         storage_management_uri = storage_manager.get_storage_management_uri()
 
-        xmlstring = etree.tostring(xml,pretty_print=False).decode("utf-8").replace("${WORKFLOW_ID}",workflow_id)
+        #xmlstring = etree.tostring(xml,pretty_print=False).decode("utf-8").replace("${WORKFLOW_ID}",workflow_id)
+        xmlstring = etree.tostring(xml,pretty_print=False).decode("utf-8") ####.replace("${WORKFLOW_ID}",workflow_id)
         xmlstring = xmlstring.replace("${STORAGE_ID}","%s%s"%(storage_management_uri,storage_id))
 
         with open("wf.xml",'w') as wfo:
