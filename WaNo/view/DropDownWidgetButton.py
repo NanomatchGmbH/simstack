@@ -3,7 +3,7 @@ from PySide.QtGui import QToolButton, QFontMetrics, QListWidgetItem, QMenu, \
 from PySide.QtCore import Qt, Signal
 
 
-class _DropDownWidget:
+class _DropDownWidget(object):
     def _set_widget(self):
         self._action.setDefaultWidget(self._widget)
         self.menu().addAction(self._action)
