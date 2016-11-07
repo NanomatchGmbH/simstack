@@ -420,6 +420,8 @@ class WaNoModelRoot(WaNoModelDictLike):
         filejsdl = JSDLtoXML.xml_datastaging_from_source(filename="rendered_wano.yml", overwrite=False,
                                                          source_uri="BFT:${STORAGE_ID}#%s/%s" % (
                                                          stageout_basedir, "rendered_wano.yml"))
+
+        #### TIMO HERE
         files.append(filejsdl)
 
         for filename in self.output_files:

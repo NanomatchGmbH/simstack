@@ -391,7 +391,7 @@ class ForEachModel(WFItemModel):
         self.is_wano = False
         self.editor = kwargs['editor']
         self.view = kwargs["view"]
-        self.itername = "ForEach"
+        self.itername = "ForEach_iterator"
         self.subwfmodel, self.subwfview = ControlFactory.construct("SubWorkflow",editor=self.editor,qt_parent=self.view, logical_parent=self.view.logical_parent,wf_root = self.wf_root)
         self.filelist = []
         self.name = "ForEach"
@@ -409,7 +409,9 @@ class ForEachModel(WFItemModel):
             basename = os.path.basename(myfile)
             filesets.append(WFtoXML.xml_fileset(base=globalpath,include=basename,exclude=""))
         swf = self.subwfmodel.render_to_simple_wf(submitdir,jobdir,path = path)
+        swf.attrib["Type"] = "LOOP_BODY"
         swf.attrib["Id"] = muuid_body
+        swf.attrib["IteratorName"] = self.itername
         return WFtoXML.xml_subwfforeach(IteratorName=self.name,IterSet=filesets,SubWorkflow=swf,Id=muuid)
 
     def assemble_files(self,path):
