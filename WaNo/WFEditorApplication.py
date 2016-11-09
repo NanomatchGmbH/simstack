@@ -171,7 +171,6 @@ class WFEditorApplication(QObject):
         #TODO factor out tests
 
         storage, querypath = self._extract_storage_path(path)
-
         if ok and not storage is None:
             #TODO use job manager?!
             storage_manager = self._unicore.get_storage_manager()
@@ -180,12 +179,36 @@ class WFEditorApplication(QObject):
             files = storage_manager.get_file_list(
                     storage_id=storage, path=querypath)
             self._view_manager.update_filesystem_model(path, files)
-            print("Got files: %s" % files)
+            print("Got (for path %s) files: %s" % (path,files))
 
-    def _on_fs_worflow_update_request(self, path):
-        self._logger.debug("Querying %s from Unicore Registry" % path)
-        # TODO
-        print("wf update requested...")
+    def _on_fs_worflow_update_request(self, wfid):
+        self._logger.debug("Querying %s from Unicore Registry" % wfid)
+        ok = True
+        files = []
+        #TODO factor out tests
+        if ok:
+            #TODO use job manager?!
+            wf_manager = self._unicore.get_workflow_manager()
+            wf = wf_manager.get_by_id(wfid)
+            wf.update()
+
+            job_manager = self._unicore.get_job_manager()
+            job_manager.update_list()
+
+            jobs = [job_manager.get_by_id(jobid) for jobid in wf.get_jobs()]
+
+            files = [{
+                        'id': job.get_id(),
+                        'name': job.get_name(),
+                        'type': 'j',
+                        'path': job.get_working_dir()
+                    } for job in jobs]
+            #print("jobs:\n\n\n\n%s\n\n\n" % job_manager.get_list())
+            print("Got files: %s" % files)
+            self._view_manager.update_job_list(files)
+            #"""
+
+        print("wf update requested... %s"%wfid)
 
     def _on_fs_directory_update_request(self, path):
         self._logger.debug("Querying %s from Unicore Registry" % path)
@@ -329,100 +352,6 @@ class WFEditorApplication(QObject):
             if not no_status_update:
                 self._set_unicore_disconnected()
 
-    def _test_wf_submit(self):
-        wf_manager = self._unicore.get_workflow_manager()
-        err, status, wf = wf_manager.create('test_storage')
-        print("err: %s, status: %s, wf_manager: %s" % (err, status, wf))
-        if not wf is None and not wf == '':
-            print("\n\nsending xml\n\n")
-            xml = '<s:Workflow xmlns:s="http://www.chemomentum.org/workflow/simple"' + \
-                '          xmlns:jsdl="http://schemas.ggf.org/jsdl/2005/11/jsdl" Id="TestWorkflow" >' + \
-                '' + \
-                '  <s:Documentation>' + \
-                '    <s:Comment>Simple diamond graph</s:Comment>' + \
-                '    <s:Name>TestWF</s:Name>' + \
-                '  </s:Documentation>' + \
-                '' + \
-                '  <s:Activity Id="date1" Type="JSDL">' + \
-                '   <s:JSDL>' + \
-                '      <jsdl:JobDescription>' + \
-                '        <jsdl:Application>' + \
-                '          <jsdl:ApplicationName>Date</jsdl:ApplicationName>' + \
-                '          <jsdl:ApplicationVersion>1.0</jsdl:ApplicationVersion>' + \
-                '        </jsdl:Application>' + \
-                '       <jsdl:DataStaging>' + \
-                '         <jsdl:FileName>stdout</jsdl:FileName>' + \
-                '         <jsdl:CreationFlag>overwrite</jsdl:CreationFlag>' + \
-                '         <jsdl:Target>' + \
-                '           <jsdl:URI>c9m:${WORKFLOW_ID}/date1.out</jsdl:URI>' + \
-                '         </jsdl:Target>' + \
-                '         </jsdl:DataStaging>' + \
-                '      </jsdl:JobDescription>' + \
-                '    </s:JSDL>' + \
-                '   </s:Activity>' + \
-                '' + \
-                '  <Activity Id="split" Type="Split"/>' + \
-                '' + \
-                '  <s:Activity Id="date2a" Type="JSDL">' + \
-                '   <s:JSDL>' + \
-                '      <jsdl:JobDescription>' + \
-                '        <jsdl:Application>' + \
-                '         <jsdl:ApplicationName>Date</jsdl:ApplicationName>' + \
-                '        </jsdl:Application>' + \
-                '       <jsdl:DataStaging>' + \
-                '         <jsdl:FileName>stdout</jsdl:FileName>' + \
-                '         <jsdl:CreationFlag>overwrite</jsdl:CreationFlag>' + \
-                '         <jsdl:Target>' + \
-                '           <jsdl:URI>c9m:${WORKFLOW_ID}/date2a.out</jsdl:URI>' + \
-                '         </jsdl:Target>' + \
-                '         </jsdl:DataStaging>' + \
-                '      </jsdl:JobDescription>' + \
-                '    </s:JSDL>' + \
-                '   </s:Activity>' + \
-                '' + \
-                '  <s:Activity Id="date2b" Type="JSDL">' + \
-                '   <s:JSDL>' + \
-                '      <jsdl:JobDescription>' + \
-                '        <jsdl:Application>' + \
-                '         <jsdl:ApplicationName>Date</jsdl:ApplicationName>' + \
-                '        </jsdl:Application>' + \
-                '       <jsdl:DataStaging>' + \
-                '         <jsdl:FileName>stdout</jsdl:FileName>' + \
-                '         <jsdl:CreationFlag>overwrite</jsdl:CreationFlag>' + \
-                '         <jsdl:Target>' + \
-                '           <jsdl:URI>c9m:${WORKFLOW_ID}/date2b.out</jsdl:URI>' + \
-                '         </jsdl:Target>' + \
-                '         </jsdl:DataStaging>' + \
-                '      </jsdl:JobDescription>' + \
-                '    </s:JSDL>' + \
-                '   </s:Activity>' + \
-                '' + \
-                '  <s:Activity Id="date3" Type="JSDL">' + \
-                '   <s:JSDL>' + \
-                '      <jsdl:JobDescription>' + \
-                '        <jsdl:Application>' + \
-                '         <jsdl:ApplicationName>Date</jsdl:ApplicationName>' + \
-                '        </jsdl:Application>' + \
-                '       <jsdl:DataStaging>' + \
-                '         <jsdl:FileName>stdout</jsdl:FileName>' + \
-                '         <jsdl:CreationFlag>overwrite</jsdl:CreationFlag>' + \
-                '         <jsdl:Target>' + \
-                '           <jsdl:URI>c9m:${WORKFLOW_ID}/date3.out</jsdl:URI>' + \
-                '         </jsdl:Target>' + \
-                '         </jsdl:DataStaging>' + \
-                '      </jsdl:JobDescription>' + \
-                '    </s:JSDL>' + \
-                '   </s:Activity>' + \
-                '' + \
-                '  <s:Transition Id="date1-split" From="date1" To="split"/>' + \
-                '  <s:Transition Id="split-date2a" From="split" To="date2a"/>' + \
-                '  <s:Transition Id="split-date2b" From="split" To="date2b"/>' + \
-                '  <s:Transition Id="date2b-date3" From="date2b" To="date3"/>' + \
-                '  <s:Transition Id="date2a-date3" From="date2a" To="date3"/>' + \
-                '' + \
-                '</s:Workflow>'
-            wf_manager.run(wf.split('/')[-1], xml)
-
     def _connect_unicore(self, index, no_status_update=False):
         success = False
         if not no_status_update:
@@ -558,12 +487,9 @@ class WFEditorApplication(QObject):
             #imports.add_import(filename,relpath)
 
         storage_uri = storage_manager.get_base_uri()
-        err, status, wf = wf_manager.create(storage_id)
+        err, status, wf = wf_manager.create(storage_id,submitname)
         workflow_id = wf.split("/")[-1]
-        #exit(0)
         storage_management_uri = storage_manager.get_storage_management_uri()
-
-        #xmlstring = etree.tostring(xml,pretty_print=False).decode("utf-8").replace("${WORKFLOW_ID}",workflow_id)
         xmlstring = etree.tostring(xml,pretty_print=False).decode("utf-8").replace("${WORKFLOW_ID}",workflow_id)
         xmlstring = xmlstring.replace("${STORAGE_ID}","%s%s"%(storage_management_uri,storage_id))
 
