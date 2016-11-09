@@ -32,6 +32,7 @@ class UnicoreStateFactory:
         """ Savely removes and returns a list.
         """
         def remove_list(self, key):
+            #TODO respect ref_count of list elements. How to handle ?!
             rv = None
             self.listslock.lockForWrite()
             if key in self.lists:
@@ -41,18 +42,42 @@ class UnicoreStateFactory:
             del(rv['lock'])
             return rv['list']
 
+        def __create_list_item(self, item):
+            return {'ref_count': 0, 'item': item}
+
+        def __create_list_items(self, items):
+            return [self.__create_list_item(items)] if len(items) <= 1 \
+                    else [self.__create_list_item(item) for item in items]
+
+        def __increment_list_ref_count(self, listitem):
+            listitem['ref_lock'].lockForWrite()
+            listitem['ref_count'] += 1
+            listitem['ref_lock'].unlock()
+
+        def __decrement_list_ref_count(self, listitem):
+            listitem['ref_lock'].lockForWrite()
+            listitem['ref_count'] -= 1
+            listitem['ref_lock'].unlock()
+
         def add_items_to_list(self, key, items):
-            rv = False
+            """
+            Returns: Tupple where the first element is a boolean indicating if
+            the operation was successful, the second and third element contain
+            the first respectively last index of the inserted elements.
+            """
+            first = -1
+            last = -1
             self.listslock.lockForRead()
             if key in self.lists:
                 lock = self.lists[key]['lock']
                 l    = self.lists[key]['list']
                 lock.lockForWrite()
-                l.extend([items] if len(items) <= 1 else items)
+                first = len(l)
+                l.extend(self.__create_list_items(items))
+                last = len(l) - 1
                 lock.unlock()
-                rv = True
             self.listslock.unlock()
-            return rv
+            return (first != -1 and last != -1, first, last)
 
         def get_list_iterator(self, key):
             self.listslock.lockForRead()
