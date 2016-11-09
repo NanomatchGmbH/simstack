@@ -484,6 +484,7 @@ class WFModel(object):
         # Name of the saved folder
         self.elementnames = []
         self.foldername = None
+        self.wf_name = "Unset"
         #Few Use Cases
         """
             Workflow containing Workflow:
@@ -538,8 +539,8 @@ class WFModel(object):
             transitions.append(transition)
             fromid = toid
             #out.write(ele.uuid + "\n")
-
-        wf = WFtoXML.xml_workflow(Transition=transitions,Activity=activities,SubWorkflow=swfs)
+        docs = WFtoXML.xml_documentation(Name=self.wf_name)
+        wf = WFtoXML.xml_workflow(Transition=transitions,Activity=activities,SubWorkflow=swfs,Documentation = docs)
         return wf
 
 
@@ -594,6 +595,7 @@ class WFModel(object):
 
     def read_from_disk(self,foldername):
         self.foldername = foldername
+        self.wf_name = os.path.basename(foldername)
         xml_filename = os.path.join(foldername,os.path.basename(foldername)) + ".xml"
         tree = etree.parse(xml_filename)
         root = tree.getroot()
