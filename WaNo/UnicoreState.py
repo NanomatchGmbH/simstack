@@ -90,6 +90,49 @@ class UnicoreStateFactory:
                 lock.unlock()
             self.listslock.unlock()
 
+        def get_list_index(self, listkey, index):
+            rv = None
+            index_in_list = False
+            if index >= 0:
+                self.listslock.lockForRead()
+                if listkey in self.lists:
+                    lock = self.lists[key]['lock']
+                    l    = self.lists[key]['list']
+                    lock.lockForRead()
+                    if index < len(l):
+                        rv = l[index]
+                        index_in_list = True
+                        self.__increment_list_ref_count(rv)
+                    lock.unlock()
+                self.listslock.unlock()
+
+            if not index_in_list:
+                raise IndexError("list index out of range")
+
+            return rv['item'] if not rv is None else None
+
+        def release_list_item_at(self, listkey, index, item):
+            done = False
+            index_in_list = False
+            if index >= 0:
+                self.listslock.lockForRead()
+                if listkey in self.lists:
+                    lock = self.lists[key]['lock']
+                    l    = self.lists[key]['list']
+                    lock.lockForRead()
+                    if index < len(l):
+                        index_in_list = True
+                        if l[index] == item:
+                            self.__decrement_list_ref_count(l[index])
+                    lock.unlock()
+                self.listslock.unlock()
+
+            if not index_in_list:
+                raise IndexError("list index out of range")
+
+            return done
+
+
         def get_value_no_lock(self, key):
             return self.value[key]
 
