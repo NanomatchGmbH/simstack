@@ -381,7 +381,7 @@ class WaNoModelRoot(WaNoModelDictLike):
     def prepare_files_submission(self,rendered_wano, basefolder):
         render_wano_filename = os.path.join(basefolder,"rendered_wano.yml")
         with open(render_wano_filename,'w') as outfile:
-            outfile.write(yaml.dump(rendered_wano,default_flow_style=False))
+            outfile.write(yaml.safe_dump(rendered_wano,default_flow_style=False))
 
         submit_script_filename = os.path.join(basefolder,"submit_command.sh")
         with open(submit_script_filename, 'w') as outfile:
