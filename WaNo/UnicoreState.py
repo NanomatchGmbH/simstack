@@ -329,13 +329,73 @@ class UnicoreStateFactory:
         def get_lock(self):
             return self.lock
     
+        def add_registry(self, base_uri, username,
+                state=UnicoreConnectionStates.DISCONNECTED):
+            tmp = {
+                    'base_uri': base_uri,
+                    'username': username,
+                    'state': state,
+                    'data_transfers': ProtectedIndexedList(),
+                    }
+            registry = ProtectedReaderWriterDict(tmp)
+            self._registries.get_writer_instance().set_value(base_uri, registry)
+            #TODO will del(tmp) delete its 'ProtectedList'?
+
+        # NOTE: Why is returning references to dict entries ok even though the
+        # lock is released imediatelly?
+        #
+        # This is because we return refernces to objects that are taking care
+        # of locking themselfs. Even if the caller of this function would still
+        # operate (they are all readers!) on these objects and the registry
+        # containing these objects is deleted during the operation, the returned
+        # object will not be deleted. The "Protected" classes don't do that.
+        # Readers can finish on recently expired data.
+        # If a caller stores the returned reference for a longer period of time,
+        # it is a mistake by the caller, not ours. :-)
+
+        def get_registry_state(self, base_uri):
+            """Returns a ProtectedDict object."""
+            return self._registries.get_reader_instance().get_value(base_uri)
+
+        def get_data_transfers_for_registry(self, base_uri):
+            """Returns a ProtectedIndexedList object."""
+            return self._registries.get_reader_instance().get_value(base_uri)\
+                    .get_reader_instance().get_value('data_transfers')
+
+        def add_data_transfer(self, base_uri, source, dest, storage,
+                state=UnicoreDataTransferStates.PENDING, total=-1, progress=0):
+            tmp = {
+                    'source': source,
+                    'dest': dest,
+                    'storage': storage,
+                    'state': state, # running, canceled, pending
+                    'total': total,
+                    'progress': progress,
+                    }
+            data_transfer = ProtectedReaderWriterDict(tmp)
+            transfers = self.get_data_transfers_for_registry(base_uri)
+            transfers.get_writer_instance().set_value(data_transfer)
+
         def __init__(self):
-            self.lock       = QReadWriteLock(QReadWriteLock.NonRecursive)
-            self.listslock  = QReadWriteLock(QReadWriteLock.NonRecursive)
-            self.values     = {}
-            self.lists      = {}
+            """
+            self._registries                        ProtectedReaderWriterDict
+                |-- registry                        ProtectedReaderWriterDict
+                |   |-- data_transfers              ProtectedIndexedList
+                |   |   |-- transfer                ProtectedReaderWriterDict
+            """
+            self._registries = ProtectedReaderWriterDict()
+    #TODO Idea: Add __enter__ / __exit__ methods for getter methods. This prevents
+    # storage of references.
 
     class __Reader:
+        """Note: we do not want to catch any errors. They should be passed to the user."""
+
+        def get_registry_state(self, base_uri):
+            return self._state.get_registry_state(base_uri).get_reader_instance()
+
+        def get_data_transfers_for_registry(self, base_uri):
+            return self._state.get_data_transfers_for_registry(base_uri).get_reader_instance()
+
         def get_dl_iterator(self):
             return self._state.get_list_iterator('dls')
 
@@ -343,8 +403,18 @@ class UnicoreStateFactory:
             self._state = state
 
     class __Writer:
+        """Note: we do not want to catch any errors. They should be passed to the user."""
+
+        def add_registry(self, base_uri, username, state=UnicoreConnectionStates.DISCONNECTED):
+            return self._state.add_registry(base_uri, username, state).get_writer_instance()
+
+        def add_data_transfer(self, base_uri, source, dest, storage,
+                state=UnicoreDataTransferStates.PENDING, total=-1, progress=0):
+            return self._state.add_data_transfer(self, base_uri, source, dest, storage,
+                state, total, progress).get_writer_instance()
+
         def __init__(self, state):
-            self._state = state
+            super(__Writer, self).__init__(state)
 
     @classmethod
     def __setup_instance(self, instance):
