@@ -261,6 +261,33 @@ class ProtectedReaderWriterDict(ReaderWriterInstance):
         self._writer = ProtectedReaderWriterDict._Writer(self._pdict)
         self._reader = ProtectedReaderWriterDict._Reader(self._pdict)
 
+class ProtectedReaderWriterIndexedList(ReaderWriterInstance):
+    class _Reader:
+        def get_value(self, key):
+            return self._list_instance.get_value(key)
+
+        def __iter__(self):
+            return self._list_instance.__iter__()
+
+        def __init__(self, instance):
+            self._list_instance = instance
+
+    class _Writer(_Reader):
+        def set_value(self, value):
+            return self._list_instance.set_value(value)
+
+        def del_value(self, key):
+            return self._list_instance.del_value(value)
+
+        def __init__(self, instance):
+            super(ProtectedReaderWriterIndexedList._Writer, self).__init__(instance)
+
+    def __init__(self, initial_dict={}):
+        super(ProtectedReaderWriterIndexedList, self).__init__()
+        self._list_instance = ProtectedIndexedList(initial_dict)
+        self._writer = ProtectedReaderWriterIndexedList._Writer(self._list_instance)
+        self._reader = ProtectedReaderWriterIndexedList._Reader(self._list_instance)
+
 UnicoreDataTransferStates = Enum(
         "DataTransferStates",
         """
@@ -348,7 +375,7 @@ class UnicoreStateFactory:
                     'base_uri': base_uri,
                     'username': username,
                     'state': state,
-                    'data_transfers': ProtectedIndexedList(),
+                    'data_transfers': ProtectedReaderWriterIndexedList(),
                     }
             registry = ProtectedReaderWriterDict(tmp)
             self._registries.get_writer_instance().set_value(base_uri, registry)
@@ -371,7 +398,7 @@ class UnicoreStateFactory:
             return self._registries.get_reader_instance().get_value(base_uri)
 
         def get_data_transfers_for_registry(self, base_uri):
-            """Returns a ProtectedIndexedList object."""
+            """Returns a ProtectedReaderWriterIndexedList object."""
             return self._registries.get_reader_instance().get_value(base_uri)\
                     .get_reader_instance().get_value('data_transfers')
 
@@ -393,7 +420,7 @@ class UnicoreStateFactory:
             """
             self._registries                        ProtectedReaderWriterDict
                 |-- registry                        ProtectedReaderWriterDict
-                |   |-- data_transfers              ProtectedIndexedList
+                |   |-- data_transfers              ProtectedReaderWriterIndexedList
                 |   |   |-- transfer                ProtectedReaderWriterDict
             """
             self._registries = ProtectedReaderWriterDict()
@@ -495,7 +522,7 @@ if __name__ == "__main__":
 
 
     executor = ThreadPoolExecutor(max_workers=1)
-    pindexed_list = ProtectedIndexedList( {'foo': 'bar'} )
+    pindexed_list = ProtectedReaderWriterIndexedList( {'foo': 'bar'} )
     plist = ProtectedList([1, 2, 3, 42])
     pdict = ProtectedReaderWriterDict({'list1': pindexed_list, 'list2': plist})
 
