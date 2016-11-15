@@ -236,16 +236,19 @@ class ProtectedReaderWriterDict(ReaderWriterInstance):
         self._writer = ProtectedReaderWriterDict._Writer(self._pdict)
         self._reader = ProtectedReaderWriterDict._Reader(self._pdict)
 
+UnicoreDataTransferStates = Enum(
+        "DataTransferStates",
+        """
+        PENDING
+        DOWNLOADING
+        CANCELED
+        """
+        )
 
 class UnicoreStateFactory:
     _instance = None
 
     class __UnicoreState:
-        def set_value(self, key, value):
-            self.write_lock()
-            self.values[key] = value
-            self.write_unlock()
-
         """ Adds a new list.
         In case an initial list is given, it will be added as a copy.
         This will prevent unsave changes.
@@ -263,35 +266,17 @@ class UnicoreStateFactory:
             self.listslock.unlock()
             return rv
 
-        """ Savely removes and returns a list.
-        """
         def remove_list(self, key):
-            #TODO respect ref_count of list elements. How to handle ?!
-            rv = None
-            self.listslock.lockForWrite()
-            if key in self.lists:
-                rv = self.lists[key]
-                del(self.lists[key])
-            self.listslock.unlock()
-            del(rv['lock'])
-            return rv['list']
-
-        def __create_list_item(self, item):
-            return {'ref_count': 0, 'item': item}
-
-        def __create_list_items(self, items):
-            return [self.__create_list_item(items)] if len(items) <= 1 \
-                    else [self.__create_list_item(item) for item in items]
-
-        def __increment_list_ref_count(self, listitem):
-            listitem['ref_lock'].lockForWrite()
-            listitem['ref_count'] += 1
-            listitem['ref_lock'].unlock()
-
-        def __decrement_list_ref_count(self, listitem):
-            listitem['ref_lock'].lockForWrite()
-            listitem['ref_count'] -= 1
-            listitem['ref_lock'].unlock()
+           """ Savely removes and returns a list. """
+           #TODO respect ref_count of list elements. How to handle ?!
+           rv = None
+           self.listslock.lockForWrite()
+           if key in self.lists:
+               rv = self.lists[key]
+               del(self.lists[key])
+           self.listslock.unlock()
+           del(rv['lock'])
+           return rv['list']
 
         def add_items_to_list(self, key, items):
             """
@@ -324,57 +309,10 @@ class UnicoreStateFactory:
                 lock.unlock()
             self.listslock.unlock()
 
-        def get_list_index(self, listkey, index):
-            rv = None
-            index_in_list = False
-            if index >= 0:
-                self.listslock.lockForRead()
-                if listkey in self.lists:
-                    lock = self.lists[key]['lock']
-                    l    = self.lists[key]['list']
-                    lock.lockForRead()
-                    if index < len(l):
-                        rv = l[index]
-                        index_in_list = True
-                        self.__increment_list_ref_count(rv)
-                    lock.unlock()
-                self.listslock.unlock()
-
-            if not index_in_list:
-                raise IndexError("list index out of range")
-
-            return rv['item'] if not rv is None else None
-
-        def release_list_item_at(self, listkey, index, item):
-            done = False
-            index_in_list = False
-            if index >= 0:
-                self.listslock.lockForRead()
-                if listkey in self.lists:
-                    lock = self.lists[key]['lock']
-                    l    = self.lists[key]['list']
-                    lock.lockForRead()
-                    if index < len(l):
-                        index_in_list = True
-                        if l[index] == item:
-                            self.__decrement_list_ref_count(l[index])
-                    lock.unlock()
-                self.listslock.unlock()
-
-            if not index_in_list:
-                raise IndexError("list index out of range")
-
-            return done
 
 
         def get_value_no_lock(self, key):
             return self.value[key]
-
-        def get_value(self, key):
-            self.read_lock()
-            v = self.value[key]
-            self.read_unlock()
-            return v
 
         def read_lock(self):
             self.lock.lockForRead()
