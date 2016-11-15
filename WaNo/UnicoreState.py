@@ -223,6 +223,16 @@ class ReaderWriterInstance:
     def get_writer_instance(self):
         raise NotImplementedError("Must be implemented in sub-class.")
 
+    def get_reader_instance(self):
+        return self._reader
+
+    def get_writer_instance(self):
+        return self._writer
+
+    def __init__(self):
+        self._writer = None
+        self._reader = None
+
 
 class ProtectedReaderWriterDict(ReaderWriterInstance):
     class _Reader:
@@ -245,19 +255,8 @@ class ProtectedReaderWriterDict(ReaderWriterInstance):
         def __init__(self, instance):
             super(ProtectedReaderWriterDict._Writer, self).__init__(instance)
 
-    #def _get_value(self, key):
-    #    self._registry.get_value(key)
-
-    #def _set_value(self, key, value):
-    #    self._registry.set_value(key, value)
-
-    def get_reader_instance(self):
-        return self._reader
-
-    def get_writer_instance(self):
-        return self._writer
-
     def __init__(self, initial_dict):
+        super(ProtectedReaderWriterDict, self).__init__()
         self._pdict = ProtectedDict(initial_dict)
         self._writer = ProtectedReaderWriterDict._Writer(self._pdict)
         self._reader = ProtectedReaderWriterDict._Reader(self._pdict)
