@@ -20,6 +20,7 @@ from WaNo.lib.pyura.pyura import JobManager
 from WaNo.lib.FileSystemTree import filewalker
 from WaNo.lib.CallableQThread import CallableQThread
 from WaNo.lib.TPCThread import TPCThread
+from WaNo.lib.BetterThreadPoolExecutor import BetterThreadPoolExecutor
 
 
 _AUTH_TYPES = Enum("AUTH_TYPES",
@@ -39,6 +40,7 @@ OPERATIONS = Enum("OPERATIONS",
     UPDATE_DIR_LIST
     DELETE_FILE
     DELETE_JOB
+    DOWNLOAD_FILE
     """,
     module=__name__
 )
@@ -217,7 +219,7 @@ class UnicoreWorker(TPCThread):
 
     def __init__(self, registry, logger):
         super(UnicoreWorker, self).__init__()
-        self._logger         = logger
+        self._logger        = logger
         self.registry       = registry
 
 class UnicoreUpload(threading.Thread):
@@ -426,6 +428,8 @@ class UnicoreConnector(CallableQThread):
             self.delete_file(*data['args'], callback=callback)
         elif operation == ops.DELETE_JOB:
             self.delete_job(*data['args'], callback=callback)
+        elif operation == ops.DOWNLOAD_FILE:
+            self.download_file(*data['args'], callback=callback)
         else:
             self.logger.error("Got unknown operation: %s" % ops(operation) \
                     if isinstance(operation, int) else str(operation))

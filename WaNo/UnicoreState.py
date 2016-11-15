@@ -1,7 +1,241 @@
 from PySide.QtCore import QReadWriteLock, QMutex
+import copy # for ProtectedDict and ProtectedList
+from enum import Enum
 
 class UnicoreStateValues:
     CONNECTION      = "connection"
+#from WaNo.lib.pyura.pyura import ConnectionState as UnicoreConnectionStates
+from lib.pyura.pyura import ConnectionState as UnicoreConnectionStates
+
+class ProtectedValue:
+    def __get_value(self, unlock=True):
+        v = None
+        self._lock.lockForWrite()
+        v = self._value
+        if unlock:
+            self._lock.unlock()
+        return v
+
+    def get_value(self):
+        return self.__get_value(unlock=True)
+
+    def change_value(self, value):
+        self._lock.lockForWrite()
+        self._value = value
+        self._lock.unlock()
+
+    def __init__(self, value):
+        self._lock = QReadWriteLock(QReadWriteLock.NonRecursive)
+        self._value = value
+
+class ProtectedRefCountedValue(ProtectedValue):
+    def __increment_list_ref_count(self):
+        self._ref_lock.lockForWrite()
+        self._ref_count += 1
+        self._ref_lock.unlock()
+
+    def __decrement_list_ref_count(self):
+        self._ref_lock.lockForWrite()
+        self._ref_count += 1
+        self._ref_lock.unlock()
+
+    def get_value(self):
+        v = super(ProtectedRefCountedValue, self).__get_value(unlock=False)
+        if not v is None:
+            self.__increment_list_ref_count()
+        self._lock.unlock()
+        return v
+
+    def release_value(self, value):
+        self._lock.lockForRead()
+        # test value, just to be shure we don't do something stupide...
+        if self._value == value:
+            self.__decrement_list_ref_count()
+        self._lock.unlock()
+
+    def __init__(self, value):
+        super(ProtectedRefCountedValue, self).__init__(value)
+        self._ref_lock = QReadWriteLock(QReadWriteLock.NonRecursive)
+        self._ref_count = 0
+
+#TODO class AutoProtectedValue:
+#    def __determine_required_protection(self, value):
+#        if type
+#    def __init__(self, value):
+#        self.
+
+class ProtectedList:
+    def __create_list_item(self, item):
+        return {'ref_count': 0, 'item': item}
+
+    def __create_list_items(self, items):
+            return [self.__create_list_item(items)] if len(items) <= 1 \
+                    else [self.__create_list_item(item) for item in items]
+
+    def get_list_index(self, listkey, index):
+        rv = None
+        index_in_list = False
+        if index >= 0:
+            self._lock.lockForRead()
+            if index < len(self._list):
+                rv = self._list[index]
+                index_in_list = True
+                self.__increment_list_ref_count(rv)
+            self._lock.unlock()
+
+        if not index_in_list:
+            raise IndexError("list index out of range")
+        return rv['item'] if not rv is None else None
+
+    def release_list_item_at(self, listkey, index, item):
+        done = False
+        index_in_list = False
+        if index >= 0:
+            self._lock.lockForRead()
+            if index < len(self._list):
+                index_in_list = True
+                if self._list[index] == item:
+                    self.__decrement_list_ref_count(self._list[index])
+            self._lock.unlock()
+
+        if not index_in_list:
+            raise IndexError("list index out of range")
+        return done
+
+    def add_items(self, items):
+        self._lock.lockForWrite()
+        self._list.extend(self.__create_list_items(items))
+        self._lock.unlock()
+
+    def __init__(self, initial_list=[]):
+        """
+        In case an initial list is given, it will be added as a deep copy.
+        This will prevent unsave changes.
+        """
+        self._list = copy.deepcopy(initial_list)
+        self._lock = QReadWriteLock(QReadWriteLock.NonRecursive)
+
+class ProtectedDict:
+
+    def _add_value(self, key, value):
+        """ Note: _Must_ hold self._lock! """
+        fail = None
+        try:
+            self._values[key] = value
+        except Exception as e:
+            fail = e
+        return fail
+
+    def set_value(self, key, value):
+        self._lock.lockForWrite()
+        fail = self._add_value(key, value)
+        self._lock.unlock()
+        if not fail is None:
+            raise fail
+
+    def get_value(self, key):
+        fail = None
+        self._lock.lockForRead()
+        try:
+            v = self._values[key]
+        except Exception as e:
+            fail = e
+        self._lock.unlock()
+        if not fail is None:
+            raise fail
+        return v
+
+    def __iter__(self):
+        self._lock.lockForRead()
+        for key in self._values:
+            yield key
+        self._lock.unlock()
+
+    def __init__(self, initial_dict={}):
+        """
+        In case an initial dict is given, it will be added as a deep copy.
+        This will prevent unsave changes.
+        """
+        self._values = copy.deepcopy(initial_dict)
+        self._lock = QReadWriteLock(QReadWriteLock.NonRecursive)
+
+class ProtectedIndexedList(ProtectedList):
+    """ Implements a list with persistent indices that would not change, even
+    if list elements are deleted or moved. """
+
+    def __create_new_index(self):
+        """Note: _Must_ hold self._lock!"""
+        index = 0
+        if len(self._values) >= 1:
+            index = max(self._values.keys()) + 1
+        return index
+
+    def __iter__(self):
+        """ Yields an index-value pair for each list element. """
+        self._lock.lockForRead()
+        for index, entry in self._values:
+            yield (index, value)
+        self._lock.unlock()
+
+    def set_value(self, value):
+        fail = None
+        self._lock.lockForWrite()
+        index = self.__create_new_index()
+        if index in self._values:
+            fail = KeyError("Key collision. Keys must be unique. This should never happen...")
+        else:
+            fail = self._add_value(index, value)
+        self._lock.unlock()
+        if not fail is None:
+            raise fail
+        return index
+
+    def __init__(self, initial_dict={}):
+        super(ProtectedIndexedList, self).__init__(initial_dict)
+
+class ReaderWriterInstance:
+    def get_reader_instance(self):
+        raise NotImplementedError("Must be implemented in sub-class.")
+
+    def get_writer_instance(self):
+        raise NotImplementedError("Must be implemented in sub-class.")
+
+
+class ProtectedReaderWriterDict(ReaderWriterInstance):
+    class _Reader:
+        def get_value(self, key):
+            return self._pdict_instance.get_value(key)
+
+        def __iter__(self):
+            return self._pdict_instance.__iter__()
+
+        def __init__(self, instance):
+            self._pdict_instance = instance
+
+    class _Writer(_Reader):
+        def set_value(self, key, value):
+            return self._pdict_instance.set_value(key, value)
+
+        def __init__(self, instance):
+            super(ProtectedReaderWriterDict._Writer, self).__init__(instance)
+
+    #def _get_value(self, key):
+    #    self._registry.get_value(key)
+
+    #def _set_value(self, key, value):
+    #    self._registry.set_value(key, value)
+
+    def get_reader_instance(self):
+        return self._reader
+
+    def get_writer_instance(self):
+        return self._writer
+
+    def __init__(self, initial_dict):
+        self._pdict = ProtectedDict(initial_dict)
+        self._writer = ProtectedReaderWriterDict._Writer(self._pdict)
+        self._reader = ProtectedReaderWriterDict._Reader(self._pdict)
+
 
 class UnicoreStateFactory:
     _instance = None
