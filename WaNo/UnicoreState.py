@@ -145,6 +145,20 @@ class ProtectedDict:
             raise fail
         return v
 
+    def del_value(self, key):
+       """ Savely removes and returns a value. """
+       rv = None
+       self._lock.lockForWrite()
+       if key in self._values:
+           # Why is this safe? - Because we either return a reference which will
+           # not be affected by del() or we return a simple build-in type which
+           # will be copied on assignment.
+           rv = self._values[key]
+           del(self._values[key])
+       self._lock.unlock()
+       return rv
+
+
     def __iter__(self):
         self._lock.lockForRead()
         for key in self._values:
@@ -190,6 +204,15 @@ class ProtectedIndexedList(ProtectedList):
             raise fail
         return index
 
+    def del_value(self, index):
+        rv = None
+        self._lock.lockForWrite()
+        if index in self._values:
+            rv = self._values[index]
+            del(self._values[index])
+        self._lock.unlock()
+        return rv
+
     def __init__(self, initial_dict={}):
         super(ProtectedIndexedList, self).__init__(initial_dict)
 
@@ -215,6 +238,9 @@ class ProtectedReaderWriterDict(ReaderWriterInstance):
     class _Writer(_Reader):
         def set_value(self, key, value):
             return self._pdict_instance.set_value(key, value)
+
+        def del_value(self, key):
+            return self._pdict_instance.del_value(key)
 
         def __init__(self, instance):
             super(ProtectedReaderWriterDict._Writer, self).__init__(instance)
@@ -265,18 +291,6 @@ class UnicoreStateFactory:
                 rv = True
             self.listslock.unlock()
             return rv
-
-        def remove_list(self, key):
-           """ Savely removes and returns a list. """
-           #TODO respect ref_count of list elements. How to handle ?!
-           rv = None
-           self.listslock.lockForWrite()
-           if key in self.lists:
-               rv = self.lists[key]
-               del(self.lists[key])
-           self.listslock.unlock()
-           del(rv['lock'])
-           return rv['list']
 
         def add_items_to_list(self, key, items):
             """
