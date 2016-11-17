@@ -365,6 +365,11 @@ class UnicoreStateFactory:
             return self._registries.get_reader_instance().get_value(base_uri)\
                     .get_reader_instance().get_value('data_transfers')
 
+        def get_data_transfer(self, base_uri, index):
+            return self._registries.get_reader_instance().get_value(base_uri)\
+                    .get_reader_instance().get_value('data_transfers')\
+                    .get_reader_instance().get_value(index)
+
         def add_data_transfer(self, base_uri, source, dest, storage,
                 state=UnicoreDataTransferStates.PENDING, total=-1, progress=0):
             tmp = {
