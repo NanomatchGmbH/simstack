@@ -22,6 +22,11 @@ from WaNo.lib.CallableQThread import CallableQThread
 from WaNo.lib.TPCThread import TPCThread
 from WaNo.lib.BetterThreadPoolExecutor import BetterThreadPoolExecutor
 
+from WaNo.UnicoreState import UnicoreDataTransferStates
+
+
+""" Number of data transfer workers per regisrtry. """
+MAX_DT_WORKERS_PER_REGISTRY = 3
 
 _AUTH_TYPES = Enum("AUTH_TYPES",
     """
@@ -223,30 +228,91 @@ class UnicoreWorker(TPCThread):
         self.registry       = registry
 
 class UnicoreUpload(threading.Thread):
-    def __update(self, uri, localfile, progress, total):
-        self.ft.update_progress(progress)
+    def run(self):
+        #storage, path = UnicoreWorker._extract_storage_path(self.dest_dir)
+
+        storage_manager = self._registry.get_storage_manager()
+        with self._status.get_reader_instance() as status:
+            path = status['dest']
+            local_file = status['source']
+            storage = status['storage']
+            remote_filepath = os.path.join(path, os.path.basename(local_file))
+
+            print("uploading '%s' to %s:%s" % (local_file, storage, path))
+            ret_status, err, json = storage_manager.upload_file(
+                    local_file,
+                    remote_filename=remote_filepath,
+                    storage_id=storage,
+                    callback=self.__on_upload_update)
+            print("status: %s, err: %s, json: %s" % (ret_status, err, json))
+
+    def __init__(self, registry, transfer, transfer_status):
+        super(UnicoreUpload, self).__init__(self, registry, transfer, transfer_status)
+
+class UnicoreDataTransfer:
+    def _update_transfer_status(self, uri, localfile, progress, total):
+        print("\t%6.2f (%6.2f / %6.2f)\t%s" % (progress / total * 100., progress,
+            total, uri))
+        self._status.set_multiple_values({
+                'total': total,
+                'progress': progress,
+                'state': UnicoreDataTransferStates.RUNNING
+            })
+        self._total = total
 
     def run(self):
-        storage, path = UnicoreWorker._extract_storage_path(self.dest_dir)
-        storage_manager = self.registry.get_storage_manager()
-        remote_filepath = os.path.join(path, os.path.basename(self.local_file))
+        raise NotImplementedError("Must be implemented in sub-class.")
 
-        #TODO do in future/Thread
-        print("uploading '%s' to %s:%s" % (self.local_file, storage, path))
-        status, err, json = storage_manager.upload_file(
-                self.local_file,
-                remote_filename=remote_filepath,
-                storage_id=storage,
-                callback=self.__on_upload_update)
-        print("status: %s, err: %s, json: %s" % (status, err, json))
-        #TODO request update when done
+    def _done_callback(self, result):
+        last_progress = self._status.get_value('progress')
+        finished = last_progress >= total * 0.99
+        self._status.set_multiple_values({
+                'total': total,
+                'progress': total if finished else last_progress,
+                'state': UnicoreDataTransferStates.DONE
+            })
 
-    def __init__(self, local_file, dest_dir, registry, logger):
-        super(UnicoreUpload, self).__init__()
-        self._logger  = logger
-        self.registry = registry
-        self.local_file = local_file
-        self.dest_dir = dest_dir
+    def cancel(self):
+        # TODO: concurrent.futures.Future.cancel():
+        # A future cannot be cancelled if it is running or has already completed.
+        #TODO lock!
+        if not self._future is None:
+            self._future.cancel()
+        self._canceled = True
+
+    def submit(self, executor):
+        # TODO: make sure, this is started only once. Must be locked
+        # TODO: make sure, this job was not cancled.
+        self._future = executor.submit(self.run)
+        executor.add_done_callback(self._future, self._done_callback)
+
+    def __init__(self, registry, transfer, transfer_status):
+        self._registry  = registry
+        self._transfer  = transfer
+        self._status    = status
+        self._future    = None
+        self._canceled  = False
+        self._total     = 0
+
+class UnicoreDownload(UnicoreDataTransfer):
+    def run(self):
+        #TODO ensure, that the registry is still connected
+        #storage, path = UnicoreWorker._extract_storage_path(from_path)
+        storage_manager = self._registry.get_storage_manager()
+
+        with self._status.get_reader_instance() as status:
+            ret_status, err = storage_manager.get_file(
+                    status['source'],
+                    status['dest'],
+                    storage_id=status['storage'],
+                    callback=self._update_transfer_status)
+        print("status: %s, err: %s" % (ret_status, err))
+
+        #TODO handle return values and return them.
+        return 0
+
+    def __init__(self, registry, transfer, transfer_status):
+        super(UnicoreDownload, self).__init__(self, registry, transfer, transfer_status)
 
 class UnicoreConnector(CallableQThread):
     error = Signal(str, int, int, name="UnicoreError")
