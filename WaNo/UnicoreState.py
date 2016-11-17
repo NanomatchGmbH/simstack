@@ -172,6 +172,12 @@ class ProtectedDict:
        self._lock.unlock()
        return rv
 
+    def __enter__(self):
+        self._lock.lockForRead()
+        return self._values
+
+    def __exit__(self, *unused):
+        self._lock.unlock()
 
     def __iter__(self):
         self._lock.lockForRead()
@@ -252,6 +258,12 @@ class ProtectedReaderWriterDict(ReaderWriterInstance):
     class _Reader:
         def get_value(self, key):
             return self._pdict_instance.get_value(key)
+
+        def __enter__(self):
+            return self._pdict.__enter__()
+
+        def __exit__(self, *unused):
+            self._pdict.__exit__(*unused)
 
         def __iter__(self):
             return self._pdict_instance.__iter__()
