@@ -136,6 +136,17 @@ class ProtectedDict:
         if not fail is None:
             raise fail
 
+    def set_multiple_values(self, key_value_tupple):
+        fail = None
+        self._lock.lockForWrite()
+        for key, value in key_value_tupple:
+            fail = self._add_value(key, value)
+            if not fail is None:
+                break
+        self._lock.unlock()
+        if not fail is None:
+            raise fail
+
     def get_value(self, key):
         fail = None
         self._lock.lockForRead()
@@ -251,6 +262,9 @@ class ProtectedReaderWriterDict(ReaderWriterInstance):
     class _Writer(_Reader):
         def set_value(self, key, value):
             return self._pdict_instance.set_value(key, value)
+
+        def set_multiple_values(self, key_value_tupple):
+            self._pdict_instance.set_multiple_values(key_value_tupple)
 
         def del_value(self, key):
             return self._pdict_instance.del_value(key)
