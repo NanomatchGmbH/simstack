@@ -421,7 +421,13 @@ class UnicoreConnector(CallableQThread):
             worker.start()
             self.logger.debug("Started worker thread for '%s'." % base_uri)
 
-        self.workers[base_uri] = {'worker': worker, 'registry': registry}
+        self.workers[base_uri] = {
+                'worker':                   worker,
+                'registry':                 registry,
+                'data_transfers':           {},
+                'data_transfer_executor':   BetterThreadPoolExecutor(
+                    max_workers=MAX_DT_WORKERS_PER_REGISTRY)
+                }
 
         self.logger.debug("Handing over to worker (%s)..." % str(worker))
         worker.connect(callback, username, password,
@@ -472,6 +478,28 @@ class UnicoreConnector(CallableQThread):
         worker = self._get_error_or_fail(base_uri)
         if not worker is None:
             worker.delete_job(callback, base_uri, job)
+
+    def download_file(self, base_uri, download, local_dest, storage, callback=(None, (), {})):
+        if not base_uri in self.workers:
+            # TODO emit error
+            return
+
+        #TODO treat callback.... required?
+
+        registry    = self.workers[base_uri]['registry']
+        transfers   = self.workers[base_uri]['data_transfers']
+        executor    = self.workers[base_uri]['data_transfer_executor']
+
+        index = self._unicore_status.add_data_transfer(
+                base_uri,
+                download,
+                local_dest,
+                storage)
+        transfer_status = self._unicore_status.get_data_transfer(
+                base_uri, index)
+
+        transfers[index] = UnicoreDownload(registry, transfer, transfer_status)
+        transfers[index].submit(executor)
 
     def unicore_operation(self, operation, data, callback=(None, (), {})):
         ops = OPERATIONS
