@@ -273,7 +273,7 @@ class ProtectedReaderWriterDict(ReaderWriterInstance):
 
     class _Writer(_Reader):
         def set_value(self, key, value):
-            return self._pdict_instance.set_value(key, value)
+            self._pdict_instance.set_value(key, value)
 
         def set_multiple_values(self, key_value_tupple):
             self._pdict_instance.set_multiple_values(key_value_tupple)
@@ -284,7 +284,7 @@ class ProtectedReaderWriterDict(ReaderWriterInstance):
         def __init__(self, instance):
             super(ProtectedReaderWriterDict._Writer, self).__init__(instance)
 
-    def __init__(self, initial_dict):
+    def __init__(self, initial_dict={}):
         super(ProtectedReaderWriterDict, self).__init__()
         self._pdict = ProtectedDict(initial_dict)
         self._writer = ProtectedReaderWriterDict._Writer(self._pdict)
@@ -321,8 +321,10 @@ UnicoreDataTransferStates = Enum(
         "DataTransferStates",
         """
         PENDING
-        DOWNLOADING
+        RUNNING
         CANCELED
+        FAILED
+        DONE
         """
         )
 
@@ -375,7 +377,7 @@ class UnicoreStateFactory:
                     }
             data_transfer = ProtectedReaderWriterDict(tmp)
             transfers = self.get_data_transfers_for_registry(base_uri)
-            transfers.get_writer_instance().set_value(data_transfer)
+            return transfers.get_writer_instance().set_value(data_transfer)
 
         def __init__(self):
             """
@@ -388,7 +390,7 @@ class UnicoreStateFactory:
     #TODO Idea: Add __enter__ / __exit__ methods for getter methods. This prevents
     # storage of references.
 
-    class __Reader:
+    class _Reader:
         """Note: we do not want to catch any errors. They should be passed to the user."""
 
         def get_registry_state(self, base_uri):
@@ -403,7 +405,7 @@ class UnicoreStateFactory:
         def __init__(self, state):
             self._state = state
 
-    class __Writer:
+    class _Writer(_Reader):
         """Note: we do not want to catch any errors. They should be passed to the user."""
 
         def add_registry(self, base_uri, username, state=UnicoreConnectionStates.DISCONNECTED):
@@ -415,7 +417,7 @@ class UnicoreStateFactory:
                 state, total, progress).get_writer_instance()
 
         def __init__(self, state):
-            super(__Writer, self).__init__(state)
+            super(UnicoreStateFactory._Writer, self).__init__(state)
 
     @classmethod
     def __get_instance(self):
@@ -430,7 +432,7 @@ class UnicoreStateFactory:
 
     @classmethod
     def get_writer(self):
-        return UnicoreStateFactory.__Writer(self.__get_instance())
+        return UnicoreStateFactory._Writer(self.__get_instance())
 
 
 
