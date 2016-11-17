@@ -304,74 +304,6 @@ class UnicoreStateFactory:
     _instance = None
 
     class __UnicoreState:
-        """ Adds a new list.
-        In case an initial list is given, it will be added as a copy.
-        This will prevent unsave changes.
-        """
-        def add_list(self, key, initial_list=[]):
-            rv = False
-            self.listslock.lockForWrite()
-            if not key in self.lists:
-                l = {
-                        'lock': QReadWriteLock(QReadWriteLock.NonRecursive),
-                        'list': initial_list.copy()
-                    }
-                self.lists[key] = l
-                rv = True
-            self.listslock.unlock()
-            return rv
-
-        def add_items_to_list(self, key, items):
-            """
-            Returns: Tupple where the first element is a boolean indicating if
-            the operation was successful, the second and third element contain
-            the first respectively last index of the inserted elements.
-            """
-            first = -1
-            last = -1
-            self.listslock.lockForRead()
-            if key in self.lists:
-                lock = self.lists[key]['lock']
-                l    = self.lists[key]['list']
-                lock.lockForWrite()
-                first = len(l)
-                l.extend(self.__create_list_items(items))
-                last = len(l) - 1
-                lock.unlock()
-            self.listslock.unlock()
-            return (first != -1 and last != -1, first, last)
-
-        def get_list_iterator(self, key):
-            self.listslock.lockForRead()
-            if key in self.lists:
-                lock = self.lists[key]['lock']
-                l    = self.lists[key]['list']
-                lock.lockForRead()
-                for i in l:
-                    yield i
-                lock.unlock()
-            self.listslock.unlock()
-
-
-
-        def get_value_no_lock(self, key):
-            return self.value[key]
-
-        def read_lock(self):
-            self.lock.lockForRead()
-    
-        def read_unlock(self):
-            self.lock.unlock()
-    
-        def write_lock(self):
-            self.lock.lockForWrite()
-    
-        def write_unlock(self):
-            self.lock.unlock()
-    
-        def get_lock(self):
-            return self.lock
-    
         def add_registry(self, base_uri, username,
                 state=UnicoreConnectionStates.DISCONNECTED):
             tmp = {
@@ -460,15 +392,10 @@ class UnicoreStateFactory:
             super(__Writer, self).__init__(state)
 
     @classmethod
-    def __setup_instance(self, instance):
-        instance.add_list('dls')
-    
-    @classmethod
     def __get_instance(self):
         #TODO mutex lock this!
         if UnicoreStateFactory._instance is None:
                 UnicoreStateFactory._instance = UnicoreStateFactory.__UnicoreState()
-                UnicoreStateFactory.__setup_instance(UnicoreStateFactory._instance)
         return UnicoreStateFactory._instance
 
     @classmethod
