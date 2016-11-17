@@ -4,8 +4,11 @@ from enum import Enum
 
 class UnicoreStateValues:
     CONNECTION      = "connection"
-#from WaNo.lib.pyura.pyura import ConnectionState as UnicoreConnectionStates
-from lib.pyura.pyura import ConnectionState as UnicoreConnectionStates
+
+try:
+    from WaNo.lib.pyura.pyura import ConnectionState as UnicoreConnectionStates
+except:
+    from lib.pyura.pyura import ConnectionState as UnicoreConnectionStates
 
 class ProtectedValue:
     def __get_value(self, unlock=True):
