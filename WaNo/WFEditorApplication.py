@@ -205,7 +205,8 @@ class WFEditorApplication(QObject):
                     } for job in jobs]
             #print("jobs:\n\n\n\n%s\n\n\n" % job_manager.get_list())
             print("Got files: %s" % files)
-            self._view_manager.update_job_list(files)
+
+            self._view_manager.update_filesystem_model(wfid,files)
             #"""
 
         print("wf update requested... %s"%wfid)

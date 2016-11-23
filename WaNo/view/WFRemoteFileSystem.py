@@ -93,6 +93,10 @@ class WFRemoteFileSystem(QWidget):
         elif not model_index is None and model_index.isValid():
             index_type = self.__fs_model.get_type(model_index)
 
+            if index_type == FSModel.HEADER_TYPE_JOB:
+                abspath = self.__fs_model.get_abspath(model_index)
+                #print("JP,abs", self._JOB_PATH, abspath)
+                #exit(0)
             update_list = [(model_index,
                 self._JOB_PATH if index_type == FSModel.HEADER_TYPE_JOB \
                         else self._WF_PATH if index_type == FSModel.HEADER_TYPE_WORKFLOW \
@@ -130,14 +134,21 @@ class WFRemoteFileSystem(QWidget):
                        #     index_type == FSModel.DATA_TYPE_FILE \
                        # else path
 
-        self.__current_requests.update( {abspath: index} )
+
+
+
+        if index_type == FSModel.DATA_TYPE_WORKFLOW:
+            abspath = self.__fs_model.get_id(index)
+
+        self.__current_requests.update({abspath: index})
         print("current_requests: %s" % self.__current_requests)
 
         print("Emitting request for %s." % abspath)
         if index_type == FSModel.DATA_TYPE_JOB:
             self.request_job_update.emit(abspath)
         elif index_type == FSModel.DATA_TYPE_WORKFLOW:
-            self.request_worflow_update.emit(abspath)
+            wf_id = self.__fs_model.get_id(index)
+            self.request_worflow_update.emit(wf_id)
         elif index_type == FSModel.DATA_TYPE_DIRECTORY:
             self.request_directory_update.emit(abspath)
         elif index_type == FSModel.DATA_TYPE_FILE:
