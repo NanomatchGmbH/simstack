@@ -73,7 +73,7 @@ class WFRemoteFileSystem(QWidget):
                         ) for i in subelements]
 
                 self.__fs_model.insertDataRows(0, entries, index)
-            print(subelements)
+            #print(subelements)
         else:
             print("Path '%s' not in current_requests." % filePath)
 

@@ -266,7 +266,6 @@ class WFItemModel(object):
         return
 
 
-#Todo: hook up render, test, end
 class SubWFModel(WFItemModel,WFItemListInterface):
     def __init__(self,*args,**kwargs):
         WFItemListInterface.__init__(self,*args,**kwargs)
@@ -380,6 +379,85 @@ class SubWFModel(WFItemModel,WFItemListInterface):
             else:
                 root.append(ele.model.save_to_disk(my_foldername))
         return root
+
+class ParallelModel(WFItemModel):
+    def __init__(self,*args,**kwargs):
+        #super(ForEachModel,self).__init__(*args,**kwargs)
+        super(ParallelModel, self).__init__()
+        self.wf_root = kwargs["wf_root"]
+
+        self.is_wano = False
+        self.editor = kwargs['editor']
+        self.view = kwargs["view"]
+        self.numbranches = 1
+        self.subwf_models = []
+        self.subwf_views = []
+        subwfmodel, subwfview = ControlFactory.construct("SubWorkflow",editor=self.editor,qt_parent=self.view, logical_parent=self.view.logical_parent,wf_root = self.wf_root)
+        self.subwf_models.append(subwfmodel)
+        self.subwf_views.append(subwfview)
+        self.name = "Parallel"
+
+
+    def render_to_simple_wf(self,submitdir,jobdir,path = ""):
+        split_activity = WFtoXML.xml_split()
+        splitid = split_activity.attrib["Id"]
+        transitions = []
+        swfs = []
+        for swfm in self.subwf_models:
+            swf_xml = swfm.render_to_simple_wf(submitdir,jobdir,path = path)
+            swf_id = swf_xml.attrib["Id"]
+            transitions.append(WFtoXML.xml_transition(From=splitid,To=swf_id))
+            swfs.append(swf_xml)
+
+        return WFtoXML.xml_subworkflow(transitions=transitions,SubWorkflow=swfs)
+
+        #-> self.subwfmodel.render_to_simple_wf(submitdir,jobdir,path = path)
+        #-> return WFtoXML.xml_subwfforeach(IteratorName=self.name,IterSet=filesets,SubWorkflow=swf,Id=muuid)
+
+    def add(self):
+        subwfmodel, subwfview = ControlFactory.construct("SubWorkflow",editor=self.editor,qt_parent=self.view, logical_parent=self.view.logical_parent,wf_root = self.wf_root)
+        self.subwf_models.append(subwfmodel)
+        self.subwf_views.append(subwfview)
+
+    def deletelast(self):
+        if len(self.subwf_views) <= 1:
+            return
+        self.subwf_views[-1].deleteLater()
+        self.subwf_views.pop()
+        self.subwf_models.pop()
+
+    def assemble_files(self,path):
+        myfiles = []
+        for swfm in self.subwf_models:
+            for otherfile in swfm.assemble_files(path):
+                myfiles.append(os.path.join(path, self.name, otherfile))
+        return myfiles
+
+    def save_to_disk(self, foldername):
+        attributes = {"name": self.name, "type": "Parallel"}
+        root = etree.Element("WFControl", attrib=attributes)
+        my_foldername = foldername
+        # TODO revert changes in filesystem in case instantiate_in_folder fails
+        #root.append(self.subwfmodel.save_to_disk(my_foldername))
+        for swf in self.subwf_models:
+            etree.SubElement(root,swf.save_to_disk(foldername))
+
+        return root
+
+    def read_from_disk(self, full_foldername, xml_subelement):
+        for child in xml_subelement:
+            if child.tag != "WFControl":
+                continue
+            if child.attrib["type"] != "SubWorkflow":
+                continue
+            subwfmodel,subwfview = ControlFactory.construct("SubWorkflow", qt_parent=self.view, logical_parent=self.view,editor=self.editor,wf_root = self.wf_root)
+            name = child.attrib["name"]
+
+            subwfview.setText(name)
+            subwfmodel.read_from_disk(full_foldername=full_foldername,xml_subelement=child)
+            self.subwf_models.append(subwfmodel)
+            self.subwf_views.append(subwfview)
+
 
 
 class ForEachModel(WFItemModel):
@@ -789,10 +867,6 @@ class SubWorkflowView(QtGui.QFrame):
     def sizeHint(self):
         return QtCore.QSize(max(self.minimum_width,self.my_width),max(self.my_height,self.minimum_height))
 
-    #def sizeHint(self):
-    #    print("SIZEHINT1")
-    #    return QtCore.QSize(500,500)
-
     def relayout(self):
         self.place_elements()
 
@@ -1017,145 +1091,9 @@ class WorkflowView(QtGui.QFrame):
         self.relayout()
 
 
-
-
-class WFBaseWidget(QtGui.QFrame):
-    def __init__(self, editor, parent=None):
-        super(WFBaseWidget, self).__init__(parent)
-        self.setStyleSheet("background: " + widgetColors['Base'])
-        self.logger = logging.getLogger('WFELOG')
-        self.editor = editor
-        self.setAcceptDrops(True)
-        self.buttons = []
-        self.autoResize = False
-        self.topWidget = False
-        self.embeddedIn = None
-        self.myName = "AbstractWFTabsWidget"
-        self.elementSkip = 20    # distance to skip between elements
-
-    def clear(self):
-        for e in self.buttons:
-            e.clear()
-
-        for c in self.children():
-            c.deleteLater()
-
-        self.buttons = []
-
-    def removeElement(self,element):
-        pass
-        # remove element both from the buttons and child list
-        try:
-            element.close()
-            self.buttons.remove(element)
-            self.children().remove(element)
-            self.placeElements()
-            if len(self.buttons) == 0 and \
-                hasattr(self.parent,'removePanel'):  # maybe remove the whole widget ?
-                self.parent().removePanel(self)
-        except IndexError:
-            print ("Removing Element ",element.text()," from WFBaseWidget",self.text())
-
-    def openWaNoEditor(self,wanoWidget):
-        self.editor.openWaNoEditor(wanoWidget)
-
-    def get_wano_variables(self):
-        paths = []
-        for button in self.buttons:
-            #make sure everything is constructed at this point:
-            #NOP for already constructed
-                #if button.
-            if button.is_wano:
-                button.construct_wano()
-        for button in self.buttons:
-            if button.is_wano:
-                paths.extend(button.wano_model.wano_walker_paths())
-
-        if not self.topWidget:
-            paths.extend(self.parent().get_wano_variables())
-        return paths
-
-    def sizeHint(self):
-        if self.topWidget:
-            s = QtCore.QSize(self.width(),self.height())
-        else:
-            s = QtCore.QSize(self.parent().width()-50,self.height())
-        return s
-
-    def xml(self,name="Untitled"):
-        ee =  etree.Element(mapClassToTag(self.__class__.__name__),name=name)
-        for e in self.buttons:
-            if e.text() != "Start":
-                ee.append(e.xml())
-        return ee
-
-    def remove(self,element):
-        print("wff,remove")
-        self.editor.remove(element)
-
-    def dropEvent(self, e):
-
-        super(WFBaseWidget,self).dropEvent(e)
-        WFWorkflowWidget.hasChanged()
-        position = e.pos()
-        sender   = e.source()
-
-        controlWidgetNames = ["While","If","ForEach","For","Parallel"]
-        controlWidgetClasses = [ "WF"+a+"Widget" for a in controlWidgetNames]
-        if type(sender) is WFWaNoWidget:
-            sender.move(e.pos())
-            sender.setParent(self)
-            self.placeElementPosition(sender)
-        elif type(sender).__name__ in controlWidgetClasses:
-            sender.move(e.pos())
-            sender.setParent(self)
-            self.placeElementPosition(sender)
-            sender.placeElements() # place all the buttons
-        else:
-            item = sender.selectedItems()[0]
-            text = item.text()
-
-            # make a new widget
-            if text in controlWidgetNames:
-                btn = eval("WF"+text+"Widget")(self.editor,self) #  WFWhileWidget(self)
-                btn.move(e.pos())
-                btn.show()
-            else:
-                if hasattr(item,'WaNo'):
-                    btn = WFWaNoWidget(text,item.WaNo,self)
-                else:
-                    btn = WFWaNoWidget(text,None,self)
-                btn.move(e.pos())
-                btn.show()
-            self.placeElementPosition(btn)
-        e.accept()
-        self.update()
-
-    def parse(self,xml):
-        for c in xml:
-            self.logger.debug("WFBaseWidget parse" +c.tag)
-            if c.tag == 'WaNo':
-                w = WaNo(c)
-                e = WFWaNoWidget(w.name,w,self)
-            else:
-                e = eval("WF"+c.tag+"Widget")(self.editor,self)
-                e.parse(c)
-            self.buttons.append(e)
-            e.show()
-        self.placeElements()
-
-
-    def gatherExports(self,wano,varExp,filExp,waNoNames):
-        for b in self.buttons:
-            if b.gatherExports(wano,varExp,filExp,waNoNames):
-                return True
-        return False
-
-    def text(self):
-        return self.myName
-
 class WFTabsWidget(QtGui.QTabWidget):
     workflow_saved = Signal(bool, str, name="WorkflowSaved")
+    changedFlag = False
 
     def __init__(self, parent):
         super(WFTabsWidget, self).__init__(parent)
@@ -1197,8 +1135,8 @@ class WFTabsWidget(QtGui.QTabWidget):
         return scroll,wf_model,wf
 
     def clear(self):
-        print ("Workflow has changed ? ",WFWorkflowWidget.changedFlag)
-        if WFWorkflowWidget.changedFlag:
+        #print ("Workflow has changed ? ",WFWorkflowWidget.changedFlag)
+        if self.changedFlag:
             reply = QtGui.QMessageBox(self)
             reply.setText("The document has been modified.")
             reply.setInformativeText("Do you want to save your changes?")
@@ -1211,7 +1149,7 @@ class WFTabsWidget(QtGui.QTabWidget):
             if ret == QtGui.QMessageBox.Save:
                 self.save()
         self.wf.clear()
-        WFWorkflowWidget.changedFlag = False
+        self.changedFlag = False
         self.tabWidget.setTabText(0,'Untitled')
 
     def markWFasChanged(self):
@@ -1323,7 +1261,7 @@ class WFTabsWidget(QtGui.QTabWidget):
 
 #
 #  editor is the workflow editor that can open/close the WaNo editor
-#   
+#
 class WFFileName:
     def __init__(self):
         self.dirName = '.'
@@ -1332,56 +1270,6 @@ class WFFileName:
     def fullName(self):
         return os.path.join(self.dirName , self.name + '.' + self.ext)
 
-class WFWorkflowWidget(WFBaseWidget):
-    changedFlag     = False
-    activeTabWidget = None
-
-
-    def __init__(self, editor,  parent):
-        super(WFWorkflowWidget, self).__init__(editor,parent)
-        self.acceptDrops()
-        self.topWidget  = True
-        self.autoResize = True
-        self.parent = parent
-        self.myName = "WFWorkflowWidget"
-        self.style_sheet_without_background = "background-color: " + widgetColors['MainEditor'] + """ ;
-                              %s
-                              background-repeat: no-repeat;
-                              background-attachment: fixed;
-                              background-position: center;  """
-        self.background_drawn = True
-        script_path = os.path.dirname(os.path.realpath(__file__))
-        media_path = os.path.join(script_path,"..","Media")
-
-        imagepath = os.path.join(media_path,"Logo_NanoMatch200.png")
-        self.setStyleSheet(self.style_sheet_without_background % "background-image: url(%s) ;" %imagepath)
-
-        self.setMinimumWidth(300)
-        self.setFrameStyle(QtGui.QFrame.WinPanel | QtGui.QFrame.Sunken)
-
-    def recPlaceElements(self):
-        if self.background_drawn:
-            self.setStyleSheet(self.style_sheet_without_background %"")
-            self.background_drawn = False
-        ypos = max(self.placeOwnButtons(), self.parent.height())
-        self.setFixedHeight(ypos)
-
-    @staticmethod
-    def hasChanged():
-        logger = logging.getLogger('WFELOG')
-        logger.info("WorkFlow has changed")
-        WFWorkflowWidget.changedFlag=True
-        if WFWorkflowWidget.activeTabWidget != None:
-            tt = WFWorkflowWidget.activeTabWidget.tabText(0)
-            if tt[-1] != '*':
-                tt += '*'
-                WFWorkflowWidget.activeTabWidget.setTabText(0,tt)
-
-    @staticmethod
-    def unChanged():
-        logger = logging.getLogger('WFELOG')
-        logger.info("WorkFlow has changed")
-        WFWorkflowWidget.changedFlag=True
 
 class WFControlWithTopMiddleAndBottom(QtGui.QFrame):
     def __init__(self,*args,**kwargs):
@@ -1467,7 +1355,7 @@ class WFControlWithTopMiddleAndBottom(QtGui.QFrame):
     def setText(self, text):
         self.model.name = text
 
-3
+
 class ForEachView(WFControlWithTopMiddleAndBottom):
     def __init__(self,*args,**kwargs):
         super(ForEachView,self).__init__(*args,**kwargs)
@@ -1535,286 +1423,76 @@ class ForEachView(WFControlWithTopMiddleAndBottom):
         self.dontplace=False
 
 
-    def _target_tracker(self,event):
-        self.newparent = event
-
-    def mouseMoveEvent(self, e):
-        if e.buttons() != QtCore.Qt.LeftButton:
-            return
-
-        #self.parent().removeElement(self)
-        mimeData = QtCore.QMimeData()
-        self.drag = QtGui.QDrag(self)
-        self.drag.setMimeData(mimeData)
-        self.drag.setHotSpot(e.pos() - self.rect().topLeft())
-        #self.move(e.globalPos())
-        self.drag.targetChanged.connect(self._target_tracker)
-        self.newparent = self.parent()
-        dropAction = self.drag.start(QtCore.Qt.MoveAction)
-
-        #In case the target of the drop changed we are outside the workflow editor
-        #In that case we would like to remove ourselves
-        if (self.newparent != self.parent()):
-            self.parent().removeElement(self)
-
-
-class WFControlWidget(QtGui.QFrame):
-    def __init__(self, editor, parent=None):
-        super(WFControlWidget, self).__init__(parent) 
-        self.logger = logging.getLogger('WFELOG')
-        self.editor = editor
-      
+class ParallelView(WFControlWithTopMiddleAndBottom):
+    def __init__(self,*args,**kwargs):
+        super(ParallelView,self).__init__(*args,**kwargs)
+        self.dontplace = False
+        self.splitter = QtGui.QSplitter(QtCore.Qt.Horizontal)
         self.is_wano = False
-        self.setFrameStyle(QtGui.QFrame.Panel)
-        self.setStyleSheet("""
-                           QFrame {
-                            border: 2px solid green;
-                            border-radius: 4px;
-                            padding: 2px;
-                            }
-                                QPushButton {
-                                 background-color: %s
-                             }
-                             QPushButton:hover {
-                                 background-color: %s;
 
-                             }
+    def add_new(self):
+        self.model.add()
+        self.place_elements()
 
-                           background: %s
-                           """ % (widgetColors['ButtonColor'],widgetColors['Control'],widgetColors['Control'])
-                           )
-        self.setAcceptDrops(True)
+    def delete(self):
+        self.model.deletelast()
+        self.place_elements()
 
+    def get_top_widget(self):
+        tw = QtGui.QWidget()
+        hor_layout = QtGui.QHBoxLayout()
+        a = QtGui.QPushButton('Add additional parallel pane')
+        a.clicked.connect(self.add_new)
+        b = QtGui.QPushButton('Remove pane')
+        b.clicked.connect(self.delete)
+        hor_layout.addWidget(a)
+        hor_layout.addWidget(b)
+        tw.setLayout(hor_layout)
+        return tw
 
+    def init_from_model(self):
+        super(ParallelView,self).init_from_model()
+        for view in self.model.subwf_views:
+            self.splitter.addWidget(view)
 
-        self.layout    = QtGui.QVBoxLayout()
-        
-        noPar=self.makeTopLine()
-        self.wf = []
-        self.hidden = []
-        self.bottomLayout = QtGui.QHBoxLayout()
-        self.elementSkip = 0 
-        for i in range(noPar):
-            wf = WFBaseWidget(editor,self)
-            self.elementSkip = max(self.elementSkip,wf.elementSkip)
-            wf.myName = self.myName + ("WF%i" % i)
-            wf.setFrameStyle(QtGui.QFrame.WinPanel | QtGui.QFrame.Sunken) 
-            wf.autoResize = True
-            self.wf.append(wf)
-            if self.isVisible:
-                self.bottomLayout.addWidget(wf)
-            
-        self.layout.addLayout(self.topLineLayout)
-        self.layout.addLayout(self.bottomLayout)
-        
-        self.setLayout(self.layout)
-        self.show()
+    def get_middle_widget(self):
+        return self.splitter
 
-    def get_wano_variables(self):
-        pass
-    def construct_wano(self):
-        pass
-    
-    def clear(self):
-        for w in self.wf:
-            w.clear()
-            w.deleteLater()
-    
-    def gatherExports(self,wano,varExp,filExp,waNoNames):
-        self.logger.error('gather exports for control elements not implemented')
-        pass
-    
-    def parse(self,xml):
-        print ("Unknown FunctionXXX")
-        pass 
-
-    def toggleVisible(self):
-        if self.isVisible: # remove widget from bottomlayout
-            for w in self.wf:
-                self.bottomLayout.takeAt(0)
-                w.setParent(None)
-            self.hidden = self.wf
-            self.wf = []
-        else:
-            for w in self.hidden:
-                self.bottomLayout.addWidget(w)
-                w.show()
-            self.wf = self.hidden
-            self.hidden = []
-          
-        self.recPlaceElements()
-        self.bottomLayout.update()
-        self.update()
-        self.isVisible = not self.isVisible
-        
-    def text(self):
-        return self.myName 
-    
-    def placeElements(self):
-        print ("Place Elements",self.text())
-        for w in self.wf:
-            w.placeElements()
-        
-    def recPlaceElements(self): 
-        # redo your own buttons and then do the parent
-        ypos = 0 
-        if len(self.wf) > 0:
-            for w in self.wf:
-                ypos=max(ypos,w.placeOwnButtons())
-            #print ("WFControlElement Child Height:",ypos)
-            ypos = max(ypos,2*self.elementSkip)
-            self.setFixedHeight(ypos+2.25*self.elementSkip) 
-            for w in self.wf:
-                w.setFixedHeight(ypos) 
-        else:
-            self.setFixedHeight(50)
-        self.update()  
-        self.parent().recPlaceElements()
-                  
     def sizeHint(self):
-        hh = max(self.height(),100)
-        s = QtCore.QSize(self.parent().width()-50,hh) 
-        return s        
-    
-    def mouseMoveEvent(self, e):
-        if e.buttons() == QtCore.Qt.LeftButton:   
-            self.parent().removeElement(self)
-            mimeData = QtCore.QMimeData()
-            drag = QtGui.QDrag(self)
-            drag.setMimeData(mimeData)
-            drag.setHotSpot(e.pos() - self.rect().topLeft())
-            self.move(e.globalPos())
-            dropAction = drag.start(QtCore.Qt.MoveAction)
 
-class WFWhileWidget(WFControlWidget):
-    def __init__(self, editor,  parent=None):
-        super(WFWhileWidget, self).__init__(editor,  parent)      
-        
-    def makeTopLine(self):
-        self.myName = 'While'
-        self.topLineLayout = QtGui.QHBoxLayout()
-        b = QtGui.QPushButton(self.myName)
-        b.clicked.connect(self.toggleVisible)
-        self.topLineLayout.addWidget(b)  
-        self.topLineLayout.addWidget(QtGui.QLineEdit('condition'))
-        return 1
-    
-class WFIfWidget(WFControlWidget):
-    def __init__(self, editor,  parent=None):
-        super(WFIfWidget, self).__init__(editor,  parent)      
-        
-    def makeTopLine(self):
-        self.myName = 'If'
-        self.topLineLayout = QtGui.QHBoxLayout()
-        b = QtGui.QPushButton(self.myName)
-        b.clicked.connect(self.toggleVisible)
-        self.topLineLayout.addWidget(b)  
-        self.topLineLayout.addWidget(QtGui.QLineEdit('condition'))
-        return 2
+        if self.model is not None:
+            maxheight = 0
+            width = 0
+            for v in self.model.subwf_views:
+                sh = v.sizeHint()
+                maxheight = max(maxheight,sh.height())
+                width += sh.width()
 
+            size = QtCore.QSize(width,maxheight)
+            size += QtCore.QSize(50,60)
+            if size.width() < 300:
+                size.setWidth(300)
+            return size
+        else:
+            return QtCore.QSize(200,100)
 
+    def place_elements(self):
+        if not self.dontplace:
+            if self.model is not None:
+                self.init_from_model()
+                self.dontplace = True
+                #self.model.subwfview.place_elements()
+            self.adjustSize()
+            self.parent().place_elements()
 
-
-class WFForEachWidget(WFControlWidget):
-    def __init__(self, editor,  parent=None):
-        super(WFForEachWidget, self).__init__(editor,  parent)      
-        
-    def makeTopLine(self):
-        self.myName = 'ForEach'
-        self.topLineLayout = QtGui.QHBoxLayout()
-        b = QtGui.QPushButton(self.myName)
-        b.clicked.connect(self.toggleVisible)
-        self.topLineLayout.addWidget(b)   
-        self.topLineLayout.addWidget(QtGui.QLineEdit('Variable Name'))
-        self.list_of_variables = QtGui.QLineEdit('')
-        self.topLineLayout.addWidget(self.list_of_variables)
-        self.open_variables = MultiselectDropDownList(self,text="Import")
-        self.open_variables.itemSelectionChanged.connect(self.onItemSelectionChange)
-        self.open_variables.connect_workaround(self._load_variables)
-        self.topLineLayout.addWidget(self.open_variables)
-        return 1
-
-    def _load_variables(self):
-        parent = self.parent()
-        while not parent.topWidget:
-            parent = parent.parent()
-        vars = parent.get_wano_variables()
-        self.open_variables.set_items(vars)
-
-    def onItemSelectionChange(self):
-        self.list_of_variables.setText(" ".join(self.open_variables.get_selection()))
-
-
-class WFParallelWidget(WFControlWidget):
-    def __init__(self, editor, parent=None):
-        super(WFParallelWidget, self).__init__(editor,  parent)      
-        
-    def makeTopLine(self):
-        self.myName = 'Parallel'
-        self.topLineLayout = QtGui.QHBoxLayout()
-        b = QtGui.QPushButton(self.myName)
-        b.clicked.connect(self.toggleVisible)
-        self.topLineLayout.addWidget(b)  
-        a = QtGui.QPushButton('Add')
-        a.clicked.connect(self.addWF)
-        self.topLineLayout.addWidget(a) 
-        return 2
-    
-    #----------------------------------------------------------------------
-    def removePanel(self,panel):
-        """"""
-        if self.bottomLayout.count() > 2: # 2 panels min
-            print ("remove panel",panel.text())
-            try:
-                index = self.bottomLayout.indexOf(panel)
-            except IndexError:
-                print ("Error Panel not found",panel.text())
-            
-            print ("Index",index)
-            if self.isVisible:
-                self.wf.remove(panel)
-            else:
-                self.hidden.remove(panel)
-            widget = self.bottomLayout.takeAt(index).widget()
-            widget.setParent(None)
-            if widget is not None: 
-                # widget will be None if the item is a layout
-                widget.deleteLater()
-            
-    
-    def addWF(self):
-        if not self.isVisible:
-            self.toggleVisible()
-        wf = WFBaseWidget(self.editor,self)
-        self.elementSkip = max(self.elementSkip,wf.elementSkip)
-        wf.myName = self.myName + "WF" + str(self.bottomLayout.count())
-        wf.setFrameStyle(QtGui.QFrame.WinPanel | QtGui.QFrame.Sunken) 
-        wf.autoResize = True
-        self.wf.append(wf)       
-        self.bottomLayout.addWidget(wf)
-        self.placeElements()
-        
- 
-    def parse(self,xml):
-        count = 0
-        for c in xml:      
-            if c.tag != 'Base':
-                self.logger.error("Found Tag ",c.tag, " in control block")
-            else:
-                if count > 2:
-                    self.addWF() 
-                self.wf[count].parse(c)
-                count += 1
-        if count != len(self.wf):
-            self.logger.error("Not enough base widgets in control element")
+        self.dontplace=False
+        self.adjustSize()
 
 
 class ControlFactory(object):
     n_t_c = {
         "ForEach" : (ForEachModel,ForEachView),
-        "While" : (WFWhileWidget,None),
-        "If": (WFIfWidget,None),
-        "Parallel": (WFParallelWidget, None),
+        "Parallel": (ParallelModel, ParallelView),
         "SubWorkflow": (SubWFModel,SubWorkflowView)
     }
     @classmethod
