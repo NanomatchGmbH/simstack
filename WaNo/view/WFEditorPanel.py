@@ -402,6 +402,7 @@ class ParallelModel(WFItemModel):
         split_activity = WFtoXML.xml_split()
         splitid = split_activity.attrib["Id"]
         transitions = []
+        transitions.append(split_activity)
         swfs = []
         for swfm in self.subwf_models:
             swf_xml = swfm.render_to_simple_wf(submitdir,jobdir,path = path)
@@ -409,7 +410,7 @@ class ParallelModel(WFItemModel):
             transitions.append(WFtoXML.xml_transition(From=splitid,To=swf_id))
             swfs.append(swf_xml)
 
-        return WFtoXML.xml_subworkflow(transitions=transitions,SubWorkflow=swfs)
+        return WFtoXML.xml_subworkflow(Transition=transitions,SubWorkflow=swfs)
 
         #-> self.subwfmodel.render_to_simple_wf(submitdir,jobdir,path = path)
         #-> return WFtoXML.xml_subwfforeach(IteratorName=self.name,IterSet=filesets,SubWorkflow=swf,Id=muuid)
@@ -440,11 +441,15 @@ class ParallelModel(WFItemModel):
         # TODO revert changes in filesystem in case instantiate_in_folder fails
         #root.append(self.subwfmodel.save_to_disk(my_foldername))
         for swf in self.subwf_models:
-            etree.SubElement(root,swf.save_to_disk(foldername))
+            root.append(swf.save_to_disk(foldername))
 
         return root
 
     def read_from_disk(self, full_foldername, xml_subelement):
+        self.subwf_models.clear()
+        for view in self.subwf_views:
+            view.deleteLater()
+        self.subwf_views.clear()
         for child in xml_subelement:
             if child.tag != "WFControl":
                 continue
@@ -457,6 +462,7 @@ class ParallelModel(WFItemModel):
             subwfmodel.read_from_disk(full_foldername=full_foldername,xml_subelement=child)
             self.subwf_models.append(subwfmodel)
             self.subwf_views.append(subwfview)
+        self.view.init_from_model()
 
 
 
@@ -958,6 +964,7 @@ class WorkflowView(QtGui.QFrame):
         self.setMinimumWidth(300)
         self.background_drawn = True
         self.enable_background(True)
+        self.dont_place = False
 
     def enable_background(self,on):
         style_sheet_without_background = "background-color: " + widgetColors['MainEditor'] + """ ;
@@ -995,21 +1002,26 @@ class WorkflowView(QtGui.QFrame):
         dims = self.geometry()
 
         #print(dims)
+        ypos = 0
+        if not self.dont_place:
+            self.dont_place = True
+            ypos = self.elementSkip / 2
+            for e in self.model.elements:
+                e.setParent(self)
+                e.adjustSize()
+                xpos = (dims.width() - e.width()) / 2
+                #print("WIDTH ",e.width())
+                #print("HEIGHT ", e.height())
+                #print(xpos,ypos)
+                e.move(xpos, ypos)
+                e.place_elements()
+                ypos += e.height() + self.elementSkip
 
-        ypos = self.elementSkip / 2
-        for e in self.model.elements:
-            e.setParent(self)
-            e.adjustSize()
-            xpos = (dims.width() - e.width()) / 2
-            #print("WIDTH ",e.width())
-            #print("HEIGHT ", e.height())
-            #print(xpos,ypos)
-            e.move(xpos, ypos)
-            e.place_elements()
-            ypos += e.height() + self.elementSkip
+            self.setFixedHeight(max(ypos,self.parent().height()))
+            self.adjustSize()
 
-        self.setFixedHeight(max(ypos,self.parent().height()))
-        self.adjustSize()
+        self.dont_place = False
+
         return ypos
 
     def relayout(self):
@@ -1469,7 +1481,7 @@ class ParallelView(WFControlWithTopMiddleAndBottom):
                 width += sh.width()
 
             size = QtCore.QSize(width,maxheight)
-            size += QtCore.QSize(50,60)
+            size += QtCore.QSize(50,75)
             if size.width() < 300:
                 size.setWidth(300)
             return size
@@ -1478,15 +1490,16 @@ class ParallelView(WFControlWithTopMiddleAndBottom):
 
     def place_elements(self):
         if not self.dontplace:
+            self.dontplace = True
             if self.model is not None:
                 self.init_from_model()
-                self.dontplace = True
-                #self.model.subwfview.place_elements()
-            self.adjustSize()
-            self.parent().place_elements()
 
-        self.dontplace=False
-        self.adjustSize()
+                #self.model.subwfview.place_elements()
+                for view in self.model.subwf_views:
+                    view.place_elements()
+
+            self.parent().place_elements()
+            self.dontplace=False
 
 
 class ControlFactory(object):
