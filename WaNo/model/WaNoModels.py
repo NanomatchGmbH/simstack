@@ -228,7 +228,9 @@ class WaNoModelRoot(WaNoModelDictLike):
         self.parent_wf = kwargs["parent_wf"]
         super(WaNoModelRoot, self).__init__(*args, **kwargs)
         self.exec_command = self.full_xml.find("WaNoExecCommand").text
+        self.rendered_exec_command = ""
         self.input_files = []
+
 
         self.wano_dir_root = kwargs["wano_dir_root"]
         for child in self.full_xml.findall("./WaNoInputFiles/WaNoInputFile"):
@@ -385,7 +387,7 @@ class WaNoModelRoot(WaNoModelDictLike):
 
         submit_script_filename = os.path.join(basefolder,"submit_command.sh")
         with open(submit_script_filename, 'w') as outfile:
-            outfile.write(self.exec_command)
+            outfile.write(self.rendered_exec_command)
 
         template_loader = FileSystemLoader(searchpath="/")
         template_env = Environment(loader = template_loader)
@@ -440,7 +442,7 @@ class WaNoModelRoot(WaNoModelDictLike):
         # We do two render passes, in case the rendering reset some values:
         fvl = []
         rendered_wano = self.wano_walker_render_pass(rendered_wano,submitdir=submitdir,flat_variable_list=fvl)
-        self.exec_command = Template(self.exec_command).render(wano = rendered_wano)
+        self.rendered_exec_command = Template(self.exec_command).render(wano = rendered_wano)
         jsdl = self.flat_variable_list_to_jsdl(fvl, submitdir,stageout_basedir)
         return rendered_wano,jsdl
 
@@ -589,7 +591,7 @@ class WaNoItemFileModel(AbstractWanoModel):
 class WaNoItemScriptFileModel(WaNoItemFileModel):
     def __init__(self,*args,**kwargs):
         #Careful: we explicitly DONT Call the init of WaNoItemFileModel here. but the one from AbstractWaNoModel!
-        super(WaNoItemFileModel,self).__init__(*args,**kwargs)
+        super(WaNoItemScriptFileModel,self).__init__(*args,**kwargs)
         self.xml = kwargs['xml']
         self.mystring = self.xml.text
         self.logical_name = self.mystring
@@ -614,6 +616,14 @@ class WaNoItemScriptFileModel(WaNoItemFileModel):
             return content
         except FileNotFoundError:
             return ""
+
+    def render(self, rendered_wano, path, submitdir):
+        rendered_logical_name = Template(self.logical_name).render(wano=rendered_wano, path=path)
+        destfile = os.path.join(submitdir, rendered_logical_name)
+
+        with open(destfile,'w') as out:
+            out.write(self.get_as_text())
+        return rendered_logical_name
 
 
 class WaNoItemStringModel(AbstractWanoModel):
