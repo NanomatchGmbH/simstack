@@ -89,11 +89,11 @@ class WFEditorMainWindow(QtGui.QMainWindow):
     
         self._createActions()
         self.fileMenu = self.menuBar().addMenu("&File")
-        self.fileMenu.addAction(self.newAct)
-        self.fileMenu.addAction(self.openAct)
+        #self.fileMenu.addAction(self.newAct)
+        #self.fileMenu.addAction(self.openAct)
         self.fileMenu.addAction(self.saveAct)
         self.fileMenu.addAction(self.saveAsAct)
-        self.fileMenu.addAction(self.printAct)
+        #self.fileMenu.addAction(self.printAct)
         self.fileMenu.addSeparator()
         self.fileMenu.addAction(self.exitAct)
         
@@ -105,7 +105,7 @@ class WFEditorMainWindow(QtGui.QMainWindow):
         self.settingsMenu.addAction(self.configPathSettingsAct)
         
         self.helpMenu = self.menuBar().addMenu("&Help")
-        self.helpMenu.addAction(self.aboutAct)
+        #self.helpMenu.addAction(self.aboutAct)
         self.helpMenu.addAction(self.aboutWFEAct)
         
         message = "Welcome to the Nanomatch Workflow Editor"
