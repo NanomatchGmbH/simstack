@@ -173,7 +173,8 @@ class WFEditorMainWindow(QtGui.QMainWindow):
                 "and context menus.")
         
     def action_aboutWFE(self):
-        self.infoLabel.setText("Invoked <b>Help|About Qt</b>")
+        pass
+        #self.infoLabel.setText("Invoked <b>Help|About Qt</b>")
 
     def action_run(self):
         self.run.emit()
