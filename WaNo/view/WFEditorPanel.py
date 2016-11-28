@@ -111,13 +111,13 @@ class WFWaNoWidget(QtGui.QToolButton):
         return me
 
     def instantiate_in_folder(self,folder):
+
         outfolder = os.path.join(folder,"wanos",self.uuid)
 
         try:
             os.makedirs(outfolder)
-        except OSError:
-            self.logger.error("Failed to create folder: %s." % outfolder)
-            return False
+        except OSError as e:
+            pass
 
         #print(self.wano[1],outfolder)
         if outfolder != self.wano[1]:
@@ -651,7 +651,7 @@ class WFModel(object):
         settings = WaNoSettingsProvider.get_instance()
         wdir = settings.get_value(SETTING_KEYS['workflows'])
 
-        mydir = os.path.join(self.foldername,self.wf_name)
+        mydir = os.path.join(wdir,self.wf_name)
         try:
             os.makedirs(mydir)
         except OSError:
@@ -672,9 +672,12 @@ class WFModel(object):
                 root.append(ele.model.save_to_disk(foldername))
 
         if success:
-            xml_path = mydir + ".xml"
+            xml_path = os.path.join(mydir,self.wf_name + ".xml")
             with open(xml_path,'w') as outfile:
                 outfile.write(etree.tostring(root,encoding="unicode",pretty_print=True))
+        else:
+            print("Error while writing wano")
+            raise Exception("This should be a custom exception")
         return success
 
     def read_from_disk(self,foldername):
@@ -1114,7 +1117,7 @@ class WFTabsWidget(QtGui.QTabWidget):
 
         self.acceptDrops()
         self.setAcceptDrops(True)
-        self.curFile = WFFileName()
+        #self.curFile = WFFileName()
         self.setTabsClosable(True)
         self.tabCloseRequested.connect(self.closeTab)
 
@@ -1127,7 +1130,7 @@ class WFTabsWidget(QtGui.QTabWidget):
 
         scroll,_,_ = self.createNewEmptyWF()
 
-        self.addTab(scroll, self.curFile.name)
+        self.addTab(scroll, "Untitled")
         self.relayout()
         self.currentChanged.connect(self._tab_changed)
 
@@ -1170,19 +1173,29 @@ class WFTabsWidget(QtGui.QTabWidget):
     def run(self):
         name = self.tabText(self.currentIndex())
         if name == "Untitled":
+            #FIXME this should be a custom exception. It should also be caught as Custom in WFEA
             raise FileNotFoundError("Please save your workflow first")
 
+        self.save()
         jobtype,directory,workflow_xml = self.currentWidget().widget().model.render()
         return name,jobtype,directory,workflow_xml
 
+    def currentTabText(self):
+        myindex = self.currentIndex()
+        return self.tabText(myindex)
+
     def save(self):
-        if self.curFile.name == 'Untitled':
+        if self.currentTabText() == 'Untitled':
             return self.saveAs()
         else:
-            return self.saveFile(self.curFile.fullName())
+            settings = WaNoSettingsProvider.get_instance()
+            workflow_path = settings.get_value(SETTING_KEYS["workflows"])
+            foldername = self.currentTabText()
+            fullpath = os.path.join(workflow_path, foldername)
+            print("FP",fullpath)
+            return self.saveFile(fullpath)
 
     def saveAs(self):
-
         foldername,ok = QtGui.QInputDialog.getText(self, self.tr("Specify Workflow Name"),
                                      self.tr("Name"), QtGui.QLineEdit.Normal,
                                      "WorkflowName")
@@ -1223,7 +1236,7 @@ class WFTabsWidget(QtGui.QTabWidget):
 
     def openWorkFlow(self,workFlow):
         index   = self.get_index(workFlow.name) if not workFlow is None else -1
-        name    = self.curFile.name
+        #name    = self.curFile.name
         if index >= 0:
             self.setCurrentIndex(index)
             return
