@@ -264,7 +264,6 @@ class WaNoItemBoolView(AbstractWanoQTView):
 class WaNoScriptView(AbstractWanoQTView):
     def __init__(self, *args, **kwargs):
         super(WaNoScriptView,self).__init__(*args,**kwargs)
-        print("HERE")
         """ Widget code here """
         self.actual_widget = QtGui.QWidget(self.qt_parent)
         vbox = QtGui.QVBoxLayout()
@@ -272,16 +271,10 @@ class WaNoScriptView(AbstractWanoQTView):
         self.menubar = QtGui.QWidget()
         hbox = QtGui.QHBoxLayout()
         self.menubar.setLayout(hbox)
-        self.combobox = QtGui.QComboBox()
-        self.combobox.addItem("Python")
-        self.combobox.addItem("Bash")
-        self.combobox.addItem("Perl")
-        self.savebutton = QtGui.QPushButton(QtGui.QIcon.fromTheme("document-save"),"")
+        self.savelabel = QtGui.QLabel("Save script")
+        self.savebutton = QtGui.QPushButton(QtGui.QIcon.fromTheme("document-save"),"Save Script")
         self.savebutton.clicked.connect(self.on_save)
         hbox.addWidget(self.savebutton)
-        hbox.addStretch()
-        hbox.addWidget(self.combobox)
-
         vbox.addWidget(self.menubar)
         self.textedit = QtGui.QTextEdit()
         vbox.addWidget(self.textedit)
