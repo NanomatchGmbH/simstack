@@ -454,7 +454,7 @@ class WFEditorApplication(QObject):
         try:
             name,jobtype,directory,wf_xml = editor.run()
         except FileNotFoundError as e:
-            self._view_manager.show_error("Please save workflow before submit.")
+            self._view_manager.show_error("Please save workflow before submit. Error was: %s"%e)
 
         if jobtype == SubmitType.SINGLE_WANO:
             print("Running", directory)
@@ -512,9 +512,9 @@ class WFEditorApplication(QObject):
 
         contents = ""
         with open(execfile) as com:
-            contents = com.readline()
+            contents = com.read()
 
-        splitcont = shlex.split(contents)
+        splitcont = shlex.split(contents.strip(" \t\n\r"))
 
         com = splitcont[0]
         arguments = splitcont[1:]
