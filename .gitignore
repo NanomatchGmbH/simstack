@@ -70,8 +70,10 @@ docs/_build/
 # PyBuilder
 target/
 
-#external pyura
+#external pyura enum requests
 external/pyura*
+external/requests*
+external/enum*
 
 #Pyside files
 .idea/*
