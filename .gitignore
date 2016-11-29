@@ -72,3 +72,12 @@ target/
 
 #external pyura
 external/pyura*
+
+#Pyside files
+.idea/*
+.idea
+
+#Timo Files
+2del/*
+2del
+
