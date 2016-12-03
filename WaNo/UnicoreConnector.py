@@ -80,20 +80,6 @@ ERROR = Enum("ERROR",
 
 
 class UnicoreWorker(TPCThread):
-    @staticmethod
-    def _extract_storage_path(path):
-        storage = None
-        querypath = ''
-        splitted = [p for p in path.split('/') if not p is None and p != ""]
-
-        if len(splitted) >= 1:
-            storage   = splitted[0]
-        if len(splitted) >= 2:
-            querypath = '/'.join(splitted[1:]) if len(splitted) > 1 else ''
-
-        return (storage, querypath)
-
-
     def _exec_callback(self, callback, *args, **kwargs):
         cb_function = callback
 
@@ -186,7 +172,7 @@ class UnicoreWorker(TPCThread):
         self._logger.debug("Querying %s from Unicore Registry" % path)
         files = []
 
-        storage, qpath = UnicoreWorker._extract_storage_path(path)
+        storage, qpath = extract_storage_path(path)
         #TODO use job manager?!
         storage_manager = self.registry.get_storage_manager()
         storage_manager.update_list()
@@ -195,7 +181,7 @@ class UnicoreWorker(TPCThread):
 
     @TPCThread._from_other_thread
     def delete_file(self, callback, base_uri, filename):
-        storage, path = UnicoreWorker._extract_storage_path(filename)
+        storage, path = extract_storage_path(filename)
         storage_manager = self.registry.get_storage_manager()
 
         self._logger.debug("deleting %s:%s" % (storage, path))
@@ -205,7 +191,7 @@ class UnicoreWorker(TPCThread):
 
     @TPCThread._from_other_thread
     def delete_job(self, callback, base_uri, job):
-        job, path = UnicoreWorker._extract_storage_path(job)
+        job, path = extract_storage_path(job)
         job_manager = self.registry.get_job_manager()
 
         self._logger.debug("deleting job: %s" % job)
@@ -231,7 +217,7 @@ class UnicoreWorker(TPCThread):
 
 class UnicoreUpload(threading.Thread):
     def run(self):
-        #storage, path = UnicoreWorker._extract_storage_path(self.dest_dir)
+        #storage, path = extract_storage_path(self.dest_dir)
 
         storage_manager = self._registry.get_storage_manager()
         with self._status.get_reader_instance() as status:
@@ -299,7 +285,7 @@ class UnicoreDataTransfer:
 class UnicoreDownload(UnicoreDataTransfer):
     def run(self):
         #TODO ensure, that the registry is still connected
-        #storage, path = UnicoreWorker._extract_storage_path(from_path)
+        #storage, path = extract_storage_path(from_path)
         storage_manager = self._registry.get_storage_manager()
 
         with self._status.get_reader_instance() as status:
@@ -488,6 +474,7 @@ class UnicoreConnector(CallableQThread):
 
         #TODO treat callback.... required?
 
+        storage, download_path = extract_storage_path(download)
         registry    = self.workers[base_uri]['registry']
         transfers   = self.workers[base_uri]['data_transfers']
         executor    = self.workers[base_uri]['data_transfer_executor']
