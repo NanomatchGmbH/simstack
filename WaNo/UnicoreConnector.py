@@ -480,7 +480,7 @@ class UnicoreConnector(CallableQThread):
         if not worker is None:
             worker.delete_job(callback, base_uri, job)
 
-    def download_file(self, base_uri, download, local_dest, storage, callback=(None, (), {})):
+    def download_file(self, base_uri, download, local_dest, callback=(None, (), {})):
         if not base_uri in self.workers:
             # TODO emit error
             return
