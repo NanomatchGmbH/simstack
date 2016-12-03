@@ -257,10 +257,10 @@ class UnicoreDataTransfer:
 
     def _done_callback(self, result):
         last_progress = self._state.get_reader_instance().get_value('progress')
-        finished = last_progress >= total * 0.99
-        self._status.set_multiple_values({
-                'total': total,
-                'progress': total if finished else last_progress,
+        finished = last_progress >= self._total * 0.99
+        self._state.get_writer_instance().set_multiple_values({
+                'total': self._total,
+                'progress': self._total if finished else last_progress,
                 'state': UnicoreDataTransferStates.DONE
             })
 
