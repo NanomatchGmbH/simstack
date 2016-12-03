@@ -238,8 +238,8 @@ class UnicoreUpload(threading.Thread):
                     callback=self.__on_upload_update)
             print("status: %s, err: %s, json: %s" % (ret_status, err, json))
 
-    def __init__(self, registry, transfer, transfer_status):
-        super(UnicoreUpload, self).__init__(self, registry, transfer, transfer_status)
+    def __init__(self, registry, transfer_state):
+        super(UnicoreUpload, self).__init__(self, registry, transfer_state)
 
 class UnicoreDataTransfer:
     def _update_transfer_status(self, uri, localfile, progress, total):
@@ -278,9 +278,8 @@ class UnicoreDataTransfer:
         self._future = executor.submit(self.run)
         executor.add_done_callback(self._future, self._done_callback)
 
-    def __init__(self, registry, transfer, transfer_state):
+    def __init__(self, registry, transfer_state):
         self._registry  = registry
-        self._transfer  = transfer
         self._state     = transfer_state
         self._future    = None
         self._canceled  = False
@@ -303,8 +302,8 @@ class UnicoreDownload(UnicoreDataTransfer):
         #TODO handle return values and return them.
         return 0
 
-    def __init__(self, registry, transfer, transfer_state):
-        super(UnicoreDownload, self).__init__(self, registry, transfer, transfer_state)
+    def __init__(self, registry, transfer_state):
+        super(UnicoreDownload, self).__init__(registry, transfer_state)
 
 class UnicoreConnector(CallableQThread):
     error = Signal(str, int, int, name="UnicoreError")
@@ -498,7 +497,7 @@ class UnicoreConnector(CallableQThread):
         transfer_state = self.unicore_state.get_data_transfer(
                 base_uri, index)
 
-        transfers[index] = UnicoreDownload(registry, transfer, transfer_status)
+        transfers[index] = UnicoreDownload(registry, transfer_state)
         transfers[index].submit(executor)
 
     def unicore_operation(self, operation, data, callback=(None, (), {})):
