@@ -404,6 +404,9 @@ class UnicoreStateFactory:
     # storage of references.
 
     class _Reader:
+        #TODO we should not return get_writer_instance nor get_reader_instances,
+        # the _Reader should not be able to get writers, but writers might
+        # decide on their own
         """Note: we do not want to catch any errors. They should be passed to the user."""
 
         def get_registry_state(self, base_uri):
