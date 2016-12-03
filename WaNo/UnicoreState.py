@@ -338,11 +338,19 @@ class UnicoreStateFactory:
                     'base_uri': base_uri,
                     'username': username,
                     'state': state,
-                    'data_transfers': ProtectedReaderWriterIndexedList(),
+                    'data_transfers': None,
                     }
             registry = ProtectedReaderWriterDict(tmp)
+
+            # We _must_ create the ProtectedReaderWriterIndexedList outside of
+            # the tmp dict and may not reference it there.
+            # Otherwise, the ProtectedReaderWriterIndexedList will be cleaned
+            # up when leaving this function's scope.
+            registry.get_writer_instance().set_value('data_transfers',
+                    ProtectedReaderWriterIndexedList())
             self._registries.get_writer_instance().set_value(base_uri, registry)
             #TODO will del(tmp) delete its 'ProtectedList'?
+            return registry
 
         # NOTE: Why is returning references to dict entries ok even though the
         # lock is released imediatelly?
