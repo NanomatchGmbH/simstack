@@ -193,7 +193,7 @@ class ProtectedDict:
         self._values = copy.deepcopy(initial_dict)
         self._lock = QReadWriteLock(QReadWriteLock.NonRecursive)
 
-class ProtectedIndexedList(ProtectedList):
+class ProtectedIndexedList(ProtectedDict):
     """ Implements a list with persistent indices that would not change, even
     if list elements are deleted or moved. """
 
