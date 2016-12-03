@@ -412,6 +412,9 @@ class UnicoreStateFactory:
         def get_data_transfers_for_registry(self, base_uri):
             return self._state.get_data_transfers_for_registry(base_uri).get_reader_instance()
 
+        def get_data_transfer(self, base_uri, index):
+            return self._state.get_data_transfer(base_uri, index)
+
         def get_dl_iterator(self):
             return self._state.get_list_iterator('dls')
 
