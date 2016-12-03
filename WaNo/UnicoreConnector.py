@@ -16,6 +16,7 @@ from PySide.QtCore import Slot, Signal, QObject
 from WaNo.lib.pyura.pyura import UnicoreAPI, HTTPBasicAuthProvider
 from WaNo.lib.pyura.pyura import ErrorCodes as UnicoreErrorCodes
 from WaNo.lib.pyura.pyura import JobManager
+from WaNo.lib.pyura.pyura import ConnectionState as UnicoreConnectionStates
 
 from WaNo.lib.FileSystemTree import filewalker
 from WaNo.lib.CallableQThread import CallableQThread
@@ -23,6 +24,7 @@ from WaNo.lib.TPCThread import TPCThread
 from WaNo.lib.BetterThreadPoolExecutor import BetterThreadPoolExecutor
 
 from WaNo.UnicoreState import UnicoreDataTransferStates
+from WaNo.UnicoreHelpers import extract_storage_path
 
 
 """ Number of data transfer workers per regisrtry. """
