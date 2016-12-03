@@ -432,8 +432,8 @@ class UnicoreStateFactory:
 
         def add_data_transfer(self, base_uri, source, dest, storage,
                 state=UnicoreDataTransferStates.PENDING, total=-1, progress=0):
-            return self._state.add_data_transfer(self, base_uri, source, dest, storage,
-                state, total, progress).get_writer_instance()
+            return self._state.add_data_transfer(base_uri, source, dest, storage,
+                state, total, progress)
 
         def __init__(self, state):
             super(UnicoreStateFactory._Writer, self).__init__(state)
