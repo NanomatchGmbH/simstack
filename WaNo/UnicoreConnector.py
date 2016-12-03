@@ -366,6 +366,12 @@ class UnicoreConnector(CallableQThread):
     def create_delete_job_args(base_uri, job):
         return UnicoreConnector.create_single_job_args(base_uri, job)
 
+    @staticmethod
+    def create_download_args(base_uri, from_path, to_path):
+        data = UnicoreConnector.create_basic_args(base_uri)
+        data['args'] += (from_path, to_path)
+        return data
+
 
 
     def connect_registry(self, username, password, base_uri,
