@@ -103,6 +103,9 @@ class UnicoreWorker(TPCThread):
         err, status = self.registry.connect()
         self._logger.debug("Unicore connect returns: %s, %s" % (str(err), str(status)))
 
+        if err == UnicoreErrorCodes.NO_ERROR and status == 200:
+            self._state.set_value('state', UnicoreConnectionStates.CONNECTING)
+
         self._exec_callback(callback, base_uri, err, status)
 
 
@@ -210,17 +213,18 @@ class UnicoreWorker(TPCThread):
                     (threading.current_thread().ident,
                     ctypes.CDLL('libc.so.6').syscall(186)))
 
-    def __init__(self, registry, logger):
+    def __init__(self, registry, logger, reg_state):
         super(UnicoreWorker, self).__init__()
         self._logger        = logger
         self.registry       = registry
+        self._state         = reg_state
 
 class UnicoreUpload(threading.Thread):
     def run(self):
         #storage, path = extract_storage_path(self.dest_dir)
 
         storage_manager = self._registry.get_storage_manager()
-        with self._status.get_reader_instance() as status:
+        with self._state.get_reader_instance() as status:
             path = status['dest']
             local_file = status['source']
             storage = status['storage']
@@ -241,7 +245,7 @@ class UnicoreDataTransfer:
     def _update_transfer_status(self, uri, localfile, progress, total):
         print("\t%6.2f (%6.2f / %6.2f)\t%s" % (progress / total * 100., progress,
             total, uri))
-        self._status.set_multiple_values({
+        self._state.get_writer_instance().set_multiple_values({
                 'total': total,
                 'progress': progress,
                 'state': UnicoreDataTransferStates.RUNNING
@@ -252,7 +256,7 @@ class UnicoreDataTransfer:
         raise NotImplementedError("Must be implemented in sub-class.")
 
     def _done_callback(self, result):
-        last_progress = self._status.get_value('progress')
+        last_progress = self._state.get_reader_instance().get_value('progress')
         finished = last_progress >= total * 0.99
         self._status.set_multiple_values({
                 'total': total,
@@ -274,10 +278,10 @@ class UnicoreDataTransfer:
         self._future = executor.submit(self.run)
         executor.add_done_callback(self._future, self._done_callback)
 
-    def __init__(self, registry, transfer, transfer_status):
+    def __init__(self, registry, transfer, transfer_state):
         self._registry  = registry
         self._transfer  = transfer
-        self._status    = status
+        self._state     = transfer_state
         self._future    = None
         self._canceled  = False
         self._total     = 0
@@ -288,7 +292,7 @@ class UnicoreDownload(UnicoreDataTransfer):
         #storage, path = extract_storage_path(from_path)
         storage_manager = self._registry.get_storage_manager()
 
-        with self._status.get_reader_instance() as status:
+        with self._state.get_reader_instance() as status:
             ret_status, err = storage_manager.get_file(
                     status['source'],
                     status['dest'],
@@ -299,8 +303,8 @@ class UnicoreDownload(UnicoreDataTransfer):
         #TODO handle return values and return them.
         return 0
 
-    def __init__(self, registry, transfer, transfer_status):
-        super(UnicoreDownload, self).__init__(self, registry, transfer, transfer_status)
+    def __init__(self, registry, transfer, transfer_state):
+        super(UnicoreDownload, self).__init__(self, registry, transfer, transfer_state)
 
 class UnicoreConnector(CallableQThread):
     error = Signal(str, int, int, name="UnicoreError")
@@ -400,10 +404,16 @@ class UnicoreConnector(CallableQThread):
             #TODO add get_registry method to UnicoreAPI, since we might want to
             # update the auth provider or something...
             registry = self.workers[base_uri]['registry']
+            reg_state = self.unicore_state.get_registry_state(base_uri)
         else:
             registry = UnicoreAPI.add_registry(base_uri, auth_provider)
 
-            worker = UnicoreWorker(registry, self.logger)
+            reg_state = self.unicore_state.add_registry(
+                    base_uri,
+                    username,
+                    UnicoreConnectionStates.CONNECTING)
+
+            worker = UnicoreWorker(registry, self.logger, reg_state)
             worker.set_exit_callback(self.cb_worker_exit, base_uri)
 
             worker.start()
@@ -416,6 +426,7 @@ class UnicoreConnector(CallableQThread):
                 'data_transfer_executor':   BetterThreadPoolExecutor(
                     max_workers=MAX_DT_WORKERS_PER_REGISTRY)
                 }
+        reg_state.set_value('state', UnicoreConnectionStates.CONNECTING)
 
         self.logger.debug("Handing over to worker (%s)..." % str(worker))
         worker.connect(callback, username, password,
@@ -479,12 +490,12 @@ class UnicoreConnector(CallableQThread):
         transfers   = self.workers[base_uri]['data_transfers']
         executor    = self.workers[base_uri]['data_transfer_executor']
 
-        index = self._unicore_status.add_data_transfer(
+        index = self.unicore_state.add_data_transfer(
                 base_uri,
-                download,
+                download_path,
                 local_dest,
                 storage)
-        transfer_status = self._unicore_status.get_data_transfer(
+        transfer_state = self.unicore_state.get_data_transfer(
                 base_uri, index)
 
         transfers[index] = UnicoreDownload(registry, transfer, transfer_status)
