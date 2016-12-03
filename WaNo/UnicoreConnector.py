@@ -320,9 +320,6 @@ class UnicoreConnector(CallableQThread):
 
         return auth_provider
 
-    def _set_connection_state(self, state):
-        self.unicore_state.set_value(UnicoreStateValues.CONNECTION, state)
-
     @CallableQThread.callback
     def cb_worker_exit(self, base_uri):
         pass
