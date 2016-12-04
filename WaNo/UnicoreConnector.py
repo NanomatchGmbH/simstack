@@ -219,28 +219,6 @@ class UnicoreWorker(TPCThread):
         self.registry       = registry
         self._state         = reg_state
 
-class UnicoreUpload(threading.Thread):
-    def run(self):
-        #storage, path = extract_storage_path(self.dest_dir)
-
-        storage_manager = self._registry.get_storage_manager()
-        with self._state.get_reader_instance() as status:
-            path = status['dest']
-            local_file = status['source']
-            storage = status['storage']
-            remote_filepath = os.path.join(path, os.path.basename(local_file))
-
-            print("uploading '%s' to %s:%s" % (local_file, storage, path))
-            ret_status, err, json = storage_manager.upload_file(
-                    local_file,
-                    remote_filename=remote_filepath,
-                    storage_id=storage,
-                    callback=self.__on_upload_update)
-            print("status: %s, err: %s, json: %s" % (ret_status, err, json))
-
-    def __init__(self, registry, transfer_state):
-        super(UnicoreUpload, self).__init__(self, registry, transfer_state)
-
 class UnicoreDataTransfer:
     def _update_transfer_status(self, uri, localfile, progress, total):
         print("\t%6.2f (%6.2f / %6.2f)\t%s" % (progress / total * 100., progress,
@@ -304,6 +282,32 @@ class UnicoreDownload(UnicoreDataTransfer):
 
     def __init__(self, registry, transfer_state):
         super(UnicoreDownload, self).__init__(registry, transfer_state)
+
+class UnicoreUpload(UnicoreDataTransfer):
+    def run(self):
+        #storage, path = extract_storage_path(self.dest_dir)
+
+        storage_manager = self._registry.get_storage_manager()
+        with self._state.get_reader_instance() as status:
+            remote_filepath = os.path.join(
+                    status['dest'],
+                    os.path.basename(status['source']))
+
+            print("uploading '%s' to %s:%s" % (
+                    status['source'],
+                    status['storage'],
+                    status['dest']))
+
+            ret_status, err, json = storage_manager.upload_file(
+                    status['source'],
+                    remote_filename=remote_filepath,
+                    storage_id=status['storage'],
+                    callback=self._update_transfer_status)
+            print("status: %s, err: %s, json: %s" % (ret_status, err, json))
+
+    def __init__(self, registry, transfer_state):
+        super(UnicoreUpload, self).__init__(self, registry, transfer_state)
+
 
 class UnicoreConnector(CallableQThread):
     error = Signal(str, int, int, name="UnicoreError")
