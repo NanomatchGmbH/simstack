@@ -208,16 +208,17 @@ class WFEditorApplication(QThreadCallback):
 
 
     def _on_fs_download(self, from_path, to_path):
-        storage, path = self._extract_storage_path(from_path)
+        base_uri = self._get_current_base_uri()
+        self.exec_unicore_callback_operation.emit(
+                uops.DOWNLOAD_FILE,
+                UnicoreConnector.create_download_args(
+                        base_uri,
+                        from_path,
+                        to_path),
+                (None, (), {})
+            )
 
-        storage_manager = self._unicore.get_storage_manager()
 
-        status, err = storage_manager.get_file(
-                path,
-                to_path,
-                storage_id=storage,
-                callback=self.__on_download_update)
-        print("status: %s, err: %s" % (status, err))
 
     def _on_fs_upload(self, local_file, dest_dir):
         storage, path = self._extract_storage_path(dest_dir)
