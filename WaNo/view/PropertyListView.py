@@ -24,14 +24,7 @@ import operator
 #und render
 
 
-class ResourceTableModel(QtCore.QAbstractTableModel):
-    class ROWTYPE(Enum):
-        ppn = 1
-        numnodes = 2
-        mem = 3
-        time = 4
-        queue = 5
-
+class ResourceTableBase(QtCore.QAbstractTableModel):
     def save(self,filename):
         with open(filename,'w') as outfile:
             outfile.write(yaml.safe_dump(self.mylist, default_flow_style=False))
@@ -41,29 +34,132 @@ class ResourceTableModel(QtCore.QAbstractTableModel):
             self.mylist = yaml.safe_load(infile)
 
     def __init__(self, parent, *args):
-        super(ResourceTableModel, self).__init__(parent, *args)
+        super(ResourceTableBase, self).__init__(parent, *args)
         self.mylist = [[]]
         self.types = []
         self.header = []
         self.alignments = []
 
-    def make_default_list(self):
-        self.mylist = [
-            [False,"CPUs per Node",1],
-            [True, "Number of Nodes",1],
-            [False, "Memory [MB]",1024],
-            [False, "Time [Wall]", 86400],
-            [True, "Queue", "default"]
-        ]
-        self.header = ["Enable", "Property", "Value"]
-        self.alignments = [QtCore.Qt.AlignCenter, QtCore.Qt.AlignLeft| QtCore.Qt.AlignVCenter, QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter]
+    def rowCount(self, parent=QtCore.QModelIndex()):
+        return len(self.mylist)
+
+    def columnCount(self,parent=QtCore.QModelIndex()):
+        return len(self.mylist[0])
+
+    def data(self, index, role):
+        if not index.isValid():
+            return None
+        elif role == QtCore.Qt.TextAlignmentRole:
+            return self.alignments[index.column()]
+        elif role != QtCore.Qt.DisplayRole:
+            return None
+        return self.mylist[index.row()][index.column()]
+
+    def setData(self, index, value, role=QtCore.Qt.EditRole):
+        if role == QtCore.Qt.EditRole:
+            row = index.row()
+            col = index.column()
+            self.mylist[row][col] = value
+            return True
+        return False
+
+    def headerData(self, col, orientation, role):
+        if orientation == QtCore.Qt.Horizontal and role == QtCore.Qt.DisplayRole:
+            return self.header[col]
+        return None
+
+    def sort(self, col, order):
+        """sort table by given column number col"""
+        self.layoutAboutToBeChanged.emit()
+        self.mylist = sorted(self.mylist,
+                             key=operator.itemgetter(col))
+        if order == QtCore.Qt.DescendingOrder:
+            self.mylist.reverse()
+        self.layoutChanged.emit()
+
+
+class ImportTableModel(ResourceTableBase):
+    class COLTYPE(Enum):
+        name = 1
+        ImportFrom = 2
+        ImportTo = 3
+
+    def __init__(self, parent, *args):
+        super(ImportTableModel, self).__init__(parent, *args)
+
+    def get_contents(self):
+        return self.mylist
 
     def flags(self, index):
-        if (index.column() == 1):
-            return QtCore.Qt.ItemIsEnabled
+        defaultflags = QtCore.Qt.ItemFlags()
+        col = 0
+        if index.row() >= len(self.mylist):
+            col = 0
         else:
-            return QtCore.Qt.ItemIsEditable | QtCore.Qt.ItemIsEnabled
+            col = index.column()
 
+        if (col == 1):
+            return QtCore.Qt.ItemIsEnabled | defaultflags
+        else:
+            return QtCore.Qt.ItemIsEditable | QtCore.Qt.ItemIsEnabled | defaultflags
+
+
+    def rowCount(self, parent=QtCore.QModelIndex()):
+        return len(self.mylist) + 1
+
+    def columnCount(self,parent=QtCore.QModelIndex()):
+        return 3
+
+    def data(self, index, role):
+        if not index.isValid():
+            return None
+        elif role == QtCore.Qt.TextAlignmentRole:
+            return self.alignments[index.column()]
+        elif role != QtCore.Qt.DisplayRole:
+            return None
+        if index.row() >= len(self.mylist):
+            return " "
+        return self.mylist[index.row()][index.column()]
+
+    def add_entry(self):
+
+        self.mylist.append(["File_%d"%len(self.mylist), "",""])
+
+
+    def setData(self, index, value, role=QtCore.Qt.EditRole):
+        row = index.row()
+
+        print(len(self.mylist),row)
+
+        if row == len(self.mylist):
+            self.beginInsertRows(QtCore.QModelIndex(), self.rowCount(), self.rowCount())
+            self.add_entry()
+            returnval = super(ImportTableModel, self).setData(index, value, role)
+            self.endInsertRows()
+            return returnval
+
+        return super(ImportTableModel, self).setData(index, value, role)
+
+
+
+    def make_default_list(self):
+        self.mylist = [
+        ]
+        self.header = ["Name", "ImportFrom", "Target Filename"]
+        self.alignments = [QtCore.Qt.AlignCenter, QtCore.Qt.AlignLeft | QtCore.Qt.AlignVCenter,
+                           QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter]
+
+
+class ResourceTableModel(ResourceTableBase):
+    class ROWTYPE(Enum):
+        ppn = 1
+        numnodes = 2
+        mem = 3
+        time = 4
+        queue = 5
+
+    def __init__(self, parent, *args):
+        super(ResourceTableModel, self).__init__(parent, *args)
 
     def render_to_resource_jsdl(self):
         from pyura.pyura.WorkflowXMLConverter import JSDLtoXML
@@ -91,44 +187,23 @@ class ResourceTableModel(QtCore.QAbstractTableModel):
                                        IndividualPhysicalMemory=mem*1024*1024,
                                        Queue=queue, IndividualCPUTime=time)
 
-    def rowCount(self, parent=QtCore.QModelIndex()):
-        return len(self.mylist)
+    def flags(self, index):
+        if (index.column() == 1):
+            return QtCore.Qt.ItemIsEnabled
+        else:
+            return QtCore.Qt.ItemIsEditable | QtCore.Qt.ItemIsEnabled
 
-    def columnCount(self,parent=QtCore.QModelIndex()):
-        return len(self.mylist[0])
 
-    def data(self, index, role):
-        if not index.isValid():
-            return None
-        elif role == QtCore.Qt.TextAlignmentRole:
-            return self.alignments[index.column()]
-        elif role != QtCore.Qt.DisplayRole:
-            return None
-        return self.mylist[index.row()][index.column()]
-
-    def setData(self, index, value, role=QtCore.Qt.EditRole):
-        if role == QtCore.Qt.EditRole:
-            row = index.row()
-            col = index.column()
-            self.mylist[row][col] = value
-
-            return True
-
-        return False
-
-    def headerData(self, col, orientation, role):
-        if orientation == QtCore.Qt.Horizontal and role == QtCore.Qt.DisplayRole:
-            return self.header[col]
-        return None
-
-    def sort(self, col, order):
-        """sort table by given column number col"""
-        self.layoutAboutToBeChanged.emit()
-        self.mylist = sorted(self.mylist,
-                             key=operator.itemgetter(col))
-        if order == QtCore.Qt.DescendingOrder:
-            self.mylist.reverse()
-        self.layoutChanged.emit()
+    def make_default_list(self):
+        self.mylist = [
+            [False,"CPUs per Node",1],
+            [True, "Number of Nodes",1],
+            [False, "Memory [MB]",1024],
+            [False, "Time [Wall]", 86400],
+            [True, "Queue", "default"]
+        ]
+        self.header = ["Enable", "Property", "Value"]
+        self.alignments = [QtCore.Qt.AlignCenter, QtCore.Qt.AlignLeft| QtCore.Qt.AlignVCenter, QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter]
 
 
 
@@ -139,9 +214,7 @@ class FileChooserDelegate(QtGui.QItemDelegate):
     def paint(self, painter, option, index):
 
         if (option.state & QtGui.QStyle.State_Selected):
-            painter.fillRect(option.rect, option.palette.highlight());
-
-
+            painter.fillRect(option.rect, option.palette.highlight())
         return
         if index.column() == IMAGE:
             painter.drawPixmap(option.rect,
@@ -340,7 +413,7 @@ class TableView(QtGui.QTableView):
         # self.setItemDelegateForColumn(0, ButtonDelegate(self))
 
         #self.setItemDelegateForColumn(0, ComboDelegate(self))
-        self.setItemDelegateForColumn(0, CheckBoxDelegate(self))
+        #self.setItemDelegateForColumn(0, CheckBoxDelegate(self))
         #self.setItemDelegateForColumn(0, FileChooserDelegate(self))
         #self.setItemDelegateForColumn(1, CheckBoxDelegate(self))
 
@@ -359,12 +432,15 @@ if __name__ == "__main__":
             QtGui.QWidget.__init__(self, parent)
 
             l = QtGui.QVBoxLayout(self)
-            self._tm = ResourceTableModel(self)
+
+            #self._tm = ResourceTableModel(self)
+
+            self._tm = ImportTableModel(self)
             self._tm.make_default_list()
             self._tv = TableView(self)
             self._tv.setModel(self._tm)
-            for row in range(0, self._tm.rowCount()):
-                self._tv.openPersistentEditor(self._tm.index(row, 0))
+            #for row in range(0, self._tm.rowCount()):
+            #    self._tv.openPersistentEditor(self._tm.index(row, 0))
 
 
             l.addWidget(self._tv)
