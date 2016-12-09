@@ -541,7 +541,7 @@ class UnicoreConnector(CallableQThread):
 
     def upload_file(self, base_uri, upload_file, destination, callback=(None, (), {})):
         self._data_transfer(
-                base_uri, destination, upload_file, Direction.UPLOAD, callback)
+                base_uri, upload_file, destination, Direction.UPLOAD, callback)
 
     def unicore_operation(self, operation, data, callback=(None, (), {})):
         ops = OPERATIONS
