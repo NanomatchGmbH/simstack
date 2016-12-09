@@ -516,8 +516,8 @@ class UnicoreConnector(CallableQThread):
         transfers   = self.workers[base_uri]['data_transfers']
         executor    = self.workers[base_uri]['data_transfer_executor']
 
-        source = localfile if (direction == Direction.UPLOAD) else remotefile
-        destination = remotefile if (direction == Direction.UPLOAD) else localfile
+        source = localfile if (direction == Direction.UPLOAD) else remote_path
+        destination = remote_path if (direction == Direction.UPLOAD) else localfile
 
         index = self.unicore_state.add_data_transfer(
                 base_uri,
