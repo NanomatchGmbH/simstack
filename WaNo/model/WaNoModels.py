@@ -24,6 +24,8 @@ import shutil
 
 from jinja2 import Template, FileSystemLoader, Environment
 
+from WaNo.view.PropertyListView import ResourceTableModel,ImportTableModel
+
 from pyura.pyura.WorkflowXMLConverter import JSDLtoXML
 
 
@@ -226,6 +228,19 @@ class WaNoModelRoot(WaNoModelDictLike):
         kwargs['xml'] = self.full_xml.find("WaNoRoot")
         kwargs["root_model"] = self.root_model
         self.parent_wf = kwargs["parent_wf"]
+        wano_dir_root = kwargs["wano_dir_root"]
+        resources_fn = os.path.join(wano_dir_root, "resources.yml")
+        self.resources = ResourceTableModel(parent=None,wano_parent=self)
+        self.import_model = ImportTableModel(parent=None,wano_parent=self)
+        self.import_model.make_default_list()
+        #local import model?
+        self.export_model = None
+        if os.path.exists(resources_fn):
+            self.resources.load(resources_fn)
+        else:
+            self.resources.make_default_list()
+            self.resources.save(resources_fn)
+
         super(WaNoModelRoot, self).__init__(*args, **kwargs)
         self.exec_command = self.full_xml.find("WaNoExecCommand").text
         self.rendered_exec_command = ""
@@ -242,6 +257,12 @@ class WaNoModelRoot(WaNoModelDictLike):
 
     def get_type_str(self):
         return None
+
+    def get_resource_model(self):
+        return self.resources
+
+    def get_import_model(self):
+        return self.import_model
 
     def get_output_files(self):
         return self.output_files
@@ -263,6 +284,8 @@ class WaNoModelRoot(WaNoModelDictLike):
             with open(filename,'w') as outfile:
                 outfile.write(etree.tostring(self.full_xml,pretty_print=True).decode("utf-8"))
             success = True
+            resources_fn = os.path.join(self.wano_dir_root, "resources.yml")
+            self.resources.save(resources_fn)
         except Exception as e:
             print(e)
         return success
@@ -432,7 +455,9 @@ class WaNoModelRoot(WaNoModelDictLike):
             files.append(filejsdl)
 
         xml_app = JSDLtoXML.xml_application(self.exec_command)
-        job_desc = JSDLtoXML.xml_job_description(self.name,xml_app,datastagings=files)
+        resources = self.resources.render_to_resource_jsdl()
+        job_desc = JSDLtoXML.xml_job_description(self.name,xml_app,datastagings=files,resource=resources)
+
         return job_desc
         #print(etree.tostring(job_desc, pretty_print=True).decode("utf-8"))
 

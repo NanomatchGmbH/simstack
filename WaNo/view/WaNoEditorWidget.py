@@ -74,6 +74,9 @@ class WaNoEditor(QtGui.QTabWidget):
         WaNoEditor.changedFlag=False
         self.setMinimumWidth(400)
         self.tabWidget.addTab(self.wano.get_widget(),self.wano.model.name)
+        self.tabWidget.addTab(self.wano.get_resource_widget(),"Resources")
+        self.tabWidget.addTab(self.wano.get_import_widget(), "Imports")
+
         return True
 
     def remove_if_open(self,wano_view):

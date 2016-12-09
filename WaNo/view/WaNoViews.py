@@ -346,8 +346,21 @@ class WanoQtViewRoot(AbstractWanoQTView):
     def get_widget(self):
         return self.actual_widget
 
-    def init_from_model(self):
+    def get_resource_widget(self):
+        model = self.model.get_resource_model()
+        from WaNo.view.PropertyListView import ResourceView
+        self.resourceview = ResourceView()
+        self.resourceview.setModel(model)
+        return self.resourceview
 
+    def get_import_widget(self):
+        model = self.model.get_import_model()
+        from WaNo.view.PropertyListView import ImportView
+        self.importview = ImportView()
+        self.importview.setModel(model)
+        return self.importview
+
+    def init_from_model(self):
         from WaNo.view.WaNoViews import WaNoTabView
         for key, model in self.model.wano_dict.items():
 
