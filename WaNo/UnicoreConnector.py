@@ -372,7 +372,7 @@ class UnicoreConnector(CallableQThread):
         return UnicoreConnector.create_single_job_args(base_uri, job)
 
     @staticmethod
-    def create_download_args(base_uri, from_path, to_path):
+    def create_data_transfer_args(base_uri, from_path, to_path):
         data = UnicoreConnector.create_basic_args(base_uri)
         data['args'] += (from_path, to_path)
         return data

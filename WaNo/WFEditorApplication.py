@@ -211,7 +211,7 @@ class WFEditorApplication(QThreadCallback):
         base_uri = self._get_current_base_uri()
         self.exec_unicore_callback_operation.emit(
                 uops.DOWNLOAD_FILE,
-                UnicoreConnector.create_download_args(
+                UnicoreConnector.create_data_transfer_args(
                         base_uri,
                         from_path,
                         to_path),
