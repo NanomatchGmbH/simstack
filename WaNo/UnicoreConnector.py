@@ -23,7 +23,8 @@ from WaNo.lib.CallableQThread import CallableQThread
 from WaNo.lib.TPCThread import TPCThread
 from WaNo.lib.BetterThreadPoolExecutor import BetterThreadPoolExecutor
 
-from WaNo.UnicoreState import UnicoreDataTransferStates
+from WaNo.UnicoreState import UnicoreDataTransferStates,\
+        UnicoreDataTransferDirection
 from WaNo.UnicoreHelpers import extract_storage_path
 
 
@@ -500,7 +501,8 @@ class UnicoreConnector(CallableQThread):
                 base_uri,
                 download_path,
                 local_dest,
-                storage)
+                storage,
+                UnicoreDataTransferDirection.DOWNLOAD)
         transfer_state = self.unicore_state.get_data_transfer(
                 base_uri, index)
 
