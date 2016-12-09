@@ -328,6 +328,14 @@ UnicoreDataTransferStates = Enum(
         """
         )
 
+UnicoreDataTransferDirection = Enum(
+        "DataTransferDirection",
+        """
+        UPLOAD
+        DOWNLOAD
+        """
+        )
+
 class UnicoreStateFactory:
     _instance = None
 
@@ -378,12 +386,13 @@ class UnicoreStateFactory:
                     .get_reader_instance().get_value('data_transfers')\
                     .get_reader_instance().get_value(index)
 
-        def add_data_transfer(self, base_uri, source, dest, storage,
+        def add_data_transfer(self, base_uri, source, dest, storage, direction,
                 state=UnicoreDataTransferStates.PENDING, total=-1, progress=0):
             tmp = {
                     'source': source,
                     'dest': dest,
                     'storage': storage,
+                    'direction': direction,
                     'state': state, # running, canceled, pending
                     'total': total,
                     'progress': progress,
@@ -430,10 +439,10 @@ class UnicoreStateFactory:
         def add_registry(self, base_uri, username, state=UnicoreConnectionStates.DISCONNECTED):
             return self._state.add_registry(base_uri, username, state).get_writer_instance()
 
-        def add_data_transfer(self, base_uri, source, dest, storage,
+        def add_data_transfer(self, base_uri, source, dest, storage, direction,
                 state=UnicoreDataTransferStates.PENDING, total=-1, progress=0):
             return self._state.add_data_transfer(base_uri, source, dest, storage,
-                state, total, progress)
+                direction, state, total, progress)
 
         def __init__(self, state):
             super(UnicoreStateFactory._Writer, self).__init__(state)

@@ -694,8 +694,8 @@ class WFEditorApplication(QThreadCallback):
         self._view_manager  = WFViewManager()
         self._unicore       = None # TODO pyura API
 
-        UnicoreStateFactory.get_writer()
-        self._unicore_connector = UnicoreConnector(self, None)
+        self._unicore_connector = UnicoreConnector(self,
+                UnicoreStateFactory.get_writer())
 
         self._unicore_connector.start()
 
