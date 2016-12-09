@@ -23,8 +23,8 @@ from WaNo.lib.CallableQThread import CallableQThread
 from WaNo.lib.TPCThread import TPCThread
 from WaNo.lib.BetterThreadPoolExecutor import BetterThreadPoolExecutor
 
-from WaNo.UnicoreState import UnicoreDataTransferStates,\
-        UnicoreDataTransferDirection
+from WaNo.UnicoreState import UnicoreDataTransferStates
+from WaNo.UnicoreState import UnicoreDataTransferDirection as Direction
 from WaNo.UnicoreHelpers import extract_storage_path
 
 
@@ -49,6 +49,7 @@ OPERATIONS = Enum("OPERATIONS",
     DELETE_FILE
     DELETE_JOB
     DOWNLOAD_FILE
+    UPLOAD_FILE
     """,
     module=__name__
 )
@@ -307,7 +308,7 @@ class UnicoreUpload(UnicoreDataTransfer):
             print("status: %s, err: %s, json: %s" % (ret_status, err, json))
 
     def __init__(self, registry, transfer_state):
-        super(UnicoreUpload, self).__init__(self, registry, transfer_state)
+        super(UnicoreUpload, self).__init__(registry, transfer_state)
 
 
 class UnicoreConnector(CallableQThread):
@@ -485,29 +486,45 @@ class UnicoreConnector(CallableQThread):
         if not worker is None:
             worker.delete_job(callback, base_uri, job)
 
-    def download_file(self, base_uri, download, local_dest, callback=(None, (), {})):
+    def _data_transfer(self, base_uri, localfile, remotefile, direction,
+            callback=(None, (), {})):
         if not base_uri in self.workers:
             # TODO emit error
             return
 
         #TODO treat callback.... required?
 
-        storage, download_path = extract_storage_path(download)
+        storage, remote_path = extract_storage_path(remotefile)
         registry    = self.workers[base_uri]['registry']
         transfers   = self.workers[base_uri]['data_transfers']
         executor    = self.workers[base_uri]['data_transfer_executor']
 
+        source = localfile if (direction == Direction.UPLOAD) else remotefile
+        destination = remotefile if (direction == Direction.UPLOAD) else localfile
+
         index = self.unicore_state.add_data_transfer(
                 base_uri,
-                download_path,
-                local_dest,
+                source,
+                destination,
                 storage,
-                UnicoreDataTransferDirection.DOWNLOAD)
+                direction)
         transfer_state = self.unicore_state.get_data_transfer(
                 base_uri, index)
 
-        transfers[index] = UnicoreDownload(registry, transfer_state)
+        if (direction == Direction.UPLOAD):
+            transfers[index] = UnicoreUpload(registry, transfer_state)
+        else:
+            transfers[index] = UnicoreDownload(registry, transfer_state)
         transfers[index].submit(executor)
+
+
+    def download_file(self, base_uri, download, local_dest, callback=(None, (), {})):
+        self._data_transfer(
+                base_uri, local_dest, download, Direction.DOWNLOAD, callback)
+
+    def upload_file(self, base_uri, upload_file, destination, callback=(None, (), {})):
+        self._data_transfer(
+                base_uri, destination, upload_file, Direction.UPLOAD, callback)
 
     def unicore_operation(self, operation, data, callback=(None, (), {})):
         ops = OPERATIONS
@@ -532,6 +549,8 @@ class UnicoreConnector(CallableQThread):
             self.delete_job(*data['args'], callback=callback)
         elif operation == ops.DOWNLOAD_FILE:
             self.download_file(*data['args'], callback=callback)
+        elif operation == ops.UPLOAD_FILE:
+            self.upload_file(*data['args'], callback=callback)
         else:
             self.logger.error("Got unknown operation: %s" % ops(operation) \
                     if isinstance(operation, int) else str(operation))
