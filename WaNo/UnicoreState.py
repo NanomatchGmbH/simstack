@@ -260,10 +260,10 @@ class ProtectedReaderWriterDict(ReaderWriterInstance):
             return self._pdict_instance.get_value(key)
 
         def __enter__(self):
-            return self._pdict.__enter__()
+            return self._pdict_instance.__enter__()
 
         def __exit__(self, *unused):
-            self._pdict.__exit__(*unused)
+            self._pdict_instance.__exit__(*unused)
 
         def __iter__(self):
             return self._pdict_instance.__iter__()
