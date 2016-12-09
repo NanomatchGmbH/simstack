@@ -270,13 +270,20 @@ class UnicoreDownload(UnicoreDataTransfer):
         #TODO ensure, that the registry is still connected
         #storage, path = extract_storage_path(from_path)
         storage_manager = self._registry.get_storage_manager()
+        source  = None
+        dest    = None
+        storage = None
 
         with self._state.get_reader_instance() as status:
-            ret_status, err = storage_manager.get_file(
-                    status['source'],
-                    status['dest'],
-                    storage_id=status['storage'],
-                    callback=self._update_transfer_status)
+            source  = status['source']
+            dest    = status['dest']
+            storage = status['storage']
+
+        ret_status, err = storage_manager.get_file(
+                source,
+                dest,
+                storage_id=storage,
+                callback=self._update_transfer_status)
         print("status: %s, err: %s" % (ret_status, err))
 
         #TODO handle return values and return them.
@@ -288,24 +295,34 @@ class UnicoreDownload(UnicoreDataTransfer):
 class UnicoreUpload(UnicoreDataTransfer):
     def run(self):
         #storage, path = extract_storage_path(self.dest_dir)
-
         storage_manager = self._registry.get_storage_manager()
+        source  = None
+        dest    = None
+        storage = None
+
         with self._state.get_reader_instance() as status:
-            remote_filepath = os.path.join(
-                    status['dest'],
-                    os.path.basename(status['source']))
+            source  = status['source']
+            dest    = status['dest']
+            storage = status['storage']
 
-            print("uploading '%s' to %s:%s" % (
-                    status['source'],
-                    status['storage'],
-                    status['dest']))
+        remote_filepath = os.path.join(
+                dest,
+                os.path.basename(source))
 
-            ret_status, err, json = storage_manager.upload_file(
-                    status['source'],
-                    remote_filename=remote_filepath,
-                    storage_id=status['storage'],
-                    callback=self._update_transfer_status)
-            print("status: %s, err: %s, json: %s" % (ret_status, err, json))
+        print("uploading '%s' to %s:%s" % (
+                source,
+                storage,
+                dest))
+
+        ret_status, err, json = storage_manager.upload_file(
+                source,
+                remote_filename=remote_filepath,
+                storage_id=storage,
+                callback=self._update_transfer_status)
+        print("status: %s, err: %s, json: %s" % (ret_status, err, json))
+
+        #TODO handle return values and return them.
+        return 0
 
     def __init__(self, registry, transfer_state):
         super(UnicoreUpload, self).__init__(registry, transfer_state)
