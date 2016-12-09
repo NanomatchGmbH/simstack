@@ -218,22 +218,16 @@ class WFEditorApplication(QThreadCallback):
                 (None, (), {})
             )
 
-
-
     def _on_fs_upload(self, local_file, dest_dir):
-        storage, path = self._extract_storage_path(dest_dir)
-        storage_manager = self._unicore.get_storage_manager()
-        remote_filepath = os.path.join(path, os.path.basename(local_file))
-
-        #TODO do in future/Thread
-        print("uploading '%s' to %s:%s" % (local_file, storage, path))
-        status, err, json = storage_manager.upload_file(
-                local_file,
-                remote_filename=remote_filepath,
-                storage_id=storage,
-                callback=self.__on_upload_update)
-        print("status: %s, err: %s, json: %s" % (status, err, json))
-        #TODO request update when done
+        base_uri = self._get_current_base_uri()
+        self.exec_unicore_callback_operation.emit(
+                uops.UPLOAD_FILE,
+                UnicoreConnector.create_data_transfer_args(
+                        base_uri,
+                        local_file,
+                        dest_dir),
+                (None, (), {})
+            )
 
     @QThreadCallback.callback
     def _on_file_deleted(self, base_uri, status, err, to_del=""):
