@@ -9,7 +9,7 @@ import os
 from PySide.QtCore import QObject, Signal
 from PySide import QtCore,QtGui
 
-from   lxml import etree
+import datetime
 
 from WaNo import WaNoFactory
 from pyura.pyura import UnicoreAPI, HTTPBasicAuthProvider
@@ -485,36 +485,22 @@ class WFEditorApplication(QThreadCallback):
             # Error case...
             pass
 
-    def run_workflow(self,xml,directory,name):
-        #TODO FMU: Das kam durch den Merge, muss nach UnicoreConnector
-        wf_manager = self._unicore.get_workflow_manager()
-        storage_manager = self._unicore.get_storage_manager()
+    def run_workflow(self, xml, directory, name):
+        base_uri = self._get_current_base_uri()
         now = datetime.datetime.now()
         nowstr = now.strftime("%Y-%m-%d %H:%M:%S")
-        submitname = "WF %s submitted at %s" %(name,nowstr )
-        storage = storage_manager.create(name=submitname)
-        storage_id = storage[1].get_id()
+        submitname = "WF %s submitted at %s" %(name, nowstr)
         to_upload = os.path.join(directory,"jobs")
 
-        for filename in filewalker(to_upload):
-            cp = os.path.commonprefix([to_upload,filename])
-            relpath = os.path.relpath(filename,cp)
-            storage_manager.upload_file(filename, storage_id=storage_id, remote_filename=relpath)
-            #imports.add_import(filename,relpath)
+        self.exec_unicore_operation.emit(
+                uops.RUN_WORKFLOW_JOB,
+                UnicoreConnector.create_workflow_job_args(
+                    base_uri,
+                    submitname,
+                    to_upload,
+                    xml)
+                )
 
-        storage_uri = storage_manager.get_base_uri()
-        err, status, wf = wf_manager.create(storage_id,submitname)
-        workflow_id = wf.split("/")[-1]
-        storage_management_uri = storage_manager.get_storage_management_uri()
-        xmlstring = etree.tostring(xml,pretty_print=False).decode("utf-8").replace("${WORKFLOW_ID}",workflow_id)
-        xmlstring = xmlstring.replace("${STORAGE_ID}","%s%s"%(storage_management_uri,storage_id))
-
-        with open("wf.xml",'w') as wfo:
-            wfo.write(xmlstring)
-
-        print("err: %s, status: %s, wf_manager: %s" % (err, status, wf))
-        #### TIMO HERE
-        wf_manager.run(wf.split('/')[-1], xmlstring)
 
     def run_job(self, wano_dir, name):
         registry = self._get_current_registry()

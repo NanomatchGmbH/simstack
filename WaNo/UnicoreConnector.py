@@ -8,6 +8,8 @@ import threading
 import shlex
 import os
 from enum import Enum
+from lxml import etree
+
 
 
 from PySide.QtCore import QThread, Qt
@@ -43,6 +45,7 @@ OPERATIONS = Enum("OPERATIONS",
     CONNECT_REGISTRY
     DISCONNECT_REGISTRY
     RUN_SINGLE_JOB
+    RUN_WORKFLOW_JOB
     UPDATE_JOB_LIST
     UPDATE_WF_LIST
     UPDATE_DIR_LIST
@@ -141,6 +144,40 @@ class UnicoreWorker(TPCThread):
         job_manager.upload_imports(newjob,storage_manager)
         wd = newjob.get_working_dir()
         job_manager.start(newjob)
+
+    @TPCThread._from_other_thread
+    def run_workflow_job(self, submitname, dir_to_upload, xml):
+        #TODO error handling
+        wf_manager = self.registry.get_workflow_manager()
+        storage_manager = self.registry.get_storage_manager()
+
+        storage = storage_manager.create(name=submitname)
+        storage_id = storage[1].get_id()
+
+        for filename in filewalker(dir_to_upload):
+            cp = os.path.commonprefix([dir_to_upload, filename])
+            relpath = os.path.relpath(filename, cp)
+            print("Uploading '%s'..." % filename)
+            storage_manager.upload_file(filename, storage_id=storage_id, remote_filename=relpath)
+            #imports.add_import(filename,relpath)
+
+        storage_uri = storage_manager.get_base_uri()
+        err, status, wf = wf_manager.create(storage_id, submitname)
+        print("err: %s\nstatus: %s\nwf: %s" % (str(err), str(status), str(wf)))
+
+        workflow_id = wf.split("/")[-1]
+
+        storage_management_uri = storage_manager.get_storage_management_uri()
+
+        xmlstring = etree.tostring(xml,pretty_print=False).decode("utf-8").replace("${WORKFLOW_ID}",workflow_id)
+        xmlstring = xmlstring.replace("${STORAGE_ID}","%s%s"%(storage_management_uri,storage_id))
+
+        with open("wf.xml",'w') as wfo:
+            wfo.write(xmlstring)
+
+        print("err: %s, status: %s, wf_manager: %s" % (err, status, wf))
+        #### TIMO HERE
+        wf_manager.run(wf.split('/')[-1], xmlstring)
 
     @TPCThread._from_other_thread
     def update_job_list(self, callback, base_uri):
@@ -378,6 +415,12 @@ class UnicoreConnector(CallableQThread):
         return data
 
     @staticmethod
+    def create_workflow_job_args(base_uri, submitname, dir_to_upload, xml):
+        data = UnicoreConnector.create_basic_args(base_uri)
+        data['args'] += (submitname, dir_to_upload, xml)
+        return data
+
+    @staticmethod
     def create_update_job_list_args(base_uri):
         return UnicoreConnector.create_basic_args(base_uri)
 
@@ -486,6 +529,11 @@ class UnicoreConnector(CallableQThread):
         if not worker is None:
             worker.run_single_job(wano_dir, name)
 
+    def run_workflow_job(self, base_uri, submitname, dir_to_upload, xml):
+        worker = self._get_error_or_fail(base_uri)
+        if not worker is None:
+            worker.run_workflow_job(submitname, dir_to_upload, xml)
+
     def update_job_list(self, base_uri, callback=(None, (), {})):
         worker = self._get_error_or_fail(base_uri)
         if not worker is None:
@@ -562,6 +610,8 @@ class UnicoreConnector(CallableQThread):
             pass #TODO
         elif operation == ops.RUN_SINGLE_JOB:
             self.run_single_job(*data['args'])
+        elif operation == ops.RUN_WORKFLOW_JOB:
+            self.run_workflow_job(*data['args'])
         elif operation == ops.UPDATE_JOB_LIST:
             self.update_job_list(*data['args'], callback=callback)
         elif operation == ops.UPDATE_WF_LIST:
