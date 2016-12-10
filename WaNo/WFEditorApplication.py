@@ -503,12 +503,11 @@ class WFEditorApplication(QThreadCallback):
 
 
     def run_job(self, wano_dir, name):
-        registry = self._get_current_registry()
         base_uri = self._get_current_base_uri()
         self.exec_unicore_operation.emit(
                 uops.RUN_SINGLE_JOB,
                 UnicoreConnector.create_single_job_args(
-                        registry[SETTING_KEYS['registry.baseURI']],
+                        base_uri,
                         wano_dir,
                         name
                     )
