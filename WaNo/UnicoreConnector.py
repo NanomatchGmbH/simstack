@@ -48,6 +48,7 @@ OPERATIONS = Enum("OPERATIONS",
     RUN_WORKFLOW_JOB
     UPDATE_JOB_LIST
     UPDATE_WF_LIST
+    UPDATE_WF_JOB_LIST
     UPDATE_DIR_LIST
     DELETE_FILE
     DELETE_JOB
@@ -214,6 +215,29 @@ class UnicoreWorker(TPCThread):
                 } for s in wf_manager.get_list()]
 
         self._exec_callback(callback, base_uri, workflows)
+
+    @TPCThread._from_other_thread
+    def update_workflow_job_list(self, callback, base_uri, wfid):
+        wf_manager = self.registry.get_workflow_manager()
+        wf = wf_manager.get_by_id(wfid)
+        wf.update()
+
+        job_manager = self.registry.get_job_manager()
+        job_manager.update_list()
+
+        jobs = [job_manager.get_by_id(jobid) for jobid in wf.get_jobs()]
+        print("jobs for wf: %s." % jobs)
+
+        files = [{
+                    'id': job.get_id(),
+                    'name': job.get_name(),
+                    'type': 'j',
+                    'path': job.get_working_dir()
+                } for job in jobs]
+        #print("jobs:\n\n\n\n%s\n\n\n" % job_manager.get_list())
+        print("Got files for wf: %s" % files)
+
+        self._exec_callback(callback, base_uri, wfid, files)
 
     @TPCThread._from_other_thread
     def list_dir(self, callback, base_uri, path):
@@ -433,6 +457,10 @@ class UnicoreConnector(CallableQThread):
         return UnicoreConnector.create_basic_args(base_uri)
 
     @staticmethod
+    def create_update_workflow_job_list_args(base_uri, wfid):
+        return UnicoreConnector.create_basic_path_args(base_uri, wfid)
+
+    @staticmethod
     def create_update_dir_list_args(base_uri, path):
         return UnicoreConnector.create_basic_path_args(base_uri, path)
 
@@ -548,6 +576,11 @@ class UnicoreConnector(CallableQThread):
         if not worker is None:
             worker.update_workflow_list(callback, base_uri)
 
+    def update_workflow_job_list(self, base_uri, wfid, callback=(None, (), {})):
+        worker = self._get_error_or_fail(base_uri)
+        if not worker is None:
+            worker.update_workflow_job_list(callback, base_uri, wfid)
+
     def update_dir_list(self, base_uri, path, callback=(None, (), {})):
         worker = self._get_error_or_fail(base_uri)
         if not worker is None:
@@ -620,6 +653,8 @@ class UnicoreConnector(CallableQThread):
             self.update_job_list(*data['args'], callback=callback)
         elif operation == ops.UPDATE_WF_LIST:
             self.update_workflow_list(*data['args'], callback=callback)
+        elif operation == ops.UPDATE_WF_JOB_LIST:
+            self.update_workflow_job_list(*data['args'], callback=callback)
         elif operation == ops.UPDATE_DIR_LIST:
             self.update_dir_list(*data['args'], callback=callback)
         elif operation == ops.DELETE_FILE:

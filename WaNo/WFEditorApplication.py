@@ -194,33 +194,12 @@ class WFEditorApplication(QThreadCallback):
     def _on_fs_worflow_update_request(self, wfid):
         #TODO FMU: Das kam durch den Merge, muss nach UnicoreConnector
         self._logger.debug("Querying %s from Unicore Registry" % wfid)
-        ok = True
-        files = []
-        #TODO factor out tests
-        if ok:
-            #TODO use job manager?!
-            wf_manager = self._unicore.get_workflow_manager()
-            wf = wf_manager.get_by_id(wfid)
-            wf.update()
-
-            job_manager = self._unicore.get_job_manager()
-            job_manager.update_list()
-
-            jobs = [job_manager.get_by_id(jobid) for jobid in wf.get_jobs()]
-
-            files = [{
-                        'id': job.get_id(),
-                        'name': job.get_name(),
-                        'type': 'j',
-                        'path': job.get_working_dir()
-                    } for job in jobs]
-            #print("jobs:\n\n\n\n%s\n\n\n" % job_manager.get_list())
-            print("Got files: %s" % files)
-
-            self._view_manager.update_filesystem_model(wfid,files)
-            #"""
-
-        print("wf update requested... %s"%wfid)
+        base_uri = self._get_current_base_uri()
+        self.exec_unicore_callback_operation.emit(
+                uops.UPDATE_WF_JOB_LIST,
+                UnicoreConnector.create_update_workflow_job_list_args(base_uri, wfid),
+                (self._on_fs_list_updated, (), {})
+            )
 
     def _on_fs_directory_update_request(self, path):
         self._logger.debug("Querying %s from Unicore Registry" % path)
