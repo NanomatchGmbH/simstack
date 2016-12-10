@@ -105,6 +105,10 @@ class UnicoreWorker(TPCThread):
                     (threading.current_thread().ident,
                     ctypes.CDLL('libc.so.6').syscall(186)))
 
+        if not con_settings is None and 'wf_uri' in con_settings:
+            print("Setting workflow uri: %s." % con_settings['wf_uri'])
+            self.registry.set_workflow_base_uri(con_settings['wf_uri'])
+
         err, status = self.registry.connect()
         self._logger.debug("Unicore connect returns: %s, %s" % (str(err), str(status)))
 
@@ -506,7 +510,7 @@ class UnicoreConnector(CallableQThread):
 
         self.logger.debug("Handing over to worker (%s)..." % str(worker))
         worker.connect(callback, username, password,
-                base_uri, con_settings=None)
+                base_uri, con_settings=con_settings)
 
     def _get_error_or_fail(self, base_uri):
         worker = None
