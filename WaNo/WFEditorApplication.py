@@ -192,7 +192,6 @@ class WFEditorApplication(QThreadCallback):
             )
 
     def _on_fs_worflow_update_request(self, wfid):
-        #TODO FMU: Das kam durch den Merge, muss nach UnicoreConnector
         self._logger.debug("Querying %s from Unicore Registry" % wfid)
         base_uri = self._get_current_base_uri()
         self.exec_unicore_callback_operation.emit(
