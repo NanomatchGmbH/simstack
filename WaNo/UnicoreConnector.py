@@ -366,9 +366,15 @@ class UnicoreConnector(CallableQThread):
         return {'args': (base_uri,), 'kwargs': {}}
 
     @staticmethod
-    def create_single_job_args(base_uri, wano_dir):
+    def create_basic_path_args(base_uri, path):
         data = UnicoreConnector.create_basic_args(base_uri)
-        data['args'] += (wano_dir,)
+        data['args'] += (path,)
+        return data
+
+    @staticmethod
+    def create_single_job_args(base_uri, wano_dir, name):
+        data = UnicoreConnector.create_basic_args(base_uri)
+        data['args'] += (wano_dir, name)
         return data
 
     @staticmethod
@@ -381,15 +387,15 @@ class UnicoreConnector(CallableQThread):
 
     @staticmethod
     def create_update_dir_list_args(base_uri, path):
-        return UnicoreConnector.create_single_job_args(base_uri, path)
+        return UnicoreConnector.create_basic_path_args(base_uri, path)
 
     @staticmethod
     def create_delete_file_args(base_uri, filename):
-        return UnicoreConnector.create_single_job_args(base_uri, filename)
+        return UnicoreConnector.create_basic_path_args(base_uri, filename)
 
     @staticmethod
     def create_delete_job_args(base_uri, job):
-        return UnicoreConnector.create_single_job_args(base_uri, job)
+        return UnicoreConnector.create_basic_path_args(base_uri, job)
 
     @staticmethod
     def create_data_transfer_args(base_uri, from_path, to_path):
@@ -475,10 +481,10 @@ class UnicoreConnector(CallableQThread):
         #TODO
         pass
 
-    def run_single_job(self, base_uri, wano_dir):
+    def run_single_job(self, base_uri, wano_dir, name):
         worker = self._get_error_or_fail(base_uri)
         if not worker is None:
-            worker.run_single_job(wano_dir)
+            worker.run_single_job(wano_dir, name)
 
     def update_job_list(self, base_uri, callback=(None, (), {})):
         worker = self._get_error_or_fail(base_uri)
