@@ -15,7 +15,7 @@ class WFEditor(QWidget):
     REGISTRY_CONNECTION_STATES = WaNoRegistrySelection.CONNECTION_STATES
 
     _controls = [
-            ("SubWorkflow", "ctrl_img/ForEach.png"),
+            #("SubWorkflow", "ctrl_img/ForEach.png"),
             ("ForEach", "ctrl_img/ForEach.png"),
             ("If", "ctrl_img/If.png"),
             ("Parallel", "ctrl_img/Parallel.png"),

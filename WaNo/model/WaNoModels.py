@@ -24,7 +24,7 @@ import shutil
 
 from jinja2 import Template, FileSystemLoader, Environment
 
-from WaNo.view.PropertyListView import ResourceTableModel,ImportTableModel
+from WaNo.view.PropertyListView import ResourceTableModel,ImportTableModel,ExportTableModel
 
 from pyura.pyura.WorkflowXMLConverter import JSDLtoXML
 
@@ -222,6 +222,14 @@ class MultipleOfModel(AbstractWanoModel):
 
 # This is the parent class and grandfather. Children have to be unique, no lists here
 class WaNoModelRoot(WaNoModelDictLike):
+    def exists_read_load(self,object,filename):
+        if os.path.exists(filename):
+            object.load(filename)
+        else:
+            object.make_default_list()
+            object.save(filename)
+
+
     def __init__(self, *args, **kwargs):
         self.root_model = self
         self.full_xml = kwargs['xml']
@@ -230,16 +238,20 @@ class WaNoModelRoot(WaNoModelDictLike):
         self.parent_wf = kwargs["parent_wf"]
         wano_dir_root = kwargs["wano_dir_root"]
         resources_fn = os.path.join(wano_dir_root, "resources.yml")
+
         self.resources = ResourceTableModel(parent=None,wano_parent=self)
+        self.exists_read_load(self.resources, resources_fn)
+
+
+        imports_fn = os.path.join(wano_dir_root, "imports.yml")
         self.import_model = ImportTableModel(parent=None,wano_parent=self)
         self.import_model.make_default_list()
-        #local import model?
-        self.export_model = None
-        if os.path.exists(resources_fn):
-            self.resources.load(resources_fn)
-        else:
-            self.resources.make_default_list()
-            self.resources.save(resources_fn)
+        self.exists_read_load(self.import_model,imports_fn)
+
+        exports_fn = os.path.join(wano_dir_root, "exports.yml")
+        self.export_model = ExportTableModel(parent=None,wano_parent=self)
+        self.export_model.make_default_list()
+        self.exists_read_load(self.export_model, exports_fn)
 
         super(WaNoModelRoot, self).__init__(*args, **kwargs)
         self.exec_command = self.full_xml.find("WaNoExecCommand").text
@@ -264,8 +276,11 @@ class WaNoModelRoot(WaNoModelDictLike):
     def get_import_model(self):
         return self.import_model
 
+    def get_export_model(self):
+        return self.export_model
+
     def get_output_files(self):
-        return self.output_files
+        return self.output_files + [ a[0] for a in self.export_model.get_contents() ]
 
     @staticmethod
     def construct_from_wano(filename, rootview, parent_wf):
@@ -286,6 +301,13 @@ class WaNoModelRoot(WaNoModelDictLike):
             success = True
             resources_fn = os.path.join(self.wano_dir_root, "resources.yml")
             self.resources.save(resources_fn)
+
+            imports_fn = os.path.join(self.wano_dir_root, "imports.yml")
+            self.import_model.save(imports_fn)
+
+            exports_fn = os.path.join(self.wano_dir_root, "exports.yml")
+            self.export_model.save(exports_fn)
+
         except Exception as e:
             print(e)
         return success
@@ -393,8 +415,11 @@ class WaNoModelRoot(WaNoModelDictLike):
                         to_upload = os.path.join(submitdir, "jobs")
                         cp = os.path.commonprefix([to_upload, filename])
                         relpath = os.path.relpath(filename, cp)
-                        print("relpath was: %s"%relpath)
-                        filename= "c9m:${WORKFLOW_ID}/%s" % relpath
+                        #print("relpath was: %s"%relpath)
+                        #filename= "c9m:${WORKFLOW_ID}/%s" % relpath
+                        #filename = "BFT:${STORAGE_ID}/%s" % relpath
+                        filename = relpath
+                        #Absolute filenames will be replace with BFT:STORAGEID etc. below.
                     else:
                         filename = "c9m:${WORKFLOW_ID}/%s" % filename
                     rendered_parent_jsdl = (rendered_parent,filename)
@@ -434,7 +459,10 @@ class WaNoModelRoot(WaNoModelDictLike):
                 if var[1].startswith("c9m:"):
                     filejsdl = JSDLtoXML.xml_datastaging_from_source(filename=var[0], overwrite=False,source_uri=var[1])
                 else:
-                    filejsdl = JSDLtoXML.xml_datastaging_from_source(filename=var[0], overwrite=False,source_uri="%s/%s"%(basedir, var[0]))
+                    #filejsdl = JSDLtoXML.xml_datastaging_from_source(filename=var[0], overwrite=False,source_uri="%s/%s"%(basedir, var[0]))
+                    filejsdl = JSDLtoXML.xml_datastaging_from_source(filename=var[0], overwrite=False,
+                                                                     source_uri="BFT:${STORAGE_ID}#%s/%s" % (
+                                                         stageout_basedir, var[1]))
 
                 files.append(filejsdl)
             else:
@@ -449,12 +477,19 @@ class WaNoModelRoot(WaNoModelDictLike):
         #### TIMO HERE
         files.append(filejsdl)
 
-        for filename in self.output_files:
+        for otherfiles in self.get_import_model().get_contents():
+            name,importloc,tostage = otherfiles[0],otherfiles[1],otherfiles[2]
+            filejsdl = JSDLtoXML.xml_datastaging_from_source(filename=tostage , overwrite=False,
+                                                             source_uri="c9m:${WORKFLOW_ID}/%s"%importloc )
+            files.append(filejsdl)
+
+
+        for filename in self.output_files + [ a[0] for a in self.export_model.get_contents() ]:
             filejsdl = JSDLtoXML.xml_datastaging_to_target(filename=filename, overwrite=True,
                                                            target_uri="c9m:${WORKFLOW_ID}/%s/%s"%(stageout_basedir,filename))
             files.append(filejsdl)
 
-        xml_app = JSDLtoXML.xml_application(self.exec_command)
+        xml_app = JSDLtoXML.xml_application(self.rendered_exec_command)
         resources = self.resources.render_to_resource_jsdl()
         job_desc = JSDLtoXML.xml_job_description(self.name,xml_app,datastagings=files,resource=resources)
 
@@ -468,6 +503,7 @@ class WaNoModelRoot(WaNoModelDictLike):
         fvl = []
         rendered_wano = self.wano_walker_render_pass(rendered_wano,submitdir=submitdir,flat_variable_list=fvl)
         self.rendered_exec_command = Template(self.exec_command).render(wano = rendered_wano)
+        self.rendered_exec_command = self.rendered_exec_command.strip(' \t\n\r')
         jsdl = self.flat_variable_list_to_jsdl(fvl, submitdir,stageout_basedir)
         return rendered_wano,jsdl
 
@@ -615,7 +651,6 @@ class WaNoItemFileModel(AbstractWanoModel):
 
 class WaNoItemScriptFileModel(WaNoItemFileModel):
     def __init__(self,*args,**kwargs):
-        #Careful: we explicitly DONT Call the init of WaNoItemFileModel here. but the one from AbstractWaNoModel!
         super(WaNoItemScriptFileModel,self).__init__(*args,**kwargs)
         self.xml = kwargs['xml']
         self.mystring = self.xml.text

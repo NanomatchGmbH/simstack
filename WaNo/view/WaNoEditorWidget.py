@@ -76,6 +76,7 @@ class WaNoEditor(QtGui.QTabWidget):
         self.tabWidget.addTab(self.wano.get_widget(),self.wano.model.name)
         self.tabWidget.addTab(self.wano.get_resource_widget(),"Resources")
         self.tabWidget.addTab(self.wano.get_import_widget(), "Imports")
+        self.tabWidget.addTab(self.wano.get_export_widget(), "Exports")
 
         return True
 

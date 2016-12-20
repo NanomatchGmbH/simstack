@@ -360,6 +360,13 @@ class WanoQtViewRoot(AbstractWanoQTView):
         self.importview.setModel(model)
         return self.importview
 
+    def get_export_widget(self):
+        model = self.model.get_export_model()
+        from WaNo.view.PropertyListView import ExportView
+        self.exportview = ExportView()
+        self.exportview.setModel(model)
+        return self.exportview
+
     def init_from_model(self):
         from WaNo.view.WaNoViews import WaNoTabView
         for key, model in self.model.wano_dict.items():
