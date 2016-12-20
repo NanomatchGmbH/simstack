@@ -9,6 +9,7 @@ except:
 
 class MultiselectDropDownList(DropDownWidgetPushButton):
     itemSelectionChanged = Signal(name="itemSelectionChanged")
+    menuAboutToShow = Signal(name="menuAboutToShow")
 
     def _on_selection_change(self):
         selected = self.get_selection()
@@ -70,7 +71,7 @@ class MultiselectDropDownList(DropDownWidgetPushButton):
 
 
     def connect_workaround(self,function):
-        self._menu.aboutToShow.connect(function)
+        self.menuAboutToShow.connect(function)
 
     """Constructs a MultiselectDropDownList.
 
@@ -85,6 +86,8 @@ class MultiselectDropDownList(DropDownWidgetPushButton):
 
         self._list = QListWidget(self)
         self._list.setSelectionMode(QAbstractItemView.ExtendedSelection)
+
+        self._menu.aboutToShow.connect(self.menuAboutToShow)
 
         if autoset_text:
             self._list.itemSelectionChanged.connect(self._on_selection_change)
