@@ -12,6 +12,7 @@ from PySide import QtGui, QtCore
 
 import yaml
 import operator
+import os
 
 
 class ResourceTableBase(QtCore.QAbstractTableModel):
@@ -51,7 +52,7 @@ class ResourceTableBase(QtCore.QAbstractTableModel):
         if role == QtCore.Qt.EditRole:
             row = index.row()
             col = index.column()
-            print("Settings row%d ,col%d ,val%s" %(row,col,value))
+            #print("Settings row%d ,col%d ,val%s" %(row,col,value))
             self.mylist[row][col] = value
             return True
         return False
@@ -69,6 +70,65 @@ class ResourceTableBase(QtCore.QAbstractTableModel):
         if order == QtCore.Qt.DescendingOrder:
             self.mylist.reverse()
         self.layoutChanged.emit()
+
+
+class ExportTableModel(ResourceTableBase):
+    class COLTYPE(IntEnum):
+        filename = 1
+
+    def __init__(self, parent, *args, **kwargs):
+        super(ExportTableModel,self).__init__(parent, *args,**kwargs)
+
+    def get_contents(self):
+        return self.mylist
+
+    def flags(self, index):
+        defaultflags = QtCore.Qt.ItemFlags()
+        return int(QtCore.Qt.ItemIsEditable | QtCore.Qt.ItemIsEnabled | defaultflags)
+
+    def rowCount(self, parent=QtCore.QModelIndex()):
+        return len(self.mylist) + 1
+
+    def columnCount(self, parent=QtCore.QModelIndex()):
+        return 1
+
+    def data(self, index, role):
+        if not index.isValid():
+            return None
+        elif role == QtCore.Qt.TextAlignmentRole:
+            return self.alignments[index.column()]
+        elif role != QtCore.Qt.DisplayRole:
+            return None
+        if index.row() >= len(self.mylist):
+            return " "
+        return self.mylist[index.row()][index.column()]
+
+    def add_entry(self):
+        self.mylist.append(["File_%d" % len(self.mylist)])
+
+    def setData(self, index, value, role=QtCore.Qt.EditRole):
+        row = index.row()
+        col = index.column()
+        # print("Setting %d %d"%(col,row))
+        if role == QtCore.Qt.EditRole:
+            if value.strip() == "":
+                return ""
+
+        if row == len(self.mylist):
+            self.beginInsertRows(QtCore.QModelIndex(), self.rowCount(), self.rowCount())
+            self.add_entry()
+            returnval = super(ExportTableModel, self).setData(index, value, role)
+            self.endInsertRows()
+            return returnval
+
+        returnval = super(ExportTableModel, self).setData(index, value, role)
+        return returnval
+
+    def make_default_list(self):
+        self.mylist = [
+        ]
+        self.header = ["Filename"]
+        self.alignments = [QtCore.Qt.AlignCenter]
 
 
 class ImportTableModel(ResourceTableBase):
@@ -102,7 +162,7 @@ class ImportTableModel(ResourceTableBase):
             return QtCore.Qt.ItemIsEnabled | defaultflags
         else:
         """
-        return QtCore.Qt.ItemIsEditable | QtCore.Qt.ItemIsEnabled | defaultflags
+        return int(QtCore.Qt.ItemIsEditable | QtCore.Qt.ItemIsEnabled | defaultflags)
 
 
     def rowCount(self, parent=QtCore.QModelIndex()):
@@ -127,16 +187,46 @@ class ImportTableModel(ResourceTableBase):
 
     def setData(self, index, value, role=QtCore.Qt.EditRole):
         row = index.row()
-
-        print(len(self.mylist),row)
+        col = index.column()
+        #print("Setting %d %d"%(col,row))
+        if role == QtCore.Qt.EditRole:
+            if value.strip() == "":
+                return ""
         if row == len(self.mylist):
             self.beginInsertRows(QtCore.QModelIndex(), self.rowCount(), self.rowCount())
             self.add_entry()
             returnval = super(ImportTableModel, self).setData(index, value, role)
             self.endInsertRows()
+            if col == 1:
+                valsplit = value.split()
+                basepath = os.path.basename(valsplit[0])
+                #print(row)
+                newindex = self.index(row, col - 1,QtCore.QModelIndex())
+                self.setData(newindex,basepath,role)
+                self.dataChanged.emit(newindex, newindex)
+                #print(row)
+                newindex = self.index(row, col + 1 ,QtCore.QModelIndex())
+                #print("NEWINDEX",newindex.column(),newindex.row())
+                self.setData(newindex, basepath, role)
+                self.dataChanged.emit(newindex,newindex)
             return returnval
 
-        return super(ImportTableModel, self).setData(index, value, role)
+
+        returnval = super(ImportTableModel, self).setData(index, value, role)
+        if col == 1:
+            valsplit = value.split()
+            basepath = os.path.basename(valsplit[0])
+            #print(row)
+            newindex = self.index(row, col - 1, QtCore.QModelIndex())
+            self.setData(newindex, basepath, role)
+            self.dataChanged.emit(newindex, newindex)
+            #print(row)
+            newindex = self.index(row, col + 1, QtCore.QModelIndex())
+            #print("NEWINDEX", newindex.column(), newindex.row())
+            self.setData(newindex, basepath, role)
+            self.dataChanged.emit(newindex, newindex)
+        #print("End of %d %d" %(col,row))
+        return returnval
 
     def make_default_list(self):
         self.mylist = [
@@ -209,10 +299,9 @@ class ResourceTableModel(ResourceTableBase):
 
 
 
-class GlobalFileChooserDelegate(QtGui.QItemDelegate):
+class GlobalFileChooserDelegate(QtGui.QStyledItemDelegate):
     def __init__(self, parent):
-        QtGui.QItemDelegate.__init__(self, parent)
-        #self.commitData.connect(lambda x: print(x))
+        QtGui.QStyledItemDelegate.__init__(self, parent)
 
     def paint(self, painter, option, index):
         if (option.state & QtGui.QStyle.State_Selected):
@@ -234,6 +323,8 @@ class GlobalFileChooserDelegate(QtGui.QItemDelegate):
         openwfbutton.setIcon(QtGui.QFileIconProvider().icon(QtGui.QFileIconProvider.Network))
         openwfbutton.itemSelectionChanged.connect(self.on_wf_file_change)
         openwfbutton.connect_workaround(self.load_wf_files)
+        openwfbutton.external_label = label
+        openwfbutton.editor = custom_widget
         hbl.addWidget(openwfbutton)
 
         #hbl.setSpacing(0)
@@ -242,18 +333,23 @@ class GlobalFileChooserDelegate(QtGui.QItemDelegate):
         hbl.setSizeConstraint(QtGui.QLayout.SetMaximumSize)
         return custom_widget
 
-    def load_wf_files(self,sender):
+    def load_wf_files(self):
         #I know this would be better the other way, i.e. make a signal, forward the signal, etc.
         #but it's the only place we would need this signal.
+        s = self.sender()
         wf = self.parent().model().wano_parent.root_model.parent_wf
         importable_files = wf.assemble_files("")
-        sender.set_items(importable_files)
+        s.set_items(importable_files)
 
     def on_wf_file_change(self):
-        self.label.setText(" ".join(self.openwfbutton.get_selection()))
-        editor = self.sender()
-        print("Sending now")
-        self.commitData.emit(editor)
+        openwfbutton = self.sender()
+        print(openwfbutton)
+        flist = " ".join(openwfbutton.get_selection())
+        openwfbutton.external_label.setText(flist)
+        #self.commitData.emit(None)
+        #print("emitting")
+        #self.commitData.emit(openwfbutton.external_label)
+        self.commitData.emit(openwfbutton.editor)
 
     def setEditorData(self, editor, index):
         editor.blockSignals(True)
@@ -263,7 +359,8 @@ class GlobalFileChooserDelegate(QtGui.QItemDelegate):
         editor.blockSignals(False)
 
     def setModelData(self, editor, model, index):
-        model.setData(index, self.label.text())
+        #print("SetModelData called")
+        model.setData(index, editor.layout().itemAt(0).widget().text())
 
     def currentIndexChanged(self):
         self.commitData.emit(self.sender())
@@ -515,6 +612,27 @@ class ImportView(QtGui.QTableView):
     def openpersistentslot(self):
         for row in range(0, self.model().rowCount()):
             self.openPersistentEditor(self.model().index(row, 1))
+
+class ExportView(QtGui.QTableView):
+    """
+    A simple table to demonstrate the QComboBox delegate.
+    """
+    def __init__(self, *args, **kwargs):
+        QtGui.QTableView.__init__(self, *args, **kwargs)
+        #gfcd = GlobalFileChooserDelegate(self)
+        #self.setItemDelegateForColumn(1, gfcd)
+
+
+    #def setModel(self,model):
+    #    super(ExportView,self).setModel(model)
+        #for row in range(0, model.rowCount()):
+        #    self.openPersistentEditor(model.index(row, 1))
+
+        #model.rowsInserted.connect(self.openpersistentslot)
+
+    #def openpersistentslot(self):
+    #    for row in range(0, self.model().rowCount()):
+    #        self.openPersistentEditor(self.model().index(row, 1))
 
 
 if __name__ == "__main__":
