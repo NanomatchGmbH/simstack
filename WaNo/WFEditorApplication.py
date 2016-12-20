@@ -5,16 +5,13 @@ from __future__ import absolute_import
 
 import logging
 import os
-import shlex
-import datetime
 
-from PySide.QtCore import QObject
+from PySide.QtCore import QObject, Signal
 from PySide import QtCore,QtGui
 
-from   lxml import etree
+import datetime
 
 from WaNo import WaNoFactory
-from WaNo.lib.FileSystemTree import filewalker
 from pyura.pyura import UnicoreAPI, HTTPBasicAuthProvider
 from pyura.pyura import ErrorCodes as UnicoreErrorCodes
 
@@ -23,17 +20,58 @@ from pyura.pyura import JobManager
 from WaNo.view import WFViewManager
 from WaNo.WaNoGitRevision import get_git_revision
 from WaNo.Constants import SETTING_KEYS
+from WaNo.UnicoreState import UnicoreStateFactory
+from WaNo.UnicoreConnector import UnicoreConnector
+from WaNo.UnicoreConnector import OPERATIONS as uops
+from WaNo.UnicoreConnector import ERROR as uerror
 from WaNo.view.WFEditorPanel import SubmitType
 from WaNo.view.WaNoViews import WanoQtViewRoot
+
+from WaNo.lib.CallableQThread import QThreadCallback
 
 #TODO remove, testing only
 from pyura.pyura import Storage
 from collections import namedtuple
 
-class WFEditorApplication(QObject):
+class WFEditorApplication(QThreadCallback):
+    exec_unicore_callback_operation = Signal(
+            object, dict, object, name="ExecuteUnicoreCallbackOperation")
+    exec_unicore_operation = Signal(object, dict, name="ExecuteUnicoreOperation")
+
     ############################################################################
     #                               Slots                                      #
     ############################################################################
+    def _on_unicore_connect_error(self, base_uri, error):
+        pass
+    def _on_unicore_disconnect_error(self, base_uri, error):
+        pass
+    def _on_unicore_run_single_job_error(self, base_uri, error):
+        msg_title   = "Error during job submission:\n\n"
+        msg         = ""
+        if error == uerror.REGISTRY_NOT_CONNECTED:
+            msg = "Registry must be connected before submitting a job."
+        else:
+            msg = "Unknown Error."
+        self._view_manager.show_error("%s%s" % (msg_title, msg))
+
+    def _on_unicore_error(self, base_uri, operation, error):
+        func = None
+
+        if operation == uops.CONNECT_REGISTRY:
+            func = self._on_unicore_connect_error
+        elif operation == uops.DISCONNECT_REGISTRY:
+            func = self._on_unicore_connect_error
+        elif operation == uops.RUN_SINGLE_JOB:
+            func = self._on_unicore_run_single_job_error
+
+        if not func is None:
+            func(base_uri, error)
+        else:
+            self._view_manager.show_error("General Unicore Error.")
+
+        self._logger.error("Unicore Error for '%s' in operation '%s': %s." % \
+                (base_uri, uops(operation), uerror(error)))
+
     def _on_save_registries(self, registriesList):
         self._logger.debug("Saving UNICORE registries.")
 
@@ -117,99 +155,50 @@ class WFEditorApplication(QObject):
         return [''.join(l[:random.randint(0,len(l))]) for i in range(0, random.randint(0, 6))]
 
 
+    @QThreadCallback.callback
+    def _on_fs_job_list_updated(self, base_uri, jobs):
+        self._view_manager.update_job_list(jobs)
+
     def _on_fs_job_list_update_request(self):
-        self._logger.debug("Querying jobs from Unicore Registry")
-        ok = True
-        files = []
-        #TODO factor out tests
-        if ok:
-            #TODO use job manager?!
-            job_manager = self._unicore.get_job_manager()
-            job_manager.update_list()
-            files = [{
-                        'id': s.get_id(),
-                        'name': s.get_name(),
-                        'type': 'j',
-                        'path': s.get_working_dir()
-                    } for s in job_manager.get_list()]
-            print("jobs:\n\n\n\n%s\n\n\n" % job_manager.get_list())
-            print("Got files: %s" % files)
-            self._view_manager.update_job_list(files)
+        base_uri = self._get_current_base_uri()
+        self.exec_unicore_callback_operation.emit(
+                uops.UPDATE_JOB_LIST,
+                UnicoreConnector.create_update_job_list_args(base_uri),
+                (self._on_fs_job_list_updated, (), {})
+            )
+
+    @QThreadCallback.callback
+    def _on_workflow_list_updated(self, base_uri, workflows):
+        self._view_manager.update_workflow_list(workflows)
 
     def _on_fs_worflow_list_update_request(self):
-        self._logger.debug("Querying workflows from Unicore Registry")
-        ok = True
-        workflows = []
-        #TODO factor out tests
-        if ok:
-            wf_manager = self._unicore.get_workflow_manager()
-            wf_manager.update_list()
-            workflows = [{
-                    'id': s.get_id(),
-                    'name': s.get_name(),
-                    'type': 'w',
-                    'path': s.get_working_dir()
-                    } for s in wf_manager.get_list()]
-            self._view_manager.update_workflow_list(workflows)
+        base_uri = self._get_current_base_uri()
+        self.exec_unicore_callback_operation.emit(
+                uops.UPDATE_WF_LIST,
+                UnicoreConnector.create_update_workflow_list_args(base_uri),
+                (self._on_workflow_list_updated, (), {})
+            )
 
-    def _extract_storage_path(self, path):
-        storage = None
-        querypath = ''
-        splitted = [p for p in path.split('/') if not p is None and p != ""]
-
-        if len(splitted) >= 1:
-            storage   = splitted[0]
-        if len(splitted) >= 2:
-            querypath = '/'.join(splitted[1:]) if len(splitted) > 1 else ''
-
-        return (storage, querypath)
+    @QThreadCallback.callback
+    def _on_fs_list_updated(self, base_uri, path, files):
+        self._view_manager.update_filesystem_model(path, files)
 
     def _on_fs_job_update_request(self, path):
-        self._logger.debug("Querying %s from Unicore Registry" % path)
-        ok = True
-        files = []
-        #TODO factor out tests
-
-        storage, querypath = self._extract_storage_path(path)
-        if ok and not storage is None:
-            #TODO use job manager?!
-            storage_manager = self._unicore.get_storage_manager()
-            storage_manager.update_list()
-            print("Requesting %s:%s" % (storage, querypath))
-            files = storage_manager.get_file_list(
-                    storage_id=storage, path=querypath)
-            self._view_manager.update_filesystem_model(path, files)
-            print("Got (for path %s) files: %s" % (path,files))
+        base_uri = self._get_current_base_uri()
+        self.exec_unicore_callback_operation.emit(
+                uops.UPDATE_DIR_LIST,
+                UnicoreConnector.create_update_dir_list_args(base_uri, path),
+                (self._on_fs_list_updated, (), {})
+            )
 
     def _on_fs_worflow_update_request(self, wfid):
         self._logger.debug("Querying %s from Unicore Registry" % wfid)
-        ok = True
-        files = []
-        #TODO factor out tests
-        if ok:
-            #TODO use job manager?!
-            wf_manager = self._unicore.get_workflow_manager()
-            wf = wf_manager.get_by_id(wfid)
-            wf.update()
-
-            job_manager = self._unicore.get_job_manager()
-            job_manager.update_list()
-
-            jobs = [job_manager.get_by_id(jobid) for jobid in wf.get_jobs()]
-
-            files = [{
-                        'id': job.get_id(),
-                        'name': job.get_name(),
-                        'type': 'j',
-                        'path': job.get_working_dir()
-                    } for job in jobs]
-            #print("jobs:\n\n\n\n%s\n\n\n" % job_manager.get_list())
-            print("Got files: %s" % files)
-
-            self._view_manager.update_filesystem_model(wfid,files)
-            #"""
-
-        print("wf update requested... %s"%wfid)
+        base_uri = self._get_current_base_uri()
+        self.exec_unicore_callback_operation.emit(
+                uops.UPDATE_WF_JOB_LIST,
+                UnicoreConnector.create_update_workflow_job_list_args(base_uri, wfid),
+                (self._on_fs_list_updated, (), {})
+            )
 
     def _on_fs_directory_update_request(self, path):
         self._logger.debug("Querying %s from Unicore Registry" % path)
@@ -218,7 +207,6 @@ class WFEditorApplication(QObject):
 
     def _on_saved_workflows_update_request(self, path):
         self._update_workflow_list()
-
 
     def __on_download_update(self, uri, localdest, progress, total):
         print("\t%6.2f (%6.2f / %6.2f)\t%s" % (progress / total * 100., progress,
@@ -233,50 +221,71 @@ class WFEditorApplication(QObject):
 
 
     def _on_fs_download(self, from_path, to_path):
-        storage, path = self._extract_storage_path(from_path)
-
-        storage_manager = self._unicore.get_storage_manager()
-
-        #TODO do in future/Thread
-        status, err = storage_manager.get_file(
-                path,
-                to_path,
-                storage_id=storage,
-                callback=self.__on_download_update)
-        print("status: %s, err: %s" % (status, err))
+        base_uri = self._get_current_base_uri()
+        self.exec_unicore_callback_operation.emit(
+                uops.DOWNLOAD_FILE,
+                UnicoreConnector.create_data_transfer_args(
+                        base_uri,
+                        from_path,
+                        to_path),
+                (None, (), {})
+            )
 
     def _on_fs_upload(self, local_file, dest_dir):
-        storage, path = self._extract_storage_path(dest_dir)
-        storage_manager = self._unicore.get_storage_manager()
-        remote_filepath = os.path.join(path, os.path.basename(local_file))
+        base_uri = self._get_current_base_uri()
+        self.exec_unicore_callback_operation.emit(
+                uops.UPLOAD_FILE,
+                UnicoreConnector.create_data_transfer_args(
+                        base_uri,
+                        local_file,
+                        dest_dir),
+                (None, (), {})
+            )
 
-        #TODO do in future/Thread
-        print("uploading '%s' to %s:%s" % (local_file, storage, path))
-        status, err, json = storage_manager.upload_file(
-                local_file,
-                remote_filename=remote_filepath,
-                storage_id=storage,
-                callback=self.__on_upload_update)
-        print("status: %s, err: %s, json: %s" % (status, err, json))
-        #TODO request update when done
+    @QThreadCallback.callback
+    def _on_file_deleted(self, base_uri, status, err, to_del=""):
+        to_update = os.path.dirname(to_del)
+        if err != UnicoreErrorCodes.NO_ERROR:
+            self._view_manager.show_error(
+                    "Failed to delete job '%s'\n"\
+                    "Registry returned status: %s." % \
+                    (to_del, str(status.name))
+                )
+        else:
+            if not (to_update is None or to_update == ""):
+                self._logger.debug(
+                        "Issuing filesystem update for '%s' after delete." % \
+                                to_update)
+                # TODO we need to add the to_update path to the list in the
+                # view first. otherwise, there will be no update...
+                self._on_fs_job_update_request(to_update)
 
     def _on_fs_delete_file(self, filename):
-        storage, path = self._extract_storage_path(filename)
-        storage_manager = self._unicore.get_storage_manager()
+        base_uri = self._get_current_base_uri()
+        self.exec_unicore_callback_operation.emit(
+                uops.DELETE_FILE,
+                UnicoreConnector.create_delete_file_args(base_uri, filename),
+                (self._on_file_deleted, (), { 'to_del': filename } )
+            )
 
-        print("deleting %s:%s" % (storage, path))
-        if not path is None and not path == "":
-            status, err = storage_manager.delete_file(path, storage_id=storage)
-            print("delete: status: %s, err: %s" % (status, err))
+    @QThreadCallback.callback
+    def _on_job_deleted(self, base_uri, status, err, job=""):
+        if err == UnicoreErrorCodes.NO_ERROR:
+            self._on_fs_job_list_update_request()
+        else:
+            self._view_manager.show_error(
+                    "Failed to delete job '%s'\n"\
+                    "Registry returned status: %s." % \
+                    (job, str(status.name))
+                )
 
     def _on_fs_delete_job(self, job):
-        job, path = self._extract_storage_path(job)
-        job_manager = self._unicore.get_job_manager()
-
-        print("deleting job: %s" % job)
-        if path is None or path == "":
-            status, err = job_manager.delete(job=job)
-            print("delete: status: %s, err: %s" % (status, err))
+        base_uri = self._get_current_base_uri()
+        self.exec_unicore_callback_operation.emit(
+                uops.DELETE_JOB,
+                UnicoreConnector.create_delete_job_args(base_uri, job),
+                (self._on_job_deleted, (), { 'job': job})
+            )
 
 
     ############################################################################
@@ -332,9 +341,48 @@ class WFEditorApplication(QObject):
         return workflows
 
     ############################################################################
+    #                       unicore  callbacks                                 #
+    ############################################################################
+    @QThreadCallback.callback
+    def _cb_connect(self, base_uri, error, status, registry=None):
+        #TODO debug only
+        print("cb_connect@WFEditorApplication: err=%s, status=%s" % (str(error), str(status)))
+        import platform
+        import ctypes
+        import threading
+        from PySide.QtCore import QThread
+        if platform.system() == "Linux":
+            self._logger.debug("Unicore Thread ID (WFEditorApplication): %d\t%d\t%s" % \
+                    (threading.current_thread().ident,
+                    ctypes.CDLL('libc.so.6').syscall(186),
+                    str(QThread.currentThreadId())))
+        ### END TODO
+
+        if registry is None:
+            self._logger.error("Callback did not get expected data.")
+            return
+
+        if error == UnicoreErrorCodes.NO_ERROR:
+            self._logger.info("Connected.")
+            connected = True
+            self._set_unicore_connected()
+        else:
+            self._logger.error("Failed to connect to registry: %s, %s" % \
+                        (str(status), str(error))
+                    )
+            self._view_manager.show_error(
+                    "Failed to connect to registry '%s'\n"\
+                    "Connection returned status: %s." % \
+                    (registry[SETTING_KEYS['registry.name']], str(status.name))
+                )
+            self._set_unicore_disconnected()
+
+        # TODO Status updates should be delegated to update method...
+        # can we manually trigger it / expire the timer?
+
+    ############################################################################
     #                              unicore                                     #
     ############################################################################
-
     # no_status_update shuld be set to true if there are multiple successive calls
     # that all would individually update the connection status.
     # This avoids flickering of the icon.
@@ -358,9 +406,8 @@ class WFEditorApplication(QObject):
         if not no_status_update:
             self._set_unicore_connecting()
 
-        idx = self._get_default_registry() \
-                if index is None or index < 0 else index
-        registry    = self._get_registry_by_index(idx)
+        self._set_current_registry_index(index)
+        registry    = self._get_current_registry()
 
         self._logger.info("Connecting to registry '%s'." % \
                 registry[SETTING_KEYS['registry.name']]
@@ -376,71 +423,16 @@ class WFEditorApplication(QObject):
                     auth_provider
                 )
 
-        if not self._unicore is None and not self._unicore.is_connected():
-            wfs = registry[SETTING_KEYS['registry.workflows']]
-            if not wfs is None and wfs != "":
-                if not self._unicore.set_workflow_base_uri(wfs):
-                    self._logger.error("Could not set workflow uri.")
-                else:
-                    self._logger.info("foo")
-            error, status = self._unicore.connect()
-
-            if error == UnicoreErrorCodes.NO_ERROR: #TODO check if _unicore.is_connected.
-                success = True
-                self._logger.info("Connected.")
-                print("#############\n#############")
-                #self._test_wf_submit()
-
-                """
-                job_manager = reg.get_job_manager()
-                if (job_manager is None):
-                    logger.error("job tests: did NOT get job manager")
-                else:
-                    logger.info("job tests: got job manager")
-
-                    job_manager.update_list()
-                    jobs = job_manager.get_list()
-                    logger.info("job tests: got %d jobs." % len(jobs))
-                    ## init all objects. Do not output anything, this will spam the log anyway...
-                    # for job in jobs:
-                    #    try:
-                    #        a = job.get_owner_dn()
-                    #    except:
-                    #        # This should not happen when the REST API Bugs are fixed
-                    #        pass
-                    logger.info("job tests: job infos:")
-                    for job in jobs:
-                        owner = None
-                        try:
-                            owner = job.get_owner_dn()
-                        except:
-                            # This should not happen when the REST API Bugs are fixed
-                            pass
-                        logger.info("   job %s from %s" % (str(job.get_id()), owner))
-
-                    err, newjob = job_manager.create('/bin/echo',
-                                                     arguments=['hallo, welt', '$FOO'],
-                                                     environment=["FOO=bar"])
-                    """
-            else:
-                self._logger.error("Failed to connect to registry: %s, %s" % \
-                            (str(status), str(error))
-                        )
-                self._view_manager.show_error(
-                        "Failed to connect to registry '%s'\n"\
-                        "Connection returned status: %s." % \
-                        (registry[SETTING_KEYS['registry.name']], str(status.name))
-                    )
-                self._unicore = None
-        else:
-            raise RuntimeError("Registry must be disconnected first.")
-
-        if not no_status_update:
-            if success:
-                self._set_unicore_connected()
-            else:
-                self._set_unicore_disconnected()
-        return success
+        self.exec_unicore_callback_operation.emit(
+                uops.CONNECT_REGISTRY,
+                UnicoreConnector.create_connect_args(
+                        registry[SETTING_KEYS['registry.username']],
+                        registry[SETTING_KEYS['registry.password']],
+                        registry[SETTING_KEYS['registry.baseURI']],
+                        wf_uri = registry[SETTING_KEYS['registry.workflows']]
+                    ),
+                (self._cb_connect, (), {'registry': registry})
+            )
 
     def _run(self):
         name        = None
@@ -471,64 +463,33 @@ class WFEditorApplication(QObject):
             # Error case...
             pass
 
-    def run_workflow(self,xml,directory,name):
-        wf_manager = self._unicore.get_workflow_manager()
-        storage_manager = self._unicore.get_storage_manager()
+    def run_workflow(self, xml, directory, name):
+        base_uri = self._get_current_base_uri()
         now = datetime.datetime.now()
         nowstr = now.strftime("%Y-%m-%d %H:%M:%S")
-        submitname = "WF %s submitted at %s" %(name,nowstr )
-        storage = storage_manager.create(name=submitname)
-        storage_id = storage[1].get_id()
+        submitname = "WF %s submitted at %s" %(name, nowstr)
         to_upload = os.path.join(directory,"jobs")
 
-        for filename in filewalker(to_upload):
-            cp = os.path.commonprefix([to_upload,filename])
-            relpath = os.path.relpath(filename,cp)
-            storage_manager.upload_file(filename, storage_id=storage_id, remote_filename=relpath)
-            #imports.add_import(filename,relpath)
+        self.exec_unicore_operation.emit(
+                uops.RUN_WORKFLOW_JOB,
+                UnicoreConnector.create_workflow_job_args(
+                    base_uri,
+                    submitname,
+                    to_upload,
+                    xml)
+                )
 
-        storage_uri = storage_manager.get_base_uri()
-        err, status, wf = wf_manager.create(storage_id,submitname)
-        workflow_id = wf.split("/")[-1]
-        storage_management_uri = storage_manager.get_storage_management_uri()
-        xmlstring = etree.tostring(xml,pretty_print=False).decode("utf-8").replace("${WORKFLOW_ID}",workflow_id)
-        xmlstring = xmlstring.replace("${STORAGE_ID}","%s%s"%(storage_management_uri,storage_id))
 
-        with open("wf.xml",'w') as wfo:
-            wfo.write(xmlstring)
-
-        print("err: %s, status: %s, wf_manager: %s" % (err, status, wf))
-        #### TIMO HERE
-        wf_manager.run(wf.split('/')[-1], xmlstring)
-
-    def run_job(self, wano_dir,name):
-        job_manager = self._unicore.get_job_manager()
-        imports = JobManager.Imports()
-        storage_manager = self._unicore.get_storage_manager()
-        execfile = os.path.join(wano_dir,"submit_command.sh")
-        for filename in filewalker(wano_dir):
-            relpath = os.path.relpath(filename,wano_dir)
-            imports.add_import(filename,relpath)
-
-        contents = ""
-        with open(execfile) as com:
-            contents = com.read()
-
-        splitcont = shlex.split(contents.strip(" \t\n\r"))
-
-        com = splitcont[0]
-        arguments = splitcont[1:]
-
-        err, newjob = job_manager.create(com,
-                                         arguments=arguments,
-                                         imports = imports,
-                                         environment=[],
-                                         name=name
-                                         )
-
-        job_manager.upload_imports(newjob,storage_manager)
-        wd = newjob.get_working_dir()
-        job_manager.start(newjob)
+    def run_job(self, wano_dir, name):
+        base_uri = self._get_current_base_uri()
+        self.exec_unicore_operation.emit(
+                uops.RUN_SINGLE_JOB,
+                UnicoreConnector.create_single_job_args(
+                        base_uri,
+                        wano_dir,
+                        name
+                    )
+            )
 
     def _reconnect_unicore(self, registry_index):
         self._logger.info("Reconnecting to Unicore Registry.")
@@ -556,8 +517,13 @@ class WFEditorApplication(QObject):
             )
 
     def _get_registry_by_index(self, index):
+        registry = None
         query_str = "%s.%d" % (SETTING_KEYS['registries'], index)
-        return self.__settings.get_value(query_str)
+        try:
+            registry = self.__settings.get_value(query_str)
+        except:
+            pass
+        return registry
 
     def _get_default_registry(self):
         default = 0
@@ -573,6 +539,23 @@ class WFEditorApplication(QObject):
     def _get_registry_names(self):
         registries = self.__settings.get_value(SETTING_KEYS['registries'])
         return [r[SETTING_KEYS['registry.name']] for r in registries]
+
+    def _set_current_registry_index(self, index):
+        self._current_registry_index = index if not index is None \
+                and index > 0 and index < len(self._get_registry_names()) \
+                else self._get_default_registry()
+
+    def _get_current_registry_index(self):
+        return self._current_registry_index
+
+    def _get_current_registry(self):
+        idx = self._get_current_registry_index()
+        return self._get_registry_by_index(idx)
+
+    def _get_current_base_uri(self):
+        registry = self._get_current_registry()
+        return "" if registry is None \
+                else registry[SETTING_KEYS['registry.baseURI']]
 
 
     ############################################################################
@@ -638,15 +621,46 @@ class WFEditorApplication(QObject):
         self._view_manager.delete_job.connect(self._on_fs_delete_job)
         self._view_manager.delete_file.connect(self._on_fs_delete_file)
 
+        self._unicore_connector.error.connect(self._on_unicore_error)
+
 
     def __init__(self, settings):
         super(WFEditorApplication, self).__init__()
+
         self.__settings     = settings
 
         self._logger        = logging.getLogger('WFELOG')
+        #TODO debug only
+        import sys
+        loglevel = logging.DEBUG
+        self._logger.setLevel(loglevel)
+        ch = logging.StreamHandler(sys.stdout)
+        ch.setLevel(loglevel)
+        self._logger.addHandler(ch)
+        ##### END TODO
+
+        #TODO debug only
+        import platform
+        import ctypes
+        import threading
+        if platform.system() == "Linux":
+            self._logger.debug("Gui Thread ID: %d\t%d" % \
+                    (threading.current_thread().ident,
+                    ctypes.CDLL('libc.so.6').syscall(186)))
+        ##### END TODO
+
+
         self._view_manager  = WFViewManager()
         self._unicore       = None # TODO pyura API
-        # TODO model
+
+        self._unicore_connector = UnicoreConnector(self,
+                UnicoreStateFactory.get_writer())
+
+        self._unicore_connector.start()
+
+        self._current_registry_index = 0
+
+	# TODO model
         self.wanos = []
 
         UnicoreAPI.init()
