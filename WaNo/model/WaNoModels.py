@@ -671,8 +671,10 @@ class WaNoItemScriptFileModel(WaNoItemFileModel):
         fullpath = self.get_path()
         content = ""
         try:
+            #print("Reading script from ",fullpath)
             with open(fullpath,'r') as infile:
                 content = infile.read()
+            #print("Contents were",content)
             return content
         except FileNotFoundError:
             return ""

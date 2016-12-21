@@ -43,6 +43,7 @@ widgetColors = {'MainEditor' : '#F5FFF5' , 'Control': '#EBFFD6' , 'Base': '#F5FF
 
 
 
+import copy
 
 class WFWaNoWidget(QtGui.QToolButton):
     def __init__(self, text, wano, parent):
@@ -76,7 +77,7 @@ class WFWaNoWidget(QtGui.QToolButton):
         self.setIcon(wano[3])
         #self.setAutoFillBackground(True)
         #self.setColor(QtCore.Qt.lightGray)
-        self.wano = wano
+        self.wano = copy.copy(wano)
         self.model = self
         self.wano_model = None
         self.wano_view = None
@@ -122,6 +123,7 @@ class WFWaNoWidget(QtGui.QToolButton):
         #print(self.wano[1],outfolder)
         if outfolder != self.wano[1]:
             try:
+                #print("Copying %s to %s"%(outfolder,self.wano[1]))
                 copytree(self.wano[1],outfolder)
             except Exception as e:
                 self.logger.error("Failed to copy tree: %s." % str(e))
@@ -664,6 +666,7 @@ class WFModel(object):
                 subxml = ele.get_xml()
                 subxml.attrib["id"] = str(myid)
                 subxml.attrib["name"] = name
+                #print("Instantiating in folder: %s, wanocheat: %s"%(foldername,ele.wano[1]))
                 success = ele.instantiate_in_folder(foldername)
                 root.append(subxml)
                 if not success:
