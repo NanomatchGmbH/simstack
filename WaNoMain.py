@@ -59,7 +59,7 @@ if __name__ == '__main__':
     settings = WaNoSettingsProvider.get_instance(SETTINGS_FILE)
     if path.exists(SETTINGS_FILE):
         with open(SETTINGS_FILE, 'r') as infile:
-            settings.load_from_dict(yaml.load(infile))
+            settings.load_from_dict(yaml.safe_load(infile))
         settings._finish_parsing()
     else:
         # Default settings are already loaded, lets save them to file

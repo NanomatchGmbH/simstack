@@ -1,4 +1,5 @@
 import abc
+import sys
 from six import string_types
 import logging
 import yaml
@@ -40,7 +41,7 @@ class AbstractSettings(object):
 
     def dump_to_file(self,filename):
         with open(filename,'w') as outfile:
-            outfile.write(yaml.dump(self.settings_container,default_flow_style=False))
+            outfile.write(yaml.safe_dump(self.settings_container,default_flow_style=False))
 
     """ Saves the settings to file.
 
@@ -103,10 +104,21 @@ class AbstractSettings(object):
     def delete_value(self, key):
         values = self.get_value(key)
         if not values is None:
-            if isinstance(values, list) or isinstance(values, dict):
+            if isinstance(values, list):
+                del values[:]
+            elif isinstance(values, dict):
                 values.clear()
             else:
                 self.set_value(key, None)
+
+    def py2unicodetostring(self,mystr):
+        if sys.version_info[0] < 3:
+            if isinstance(mystr,unicode):
+                return str(mystr)
+            return mystr
+        else:
+            return mystr
+
 
     """ Deletes a given key and all subsequent values from the settings dict.
     """
@@ -165,13 +177,16 @@ class AbstractSettings(object):
 
         current_dict = self.settings_container
         for key, nextkey in zip(splitname[:-1], splitname[1:]):
-            #parsed_key = self._cast_string_to_correct_type(key)
+            key = self.py2unicodetostring(key)
+
             if isinstance(key, str) and not key in current_dict:
+                nextkey = self.py2unicodetostring(nextkey)
                 if isinstance(nextkey, str):
                     current_dict[key] = {}
                 elif isinstance(nextkey, int):
                     current_dict[key] = []
             elif isinstance(key, int) and key == len(current_dict):
+                nextkey = self.py2unicodetostring(nextkey)
                 if isinstance(nextkey, str):
                     current_dict.append({})
                 elif isinstance(nextkey, int):
