@@ -162,7 +162,7 @@ class DownloadProgressWidget(QWidget):
 if __name__ == '__main__':
     import sys
     from PySide.QtGui import QWidget, QHBoxLayout, QApplication, QFileIconProvider
-    class DummyDlStatus:
+    class DummyDlStatus(object):
         def get_list_iterator(self, key):
             if key in self.lists:
                 l    = self.lists[key]['list']

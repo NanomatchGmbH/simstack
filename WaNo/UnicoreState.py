@@ -2,7 +2,7 @@ from PySide.QtCore import QReadWriteLock, QMutex
 import copy # for ProtectedDict and ProtectedList
 from enum import Enum
 
-class UnicoreStateValues:
+class UnicoreStateValues(object):
     CONNECTION      = "connection"
 
 try:
@@ -10,7 +10,7 @@ try:
 except:
     from lib.pyura.pyura import ConnectionState as UnicoreConnectionStates
 
-class ProtectedValue:
+class ProtectedValue(object):
     def __get_value(self, unlock=True):
         v = None
         self._lock.lockForWrite()
@@ -67,7 +67,7 @@ class ProtectedRefCountedValue(ProtectedValue):
 #    def __init__(self, value):
 #        self.
 
-class ProtectedList:
+class ProtectedList(object):
     def __create_list_item(self, item):
         return {'ref_count': 0, 'item': item}
 
@@ -118,7 +118,7 @@ class ProtectedList:
         self._list = copy.deepcopy(initial_list)
         self._lock = QReadWriteLock(QReadWriteLock.NonRecursive)
 
-class ProtectedDict:
+class ProtectedDict(object):
 
     def _add_value(self, key, value):
         """ Note: _Must_ hold self._lock! """
@@ -236,7 +236,7 @@ class ProtectedIndexedList(ProtectedDict):
     def __init__(self, initial_dict={}):
         super(ProtectedIndexedList, self).__init__(initial_dict)
 
-class ReaderWriterInstance:
+class ReaderWriterInstance(object):
     def get_reader_instance(self):
         raise NotImplementedError("Must be implemented in sub-class.")
 
@@ -255,7 +255,7 @@ class ReaderWriterInstance:
 
 
 class ProtectedReaderWriterDict(ReaderWriterInstance):
-    class _Reader:
+    class _Reader(object):
         def get_value(self, key):
             return self._pdict_instance.get_value(key)
 
@@ -291,7 +291,7 @@ class ProtectedReaderWriterDict(ReaderWriterInstance):
         self._reader = ProtectedReaderWriterDict._Reader(self._pdict)
 
 class ProtectedReaderWriterIndexedList(ReaderWriterInstance):
-    class _Reader:
+    class _Reader(object):
         def get_value(self, key):
             return self._list_instance.get_value(key)
 
@@ -336,10 +336,10 @@ UnicoreDataTransferDirection = Enum(
         """
         )
 
-class UnicoreStateFactory:
+class UnicoreStateFactory(object):
     _instance = None
 
-    class __UnicoreState:
+    class __UnicoreState(object):
         def add_registry(self, base_uri, username,
                 state=UnicoreConnectionStates.DISCONNECTED):
             tmp = {
@@ -412,7 +412,7 @@ class UnicoreStateFactory:
     #TODO Idea: Add __enter__ / __exit__ methods for getter methods. This prevents
     # storage of references.
 
-    class _Reader:
+    class _Reader(object):
         #TODO we should not return get_writer_instance nor get_reader_instances,
         # the _Reader should not be able to get writers, but writers might
         # decide on their own

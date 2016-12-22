@@ -1,3 +1,4 @@
+import os
 from PySide.QtGui import QWidget, QComboBox, QPushButton, QHBoxLayout, QPixmap, QIcon, \
     QSizePolicy
 
@@ -18,9 +19,9 @@ class WaNoRegistrySelection(QWidget):
             "Connect",
         ]
     __icons = [
-            'WaNo/Media/icons/cs-xlet-running.svg',
-            'WaNo/Media/icons/cs-xlet-update.svg',
-            'WaNo/Media/icons/cs-xlet-error.svg',
+            'cs-xlet-running.svg',
+            'cs-xlet-update.svg',
+            'cs-xlet-error.svg',
         ]
 
     registrySelectionChanged    = Signal(int, name='registrySelectionChanged')
@@ -38,8 +39,14 @@ class WaNoRegistrySelection(QWidget):
         self.select_registry(index)
         self.__emit_signal = True
 
+    def get_iconpath(self,icon):
+        script_path = os.path.dirname(os.path.realpath(__file__))
+        media_path = os.path.join(script_path, "..", "Media","icons")
+        imagepath = os.path.join(media_path, icon)
+        return imagepath
+
     def __update_status(self):
-        p = QPixmap(self.__icons[self.__status.value])
+        p = QPixmap(self.get_iconpath(self.__icons[self.__status.value]))
         buttonIcon = QIcon(p)
         self.isConnectedIcon.setIcon(buttonIcon)
         self.isConnectedIcon.setText(self.__text[self.__status.value])

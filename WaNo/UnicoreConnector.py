@@ -288,7 +288,7 @@ class UnicoreWorker(TPCThread):
         self.registry       = registry
         self._state         = reg_state
 
-class UnicoreDataTransfer:
+class UnicoreDataTransfer(object):
     def _update_transfer_status(self, uri, localfile, progress, total):
         print("\t%6.2f (%6.2f / %6.2f)\t%s" % (progress / total * 100., progress,
             total, uri))
@@ -640,9 +640,8 @@ class UnicoreConnector(CallableQThread):
         ops = OPERATIONS
 
         if operation == ops.CONNECT_REGISTRY:
-            #data['kwargs']['callback'] = callback
-            self.connect_registry(*data['args'], **data['kwargs'],
-                    callback=callback)
+            data['kwargs']['callback'] = callback
+            self.connect_registry(*data['args'], **data['kwargs'])
         elif operation == ops.DISCONNECT_REGISTRY:
             pass #TODO
         elif operation == ops.RUN_SINGLE_JOB:

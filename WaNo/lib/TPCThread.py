@@ -1,5 +1,10 @@
 import threading
-from queue import Queue, Empty
+import sys
+
+if sys.version_info[0] < 3:
+    from Queue import Queue, Empty
+else:
+    from queue import Queue, Empty
 from functools import wraps
 
 class TPCThread(threading.Thread):
@@ -44,7 +49,9 @@ class TPCThread(threading.Thread):
                 break
 
         if not self.exit_callback is None:
-            self.exit_callback[0](*self.exit_callback[1], *self.exit_callback[2])
+            callbacks = self.exit_callback[1] + self.exit_callback[2]
+            #self.exit_callback[0](*self.exit_callback[1], *self.exit_callback[2])
+            self.exit_callback[0](*callbacks)
 
     def join(self, timeout=None):
         self.stoprequest.set()

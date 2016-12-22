@@ -3,6 +3,7 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 import time
+import os
 
 import PySide.QtGui  as QtGui
 from PySide.QtCore import Signal
@@ -12,7 +13,7 @@ from .ViewTimer import ViewTimer
 
 from PySide.QtCore import QMutex
 
-class StatusMessageManager:
+class StatusMessageManager(object):
     def __sort(self):
         """ Sorts by time of arrival, newest first.
 
@@ -84,7 +85,10 @@ class WFEditorMainWindow(QtGui.QMainWindow):
     run                 = Signal(name="Run")
    
     def __init_ui(self,parent=None):
-        self.setWindowIcon(QtGui.QIcon('./WaNo/Media/Logo_Nanomatch.png'))
+        script_path = os.path.dirname(os.path.realpath(__file__))
+        media_path = os.path.join(script_path, "..", "Media")
+        imagepath = os.path.join(media_path, "Logo_Nanomatch.png")
+        self.setWindowIcon(QtGui.QIcon(imagepath))
         self.setCentralWidget(self.wfEditor)
     
         self._createActions()

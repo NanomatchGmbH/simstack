@@ -47,7 +47,7 @@ class DownloadProgressMenuButton(DropDownWidgetPushButton):
 if __name__ == '__main__':
     from PySide.QtGui import QApplication, QMainWindow
     import sys
-    class DummyDlStatus:
+    class DummyDlStatus(object):
         def get_list_iterator(self, key):
             if key in self.lists:
                 l    = self.lists[key]['list']
