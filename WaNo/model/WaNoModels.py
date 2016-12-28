@@ -462,7 +462,7 @@ class WaNoModelRoot(WaNoModelDictLike):
                     #filejsdl = JSDLtoXML.xml_datastaging_from_source(filename=var[0], overwrite=False,source_uri="%s/%s"%(basedir, var[0]))
                     filejsdl = JSDLtoXML.xml_datastaging_from_source(filename=var[0], overwrite=False,
                                                                      source_uri="BFT:${STORAGE_ID}#%s/%s" % (
-                                                         stageout_basedir, var[1]))
+                                                         stageout_basedir, var[0]))
 
                 files.append(filejsdl)
             else:
