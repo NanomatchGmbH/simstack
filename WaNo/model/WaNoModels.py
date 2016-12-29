@@ -452,17 +452,23 @@ class WaNoModelRoot(WaNoModelDictLike):
 
     def flat_variable_list_to_jsdl(self,fvl,basedir,stageout_basedir):
         files = []
-        print(fvl)
+
+        for myid,(logical_filename, source) in enumerate(self.input_files):
+            fvl.append(("IFILE%d"%(myid),"File",(logical_filename,source)))
+            #print("Trying to add ",logical_filename,source)
+
+
         for (varname,type,var) in fvl:
-            jsdl = None
             if type == "File":
                 if var[1].startswith("c9m:"):
                     filejsdl = JSDLtoXML.xml_datastaging_from_source(filename=var[0], overwrite=False,source_uri=var[1])
                 else:
                     #filejsdl = JSDLtoXML.xml_datastaging_from_source(filename=var[0], overwrite=False,source_uri="%s/%s"%(basedir, var[0]))
+
                     filejsdl = JSDLtoXML.xml_datastaging_from_source(filename=var[0], overwrite=False,
                                                                      source_uri="BFT:${STORAGE_ID}#%s/%s" % (
                                                          stageout_basedir, var[0]))
+
 
                 files.append(filejsdl)
             else:
