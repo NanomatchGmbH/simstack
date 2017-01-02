@@ -52,6 +52,7 @@ OPERATIONS = Enum("OPERATIONS",
     UPDATE_DIR_LIST
     DELETE_FILE
     DELETE_JOB
+    DELETE_WORKFLOW
     DOWNLOAD_FILE
     UPLOAD_FILE
     """,
@@ -271,8 +272,19 @@ class UnicoreWorker(TPCThread):
             status, err = job_manager.delete(job=job)
             self._exec_callback(callback, base_uri, status, err)
 
+    @TPCThread._from_other_thread
+    def delete_workflow(self, callback, base_uri, workflow):
+        wf, path = extract_storage_path(workflow)
+        print(wf,path)
+        wf_manager = self.registry.get_workflow_manager()
 
-       #TODO remove, debug only
+        self._logger.debug("deleting workflow: %s" % workflow)
+        if path is None or path == "":
+            status, err = wf_manager.delete(workflow=workflow)
+            self._exec_callback(callback, base_uri, status, err)
+
+
+                    #TODO remove, debug only
     def start(self):
         super(UnicoreWorker, self).start()
         import platform
@@ -473,6 +485,10 @@ class UnicoreConnector(CallableQThread):
         return UnicoreConnector.create_basic_path_args(base_uri, job)
 
     @staticmethod
+    def create_delete_workflow_args(base_uri, workflow):
+        return UnicoreConnector.create_basic_path_args(base_uri, workflow)
+
+    @staticmethod
     def create_data_transfer_args(base_uri, from_path, to_path):
         data = UnicoreConnector.create_basic_args(base_uri)
         data['args'] += (from_path, to_path)
@@ -596,6 +612,11 @@ class UnicoreConnector(CallableQThread):
         if not worker is None:
             worker.delete_job(callback, base_uri, job)
 
+    def delete_workflow(self, base_uri, workflow, callback=(None, (), {})):
+        worker = self._get_error_or_fail(base_uri)
+        if not worker is None:
+            worker.delete_workflow(callback, base_uri, workflow)
+
     def _data_transfer(self, base_uri, localfile, remotefile, direction,
             callback=(None, (), {})):
         if not base_uri in self.workers:
@@ -660,6 +681,8 @@ class UnicoreConnector(CallableQThread):
             self.delete_file(*data['args'], callback=callback)
         elif operation == ops.DELETE_JOB:
             self.delete_job(*data['args'], callback=callback)
+        elif operation == ops.DELETE_WORKFLOW:
+            self.delete_workflow(*data['args'], callback=callback)
         elif operation == ops.DOWNLOAD_FILE:
             self.download_file(*data['args'], callback=callback)
         elif operation == ops.UPLOAD_FILE:

@@ -26,6 +26,7 @@ class WFViewManager(QObject):
     upload_file                 = Signal(str, str, name="uploadFile")
     delete_file                 = Signal(str, name="deleetFile")
     delete_job                  = Signal(str, name="deleetJob")
+    delete_workflow             = Signal(str, name="deleteWorkflow")
 
 
     def _show_message(self, msg_type, msg):
@@ -159,6 +160,7 @@ class WFViewManager(QObject):
         self._editor.download_file.connect(self._on_file_download)
         self._editor.upload_file_to.connect(self._on_file_upload)
         self._editor.delete_job.connect(self.delete_job)
+        self._editor.delete_workflow.connect(self.delete_workflow)
         self._editor.delete_file.connect(self.delete_file)
         self._editor.workflow_saved.connect(self._on_workflow_saved)
 

@@ -279,6 +279,17 @@ class WFEditorApplication(QThreadCallback):
                     (job, str(status.name))
                 )
 
+    @QThreadCallback.callback
+    def _on_workflow_deleted(self, base_uri, status, err, workflow=""):
+        if err == UnicoreErrorCodes.NO_ERROR:
+            self._on_fs_worflow_list_update_request()
+        else:
+            self._view_manager.show_error(
+                "Failed to delete workflow '%s'\n" \
+                "Registry returned status: %s." % \
+                (workflow, str(status.name))
+            )
+
     def _on_fs_delete_job(self, job):
         base_uri = self._get_current_base_uri()
         self.exec_unicore_callback_operation.emit(
@@ -287,6 +298,14 @@ class WFEditorApplication(QThreadCallback):
                 (self._on_job_deleted, (), { 'job': job})
             )
 
+    def _on_fs_delete_workflow(self, workflow):
+        base_uri = self._get_current_base_uri()
+
+        self.exec_unicore_callback_operation.emit(
+                uops.DELETE_WORKFLOW,
+                UnicoreConnector.create_delete_workflow_args(base_uri, workflow),
+                (self._on_workflow_deleted, (), { 'workflow': workflow})
+            )
 
     ############################################################################
     #                                                                          #
@@ -557,6 +576,13 @@ class WFEditorApplication(QThreadCallback):
         return "" if registry is None \
                 else registry[SETTING_KEYS['registry.baseURI']]
 
+    def _get_current_workflow_uri(self):
+        registry = self._get_current_registry()
+        return "" if registry is None \
+                else registry[SETTING_KEYS['registry.workflows']]
+
+
+
 
     ############################################################################
     #                             update                                       #
@@ -619,6 +645,7 @@ class WFEditorApplication(QThreadCallback):
         self._view_manager.download_file_to.connect(self._on_fs_download)
         self._view_manager.upload_file.connect(self._on_fs_upload)
         self._view_manager.delete_job.connect(self._on_fs_delete_job)
+        self._view_manager.delete_workflow.connect(self._on_fs_delete_workflow)
         self._view_manager.delete_file.connect(self._on_fs_delete_file)
 
         self._unicore_connector.error.connect(self._on_unicore_error)

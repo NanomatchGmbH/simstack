@@ -20,6 +20,7 @@ class WFRemoteFileSystem(QWidget):
     upload_file_to              = Signal(str, name="uploadFile")
     delete_file                 = Signal(str, name="deleetFile")
     delete_job                  = Signal(str, name="deleetJob")
+    delete_workflow             = Signal(str, name="deleteWorkflow")
     _WF_PATH                    = '?wf?'
     _JOB_PATH                   = '?job?'
 
@@ -201,6 +202,14 @@ class WFRemoteFileSystem(QWidget):
             job = self.__fs_model.get_id(index)
             self.delete_job.emit(job)
 
+    def __on_cm_delete_workflow(self):
+        index = self.__fileTree.selectedIndexes()[0]
+        if not index is None \
+                and self.__fs_model.get_type(index) == FSModel.DATA_TYPE_WORKFLOW:
+            print("got id: %s" % self.__fs_model.get_id(index))
+            workflow = self.__fs_model.get_id(index)
+            self.delete_workflow.emit(workflow)
+
     def __create_file_context_menu(self, menu, index):
         action_1=menu.addAction("Download File")
         action_1.triggered.connect(self.__on_cm_download)
@@ -214,6 +223,11 @@ class WFRemoteFileSystem(QWidget):
 
         action_2=menu.addAction("Delete Directory")
         action_2.triggered.connect(self.__on_cm_delete_file)
+
+    def __create_workflow_context_menu(self, menu, index):
+        action_1=menu.addAction("Delete Workflow")
+        action_1.triggered.connect(self.__on_cm_delete_workflow)
+
 
     def __create_job_context_menu(self, menu, index):
         action_1=menu.addAction("Delete Job")
@@ -244,6 +258,8 @@ class WFRemoteFileSystem(QWidget):
             self.__create_job_context_menu(menu, index)
             menu.addSeparator()
             self.__create_directory_context_menu(menu, index)
+        elif index_type == FSModel.DATA_TYPE_WORKFLOW:
+            self.__create_workflow_context_menu(menu,index)
         else:
             #TODO, also include number of selected indices.
             pass
