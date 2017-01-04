@@ -116,19 +116,17 @@ class DataTreeModel(QAbstractItemModel):
             if len(child) > 0:
                 childIndex = self.index(row, count, parentIndex)
                 print("removing %d subchildren of %s" % (childLength, child._data))
+                self.beginRemoveRows(parentIndex, 0, childLength)
                 self._removeRows(0, childLength, childIndex, emitSignals)
-                if emitSignals:
-                    self.beginRemoveRows(parentIndex, 0, childLength)
-                    self.endRemoveRows()
+                self.endRemoveRows()
             print("\tremoving: %s with %d children\n" % (child._data, childLength))
             parentNode.removeChild(i)
         return True
 
     def removeRows(self, row, count, parentIndex):
+        self.beginRemoveRows(parentIndex, row, row + count - 1)
         result = self._removeRows(row, count, parentIndex, emitSignals=True)
-        if result:
-            self.beginRemoveRows(parentIndex, row, row + count - 1)
-            self.endRemoveRows()
+        self.endRemoveRows()
         return result
 
     def removeSubRows(self, index):
@@ -137,9 +135,6 @@ class DataTreeModel(QAbstractItemModel):
             node = self.getNodeByIndex(index)
             result = self.removeRows(0, len(node), index)
         return result
-
-
-
 
     def clear(self):
         rootIndex = QModelIndex()
