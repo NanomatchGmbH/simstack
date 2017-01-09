@@ -724,7 +724,7 @@ class WFModel(object):
         except OSError:
             pass
 
-
+        """
         if len(self.elements) == 1:
             ele = self.elements[0]
             if ele.is_wano:
@@ -735,7 +735,7 @@ class WFModel(object):
                     pass
                 ele.render(wano_dir)
                 return SubmitType.SINGLE_WANO,wano_dir,None
-
+        """ #currently disabled until we can better take care of single job resources
 
         wf_xml = self.render_to_simple_wf(submitdir,jobdir)
 
