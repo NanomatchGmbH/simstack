@@ -66,7 +66,6 @@ if __name__ == '__main__':
         settings.dump_to_file(SETTINGS_FILE)
    
     editor = WFEditorApplication(settings)
-#    editor.show()
 
     # This timer is required to let the python interpreter handle terminal
     # input from time to time. See: http://stackoverflow.com/a/4939113
