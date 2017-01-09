@@ -2,10 +2,19 @@ from PySide.QtGui import QToolButton, QFontMetrics, QListWidgetItem, QMenu, \
         QListWidget, QAbstractItemView, QWidgetAction, QFileIconProvider
 from PySide.QtCore import Qt, Signal
 
+
+
+
 try:
     from .DropDownWidgetButton import DropDownWidgetPushButton
 except:
     from DropDownWidgetButton import DropDownWidgetPushButton
+
+try:
+    basestring
+except NameError:
+    basestring = str
+
 
 class MultiselectDropDownList(DropDownWidgetPushButton):
     itemSelectionChanged = Signal(name="itemSelectionChanged")
@@ -63,7 +72,7 @@ class MultiselectDropDownList(DropDownWidgetPushButton):
                 lwi = QListWidgetItem(item[0])
                 lwi.setData(Qt.ItemDataRole.DecorationRole, item[1])
                 self._list.addItem(lwi)
-            elif isinstance(item, str):
+            elif isinstance(item,basestring):
                 self._list.addItem(item)
             else:
                 raise TypeError("Item must be either tuple of string and \
