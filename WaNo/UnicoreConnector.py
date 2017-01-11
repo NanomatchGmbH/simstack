@@ -196,7 +196,8 @@ class UnicoreWorker(TPCThread):
                     'id': s.get_id(),
                     'name': s.get_name(),
                     'type': 'j',
-                    'path': s.get_working_dir()
+                    'path': s.get_working_dir(),
+                    'status': s.get_status()
                 } for s in job_manager.get_list()]
 
         self._exec_callback(callback, base_uri, jobs)
@@ -212,7 +213,8 @@ class UnicoreWorker(TPCThread):
                 'id': s.get_id(),
                 'name': s.get_name(),
                 'type': 'w',
-                'path': s.get_working_dir()
+                'path': s.get_working_dir(),
+                'status': s.get_status()
                 } for s in wf_manager.get_list()]
 
         self._exec_callback(callback, base_uri, workflows)
@@ -233,8 +235,10 @@ class UnicoreWorker(TPCThread):
                     'id': job.get_id(),
                     'name': job.get_name(),
                     'type': 'j',
-                    'path': job.get_working_dir()
+                    'path': job.get_working_dir(),
+                    'status': job.get_status()
                 } for job in jobs]
+
         #print("jobs:\n\n\n\n%s\n\n\n" % job_manager.get_list())
         print("Got files for wf: %s" % files)
 
