@@ -5,13 +5,15 @@ from abc import abstractmethod
 
 # imports for tests only.
 # TODO remove when done.
-from PySide.QtCore import QAbstractItemModel, QModelIndex, QFileInfo, Qt
+from PySide.QtCore import QAbstractItemModel, QModelIndex, QFileInfo, Qt, QSize
 from PySide.QtGui import QFileIconProvider, QTreeView
 from PySide.QtGui import *
 import PySide.QtCore
 import abc
 import os, sys, time
 from enum import Enum
+
+from pyura.pyura.Constants import JobStatus
 
 ########################
 
@@ -24,6 +26,38 @@ class DATA_TYPE(Enum):
     SEPARATOR2  = 5
     SEPARATOR3  = 6
     SEPARATOR4  = 7
+    ###These are basically exclusive to icon types
+    JOB_QUEUED  = 8
+    JOB_RUNNING = 9
+    JOB_READY   = 10
+    JOB_FAILED  = 11
+    JOB_SUCCESSFUL = 12
+    JOB_ABORTED    = 13
+    WF_QUEUED = 14
+    WF_RUNNING = 15
+    WF_READY = 16
+    WF_FAILED = 17
+    WF_SUCCESSFUL = 18
+    WF_ABORTED = 19
+
+JOB_STATUS_TO_DATA_TYPE = {
+    JobStatus.READY : DATA_TYPE.JOB_READY,
+    JobStatus.FAILED : DATA_TYPE.JOB_FAILED,
+    JobStatus.ABORTED: DATA_TYPE.JOB_ABORTED,
+    JobStatus.SUCCESSFUL: DATA_TYPE.JOB_SUCCESSFUL,
+    JobStatus.QUEUED: DATA_TYPE.JOB_QUEUED, 
+    JobStatus.RUNNING : DATA_TYPE.JOB_RUNNING
+}
+
+WF_STATUS_TO_DATA_TYPE = {
+    JobStatus.READY : DATA_TYPE.WF_READY,
+    JobStatus.FAILED : DATA_TYPE.WF_FAILED,
+    JobStatus.ABORTED: DATA_TYPE.WF_ABORTED,
+    JobStatus.SUCCESSFUL: DATA_TYPE.WF_SUCCESSFUL,
+    JobStatus.QUEUED: DATA_TYPE.WF_QUEUED, 
+    JobStatus.RUNNING : DATA_TYPE.WF_RUNNING
+}
+
 
 class DataNode(object):
     def __init__(self, data, parent=None):
@@ -325,15 +359,31 @@ class WFEUnicoreFileSystemEntry(WFEFileSystemEntry):
     def getID(self):
         return self._data['id']
 
+    def getStatus(self):
+        return self._data['status']
+
+    def getIconType(self):
+        if self._data['data_type'] == WFEUnicoreRemoteFileSystemModel.DATA_TYPE_JOB:
+            if self._data['status'] != None:
+                return JOB_STATUS_TO_DATA_TYPE[self._data["status"]]
+
+        if self._data['data_type'] == WFEUnicoreRemoteFileSystemModel.DATA_TYPE_WORKFLOW:
+            if self._data['status'] != None:
+                return WF_STATUS_TO_DATA_TYPE[self._data["status"]]
+
+        return super(WFEUnicoreFileSystemEntry,self).getIconType()
+
     @staticmethod
-    def createData(id, name, path, abspath, data_type=None):
+    def createData(id, name, path, abspath, data_type=None, status = None):
         return {
                 'id'        : id,
                 'name'      : name,
                 'abspath'   : abspath,
                 'path'      : path,
-                'data_type' : data_type
+                'data_type' : data_type,
+                'status'    : status
             }
+
 
 class WFEUnicoreRemoteFileSystemModel(WFEFileSystemModel):
     DATA_TYPE_FILE          = DATA_TYPE.FILE
@@ -345,7 +395,52 @@ class WFEUnicoreRemoteFileSystemModel(WFEFileSystemModel):
     HEADER_TYPE_JOB         = DATA_TYPE.SEPARATOR3
     HEADER_TYPE_WORKFLOW    = DATA_TYPE.SEPARATOR4
 
+    def colorize_icon(self,icon,color):
+        if isinstance(icon,QIcon):
+            pixmap = icon.pixmap(QSize(16,16))
+            #color = QColor.QC
+            painter = QPainter()
+            painter.begin(pixmap)
+            painter.setCompositionMode(painter.RasterOp_SourceAndDestination)
+            painter.fillRect(pixmap.rect(),color)
+            painter.end()
+            return QIcon(pixmap)
+
+    def icons(self,itype):
+        if itype in self._icons.keys():
+            return self._icons[itype]
+        else:
+            print("--!!!!--")
+            print(itype,self._icons)
+            print("--!!!!--")
+            icon = QFileIconProvider().icon(QFileIconProvider.Computer)
+            return icon
+
     def __init__(self, parent=None):
+        
+        self._icons = {
+            DATA_TYPE.SEPARATOR1: QFileIconProvider().icon(QFileIconProvider.Computer),
+            DATA_TYPE.SEPARATOR2: QFileIconProvider().icon(QFileIconProvider.Desktop),
+            DATA_TYPE.SEPARATOR3: QFileIconProvider().icon(QFileIconProvider.Trashcan),
+            DATA_TYPE.SEPARATOR4: QFileIconProvider().icon(QFileIconProvider.Drive),
+            DATA_TYPE.JOB_QUEUED: QFileIconProvider().icon(QFileIconProvider.Computer),
+            #DATA_TYPE.JOB_QUEUED: self.colorize_icon(QFileIconProvider().icon(QFileIconProvider.Computer),Qt.darkYellow),
+            DATA_TYPE.JOB_RUNNING: self.colorize_icon(QFileIconProvider().icon(QFileIconProvider.Computer),Qt.yellow),
+            DATA_TYPE.JOB_READY: QFileIconProvider().icon(QFileIconProvider.Computer),
+            DATA_TYPE.JOB_FAILED: self.colorize_icon(QFileIconProvider().icon(QFileIconProvider.Computer), Qt.red),
+            DATA_TYPE.JOB_SUCCESSFUL: self.colorize_icon(QFileIconProvider().icon(QFileIconProvider.Computer),Qt.green),
+            DATA_TYPE.JOB_ABORTED: self.colorize_icon(QFileIconProvider().icon(QFileIconProvider.Computer), Qt.red),
+            
+            #DATA_TYPE.WF_QUEUED: self.colorize_icon(QFileIconProvider().icon(QFileIconProvider.Desktop),Qt.darkYellow),
+            DATA_TYPE.WF_QUEUED: QFileIconProvider().icon(QFileIconProvider.Desktop),
+            DATA_TYPE.WF_RUNNING: self.colorize_icon(QFileIconProvider().icon(QFileIconProvider.Desktop), Qt.yellow),
+            DATA_TYPE.WF_READY: QFileIconProvider().icon(QFileIconProvider.Desktop),
+            DATA_TYPE.WF_FAILED: self.colorize_icon(QFileIconProvider().icon(QFileIconProvider.Desktop), Qt.red),
+            DATA_TYPE.WF_SUCCESSFUL: self.colorize_icon(QFileIconProvider().icon(QFileIconProvider.Desktop),
+                                                         Qt.green),
+            DATA_TYPE.WF_ABORTED: self.colorize_icon(QFileIconProvider().icon(QFileIconProvider.Desktop), Qt.red),
+        }
+
         super(WFEUnicoreRemoteFileSystemModel, self).__init__(parent)
         print("WFEUnicoreRemoteFileSystemModel")
         self._add_headers()
@@ -359,14 +454,7 @@ class WFEUnicoreRemoteFileSystemModel(WFEFileSystemModel):
         if icon is None:
             node = self.getNodeByIndex(index)
             icon_type = node.getIconType()
-            if icon_type == self.DATA_TYPE_JOB:
-                icon = QFileIconProvider().icon(QFileIconProvider.Computer)
-            elif icon_type == self.DATA_TYPE_WORKFLOW:
-                icon = QFileIconProvider().icon(QFileIconProvider.Desktop)
-            elif icon_type == self.HEADER_TYPE_JOB:
-                icon = QFileIconProvider().icon(QFileIconProvider.Trashcan)
-            elif icon_type == self.HEADER_TYPE_WORKFLOW:
-                icon = QFileIconProvider().icon(QFileIconProvider.Drive)
+            icon = self.icons(icon_type)
         return icon
 
     def _recursive_find_parent(self, index, parent_types):
