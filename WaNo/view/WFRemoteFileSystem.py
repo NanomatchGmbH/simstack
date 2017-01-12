@@ -57,6 +57,8 @@ class WFRemoteFileSystem(QWidget):
                 subelements.sort(key=lambda k: k['name'])
                 i=subelements[0]
                 print("i(id=%s): %s" % (i['id'] if 'id' in i else '', i))
+                #print(path,i['path'],i['name'])
+
                 entries = [WFEUnicoreFileSystemEntry.createData(
                         i['id'] if 'id' in i else i['name'],
                         i['name'],
@@ -65,7 +67,7 @@ class WFRemoteFileSystem(QWidget):
                         ),
                         "%s/%s" % (
                             path if i['type'] == 'f' or i['type'] == 'd' else '',
-                            i['path']),
+                            i['path'] if i['type'] != 'f' and i['type'] != 'd' else i['name']),
                         FSModel.DATA_TYPE_FILE if i['type'] == 'f' \
                                 else FSModel.DATA_TYPE_DIRECTORY if i['type'] == 'd' \
                                 else FSModel.DATA_TYPE_JOB if i['type'] == 'j' \
