@@ -338,7 +338,14 @@ class WFEditorApplication(QThreadCallback):
                 (self._on_workflow_deleted, (), { 'workflow': workflow})
             )
 
-    ############################################################################
+    def _on_fs_abort_workflow(self, workflow):
+        base_uri = self._get_current_base_uri()
+
+        self.exec_unicore_callback_operation.emit(
+                uops.ABORT_WORKFLOW,
+                UnicoreConnector.create_abort_workflow_args(base_uri, workflow),
+                (self._on_workflow_aborted, (), { 'workflow': workflow})
+            )
 
     ############################################################################
     #                                                                          #

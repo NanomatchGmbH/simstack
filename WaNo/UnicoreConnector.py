@@ -274,34 +274,53 @@ class UnicoreWorker(TPCThread):
             status, err = storage_manager.delete_file(path, storage_id=storage)
             self._exec_callback(callback, base_uri, status, err)
 
-    @TPCThread._from_other_thread
-    def delete_job(self, callback, base_uri, job):
+    def abort_or_delete_job(self, callback, base_uri, job, operation):
         job, path = extract_storage_path(job)
         job_manager = self.registry.get_job_manager()
 
-        self._logger.debug("deleting job: %s" % job)
         if path is None or path == "":
-            status, err = job_manager.delete(job=job)
-            self._logger.debug("Operation returned: status: %d, err: %s,\nunused: %s" % (
-                status, err, _unused))
+            job_obj = job_manager.get_by_id(job)
+            if operation == self.OPERATIONS.DELETE:
+                self._logger.debug("deleting job: %s" % job)
+                status, err, _unused = job_manager.delete(job=job_obj)
+            else:
+                self._logger.debug("aborting job: %s" % job)
+                status, err, _unused = job_manager.abort(job=job_obj)
             self._exec_callback(callback, base_uri, status, err)
 
     @TPCThread._from_other_thread
-    def delete_workflow(self, callback, base_uri, workflow):
+    def delete_job(self, callback, base_uri, job):
+        self.abort_or_delete_job(callback, base_uri, job, self.OPERATIONS.DELETE)
+
+    @TPCThread._from_other_thread
+    def abort_job(self, callback, base_uri, job):
+        self.abort_or_delete_job(callback, base_uri, job, self.OPERATIONS.ABORT)
+
+    def abort_or_delete_workflow(self, callback, base_uri, workflow, operation):
         wf, path = extract_storage_path(workflow)
         print(wf,path)
         wf_manager = self.registry.get_workflow_manager()
 
-        self._logger.debug("deleting workflow: %s" % workflow)
         if path is None or path == "":
-            status, err = wf_manager.delete(workflow=workflow)
-            print("##################################################")
-            print("status: %s" % status)
-            print("err: %s" % err)
-            print("response: %s" % _unused)
-            print("##################################################")
+            wf_obj = wf_manager.get_by_id(wf)
+            if operation == self.OPERATIONS.DELETE:
+                self._logger.debug("deleting workflow: %s" % workflow)
+                status, err, _unused = wf_manager.delete(workflow=wf_obj)
+            else:
+                self._logger.debug("aborting workflow: %s" % workflow)
+                status, err, _unused = wf_manager.abort(workflow=wf_obj)
+
             self._exec_callback(callback, base_uri, status, err)
 
+    @TPCThread._from_other_thread
+    def delete_workflow(self, callback, base_uri, workflow):
+        self.abort_or_delete_workflow(callback, base_uri, workflow,
+                self.OPERATIONS.DELETE)
+
+    @TPCThread._from_other_thread
+    def abort_workflow(self, callback, base_uri, workflow):
+        self.abort_or_delete_workflow(callback, base_uri, workflow,
+                self.OPERATIONS.ABORT)
 
                     #TODO remove, debug only
     def start(self):
