@@ -52,7 +52,9 @@ OPERATIONS = Enum("OPERATIONS",
     UPDATE_DIR_LIST
     DELETE_FILE
     DELETE_JOB
+    ABORT_JOB
     DELETE_WORKFLOW
+    ABORT_WORKFLOW
     DOWNLOAD_FILE
     UPLOAD_FILE
     """,
@@ -87,6 +89,12 @@ ERROR = Enum("ERROR",
 
 
 class UnicoreWorker(TPCThread):
+    OPERATIONS = Enum("Operations",
+            """
+            DELETE
+            ABORT
+            """
+            )
     def _exec_callback(self, callback, *args, **kwargs):
         cb_function = callback
 
@@ -274,6 +282,8 @@ class UnicoreWorker(TPCThread):
         self._logger.debug("deleting job: %s" % job)
         if path is None or path == "":
             status, err = job_manager.delete(job=job)
+            self._logger.debug("Operation returned: status: %d, err: %s,\nunused: %s" % (
+                status, err, _unused))
             self._exec_callback(callback, base_uri, status, err)
 
     @TPCThread._from_other_thread
@@ -285,6 +295,11 @@ class UnicoreWorker(TPCThread):
         self._logger.debug("deleting workflow: %s" % workflow)
         if path is None or path == "":
             status, err = wf_manager.delete(workflow=workflow)
+            print("##################################################")
+            print("status: %s" % status)
+            print("err: %s" % err)
+            print("response: %s" % _unused)
+            print("##################################################")
             self._exec_callback(callback, base_uri, status, err)
 
 
@@ -489,7 +504,15 @@ class UnicoreConnector(CallableQThread):
         return UnicoreConnector.create_basic_path_args(base_uri, job)
 
     @staticmethod
+    def create_abort_job_args(base_uri, job):
+        return UnicoreConnector.create_basic_path_args(base_uri, job)
+
+    @staticmethod
     def create_delete_workflow_args(base_uri, workflow):
+        return UnicoreConnector.create_basic_path_args(base_uri, workflow)
+
+    @staticmethod
+    def create_abort_workflow_args(base_uri, workflow):
         return UnicoreConnector.create_basic_path_args(base_uri, workflow)
 
     @staticmethod
@@ -616,10 +639,20 @@ class UnicoreConnector(CallableQThread):
         if not worker is None:
             worker.delete_job(callback, base_uri, job)
 
+    def abort_job(self, base_uri, job, callback=(None, (), {})):
+        worker = self._get_error_or_fail(base_uri)
+        if not worker is None:
+            worker.abort_job(callback, base_uri, job)
+
     def delete_workflow(self, base_uri, workflow, callback=(None, (), {})):
         worker = self._get_error_or_fail(base_uri)
         if not worker is None:
             worker.delete_workflow(callback, base_uri, workflow)
+
+    def abort_workflow(self, base_uri, workflow, callback=(None, (), {})):
+        worker = self._get_error_or_fail(base_uri)
+        if not worker is None:
+            worker.abort_workflow(callback, base_uri, workflow)
 
     def _data_transfer(self, base_uri, localfile, remotefile, direction,
             callback=(None, (), {})):
@@ -685,8 +718,12 @@ class UnicoreConnector(CallableQThread):
             self.delete_file(*data['args'], callback=callback)
         elif operation == ops.DELETE_JOB:
             self.delete_job(*data['args'], callback=callback)
+        elif operation == ops.ABORT_JOB:
+            self.abort_job(*data['args'], callback=callback)
         elif operation == ops.DELETE_WORKFLOW:
             self.delete_workflow(*data['args'], callback=callback)
+        elif operation == ops.ABORT_WORKFLOW:
+            self.abort_workflow(*data['args'], callback=callback)
         elif operation == ops.DOWNLOAD_FILE:
             self.download_file(*data['args'], callback=callback)
         elif operation == ops.UPLOAD_FILE:

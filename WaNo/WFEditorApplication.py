@@ -279,6 +279,18 @@ class WFEditorApplication(QThreadCallback):
                     (job, str(status.name))
                 )
 
+
+    @QThreadCallback.callback
+    def _on_job_aborted(self, base_uri, status, err, job=""):
+        if err == UnicoreErrorCodes.NO_ERROR:
+            self._on_fs_job_list_update_request()
+        else:
+            self._view_manager.show_error(
+                    "Failed to abort job '%s'\n"\
+                    "Registry returned status: %s." % \
+                    (job, str(status.name))
+                )
+
     @QThreadCallback.callback
     def _on_workflow_deleted(self, base_uri, status, err, workflow=""):
         if err == UnicoreErrorCodes.NO_ERROR:
@@ -286,6 +298,17 @@ class WFEditorApplication(QThreadCallback):
         else:
             self._view_manager.show_error(
                 "Failed to delete workflow '%s'\n" \
+                "Registry returned status: %s." % \
+                (workflow, str(status.name))
+            )
+
+    @QThreadCallback.callback
+    def _on_workflow_aborted(self, base_uri, status, err, workflow=""):
+        if err == UnicoreErrorCodes.NO_ERROR:
+            self._on_fs_worflow_list_update_request()
+        else:
+            self._view_manager.show_error(
+                "Failed to abort workflow '%s'\n" \
                 "Registry returned status: %s." % \
                 (workflow, str(status.name))
             )
@@ -298,6 +321,14 @@ class WFEditorApplication(QThreadCallback):
                 (self._on_job_deleted, (), { 'job': job})
             )
 
+    def _on_fs_abort_job(self, job):
+        base_uri = self._get_current_base_uri()
+        self.exec_unicore_callback_operation.emit(
+                uops.ABORT_JOB,
+                UnicoreConnector.create_abort_job_args(base_uri, job),
+                (self._on_job_aborted, (), { 'job': job})
+            )
+
     def _on_fs_delete_workflow(self, workflow):
         base_uri = self._get_current_base_uri()
 
@@ -306,6 +337,8 @@ class WFEditorApplication(QThreadCallback):
                 UnicoreConnector.create_delete_workflow_args(base_uri, workflow),
                 (self._on_workflow_deleted, (), { 'workflow': workflow})
             )
+
+    ############################################################################
 
     ############################################################################
     #                                                                          #
@@ -645,7 +678,9 @@ class WFEditorApplication(QThreadCallback):
         self._view_manager.download_file_to.connect(self._on_fs_download)
         self._view_manager.upload_file.connect(self._on_fs_upload)
         self._view_manager.delete_job.connect(self._on_fs_delete_job)
+        self._view_manager.abort_job.connect(self._on_fs_abort_job)
         self._view_manager.delete_workflow.connect(self._on_fs_delete_workflow)
+        self._view_manager.abort_workflow.connect(self._on_fs_abort_workflow)
         self._view_manager.delete_file.connect(self._on_fs_delete_file)
 
         self._unicore_connector.error.connect(self._on_unicore_error)

@@ -35,7 +35,9 @@ class WFEditor(QWidget):
     upload_file_to              = Signal(str, name="uploadFile")
     delete_file                 = Signal(str, name="deleetFile")
     delete_job                  = Signal(str, name="deleetJob")
+    abort_job                   = Signal(str, name="deleetJob")
     delete_workflow             = Signal(str, name="deleteWorkflow")
+    abort_workflow              = Signal(str, name="abortWorkflow")
 
     workflow_saved              = Signal(bool, str, name="WorkflowSaved")
 
@@ -161,7 +163,9 @@ class WFEditor(QWidget):
         self.remoteFileTree.download_file.connect(self.download_file)
         self.remoteFileTree.upload_file_to.connect(self.upload_file_to)
         self.remoteFileTree.delete_job.connect(self.delete_job)
+        self.remoteFileTree.abort_job.connect(self.abort_job)
         self.remoteFileTree.delete_workflow.connect(self.delete_workflow)
+        self.remoteFileTree.abort_workflow.connect(self.abort_workflow)
         self.remoteFileTree.delete_file.connect(self.delete_file)
 
         self.workflowWidget.workflow_saved.connect(self.workflow_saved)

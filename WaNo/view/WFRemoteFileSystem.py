@@ -20,7 +20,9 @@ class WFRemoteFileSystem(QWidget):
     upload_file_to              = Signal(str, name="uploadFile")
     delete_file                 = Signal(str, name="deleetFile")
     delete_job                  = Signal(str, name="deleetJob")
+    abort_job                   = Signal(str, name="abortJob")
     delete_workflow             = Signal(str, name="deleteWorkflow")
+    abort_workflow              = Signal(str, name="abortWorkflow")
     _WF_PATH                    = '?wf?'
     _JOB_PATH                   = '?job?'
 
@@ -205,6 +207,15 @@ class WFRemoteFileSystem(QWidget):
             job = self.__fs_model.get_id(index)
             self.delete_job.emit(job)
 
+    def __on_cm_abort_job(self):
+        #TODO modify to handle all selected.
+        index = self.__fileTree.selectedIndexes()[0]
+        if not index is None \
+                and self.__fs_model.get_type(index) == FSModel.DATA_TYPE_JOB:
+            print("got id: %s" % self.__fs_model.get_id(index))
+            job = self.__fs_model.get_id(index)
+            self.abort_job.emit(job)
+
     def __on_cm_delete_workflow(self):
         index = self.__fileTree.selectedIndexes()[0]
         if not index is None \
@@ -212,6 +223,14 @@ class WFRemoteFileSystem(QWidget):
             print("got id: %s" % self.__fs_model.get_id(index))
             workflow = self.__fs_model.get_id(index)
             self.delete_workflow.emit(workflow)
+
+    def __on_cm_abort_workflow(self):
+        index = self.__fileTree.selectedIndexes()[0]
+        if not index is None \
+                and self.__fs_model.get_type(index) == FSModel.DATA_TYPE_WORKFLOW:
+            print("got id: %s" % self.__fs_model.get_id(index))
+            workflow = self.__fs_model.get_id(index)
+            self.abort_workflow.emit(workflow)
 
     def __create_file_context_menu(self, menu, index):
         action_1=menu.addAction("Download File")
@@ -230,11 +249,15 @@ class WFRemoteFileSystem(QWidget):
     def __create_workflow_context_menu(self, menu, index):
         action_1=menu.addAction("Delete Workflow")
         action_1.triggered.connect(self.__on_cm_delete_workflow)
+        action_1=menu.addAction("Abort Workflow")
+        action_1.triggered.connect(self.__on_cm_abort_workflow)
 
 
     def __create_job_context_menu(self, menu, index):
         action_1=menu.addAction("Delete Job")
         action_1.triggered.connect(self.__on_cm_delete_job)
+        action_2=menu.addAction("Abort Job")
+        action_2.triggered.connect(self.__on_cm_abort_job)
 
     def __context_menu(self, pos):
         index = self.__fileTree.indexAt(pos)
