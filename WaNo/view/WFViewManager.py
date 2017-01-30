@@ -115,7 +115,7 @@ class WFViewManager(QObject):
                 '',
                 selectedFilter=''
                 )
-        if save_to:
+        if save_to[0]:
             print(save_to)
             print("Save file to: %s." % save_to[0])
             self.download_file_to.emit(filepath, save_to[0])
@@ -127,8 +127,7 @@ class WFViewManager(QObject):
                 '',
                 selectedFilter=''
                 )
-        if upload:
-            print(upload)
+        if upload[0]:
             self.upload_file.emit(upload[0], dirpath)
 
     def _on_workflow_saved(self, success, folder):
