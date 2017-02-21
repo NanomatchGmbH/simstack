@@ -159,8 +159,13 @@ class WFWaNoWidget(QtGui.QToolButton):
 
         #In case the target of the drop changed we are outside the workflow editor
         #In that case we would like to remove ourselves
-        if (self.newparent != self.parent()):
+        if self.newparent is None:
+        #if (self.newparent != self.parent()):
+        #    print(type(self.newparent),type(self.parent()))
+        #    print ("I am outside of drop")
             self.parent().removeElement(self)
+        else:
+            pass
 
     def clear(self):
         pass 
@@ -246,7 +251,7 @@ class WFItemListInterface(object):
         myid = self.elements.index(element)
         self.elements.remove(element)
         del self.elementnames[myid]
-        element.deleteLater()
+        #element.deleteLater()
 
 class WFItemModel(object):
     def render_to_simple_wf(self,submitdir,jobdir):
@@ -448,10 +453,10 @@ class ParallelModel(WFItemModel):
         return root
 
     def read_from_disk(self, full_foldername, xml_subelement):
-        self.subwf_models.clear()
+        self.subwf_models = []
         for view in self.subwf_views:
             view.deleteLater()
-        self.subwf_views.clear()
+        self.subwf_views = []
         for child in xml_subelement:
             if child.tag != "WFControl":
                 continue
@@ -787,7 +792,7 @@ class WFModel(object):
         myid = self.elements.index(element)
         self.elements.remove(element)
         del self.elementnames[myid]
-        element.deleteLater()
+        #element.deleteLater()
 
 
 class SubWorkflowView(QtGui.QFrame):
@@ -923,8 +928,19 @@ class SubWorkflowView(QtGui.QFrame):
         print("In subwf drop")
         position = e.pos()
         new_position = self._locate_element_above(position)
+        ele = e.source()
         if type(e.source()) is WFWaNoWidget:
-            self.model.move_element_to_position(e.source().model, new_position)
+            if e.source().model.parent() is self:
+                self.model.move_element_to_position(e.source().model, new_position)
+
+            else:
+                #e.source().model.parent().removeElement(ele.model)
+                #self.model.add_element(ele.model, new_position)
+                self.model.add_element(ele.model, new_position)
+                e.source().model.parent().removeElement(ele.model)
+                ele.show()
+                ele.raise_()
+                ele.activateWindow()
 
         elif type(e.source()) is ForEachView:
             self.model.move_element_to_position(e.source().model, new_position)
@@ -1073,8 +1089,18 @@ class WorkflowView(QtGui.QFrame):
     def dropEvent(self, e):
         position = e.pos()
         new_position = self._locate_element_above(position)
+        ele = e.source()
         if type(e.source()) is WFWaNoWidget:
-            self.model.move_element_to_position(e.source().model, new_position)
+            if e.source().model.parent() is self:
+                self.model.move_element_to_position(e.source().model, new_position)
+
+            else:
+                self.model.add_element(ele.model, new_position)
+                e.source().model.parent().removeElement(ele.model)
+                ele.show()
+                ele.raise_()
+                ele.activateWindow()
+
 
         elif type(e.source()) is ForEachView:
             self.model.move_element_to_position(e.source(), new_position)
