@@ -339,7 +339,7 @@ class SubWFModel(WFItemModel,WFItemListInterface):
                     fn = os.path.join(path,"",name, file)
                     myfiles.append(fn)
             else:
-                for otherfile in ele.model.assemble_files():
+                for otherfile in ele.model.assemble_files(path):
                     myfiles.append(os.path.join(path,"",otherfile))
         return myfiles
 
@@ -364,11 +364,11 @@ class SubWFModel(WFItemModel,WFItemListInterface):
             elif child.tag == "WFControl":
                 name = child.attrib["name"]
                 type = child.attrib["type"]
-                model,view = ControlFactory.construct(type,qt_parent=self.view,logical_parent=self.view,editor=self.editor)
+                model,view = ControlFactory.construct(type,qt_parent=self.view,logical_parent=self.view,editor=self.editor,wf_root=self.wf_root)
                 self.elements.append(view)
                 self.elementnames.append(name)
                 view.setText(name)
-                view.read_from_disk(full_foldername=full_foldername,xml_subelement=child)
+                model.read_from_disk(full_foldername=full_foldername,xml_subelement=child)
 
 
     def save_to_disk(self,foldername):
@@ -860,7 +860,7 @@ class SubWorkflowView(QtGui.QFrame):
         self.model.name = text
 
     def init_from_model(self):
-        self.place_elements()
+        self.relayout()
 
     #Place elements places elements top down.
     def place_elements(self):
@@ -891,18 +891,21 @@ class SubWorkflowView(QtGui.QFrame):
         #self.setFixedHeight(max(ypos,self.parent().height()))
         if not self.dontplace:
             self.dontplace = True
-            self.logical_parent.place_elements()
+            #self.logical_parent.place_elements()
         self.dontplace=False
         #if (ypos < 50):
         #    self.setFixedHeight(50)
-
+        self.updateGeometry()
         return ypos
 
     def sizeHint(self):
         return QtCore.QSize(max(self.minimum_width,self.my_width),max(self.my_height,self.minimum_height))
 
     def relayout(self):
-        self.place_elements()
+        self.model.get_root().view.relayout()
+        #self.model.get_root().view.place_elements()
+        #self.model.get_root().view.place_elements()
+        #self.place_elements()
 
     #Manually paint the lines:
     def paintEvent(self, event):
@@ -981,6 +984,7 @@ class SubWorkflowView(QtGui.QFrame):
             print("Type %s not yet accepted by dropevent, please implement"%(e.source()))
             return
         e.setDropAction(QtCore.Qt.MoveAction)
+
         self.relayout()
 
     def openWaNoEditor(self,wanoWidget):
@@ -1030,7 +1034,7 @@ class WorkflowView(QtGui.QFrame):
         self.model = model
 
     def init_from_model(self):
-        self.place_elements()
+        self.relayout()
 
     #Place elements places elements top down.
     def place_elements(self):
@@ -1064,11 +1068,19 @@ class WorkflowView(QtGui.QFrame):
             self.adjustSize()
 
         self.dont_place = False
-
+        self.updateGeometry()
         return ypos
 
     def relayout(self):
+        # Relayouting twice (once for the kids to specify their correct size and ones for the parents to catch up
+        # This is inherently flawed, because if the recursion depth grows and grows, you need more and more updates
+        #
         self.place_elements()
+        self.place_elements()
+        self.place_elements()
+        self.updateGeometry()
+
+        #self.place_elements()
 
     #Manually paint the lines:
     def paintEvent(self, event):
@@ -1496,6 +1508,7 @@ class ForEachView(WFControlWithTopMiddleAndBottom):
                 self.model.subwfview.place_elements()
             self.adjustSize()
         self.dontplace=False
+        self.updateGeometry()
 
 
 class ParallelView(WFControlWithTopMiddleAndBottom):
@@ -1507,11 +1520,14 @@ class ParallelView(WFControlWithTopMiddleAndBottom):
 
     def add_new(self):
         self.model.add()
-        self.place_elements()
+        self.relayout()
+
+    def relayout(self):
+        self.model.wf_root.view.relayout()
 
     def delete(self):
         self.model.deletelast()
-        self.place_elements()
+        self.relayout()
 
     def get_top_widget(self):
         tw = QtGui.QWidget()
@@ -1561,8 +1577,9 @@ class ParallelView(WFControlWithTopMiddleAndBottom):
                 for view in self.model.subwf_views:
                     view.place_elements()
 
-            self.parent().place_elements()
+            #self.parent().place_elements()
             self.dontplace=False
+        self.updateGeometry()
 
 
 class ControlFactory(object):
