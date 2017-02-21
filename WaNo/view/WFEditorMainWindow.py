@@ -112,11 +112,11 @@ class WFEditorMainWindow(QtGui.QMainWindow):
         #self.helpMenu.addAction(self.aboutAct)
         self.helpMenu.addAction(self.aboutWFEAct)
         
-        message = "Welcome to the Nanomatch Workflow Editor"
+        message = "Welcome to the SimStack Framework"
         self.statusBar().showMessage(message)
         self._status_manager = StatusMessageManager(self.statusBar().showMessage)
         
-        self.setWindowTitle("Workflow Editor (C) 2016")
+        self.setWindowTitle("SimStack")
    
     def __init__(self, editor, parent=None):
         super(WFEditorMainWindow, self).__init__(parent)
@@ -214,8 +214,8 @@ class WFEditorMainWindow(QtGui.QMainWindow):
                 statusTip="Show the application's Help box",
                 triggered=self.action_about)
 
-        self.aboutWFEAct = QtGui.QAction("About &WorkflowEditor", self,
-                statusTip="About the Nanomatch Workflow Editor",
+        self.aboutWFEAct = QtGui.QAction("About SimS&tack", self,
+                statusTip="About the Nanomatch SimStack Client",
                 triggered=self.action_aboutWFE)
 
         self.configServAct = QtGui.QAction("&Servers", self,
