@@ -338,7 +338,7 @@ class GlobalFileChooserDelegate(QtGui.QStyledItemDelegate):
         #but it's the only place we would need this signal.
         s = self.sender()
         wf = self.parent().model().wano_parent.root_model.parent_wf
-        importable_files = wf.assemble_files("")
+        importable_files = wf.get_root().assemble_files("")
         s.set_items(importable_files)
 
     def on_wf_file_change(self):

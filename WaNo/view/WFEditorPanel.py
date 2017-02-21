@@ -276,7 +276,11 @@ class WFItemModel(object):
 class SubWFModel(WFItemModel,WFItemListInterface):
     def __init__(self,*args,**kwargs):
         WFItemListInterface.__init__(self,*args,**kwargs)
+        self.wf_root = kwargs["wf_root"]
         self.name = "SubWF"
+
+    def get_root(self):
+        return self.wf_root
 
     def render_to_simple_wf(self,submitdir,jobdir,path):
         activities = []
@@ -286,10 +290,11 @@ class SubWFModel(WFItemModel,WFItemListInterface):
         #activities.append(start)
         my_jobdir = os.path.join(jobdir,self.view.text())
         first = True
-        if path == "":
-            basepath = "%s" % self.view.text()
-        else:
-            basepath = "%s/%s" % (path,self.view.text())
+        basepath = path
+        #if path == "":
+        #    basepath = "%s" % self.view.text()
+        #else:
+        #    basepath = "%s/%s" % (path,self.view.text())
         for myid, (ele, elename) in enumerate(zip(self.elements, self.elementnames)):
 
             if ele.is_wano:
@@ -331,11 +336,11 @@ class SubWFModel(WFItemModel,WFItemListInterface):
         for myid, (ele, name) in enumerate(zip(self.elements, self.elementnames)):
             if ele.is_wano:
                 for file in ele.wano_model.get_output_files():
-                    fn = os.path.join(path,self.view.text(),name, file)
+                    fn = os.path.join(path,"",name, file)
                     myfiles.append(fn)
             else:
                 for otherfile in ele.model.assemble_files():
-                    myfiles.append(os.path.join(path,self.view.text(),otherfile))
+                    myfiles.append(os.path.join(path,"",otherfile))
         return myfiles
 
     def read_from_disk(self, full_foldername, xml_subelement):
@@ -436,9 +441,9 @@ class ParallelModel(WFItemModel):
 
     def assemble_files(self,path):
         myfiles = []
-        for swfm in self.subwf_models:
+        for swfid,swfm in enumerate(self.subwf_models):
             for otherfile in swfm.assemble_files(path):
-                myfiles.append(os.path.join(path, self.name, otherfile))
+                myfiles.append(os.path.join(path, self.name, "%d"%swfid, otherfile))
         return myfiles
 
     def save_to_disk(self, foldername):
@@ -499,6 +504,12 @@ class ForEachModel(WFItemModel):
             globalpath = "c9m:${WORKFLOW_ID}/%s/" % os.path.dirname(myfile)
             basename = os.path.basename(myfile)
             filesets.append(WFtoXML.xml_fileset(base=globalpath,include=basename,exclude=""))
+
+        print(submitdir,jobdir,"WFFOREACH")
+        if path == "":
+            path = self.name
+        else:
+            path = "%s/%s" %(path,self.name)
         swf = self.subwfmodel.render_to_simple_wf(submitdir,jobdir,path = path)
         swf.attrib["Type"] = "LOOP_BODY"
         swf.attrib["Id"] = muuid_body
@@ -597,6 +608,9 @@ class WFModel(object):
             #it doesn't have to be unique among workflow nesting.
         """
 
+    def get_root(self):
+        return self
+
     def element_to_name(self,element):
         idx = self.elements.index(element)
         return self.elementnames[idx]
@@ -639,6 +653,7 @@ class WFModel(object):
     #The files will be export to c9m:${WORKFLOW_ID}/the file name below
     def assemble_files(self,path):
         myfiles = []
+        print("Assembling in WFModel root")
         for myid,(ele,name) in enumerate(zip(self.elements,self.elementnames)):
             if ele.is_wano:
                 for file in ele.wano_model.get_output_files():
@@ -956,8 +971,12 @@ class SubWorkflowView(QtGui.QFrame):
             wd.show()
 
         elif type(e.source()) is WFEListWidget:
-            print("Request to instantiate WFELW: %s" % e.source())
-
+            wfe = e.source()
+            dropped = wfe.selectedItems()[0]
+            name = dropped.text()
+            model, view = ControlFactory.construct(name, qt_parent=self, logical_parent=self, editor=self.model.editor,
+                                                   wf_root=self.model)
+            self.model.add_element(view, new_position)
         else:
             print("Type %s not yet accepted by dropevent, please implement"%(e.source()))
             return
@@ -1471,9 +1490,9 @@ class ForEachView(WFControlWithTopMiddleAndBottom):
 
     def place_elements(self):
         if not self.dontplace:
+            self.dontplace = True
             if self.model is not None:
                 self.init_from_model()
-                self.dontplace = True
                 self.model.subwfview.place_elements()
             self.adjustSize()
         self.dontplace=False
