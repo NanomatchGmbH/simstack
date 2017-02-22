@@ -420,8 +420,9 @@ class WaNoModelRoot(WaNoModelDictLike):
                         #filename = "BFT:${STORAGE_ID}/%s" % relpath
                         filename = relpath
                         #Absolute filenames will be replace with BFT:STORAGEID etc. below.
-                    else:
+                    elif not filename.endswith("_VALUE}"):
                         filename = "c9m:${WORKFLOW_ID}/%s" % filename
+
                     rendered_parent_jsdl = (rendered_parent,filename)
 
                 flat_variable_list.append((path,parent.get_type_str(),rendered_parent_jsdl))
@@ -452,7 +453,7 @@ class WaNoModelRoot(WaNoModelDictLike):
 
     def flat_variable_list_to_jsdl(self,fvl,basedir,stageout_basedir):
         files = []
-
+        print("CONVERTING FVL to JDSL")
         for myid,(logical_filename, source) in enumerate(self.input_files):
             fvl.append(("IFILE%d"%(myid),"File",(logical_filename,source)))
             #print("Trying to add ",logical_filename,source)
@@ -460,8 +461,12 @@ class WaNoModelRoot(WaNoModelDictLike):
 
         for (varname,type,var) in fvl:
             if type == "File":
+                print("HERE",varname,type,var)
                 if var[1].startswith("c9m:"):
                     filejsdl = JSDLtoXML.xml_datastaging_from_source(filename=var[0], overwrite=False,source_uri=var[1])
+                elif var[1].endswith("_VALUE}"):
+                    filejsdl = JSDLtoXML.xml_datastaging_from_source(filename=var[0], overwrite=False,
+                                                                     source_uri=var[1])
                 else:
                     #filejsdl = JSDLtoXML.xml_datastaging_from_source(filename=var[0], overwrite=False,source_uri="%s/%s"%(basedir, var[0]))
 
@@ -485,7 +490,11 @@ class WaNoModelRoot(WaNoModelDictLike):
 
         for otherfiles in self.get_import_model().get_contents():
             name,importloc,tostage = otherfiles[0],otherfiles[1],otherfiles[2]
-            filejsdl = JSDLtoXML.xml_datastaging_from_source(filename=tostage , overwrite=False,
+            if importloc.endswith("_VALUE}"):
+                filejsdl = JSDLtoXML.xml_datastaging_from_source(filename=name, overwrite=False,
+                                                                 source_uri=importloc)
+            else:
+                filejsdl = JSDLtoXML.xml_datastaging_from_source(filename=tostage , overwrite=False,
                                                              source_uri="c9m:${WORKFLOW_ID}/%s"%importloc )
             files.append(filejsdl)
 
