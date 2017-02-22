@@ -29,6 +29,11 @@ from WaNo.view.WaNoViews import WanoQtViewRoot
 
 from WaNo.lib.CallableQThread import QThreadCallback
 
+try:
+    FileNotFoundError
+except:
+    FileNotFoundError = EnvironmentError
+
 #TODO remove, testing only
 from pyura.pyura import Storage
 from collections import namedtuple
