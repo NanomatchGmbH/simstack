@@ -310,7 +310,10 @@ class SubWFModel(WFItemModel,WFItemListInterface):
         swfs = []
         #start = WFtoXML.xml_start()
         #activities.append(start)
-        my_jobdir = os.path.join(jobdir,self.view.text())
+        my_jobdir = jobdir
+        #The next line was for testing. If jobdir set diffenrently here you get another
+        # subfolder
+        #my_jobdir = os.path.join(jobdir,self.view.text())
         first = True
         basepath = path
         #if path == "":
@@ -438,8 +441,21 @@ class ParallelModel(WFItemModel):
         transitions = []
         transitions.append(split_activity)
         swfs = []
-        for swfm in self.subwf_models:
-            swf_xml = swfm.render_to_simple_wf(submitdir,jobdir,path = path)
+
+        if jobdir == "":
+            my_jobdir = self.name
+        else:
+            my_jobdir = "%s/%s" % (jobdir, self.name)
+        if path == "":
+            path = self.name
+        else:
+            path = "%s/%s" % (path, self.name)
+
+        for swf_id,swfm in enumerate(self.subwf_models):
+            inner_jobdir = "%s/%d" % (my_jobdir,swf_id)
+            inner_path = "%s/%d" % (path,swf_id)
+
+            swf_xml = swfm.render_to_simple_wf(submitdir,inner_jobdir,path = inner_path)
             swf_id = swf_xml.attrib["Id"]
             transitions.append(WFtoXML.xml_transition(From=splitid,To=swf_id))
             swfs.append(swf_xml)
@@ -522,17 +538,24 @@ class ForEachModel(WFItemModel):
         filesets = []
         muuid = str(uuid.uuid4())
         muuid_body = "%s_body"%muuid
+
+
         for myfile in self.filelist:
             globalpath = "c9m:${WORKFLOW_ID}/%s/" % os.path.dirname(myfile)
             basename = os.path.basename(myfile)
             filesets.append(WFtoXML.xml_fileset(base=globalpath,include=basename,exclude=""))
 
         #print(submitdir,jobdir,"WFFOREACH")
+        if jobdir == "":
+            my_jobdir = self.name
+        else:
+            my_jobdir = "%s/%s" % (jobdir, self.name)
+
         if path == "":
             path = self.name
         else:
             path = "%s/%s" %(path,self.name)
-        swf = self.subwfmodel.render_to_simple_wf(submitdir,jobdir,path = path)
+        swf = self.subwfmodel.render_to_simple_wf(submitdir,my_jobdir,path = path)
         swf.attrib["Type"] = "LOOP_BODY"
         swf.attrib["Id"] = muuid_body
         swf.attrib["IteratorName"] = self.itername
