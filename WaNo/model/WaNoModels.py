@@ -284,7 +284,7 @@ class WaNoModelRoot(WaNoModelDictLike):
 
     @staticmethod
     def construct_from_wano(filename, rootview, parent_wf):
-        parser = etree.XMLParser(remove_blank_text=True)
+        parser = etree.XMLParser(remove_blank_text=True,remove_comments=True)
         tree = etree.ElementTree(file=filename,parser=parser)
         root = tree.getroot()
         wano_dir_root = os.path.dirname(os.path.realpath(filename))
