@@ -76,7 +76,7 @@ class WaNoFactory(object):
         }
 
         if xml.tag not in wano_list:
-            print("Unknown Wano")
+            print("Unknown Wano", xml.tag)
             raise WaNoNotImplementedError()
         else:
             model, view = wano_list[xml.tag]
