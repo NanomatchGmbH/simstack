@@ -264,7 +264,7 @@ class ResourceTableModel(ResourceTableBase):
 
         mem = None
         if self.mylist[self.ROWTYPE.mem][0] == True:
-            mem = self.mylist[self.ROWTYPE.mem][2]
+            mem = float(self.mylist[self.ROWTYPE.mem][2])
             mem *= 1024 * 1024
 
         time = None
