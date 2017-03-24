@@ -19,14 +19,12 @@ class ContinuousViewTimer(QObject):
 
         if not callback in self._interval_list[interval]:
             self._interval_list[interval] = {callback: 1}
-            print("new list entry: %d" % interval)
         else:
             self._interval_list[interval][callback] += 1
 
         self.__update_max_tick(interval)
 
         if not self._timer.isActive():
-            print("start timer")
             self._base_tick = interval
             self._timer.start(self._base_tick)
         else:
@@ -40,7 +38,6 @@ class ContinuousViewTimer(QObject):
                     self._tick_counter = 0
                 self._base_tick = gcd
                 self._timer.setInterval(self._base_tick)
-                print("setting Interval to new value: %d" % self._base_tick)
 
     def __recalc_base_tick(self, new_value):
         return new_value if self._base_tick is None \
@@ -48,7 +45,6 @@ class ContinuousViewTimer(QObject):
 
     def __update_max_tick(self, new_value):
         self._tick_max = least_common_multiple(self._tick_max, new_value)
-        print("new max: %d" % self._tick_max)
 
     def remove_callback(self, callback, interval):
         if interval in self._interval_list:
@@ -60,7 +56,6 @@ class ContinuousViewTimer(QObject):
 
             # are there any callbacks for this interval left?
             if len(self._interval_list[interval]) == 0:
-                print("recalc")
                 del(self._interval_list[interval])
                 self._recalc   = True
 
@@ -89,7 +84,6 @@ class ContinuousViewTimer(QObject):
 
         if recalc:
             self._timer.setInterval(self._base_tick)
-            print("resetting timer to : %d" % self._base_tick)
 
         tick_max = self._tick_max / self._base_tick
 
@@ -118,7 +112,6 @@ class ContinuousViewTimer(QObject):
 
 if __name__ == "__main__":
     from PySide.QtCore import QCoreApplication, QThread
-    import time
 
     def test1():
         print("1")
