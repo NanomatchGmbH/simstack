@@ -20,6 +20,16 @@ class ContinuousViewTimer(QObject):
         self._lock.unlock()
 
     def add_callback(self, callback, interval):
+        """ Registers a callback that will be executed with a period of interval.
+
+        Multiple registrations for the same callback and the same interval
+        will result in just one single execution of the callback.
+
+        .. note:: The execution time of the callback must be kept as short as
+        possible.
+
+        .. note:: Blocking call.
+        """
         self.__lock()
         if not interval in self._interval_list:
             self._interval_list[interval] = []
@@ -57,6 +67,13 @@ class ContinuousViewTimer(QObject):
         self._tick_max = least_common_multiple(self._tick_max, new_value)
 
     def remove_callback(self, callback, interval):
+        """ Removes a callback registered with a specified interval.
+
+        If a callback has been registered multiple times with the same interval,
+        it has to be removed multiple times, too.
+
+        .. note:: Blocking call.
+        """
         self.__lock()
         if interval in self._interval_list:
             if callback in self._interval_list[interval]:
@@ -103,27 +120,27 @@ class ContinuousViewTimer(QObject):
         self._tick_counter = (self._tick_counter + 1) % tick_max
         self.__unlock()
 
-    def __init__(self, base_tick=100):
+    def __init__(self):
+        """ Dynamic lightweight timer with support for multiple period lengths.
+
+        This timer dynamically adapts its timer interval to the smallest interval
+        that satisfies all requested cycle times. This avoids unnecessary ticks
+        that will not lead to a callback being executed.
+
+        .. note:: The timer itself is not threaded. The timer signal handler
+        as well as the callbacks are executed within the surrounding thread
+        context. Keep this in mind when registering callbacks.
+        """
         super(ContinuousViewTimer, self).__init__()
-        # must be locked:
-        self._tick_counter=0
-        self._tick_max=1
-        self._interval_list={}
-        self._recalc = False
-        ####
+        self._tick_counter  = 0
+        self._tick_max      = 1
+        self._interval_list = {}
+        self._recalc        = False
+        self._timer         = QTimer(self)
+        self._base_tick     = None
+        self._lock          = QMutex(QMutex.NonRecursive)
 
-        self._timer = QTimer(self)
-        self._base_tick=None
         self._timer.timeout.connect(self.__timeout)
-        self._lock = QMutex(QMutex.NonRecursive)
-        #self._timer.start(self._base_tick)
-
-#               #
-# - - - - - - - - - - - - -
-# |   |   |   |   |   |   |
-# X       X       X       X
-# *           *           *
-
 
 if __name__ == "__main__":
     from PySide.QtCore import QCoreApplication, QThread
