@@ -112,14 +112,26 @@ class ContinuousViewTimer(QObject):
 
 if __name__ == "__main__":
     from PySide.QtCore import QCoreApplication, QThread
+    import ctypes
+    ptime = 0
+    count = 0
 
+    def test(i):
+        global count
+        global ptime
+        now = time.time()
+        diff = (now - ptime)
+        print("%d (%04d): %s (tid: %d)" % (i, count,
+                    "%2.5f" % diff if diff > 0.005 else "       ",
+                    ctypes.CDLL('libc.so.6').syscall(186)))
+        ptime = now
+        count = count + 1
     def test1():
-        print("1")
+        test(1)
     def test2():
-        print("2")
-
+        test(2)
     def test3():
-        print("3")
+        test(3)
 
     class APP(QCoreApplication):
         def get_ct(self):
@@ -127,19 +139,15 @@ if __name__ == "__main__":
         def __init__(self):
             super(APP, self).__init__([])
 
-            #self.timer = QTimer()
-            #self.timer.timeout.connect(foo)
-            #self.timer.start(1000)
+            print("App (tid: %d)" % ctypes.CDLL('libc.so.6').syscall(186))
             self.ct = ContinuousViewTimer()
             self.ct.add_callback(test3, 4000)
             self.ct.add_callback(test2, 2000)
-            super(APP, self).quit()
 
-            print("App")
     class TestThread(QThread):
         def run(self):
+            print("run (tid: %d)" % ctypes.CDLL('libc.so.6').syscall(186))
             time.sleep(7)
-            print("run")
             self.ct.add_callback(test1, 1000)
             time.sleep(4)
             self.ct.remove_callback(test1, 1000)
