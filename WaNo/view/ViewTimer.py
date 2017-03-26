@@ -13,7 +13,14 @@ def write_output(text):
     sys.stdout.flush()
 
 class ContinuousViewTimer(QObject):
+    def __lock(self):
+        self._lock.lock()
+
+    def __unlock(self):
+        self._lock.unlock()
+
     def add_callback(self, callback, interval):
+        self.__lock()
         if not interval in self._interval_list:
             self._interval_list[interval] = []
 
@@ -38,15 +45,19 @@ class ContinuousViewTimer(QObject):
                     self._tick_counter = 0
                 self._base_tick = gcd
                 self._timer.setInterval(self._base_tick)
+        self.__unlock()
 
     def __recalc_base_tick(self, new_value):
+        """ Lock must be held."""
         return new_value if self._base_tick is None \
                 else math.gcd(self._base_tick, new_value)
 
     def __update_max_tick(self, new_value):
+        """ Lock must be held."""
         self._tick_max = least_common_multiple(self._tick_max, new_value)
 
     def remove_callback(self, callback, interval):
+        self.__lock()
         if interval in self._interval_list:
             if callback in self._interval_list[interval]:
                 self._interval_list[interval][callback] -= 1
@@ -62,8 +73,10 @@ class ContinuousViewTimer(QObject):
         # are there any callbacks left? if not, stop timer.
         if len(self._interval_list) == 0:
             self._timer.stop()
+        self.__unlock()
 
     def __timeout(self):
+        self.__lock()
         recalc = False
         if self._recalc and (self._tick_counter == 0):
             recalc = True
@@ -88,6 +101,7 @@ class ContinuousViewTimer(QObject):
         tick_max = self._tick_max / self._base_tick
 
         self._tick_counter = (self._tick_counter + 1) % tick_max
+        self.__unlock()
 
     def __init__(self, base_tick=100):
         super(ContinuousViewTimer, self).__init__()
@@ -101,6 +115,7 @@ class ContinuousViewTimer(QObject):
         self._timer = QTimer(self)
         self._base_tick=None
         self._timer.timeout.connect(self.__timeout)
+        self._lock = QMutex(QMutex.NonRecursive)
         #self._timer.start(self._base_tick)
 
 #               #
@@ -158,6 +173,7 @@ if __name__ == "__main__":
             super(TestThread, self).__init__()
             self.ct = ct
 
+    print("Start (tid: %d)" % ctypes.CDLL('libc.so.6').syscall(186))
     app = APP()
     t = TestThread(app.get_ct())
     t.start()
