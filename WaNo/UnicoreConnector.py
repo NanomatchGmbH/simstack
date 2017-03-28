@@ -360,6 +360,8 @@ class UnicoreDataTransfer(object):
                 'progress': self._total if finished else last_progress,
                 'state': UnicoreDataTransferStates.DONE
             })
+        if not self._callback[0] is None:
+            self._callback[0](*self._callback[1], **self._callback[2])
 
     def cancel(self):
         # TODO: concurrent.futures.Future.cancel():
@@ -375,12 +377,13 @@ class UnicoreDataTransfer(object):
         self._future = executor.submit(self.run)
         executor.add_done_callback(self._future, self._done_callback)
 
-    def __init__(self, registry, transfer_state):
+    def __init__(self, registry, transfer_state, callback=(None, (), {})):
         self._registry  = registry
         self._state     = transfer_state
         self._future    = None
         self._canceled  = False
         self._total     = 0
+        self._callback  = callback
 
 class UnicoreDownload(UnicoreDataTransfer):
     def run(self):
@@ -406,8 +409,8 @@ class UnicoreDownload(UnicoreDataTransfer):
         #TODO handle return values and return them.
         return 0
 
-    def __init__(self, registry, transfer_state):
-        super(UnicoreDownload, self).__init__(registry, transfer_state)
+    def __init__(self, registry, transfer_state, callback):
+        super(UnicoreDownload, self).__init__(registry, transfer_state, callback)
 
 class UnicoreUpload(UnicoreDataTransfer):
     def run(self):
@@ -441,8 +444,8 @@ class UnicoreUpload(UnicoreDataTransfer):
         #TODO handle return values and return them.
         return 0
 
-    def __init__(self, registry, transfer_state):
-        super(UnicoreUpload, self).__init__(registry, transfer_state)
+    def __init__(self, registry, transfer_state, callback):
+        super(UnicoreUpload, self).__init__(registry, transfer_state, callback)
 
 
 class UnicoreConnector(CallableQThread):
@@ -675,11 +678,13 @@ class UnicoreConnector(CallableQThread):
 
     def _data_transfer(self, base_uri, localfile, remotefile, direction,
             callback=(None, (), {})):
+        """
+        Args:
+            callback (function) callback that is executed when transfer completes
+        """
         if not base_uri in self.workers:
             # TODO emit error
             return
-
-        #TODO treat callback.... required?
 
         storage, remote_path = extract_storage_path(remotefile)
         registry    = self.workers[base_uri]['registry']
@@ -699,9 +704,9 @@ class UnicoreConnector(CallableQThread):
                 base_uri, index)
 
         if (direction == Direction.UPLOAD):
-            transfers[index] = UnicoreUpload(registry, transfer_state)
+            transfers[index] = UnicoreUpload(registry, transfer_state, callback)
         else:
-            transfers[index] = UnicoreDownload(registry, transfer_state)
+            transfers[index] = UnicoreDownload(registry, transfer_state, callback)
         transfers[index].submit(executor)
 
 
