@@ -1,12 +1,13 @@
 from .WFEditorMainWindow import WFEditorMainWindow
 from .WFEditor import WFEditor
 
-from PySide.QtCore import Signal, QObject
+from PySide.QtCore import Signal, QObject, QMutex
 from PySide.QtGui import QMessageBox, QFileDialog
 
 from .MessageDialog import MessageDialog
 from .DownloadProgressWidget import DownloadProgressWidget
 from .DownloadProgressMenuButton import DownloadProgressMenuButton
+from ..lib.DynamicTimer import DynamicTimer
 
 class WFViewManager(QObject):
     REGISTRY_CONNECTION_STATES = WFEditor.REGISTRY_CONNECTION_STATES
@@ -121,6 +122,8 @@ class WFViewManager(QObject):
             print(save_to)
             print("Save file to: %s." % save_to[0])
             self.download_file_to.emit(filepath, save_to[0])
+            self._view_timer.add_callback(self._on_view_update,
+                    self._dl_update_interval)
 
     def _on_file_upload(self, dirpath):
         upload = QFileDialog.getOpenFileName(
@@ -130,13 +133,43 @@ class WFViewManager(QObject):
                 selectedFilter=''
                 )
         if upload[0]:
+            print("Going to upload: %s" % str(upload))
             self.upload_file.emit(upload[0], dirpath)
+            self._view_timer.add_callback(self._on_view_update,
+                    self._dl_update_interval)
 
     def _on_workflow_saved(self, success, folder):
         if not success:
             self.show_error("Could not save Workflow to folder\n%s" % folder)
         else:
             self.request_saved_workflows_update.emit(folder)
+
+    def _on_view_update(self)
+        #TODO might take too long for a DynamicTimer callback
+        self._dl_progress_widget.update()
+
+        # Note: This is required to have at least one additional view update
+        # after a transfer has completed.
+        self._dl_callback_delete["lock"].lock()
+        for i in range(0, self._dl_callback_delete["to_delete"]):
+            self._view_timer.remove_callback(self._on_view_update,
+                    self._dl_update_interval)
+        self._dl_callback_delete["to_delete"] = 0
+        self._dl_callback_delete["lock"].unlock()
+
+        print("######################### view update")
+
+
+    def _remove_dl_progress_callback(self):
+        self._dl_callback_delete["lock"].lock()
+        self._dl_callback_delete["to_delete"] += 1
+        self._dl_callback_delete["lock"].unlock()
+
+    def on_download_complete(self, base_uri, from_path, to_path):
+        self._remove_dl_progress_callback()
+
+    def on_upload_complete(self, base_uri, from_path, to_path):
+        self._remove_dl_progress_callback()
  
     def _connect_signals(self):
         self._mainwindow.open_file.connect(self.open_dialog_open_workflow)
@@ -186,5 +219,11 @@ class WFViewManager(QObject):
 
         self._mainwindow    = WFEditorMainWindow(self._editor)
         self._init_dl_progressbar(unicore_state)
+        self._view_timer    = DynamicTimer()
+        self._dl_update_interval =  200
+        self._dl_callback_delete = { # used to schedule dl progress callbacks for deletion
+                "lock": QMutex(),
+                "to_delete": 0
+            }
 
         self._connect_signals()
