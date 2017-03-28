@@ -726,13 +726,14 @@ class WFEditorApplication(QThreadCallback):
         ##### END TODO
 
 
-        self._view_manager  = WFViewManager()
         self._unicore       = None # TODO pyura API
 
         self._unicore_connector = UnicoreConnector(self,
                 UnicoreStateFactory.get_writer())
 
         self._unicore_connector.start()
+
+        self._view_manager  = WFViewManager(UnicoreStateFactory.get_reader())
 
         self._current_registry_index = 0
 
