@@ -233,7 +233,8 @@ class WFEditorApplication(QThreadCallback):
                         base_uri,
                         from_path,
                         to_path),
-                (None, (), {})
+                (self._view_manager.on_download_complete, (
+                    base_uri, from_path, to_path), {})
             )
 
     def _on_fs_upload(self, local_file, dest_dir):
@@ -244,7 +245,8 @@ class WFEditorApplication(QThreadCallback):
                         base_uri,
                         local_file,
                         dest_dir),
-                (None, (), {})
+                (self._view_manager.on_upload_complete, (
+                    base_uri, from_path, to_path), {})
             )
 
     @QThreadCallback.callback
