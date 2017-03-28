@@ -5,6 +5,8 @@ from PySide.QtCore import Signal, QObject
 from PySide.QtGui import QMessageBox, QFileDialog
 
 from .MessageDialog import MessageDialog
+from .DownloadProgressWidget import DownloadProgressWidget
+from .DownloadProgressMenuButton import DownloadProgressMenuButton
 
 class WFViewManager(QObject):
     REGISTRY_CONNECTION_STATES = WFEditor.REGISTRY_CONNECTION_STATES
@@ -170,10 +172,19 @@ class WFViewManager(QObject):
     def get_editor(self):
         return self._editor
 
-    def __init__(self):
+    def _init_dl_progressbar(self, unicore_state):
+        self._dl_progress_widget = DownloadProgressWidget(self._mainwindow, unicore_state)
+        self._dl_progress_bar    = DownloadProgressMenuButton(
+                self._mainwindow.statusBar(),
+                self._dl_progress_widget)
+        self._mainwindow.statusBar().addPermanentWidget(self._dl_progress_bar)
+
+
+    def __init__(self, unicore_state):
         super(WFViewManager, self).__init__()
         self._editor        = WFEditor()
 
         self._mainwindow    = WFEditorMainWindow(self._editor)
+        self._init_dl_progressbar(unicore_state)
 
         self._connect_signals()
