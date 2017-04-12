@@ -207,8 +207,8 @@ class ProtectedIndexedList(ProtectedDict):
     def __iter__(self):
         """ Yields an index-value pair for each list element. """
         self._lock.lockForRead()
-        for index, entry in self._values:
-            yield (index, value)
+        for index, entry in self._values.items():
+            yield (index, entry)
         self._lock.unlock()
 
     def set_value(self, value):
