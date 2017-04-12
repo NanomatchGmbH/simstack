@@ -246,7 +246,7 @@ class WFEditorApplication(QThreadCallback):
                         local_file,
                         dest_dir),
                 (self._view_manager.on_upload_complete, (
-                    base_uri, from_path, to_path), {})
+                    base_uri, local_file, dest_dir), {})
             )
 
     @QThreadCallback.callback
