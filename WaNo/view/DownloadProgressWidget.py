@@ -100,17 +100,17 @@ class Download(QWidget):
 
 
 class DownloadProgressWidget(QWidget):
-    def _create_add_widget(self, dl):
+    def _create_add_widget(self, index, dl):
         widget = Download(
-                dl['from'],
-                dl['to'],
+                dl['source'],
+                dl['dest'],
                 dl['total'],
                 Download.DIRECTION(dl['direction']))
         item = QListWidgetItem()
         item.setSizeHint(widget.sizeHint())
         self._list.addItem(item)
         self._list.setItemWidget(item, widget)
-        self._downloads[dl['id']] = {'widget': widget, 'item': item}
+        self._downloads[index] = {'widget': widget, 'item': item}
         return widget
 
     def _sort(self):
@@ -136,15 +136,17 @@ class DownloadProgressWidget(QWidget):
     def update(self):
         #TODO protect from concurent runs.
         if not self.download_status is None:
-            for dl in self.download_status.get_list_iterator('dl'):
-                widget = None
-                if dl['id'] in self._downloads:
-                    widget = self._downloads[dl['id']]['widget']
-                else:
-                    widget = self._create_add_widget(dl)
-                if not widget is None:
-                    widget.set_progress(dl['progress'])
-        #TODO self._sort()
+            for (index, download) in self.download_status.data_transfer_iterator():
+                print("index %d, download: %s" % (index, str(download)))
+                with download.get_reader_instance() as dl:
+                    widget = None
+                    if index in self._downloads:
+                        widget = self._downloads[index]['widget']
+                    else:
+                        widget = self._create_add_widget(index, dl)
+                    if not widget is None:
+                        widget.set_progress(dl['progress'])
+            #TODO self._sort()
 
     def set_download_status(self, download_status):
         if not download_status is None:
