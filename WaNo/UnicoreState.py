@@ -295,6 +295,12 @@ class ProtectedReaderWriterIndexedList(ReaderWriterInstance):
         def get_value(self, key):
             return self._list_instance.get_value(key)
 
+        def __enter__(self):
+            return self._list_instance.__enter__()
+
+        def __exit__(self, *unused):
+            self._list_instance.__exit__(*unused)
+
         def __iter__(self):
             return self._list_instance.__iter__()
 
