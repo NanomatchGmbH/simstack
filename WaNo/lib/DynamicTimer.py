@@ -29,6 +29,10 @@ class DynamicTimer(QObject):
         possible.
 
         .. note:: Blocking call.
+
+        Args:
+            callback (function) callback to execute periodically.
+            interval (int) period time in ms.
         """
         self.__lock()
         if not interval in self._interval_list:
@@ -73,6 +77,10 @@ class DynamicTimer(QObject):
         it has to be removed multiple times, too.
 
         .. note:: Blocking call.
+
+        Args:
+            callback (function) callback to remove.
+            interval (int) previously configured period time in ms.
         """
         self.__lock()
         if interval in self._interval_list:
