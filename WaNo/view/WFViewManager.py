@@ -144,18 +144,21 @@ class WFViewManager(QObject):
         else:
             self.request_saved_workflows_update.emit(folder)
 
-    def _on_view_update(self)
+    def _on_view_update(self):
         #TODO might take too long for a DynamicTimer callback
-        self._dl_progress_widget.update()
+        #self._dl_progress_widget.update()
+        self._dl_progress_bar.update()
 
         # Note: This is required to have at least one additional view update
         # after a transfer has completed.
-        self._dl_callback_delete["lock"].lock()
-        for i in range(0, self._dl_callback_delete["to_delete"]):
-            self._view_timer.remove_callback(self._on_view_update,
-                    self._dl_update_interval)
-        self._dl_callback_delete["to_delete"] = 0
-        self._dl_callback_delete["lock"].unlock()
+
+        #TODO re-entering into locked code. we should postpone the release here.
+        #self._dl_callback_delete["lock"].lock()
+        #for i in range(0, self._dl_callback_delete["to_delete"]):
+        #    self._view_timer.remove_callback(self._on_view_update,
+        #            self._dl_update_interval)
+        #self._dl_callback_delete["to_delete"] = 0
+        #self._dl_callback_delete["lock"].unlock()
 
         print("######################### view update")
 
