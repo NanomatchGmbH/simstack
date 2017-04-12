@@ -699,7 +699,7 @@ class UnicoreConnector(CallableQThread):
                 source,
                 destination,
                 storage,
-                direction)
+                direction.value)
         transfer_state = self.unicore_state.get_data_transfer(
                 base_uri, index)
 
