@@ -87,7 +87,10 @@ class Download(QWidget):
         super(Download, self).__init__()
         
         self._from_path = from_path
-        self._to_path   = to_path
+        if not to_path is None and not to_path == "":
+            self._to_path = to_path
+        else:
+            self._to_path = basename(from_path)
         self._direction = direction
         self._total     = total
         self._done      = False
