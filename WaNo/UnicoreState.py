@@ -471,8 +471,8 @@ class UnicoreStateFactory(object):
         return UnicoreStateFactory._instance
 
     @classmethod
-    def get_reader():
-        return UnicoreStateFactory.__Reader(self.__get_instance())
+    def get_reader(self):
+        return UnicoreStateFactory._Reader(self.__get_instance())
 
     @classmethod
     def get_writer(self):
