@@ -1,4 +1,4 @@
-if [ ! -f WaNoMain.py ]
+if [ ! -f simstack ]
 then
     echo "Main executable not found, quitting."
     exit 0
