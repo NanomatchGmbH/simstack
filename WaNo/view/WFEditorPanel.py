@@ -41,6 +41,10 @@ from pyura.pyura.WorkflowXMLConverter import WFtoXML
 widgetColors = {'MainEditor' : '#F5FFF5' , 'Control': '#EBFFD6' , 'Base': '#F5FFEB' ,
                'WaNo' : '#FF00FF', 'ButtonColor':'#D4FF7F' }
 
+#Blue Theme
+#widgetColors = {'MainEditor' : '#D5E9FF' , 'Control': '#D5E9FF' , 'Base': '#AABBCC' ,
+#               'WaNo' : '#AABBCC', 'ButtonColor':'#88C2FF' }
+
 
 
 import copy
@@ -868,7 +872,7 @@ class SubWorkflowView(QtGui.QFrame):
         self.setFrameStyle(QtGui.QFrame.Panel)
         self.setStyleSheet("""
                            QFrame {
-                            border: 2px solid green;
+                            border: 2px solid black;
                             border-radius: 4px;
                             padding: 2px;
                             background: %s
@@ -1551,7 +1555,7 @@ class WFControlWithTopMiddleAndBottom(QtGui.QFrame,DragDropTargetTracker):
         self.setFrameStyle(QtGui.QFrame.Panel)
         self.setStyleSheet("""
                            QFrame {
-                            border: 2px solid green;
+                            border: 2px solid black;
                             border-radius: 4px;
                             padding: 2px;
                             background: %s;
