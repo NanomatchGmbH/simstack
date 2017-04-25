@@ -60,6 +60,8 @@ class ResourceTableBase(QtCore.QAbstractTableModel):
     def headerData(self, col, orientation, role):
         if orientation == QtCore.Qt.Horizontal and role == QtCore.Qt.DisplayRole:
             return self.header[col]
+        if orientation == QtCore.Qt.Vertical and role == QtCore.Qt.DisplayRole:
+            return "%d"%(col+1)
         return None
 
     def sort(self, col, order):
@@ -149,19 +151,15 @@ class ImportTableModel(ResourceTableBase):
     def get_contents(self):
         return self.mylist
 
-    def flags(self, index):
-        defaultflags = QtCore.Qt.ItemFlags()
-        """
-        col = 0
-        if index.row() >= len(self.mylist):
-            col = 0
-        else:
-            col = index.column()
+    def delete_entry(self,row):
+        if len(self.mylist) <= 0 or row >= len(self.mylist):
+            return
+        self.beginRemoveRows(QtCore.QModelIndex(),row,row)
+        self.mylist.pop(row)
+        self.endRemoveRows()
 
-        if (col == 1):
-            return QtCore.Qt.ItemIsEnabled | defaultflags
-        else:
-        """
+    def flags(self, index):
+        defaultflags = int(QtCore.Qt.ItemFlags() | QtCore.Qt.ItemIsSelectable)
         return int(QtCore.Qt.ItemIsEditable | QtCore.Qt.ItemIsEnabled | defaultflags)
 
 
@@ -233,7 +231,7 @@ class ImportTableModel(ResourceTableBase):
         ]
         self.header = ["Name", "ImportFrom", "Target Filename"]
         self.alignments = [QtCore.Qt.AlignCenter, int(QtCore.Qt.AlignLeft | QtCore.Qt.AlignVCenter),
-                           int(QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter)]
+                           int(QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter),QtCore.Qt.AlignCenter]
 
 
 class ResourceTableModel(ResourceTableBase):
@@ -416,23 +414,28 @@ class ButtonDelegate(QtGui.QItemDelegate):
         QtGui.QItemDelegate.__init__(self, parent)
 
     def createEditor(self, parent, option, index):
-        combo = QtGui.QPushButton(str(index.data()), parent)
-
+        self.combo = QtGui.QPushButton(str(index.data()), parent)
         # self.connect(combo, QtCore.SIGNAL("currentIndexChanged(int)"), self, QtCore.SLOT("currentIndexChanged()"))
-        combo.clicked.connect(self.currentIndexChanged)
-        return combo
+        self.combo.clicked.connect(self.on_button_clicked)
+        return self.combo
 
-    def setEditorData(self, editor, index):
-        editor.blockSignals(True)
-        # editor.setCurrentIndex(int(index.model().data(index)))
-        editor.blockSignals(False)
+    def on_button_clicked(self):
+        pass
 
-    def setModelData(self, editor, model, index):
-        model.setData(index, editor.text())
 
-    def currentIndexChanged(self):
-        self.commitData.emit(self.sender())
+    #def setEditorData(self, editor, index):
+    #    editor.blockSignals(True)
+    #    self.combo.setText(index.model().data(index))
+    #    # editor.setCurrentIndex(int(index.model().data(index)))
+    #    editor.blockSignals(False)
 
+
+
+    #def setModelData(self, editor, model, index):
+    #    model.setData(index, editor.text())
+
+    #def currentIndexChanged(self):
+    #    self.commitData.emit(self.sender())
 
 
 class CheckBoxDelegate(QtGui.QStyledItemDelegate):
@@ -566,6 +569,7 @@ class TableView(QtGui.QTableView):
     def __init__(self, *args, **kwargs):
         QtGui.QTableView.__init__(self, *args, **kwargs)
 
+
         # Set the delegate for column 0 of our table
         # self.setItemDelegateForColumn(0, ButtonDelegate(self))
 
@@ -600,18 +604,37 @@ class ImportView(QtGui.QTableView):
         QtGui.QTableView.__init__(self, *args, **kwargs)
         gfcd = GlobalFileChooserDelegate(self)
         self.setItemDelegateForColumn(1, gfcd)
+        self.setSelectionBehavior(QtGui.QAbstractItemView.SelectRows)
+        self.setSelectionMode(QtGui.QAbstractItemView.SingleSelection)
+        self.verticalHeader().show()
+        self.horizontalHeader().show()
+        #self.verticalHeader().sectionClicked.connect(self._selectRow)
+        self.setStyleSheet("QTreeView::item:selected{background-color: palette(highlight); color: palette(highlightedText);};")
+        #connect(ui->tableWidget->verticalHeader(), SIGNAL(sectionClicked(int)), this, SLOT(verticalHeaderClicked(int)));
+
+
+    def keyPressEvent(self,event):
+        if (event.key() == QtCore.Qt.Key_Delete):
+            selectionmodel = self.selectionModel()
+            for rowm in selectionmodel.selectedRows():
+                self.model().delete_entry(rowm.row())
+                #print (rowm.row())
+            #In delete condition. We tell the model our selectionindex and delete
+            return
+        super(ImportView,self).keyPressEvent(event)
 
 
     def setModel(self,model):
+
         super(ImportView,self).setModel(model)
         for row in range(0, model.rowCount()):
             self.openPersistentEditor(model.index(row, 1))
-
         model.rowsInserted.connect(self.openpersistentslot)
 
     def openpersistentslot(self):
         for row in range(0, self.model().rowCount()):
             self.openPersistentEditor(self.model().index(row, 1))
+
 
 class ExportView(QtGui.QTableView):
     """
