@@ -86,7 +86,7 @@ class ExportTableModel(ResourceTableBase):
 
     def flags(self, index):
         defaultflags = QtCore.Qt.ItemFlags()
-        return int(QtCore.Qt.ItemIsEditable | QtCore.Qt.ItemIsEnabled | defaultflags)
+        return int(QtCore.Qt.ItemIsEditable | QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsSelectable | defaultflags)
 
     def rowCount(self, parent=QtCore.QModelIndex()):
         return len(self.mylist) + 1
@@ -104,6 +104,13 @@ class ExportTableModel(ResourceTableBase):
         if index.row() >= len(self.mylist):
             return " "
         return self.mylist[index.row()][index.column()]
+
+    def delete_entry(self,row):
+        if len(self.mylist) <= 0 or row >= len(self.mylist):
+            return
+        self.beginRemoveRows(QtCore.QModelIndex(),row,row)
+        self.mylist.pop(row)
+        self.endRemoveRows()
 
     def add_entry(self):
         self.mylist.append(["File_%d" % len(self.mylist)])
@@ -646,17 +653,15 @@ class ExportView(QtGui.QTableView):
         #self.setItemDelegateForColumn(1, gfcd)
 
 
-    #def setModel(self,model):
-    #    super(ExportView,self).setModel(model)
-        #for row in range(0, model.rowCount()):
-        #    self.openPersistentEditor(model.index(row, 1))
-
-        #model.rowsInserted.connect(self.openpersistentslot)
-
-    #def openpersistentslot(self):
-    #    for row in range(0, self.model().rowCount()):
-    #        self.openPersistentEditor(self.model().index(row, 1))
-
+    def keyPressEvent(self, event):
+        if (event.key() == QtCore.Qt.Key_Delete):
+            selectionmodel = self.selectionModel()
+            for rowm in selectionmodel.selectedRows():
+                self.model().delete_entry(rowm.row())
+                # print (rowm.row())
+            # In delete condition. We tell the model our selectionindex and delete
+            return
+        super(ExportView, self).keyPressEvent(event)
 
 if __name__ == "__main__":
     from sys import argv, exit
