@@ -6,9 +6,9 @@ class UnicoreStateValues(object):
     CONNECTION      = "connection"
 
 try:
-    from pyura.pyura import ConnectionState as UnicoreConnectionStates
+    from pyura.pyura.Constants import ConnectionState as UnicoreConnectionStates
 except:
-    from lib.pyura.pyura import ConnectionState as UnicoreConnectionStates
+    from lib.pyura.pyura.Constants import ConnectionState as UnicoreConnectionStates
 
 class ProtectedValue(object):
     def __get_value(self, unlock=True):

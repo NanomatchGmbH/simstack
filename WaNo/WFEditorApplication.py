@@ -12,12 +12,13 @@ from PySide import QtCore,QtGui
 import datetime
 
 from WaNo import WaNoFactory
-from pyura.pyura import UnicoreAPI, HTTPBasicAuthProvider
-from pyura.pyura import ErrorCodes as UnicoreErrorCodes
+from pyura.pyura import UnicoreAPI
+from pyura.pyura.HTTPBasicAuthProvider import HTTPBasicAuthProvider
+from pyura.pyura.Constants import ErrorCodes as UnicoreErrorCodes
 
 from pyura.pyura import JobManager
 
-from WaNo.view import WFViewManager
+from WaNo.view.WFViewManager import WFViewManager
 from WaNo.WaNoGitRevision import get_git_revision
 from WaNo.Constants import SETTING_KEYS
 from WaNo.UnicoreState import UnicoreStateFactory

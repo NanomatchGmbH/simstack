@@ -15,10 +15,11 @@ from lxml import etree
 from PySide.QtCore import QThread, Qt
 from PySide.QtCore import Slot, Signal, QObject
 
-from pyura.pyura import UnicoreAPI, HTTPBasicAuthProvider
-from pyura.pyura import ErrorCodes as UnicoreErrorCodes
+from pyura.pyura.HTTPBasicAuthProvider import HTTPBasicAuthProvider
+from pyura.pyura import UnicoreAPI
+from pyura.pyura.Constants import ErrorCodes as UnicoreErrorCodes
 from pyura.pyura import JobManager
-from pyura.pyura import ConnectionState as UnicoreConnectionStates
+from pyura.pyura.Constants import ConnectionState as UnicoreConnectionStates
 
 from WaNo.lib.FileSystemTree import filewalker
 from WaNo.lib.CallableQThread import CallableQThread

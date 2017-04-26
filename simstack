@@ -22,8 +22,8 @@ from PySide.QtGui import QApplication,QDesktopServices
 from PySide.QtCore import QTimer
 
 
-from WaNo import WFEditorApplication
-from WaNo import WaNoSettingsProvider
+from WaNo.WFEditorApplication import WFEditorApplication
+from WaNo.WaNoSettingsProvider import WaNoSettingsProvider
 
 _SETTINGS_DIR="NanoMatch"
 _SETTINGS_FILE="clientsettings.yml"
