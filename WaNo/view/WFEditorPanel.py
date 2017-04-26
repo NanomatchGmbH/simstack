@@ -1441,6 +1441,8 @@ class WFTabsWidget(QtGui.QTabWidget):
         if not workFlow is None:
             name = workFlow.name
             model.read_from_disk(workFlow.workflow)
+        else:
+            name = "Untitled"
         self.addTab(scroll, name)
         view.relayout()
         self.relayout()
