@@ -71,38 +71,64 @@ class DynamicTimer(QObject):
         self._tick_max = least_common_multiple(self._tick_max, new_value)
 
     def remove_callback(self, callback, interval):
-        """ Removes a callback registered with a specified interval.
+        """ Schedules a callback registered with a specified interval for lazy remove.
 
-        If a callback has been registered multiple times with the same interval,
-        it has to be removed multiple times, too.
+        Removal is done by decrementing the usage counter of the callback.
+        Therefore, if this callback with this exact interval has been registered
+        multiple times, it might persist this operation unless this function is
+        called as many times as the callback has been inserted.
 
-        .. note:: Blocking call.
+        .. note:: Removal will take place before the next timer event for this
+            interval. However, if the interval this callback belongs to is
+            currently being executed, the callback might be executed once more.
+        .. note:: This call might block until all callbacks of the currently
+            active intervall have been executed.
 
         Args:
             callback (function) callback to remove.
             interval (int) previously configured period time in ms.
         """
-        self.__lock()
-        if interval in self._interval_list:
-            if callback in self._interval_list[interval]:
-                self._interval_list[interval][callback] -= 1
 
-                if self._interval_list[interval][callback] <= 0:
-                    del(self._interval_list[interval][callback])
+        cb_tuple = (callback, interval)
 
-            # are there any callbacks for this interval left?
-            if len(self._interval_list[interval]) == 0:
-                del(self._interval_list[interval])
-                self._recalc   = True
+        self._delete_list_lock.lock()
+        # Note: we abuse the dict's hash function to store our callback + interval
+        # pairs. This allows for loockups in O(1) in average - yay!
+        if cb_tuple in self._delete_list:
+            self._delete_list[(callback, interval)] += 1
+        else:
+            self._delete_list[(callback, interval)] = 1
+        self._delete_list_lock.unlock()
 
+    def __remove_callbacks(self, del_list):
+        """ .. note:: self._lock must be held."""
+        for interval in del_list.keys():
+            if interval in self._interval_list:
+                for callback, count in del_list[interval]:
+                    if callback in self._interval_list[interval]:
+                        # decrement usage counter
+                        self._interval_list[interval][callback] -= count
+
+                        # delete callback if unused
+                        if self._interval_list[interval][callback] <= 0:
+                            del(self._interval_list[interval][callback])
+
+                # are there any callbacks for this interval left?
+                if len(self._interval_list[interval]) == 0:
+                    del(self._interval_list[interval])
+                    self._recalc   = True
         # are there any callbacks left? if not, stop timer.
         if len(self._interval_list) == 0:
             self._timer.stop()
-        self.__unlock()
+
+
 
     def __timeout(self):
         self.__lock()
         recalc = False
+        del_list = {}
+        del_count = 0 # stores the decrement for the ref counter of a callback scheduled for removal
+
         if self._recalc and (self._tick_counter == 0):
             recalc = True
             self._recalc = False
@@ -114,8 +140,23 @@ class DynamicTimer(QObject):
 
         for interval in self._interval_list.keys():
             if current_interval % interval == 0:
+                self._delete_list_lock.lock()
+
                 for callback in self._interval_list[interval]:
-                    callback()
+                    del_count = 0
+                    if (callback, interval) in self._delete_list:
+                        del_count = self._delete_list[(callback, interval)]
+                        del_list[interval] = (callback, del_count)
+
+                        # TODO maybe set to 0?!
+                        del(self._delete_list[(callback, interval)])
+
+                    # will there be any instances left after removal?
+                    # In that case, we can execute again
+                    if self._interval_list[interval][callback] > del_count:
+                        callback()
+
+                self._delete_list_lock.unlock()
             if recalc:
                 self.__update_max_tick(interval)
                 self._base_tick = self.__recalc_base_tick(interval)
@@ -126,6 +167,9 @@ class DynamicTimer(QObject):
         tick_max = self._tick_max / self._base_tick
 
         self._tick_counter = (self._tick_counter + 1) % tick_max
+
+        self.__remove_callbacks(del_list)
+
         self.__unlock()
 
     def __init__(self):
@@ -147,6 +191,8 @@ class DynamicTimer(QObject):
         self._timer         = QTimer(self)
         self._base_tick     = None
         self._lock          = QMutex(QMutex.NonRecursive)
+        self._delete_list   = {}
+        self._delete_list_lock = QMutex(QMutex.NonRecursive)
 
         self._timer.timeout.connect(self.__timeout)
 
