@@ -22,60 +22,60 @@ def write_output(text):
     sys.stdout.write("\r%s" % text);
     sys.stdout.flush()
 
-OPERATIONS = Enum("OPERATIONS",
-    """
-    START
-    STOP
-    TERMINATE
-    """,
-    module=__name__
-)
-
-class TimerThread(CallableQThread):
-    def timer_command(self, operation, tick=0):
-        if operation == OPERATIONS.START:
-            print("------> start timer")
-            self._timer.start(tick)
-        if operation == OPERATIONS.STOP:
-            print("------> stop timer")
-            self._timer.stop()
-        elif operation == OPERATIONS.TERMINATE:
-            self._timer.stop()
-            #TODO exit.
-            self.quit()
-
-    def run(self):
-        print("Timer Thread (tid: %d)" % ctypes.CDLL('libc.so.6').syscall(186))
-        self.exec_()
-        print("Thread terminated.")
-
-    def start(self):
-        super(TimerThread, self).start()
-        self._timer.moveToThread(self)
-
-    def setInterval(self, interval):
-        print("------> setInterval")
-        if not self._timer is None:
-            self._timer.setInterval(interval)
-
-    def isActive(self):
-        print("------> isActive")
-        return False if self._timer is None else self._timer.isActive()
-
-    # NOTE: do not make this function "private" (leading __) or call the
-    # DynamicTimer callback direct. For some reason, this will make Qt execute
-    # the function outside the thread's context... -.-
-    def _trigger_timeout_callback(self):
-        print("FOO - Timer Thread (tid: %d)" % ctypes.CDLL('libc.so.6').syscall(186))
-        self._timerout()
-
-    def __init__(self, timeout_cb):
-        super(TimerThread, self).__init__()
-        self._timer = QTimer(None)
-        self._timer.timeout.connect(self._trigger_timeout_callback)
-        self._timerout = timeout_cb
-
 class DynamicTimer(QObject):
+    OPS = Enum("OPS",
+        """
+        START
+        STOP
+        TERMINATE
+        """,
+        module=__name__
+    )
+
+    class TimerThread(CallableQThread):
+        def timer_command(self, operation, tick=0):
+            if operation == DynamicTimer.OPS.START:
+                print("------> start timer")
+                self._timer.start(tick)
+            if operation == DynamicTimer.OPS.STOP:
+                print("------> stop timer")
+                self._timer.stop()
+            elif operation == DynamicTimer.OPS.TERMINATE:
+                self._timer.stop()
+                #TODO exit.
+                self.quit()
+
+        def run(self):
+            print("Timer Thread (tid: %d)" % ctypes.CDLL('libc.so.6').syscall(186))
+            self.exec_()
+            print("Thread terminated.")
+
+        def start(self):
+            super(DynamicTimer.TimerThread, self).start()
+            self._timer.moveToThread(self)
+
+        def setInterval(self, interval):
+            print("------> setInterval")
+            if not self._timer is None:
+                self._timer.setInterval(interval)
+
+        def isActive(self):
+            print("------> isActive")
+            return False if self._timer is None else self._timer.isActive()
+
+        # NOTE: do not make this function "private" (leading __) or call the
+        # DynamicTimer callback direct. For some reason, this will make Qt execute
+        # the function outside the thread's context... -.-
+        def _trigger_timeout_callback(self):
+            print("FOO - Timer Thread (tid: %d)" % ctypes.CDLL('libc.so.6').syscall(186))
+            self._timerout()
+
+        def __init__(self, timeout_cb):
+            super(DynamicTimer.TimerThread, self).__init__()
+            self._timer = QTimer(None)
+            self._timer.timeout.connect(self._trigger_timeout_callback)
+            self._timerout = timeout_cb
+
     _timer_command = Signal(object, int, name="TimerCommand")
 
     def __lock(self):
@@ -85,16 +85,16 @@ class DynamicTimer(QObject):
         self._lock.unlock()
 
     def _start_timer(self, base_tick):
-        if not self._thread.isRunning():
-            self._thread.start()
-        self._timer_command.emit(OPERATIONS.START, base_tick)
+        if not self._timer_thread.isRunning():
+            self._timer_thread.start()
+        self._timer_command.emit(DynamicTimer.OPS.START, base_tick)
 
     def _stop_timer(self):
-        self._timer_command.emit(OPERATIONS.STOP, 0)
+        self._timer_command.emit(DynamicTimer.OPS.STOP, 0)
 
     def _terminate_timer_thread(self):
-        self._timer_command.emit(OPERATIONS.TERMINATE, 0)
-        self._thread.wait()
+        self._timer_command.emit(DynamicTimer.OPS.TERMINATE, 0)
+        self._timer_thread.wait()
         print("stopped and closed...")
 
     def quit(self):
@@ -126,7 +126,7 @@ class DynamicTimer(QObject):
 
         self.__update_max_tick(interval)
 
-        if not self._thread.isActive():
+        if not self._timer_thread.isActive():
             self._base_tick = interval
             self._start_timer(self._base_tick)
         else:
@@ -139,7 +139,7 @@ class DynamicTimer(QObject):
                 else:
                     self._tick_counter = 0
                 self._base_tick = gcd
-                self._thread.setInterval(self._base_tick)
+                self._timer_thread.setInterval(self._base_tick)
         self.__unlock()
 
     def __recalc_base_tick(self, new_value):
@@ -247,7 +247,7 @@ class DynamicTimer(QObject):
                 self._base_tick = self.__recalc_base_tick(interval)
 
         if recalc:
-            self._thread.setInterval(self._base_tick)
+            self._timer_thread.setInterval(self._base_tick)
 
         tick_max = self._tick_max / self._base_tick
 
@@ -277,9 +277,9 @@ class DynamicTimer(QObject):
         self._lock          = QMutex(QMutex.NonRecursive)
         self._delete_list   = {}
         self._delete_list_lock = QMutex(QMutex.NonRecursive)
-        self._thread        = TimerThread(self.__timeout)
+        self._timer_thread  = DynamicTimer.TimerThread(self.__timeout)
 
-        self._timer_command.connect(self._thread.timer_command)
+        self._timer_command.connect(self._timer_thread.timer_command)
 
 
 if __name__ == "__main__":
