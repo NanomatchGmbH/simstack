@@ -32,6 +32,8 @@ class WFViewManager(QObject):
     abort_job                   = Signal(str, name="deleetJob")
     delete_workflow             = Signal(str, name="deleteWorkflow")
     abort_workflow              = Signal(str, name="abortWorkflow")
+    # for internal use only
+    _update_timeout             = Signal(name="updateTimeout")
 
 
     def _show_message(self, msg_type, msg):
@@ -122,7 +124,7 @@ class WFViewManager(QObject):
             print(save_to)
             print("Save file to: %s." % save_to[0])
             self.download_file_to.emit(filepath, save_to[0])
-            self._view_timer.add_callback(self._on_view_update,
+            self._view_timer.add_callback(self._update_timeout.emit,
                     self._dl_update_interval)
 
     def _on_file_upload(self, dirpath):
@@ -135,7 +137,7 @@ class WFViewManager(QObject):
         if upload[0]:
             print("Going to upload: %s" % str(upload))
             self.upload_file.emit(upload[0], dirpath)
-            self._view_timer.add_callback(self._on_view_update,
+            self._view_timer.add_callback(self._update_timeout.emit,
                     self._dl_update_interval)
 
     def _on_workflow_saved(self, success, folder):
@@ -204,6 +206,8 @@ class WFViewManager(QObject):
         self._editor.abort_workflow.connect(self.abort_workflow)
         self._editor.delete_file.connect(self.delete_file)
         self._editor.workflow_saved.connect(self._on_workflow_saved)
+
+        self._update_timeout.connect(self._on_view_update)
 
     def get_editor(self):
         return self._editor
