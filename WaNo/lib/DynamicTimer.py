@@ -78,6 +78,9 @@ class TimerThread(CallableQThread):
 class DynamicTimer(QObject):
     _timer_command = Signal(object, int, name="TimerCommand")
 
+    def __del__(self):
+        self._terminate_timer_thread()
+
     def __lock(self):
         self._lock.lock()
 
@@ -96,6 +99,9 @@ class DynamicTimer(QObject):
         self._timer_command.emit(OPERATIONS.TERMINATE, 0)
         self._thread.wait()
         print("stopped and closed...")
+
+    def quit(self):
+        self._terminate_timer_thread()
 
     def add_callback(self, callback, interval):
         """ Registers a callback that will be executed with a period of interval.
@@ -318,6 +324,7 @@ if __name__ == "__main__":
             self.dyntimer.remove_callback(test1, 1000)
             time.sleep(10)
             print("done")
+            self.dyntimer.quit()
             app.quit()
         def __init__(self, dyntimer):
             super(TestThread, self).__init__()
