@@ -230,7 +230,11 @@ class DynamicTimer(QObject):
                     del_count = 0
                     if (callback, interval) in self._delete_list:
                         del_count = self._delete_list[(callback, interval)]
-                        del_list[interval] = (callback, del_count)
+                        print("scheduling for removal %d" % del_count)
+                        if not interval in del_list:
+                            del_list[interval] = [(callback, del_count)]
+                        else:
+                            del_list[interval].append((callback, del_count))
 
                         # TODO maybe set to 0?!
                         del(self._delete_list[(callback, interval)])
