@@ -78,9 +78,6 @@ class TimerThread(CallableQThread):
 class DynamicTimer(QObject):
     _timer_command = Signal(object, int, name="TimerCommand")
 
-    def __del__(self):
-        self._terminate_timer_thread()
-
     def __lock(self):
         self._lock.lock()
 
