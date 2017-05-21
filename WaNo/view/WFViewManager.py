@@ -164,8 +164,6 @@ class WFViewManager(QObject):
 
         # Note: This is required to have at least one additional view update
         # after a transfer has completed.
-
-        #TODO re-entering into locked code. we should postpone the release here.
         self._dl_callback_delete["lock"].lock()
         if self._dl_callback_delete["to_delete"] > 0:
             self._release_dl_progress_callbacks()
