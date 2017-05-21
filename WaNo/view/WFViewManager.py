@@ -146,21 +146,30 @@ class WFViewManager(QObject):
         else:
             self.request_saved_workflows_update.emit(folder)
 
+    def _release_dl_progress_callbacks(self):
+        """ .. note:: self._dl_callback_delete["lock"] must be held. """
+        print("WFViewManager: %d" % (ctypes.CDLL('libc.so.6').syscall(186)))
+
+        for i in range(0, self._dl_callback_delete["to_delete"]):
+            self._view_timer.remove_callback(self._update_timeout.emit,
+                    self._dl_update_interval)
+        self._dl_callback_delete["to_delete"] = 0
+
     def _on_view_update(self):
         #TODO might take too long for a DynamicTimer callback
         #self._dl_progress_widget.update()
         self._dl_progress_bar.update()
 
+        print("WFViewManager -> update: %d" % (ctypes.CDLL('libc.so.6').syscall(186)))
+
         # Note: This is required to have at least one additional view update
         # after a transfer has completed.
 
         #TODO re-entering into locked code. we should postpone the release here.
-        #self._dl_callback_delete["lock"].lock()
-        #for i in range(0, self._dl_callback_delete["to_delete"]):
-        #    self._view_timer.remove_callback(self._on_view_update,
-        #            self._dl_update_interval)
-        #self._dl_callback_delete["to_delete"] = 0
-        #self._dl_callback_delete["lock"].unlock()
+        self._dl_callback_delete["lock"].lock()
+        if self._dl_callback_delete["to_delete"] > 0:
+            self._release_dl_progress_callbacks()
+        self._dl_callback_delete["lock"].unlock()
 
         print("######################### view update")
 
