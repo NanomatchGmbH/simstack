@@ -10,6 +10,7 @@ from enum import Enum
 import time
 import math
 import sys
+import logging
 
 # TODO Debug only
 import ctypes
@@ -35,10 +36,8 @@ class DynamicTimer(QObject):
     class TimerThread(CallableQThread):
         def timer_command(self, operation, tick=0):
             if operation == DynamicTimer.OPS.START:
-                print("------> start timer")
                 self._timer.start(tick)
             if operation == DynamicTimer.OPS.STOP:
-                print("------> stop timer")
                 self._timer.stop()
             elif operation == DynamicTimer.OPS.TERMINATE:
                 self._timer.stop()
@@ -46,28 +45,23 @@ class DynamicTimer(QObject):
                 self.quit()
 
         def run(self):
-            print("Timer Thread (tid: %d)" % ctypes.CDLL('libc.so.6').syscall(186))
             self.exec_()
-            print("Thread terminated.")
 
         def start(self):
             super(DynamicTimer.TimerThread, self).start()
             self._timer.moveToThread(self)
 
         def setInterval(self, interval):
-            print("------> setInterval")
             if not self._timer is None:
                 self._timer.setInterval(interval)
 
         def isActive(self):
-            print("------> isActive")
             return False if self._timer is None else self._timer.isActive()
 
         # NOTE: do not make this function "private" (leading __) or call the
         # DynamicTimer callback direct. For some reason, this will make Qt execute
         # the function outside the thread's context... -.-
         def _trigger_timeout_callback(self):
-            print("FOO - Timer Thread (tid: %d)" % ctypes.CDLL('libc.so.6').syscall(186))
             self._timerout()
 
         def __init__(self, timeout_cb):
@@ -95,7 +89,7 @@ class DynamicTimer(QObject):
     def _terminate_timer_thread(self):
         self._timer_command.emit(DynamicTimer.OPS.TERMINATE, 0)
         self._timer_thread.wait()
-        print("stopped and closed...")
+        self._logger.debug("Timer Thread terminated.")
 
     def quit(self):
         self._terminate_timer_thread()
@@ -183,28 +177,35 @@ class DynamicTimer(QObject):
 
     def __remove_callbacks(self, del_list):
         """ .. note:: self._lock must be held."""
+        self._logger.debug("DynamicTimer: __remove_callbacks: %d" %
+                (ctypes.CDLL('libc.so.6').syscall(186)))
         for interval in del_list.keys():
             if interval in self._interval_list:
                 for callback, count in del_list[interval]:
                     if callback in self._interval_list[interval]:
+                        self._logger.debug("Decrementing cb usage counter by %d." % count)
                         # decrement usage counter
                         self._interval_list[interval][callback] -= count
 
                         # delete callback if unused
                         if self._interval_list[interval][callback] <= 0:
+                            self._logger.debug("Removing cb, unused.")
                             del(self._interval_list[interval][callback])
 
                 # are there any callbacks for this interval left?
                 if len(self._interval_list[interval]) == 0:
+                    self._logger.debug("Removing interval, unused.")
                     del(self._interval_list[interval])
                     self._recalc   = True
         # are there any callbacks left? if not, stop timer.
         if len(self._interval_list) == 0:
+            self._logger.debug("Stopping timer, unused.")
             self._stop_timer()
 
 
 
     def __timeout(self):
+        self._logger.debug("__timeout: %d" % (ctypes.CDLL('libc.so.6').syscall(186)))
         self.__lock()
         recalc = False
         del_list = {}
@@ -227,7 +228,6 @@ class DynamicTimer(QObject):
                     del_count = 0
                     if (callback, interval) in self._delete_list:
                         del_count = self._delete_list[(callback, interval)]
-                        print("scheduling for removal %d" % del_count)
                         if not interval in del_list:
                             del_list[interval] = [(callback, del_count)]
                         else:
@@ -281,6 +281,12 @@ class DynamicTimer(QObject):
 
         self._timer_command.connect(self._timer_thread.timer_command)
 
+        self._logger         = logging.getLogger("DynamicTimer")
+        loglevel = logging.DEBUG
+        self._logger.setLevel(loglevel)
+        ch = logging.StreamHandler(sys.stdout)
+        ch.setLevel(loglevel)
+        self._logger.addHandler(ch)
 
 if __name__ == "__main__":
     from PySide.QtCore import QCoreApplication, QThread
