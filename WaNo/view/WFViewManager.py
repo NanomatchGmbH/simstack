@@ -9,6 +9,9 @@ from .DownloadProgressWidget import DownloadProgressWidget
 from .DownloadProgressMenuButton import DownloadProgressMenuButton
 from ..lib.DynamicTimer import DynamicTimer
 
+# TODO Debug only
+import ctypes
+
 class WFViewManager(QObject):
     REGISTRY_CONNECTION_STATES = WFEditor.REGISTRY_CONNECTION_STATES
     save_registries         = Signal(list, name="SaveRegistries")
