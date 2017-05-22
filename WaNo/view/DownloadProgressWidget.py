@@ -163,11 +163,14 @@ class DownloadProgressWidget(QWidget):
                 and dl['state'] != UnicoreDataTransferStates.PENDING)
 
     def update(self):
+        active_total       = 0
+        active_progress    = 0
         #TODO protect from concurent runs.
         if not self.download_status is None:
             for (index, download) in self.download_status.data_transfer_iterator():
                 print("index %d, download: %s" % (index, str(download)))
                 with download.get_reader_instance() as dl:
+
                     widget = None
                     if index in self._downloads:
                         widget = self._downloads[index]['widget']
@@ -181,7 +184,10 @@ class DownloadProgressWidget(QWidget):
                                 or (DownloadProgressWidget._dl_ended(dl) \
                                     and not widget.is_done())) :
                         widget.set_progress(dl['progress'], dl['total'])
+                        active_total       += dl['total'] if dl['total'] >= 0 else 0
+                        active_progress    += dl['progress']
             #TODO self._sort()
+        return (active_progress, active_total)
 
     def set_download_status(self, download_status):
         if not download_status is None:
