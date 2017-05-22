@@ -225,6 +225,8 @@ class WFViewManager(QObject):
         self._dl_progress_bar    = DownloadProgressMenuButton(
                 self._mainwindow.statusBar(),
                 self._dl_progress_widget)
+        self._dl_progress_bar.setMaximumWidth(150)
+        self._dl_progress_bar.setMinimumWidth(75)
         self._mainwindow.statusBar().addPermanentWidget(self._dl_progress_bar)
 
 

@@ -15,7 +15,7 @@ class DownloadProgressMenuButton(DropDownWidgetPushButton):
 
     def __init__(self, parent, dlpw):
         super(DownloadProgressMenuButton, self).__init__(parent)
-        self.progress = QProgressBar()
+        self.progress = QProgressBar(self)
 
         self.__reset()
 
@@ -23,7 +23,7 @@ class DownloadProgressMenuButton(DropDownWidgetPushButton):
         #self.progress.setTextVisible(False)
         # Set margin to 0px, to move progress text over progress bar
         # self.progress.setStyleSheet('margin: 0px;')
-        
+
         self._init_ui(dlpw)
 
     def _init_ui(self, dlpw):
@@ -33,13 +33,15 @@ class DownloadProgressMenuButton(DropDownWidgetPushButton):
         self.setStyleSheet(''
                 'QPushButton::menu-indicator { image:  url(none.jpg); }' \
                 'QPushButton { border: none; margin: 0px; padding: 0px; }'
-                ) 
+                )
 
         self.layout = QHBoxLayout()
         self.layout.addWidget(self.progress)
         self.setLayout(self.layout)
 
         self.layout.setContentsMargins(0, 0, 0, 0)
+
+        self.resize(self.sizeHint())
         self.set_widget(dlpw)
 
     def update(self):
@@ -75,7 +77,7 @@ if __name__ == '__main__':
                 l    = self.lists[key]['list']
                 for i in l:
                     yield i
-    
+
         def __init__(self, l=[]):
             self.lists = {'dl': {'list': l}}
 
