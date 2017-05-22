@@ -340,8 +340,8 @@ class UnicoreWorker(TPCThread):
 
 class UnicoreDataTransfer(object):
     def _update_transfer_status(self, uri, localfile, progress, total):
-        print("\t%6.2f (%6.2f / %6.2f)\t%s" % (progress / total * 100., progress,
-            total, uri))
+#        print("\t%6.2f (%6.2f / %6.2f)\t%s" % (progress / total * 100., progress,
+#            total, uri))
         self._state.get_writer_instance().set_multiple_values({
                 'total': total,
                 'progress': progress,

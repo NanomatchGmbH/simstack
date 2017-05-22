@@ -148,8 +148,6 @@ class WFViewManager(QObject):
 
     def _release_dl_progress_callbacks(self):
         """ .. note:: self._dl_callback_delete["lock"] must be held. """
-        print("WFViewManager: %d" % (ctypes.CDLL('libc.so.6').syscall(186)))
-
         for i in range(0, self._dl_callback_delete["to_delete"]):
             self._view_timer.remove_callback(self._update_timeout.emit,
                     self._dl_update_interval)
