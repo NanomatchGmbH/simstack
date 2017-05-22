@@ -41,8 +41,23 @@ class Download(QWidget):
     def is_done(self):
         return self._done
 
-    def set_progress(self, progress):
+    def set_progress(self, progress, total=None):
+        """ Sets the transfer progress.
+
+        The optional total parameter can be used to correct the total value
+        set in the constructor. This is usefull in cases when the widget is
+        constructed before the total is known.
+        Only values larger than the previously set ones are allowed.
+
+        Args:
+            progress (float): current progress of the transfer.
+            total (float):    total file size.
+        """
         self._progress = progress
+        if not total is None and total > self._total:
+            self._total = total
+            self._progressbar.setMaximum(self._total)
+
         if self._progress >= self._total * self.DONE_THRESHOLD:
             self._set_done()
         else:
@@ -145,7 +160,7 @@ class DownloadProgressWidget(QWidget):
                     else:
                         widget = self._create_add_widget(index, dl)
                     if not widget is None:
-                        widget.set_progress(dl['progress'])
+                        widget.set_progress(dl['progress'], dl['total'])
             #TODO self._sort()
 
     def set_download_status(self, download_status):
