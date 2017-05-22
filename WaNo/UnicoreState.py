@@ -409,7 +409,7 @@ class UnicoreStateFactory(object):
                     'dest': dest,
                     'storage': storage,
                     'direction': direction,
-                    'state': state, # running, canceled, pending
+                    'state': state, # running, canceled, pending, done, ...
                     'total': total,
                     'progress': progress,
                     }

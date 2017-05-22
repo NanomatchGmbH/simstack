@@ -8,6 +8,8 @@ from PySide.QtCore import QSize, Qt
 from enum import Enum
 from os.path import basename
 
+from ..UnicoreState import UnicoreDataTransferStates
+
 class Download(QWidget):
     DIRECTION = Enum("DLDirection",
             """
@@ -148,6 +150,18 @@ class DownloadProgressWidget(QWidget):
                     self._list.insertItem(new, item)
                     self._list.insertItem(i, tmp)
 
+    @staticmethod
+    def _dl_active(dl):
+        """ Returns True, if the transfer is active (state is running) """
+        return (dl['state'] == UnicoreDataTransferStates.RUNNING)
+
+    @staticmethod
+    def _dl_ended(dl):
+        """ Returs True, if the transfer has ended (state is done, failed or
+        canceled)."""
+        return (not DownloadProgressWidget._dl_active(dl)
+                and dl['state'] != UnicoreDataTransferStates.PENDING)
+
     def update(self):
         #TODO protect from concurent runs.
         if not self.download_status is None:
@@ -159,7 +173,13 @@ class DownloadProgressWidget(QWidget):
                         widget = self._downloads[index]['widget']
                     else:
                         widget = self._create_add_widget(index, dl)
-                    if not widget is None:
+
+                    # only update if the transfer is active or about to end.
+                    # Pending transfers do not need updates.
+                    if not widget is None \
+                            and (DownloadProgressWidget._dl_active(dl) \
+                                or (DownloadProgressWidget._dl_ended(dl) \
+                                    and not widget.is_done())) :
                         widget.set_progress(dl['progress'], dl['total'])
             #TODO self._sort()
 
