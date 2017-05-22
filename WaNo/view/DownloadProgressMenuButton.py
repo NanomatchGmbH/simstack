@@ -8,12 +8,16 @@ except:
     from DownloadProgressWidget import DownloadProgressWidget
 
 class DownloadProgressMenuButton(DropDownWidgetPushButton):
+    def __reset(self):
+        self.progress.setMaximum(100)
+        self.progress.setMinimum(0)
+        self.set_progress_value(0)
+
     def __init__(self, parent, dlpw):
         super(DownloadProgressMenuButton, self).__init__(parent)
         self.progress = QProgressBar()
 
-        self.progress.setMaximum(100)
-        self.progress.setMinimum(0)
+        self.__reset()
 
         # Enable / Disable progress Text
         #self.progress.setTextVisible(False)
@@ -39,7 +43,12 @@ class DownloadProgressMenuButton(DropDownWidgetPushButton):
         self.set_widget(dlpw)
 
     def update(self):
-        self.dlpw.update()
+        progress, total = self.dlpw.update()
+        if total > 0:
+            self.progress.setMaximum(total)
+            self.set_progress_value(progress)
+        else:
+            self.__reset()
 
     def set_progress_value(self, value):
         self.progress.setValue(value)
