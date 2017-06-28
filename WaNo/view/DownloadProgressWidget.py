@@ -94,11 +94,12 @@ class Download(QWidget):
 
         self.setToolTip(
                 '<table>' \
-                '<tr><td><b>Download from:</b></td><td>%s</td></tr>' \
-                '<tr><td><b>Download to:</b></td><td>%s</td></tr>'\
+                '<tr><td><b>From:</b></td><td>%s</td></tr>' \
+                '<tr><td><b>To:</b></td><td>%s</td></tr>'\
                 '<tr><td><b>File size:</b></td><td>%d</td></tr>' \
+                '<tr><td><b>Direction:</b></td><td>%s</td></tr>' \
                 '</table>' % \
-                (self._from_path, self._to_path, self._total))
+                (self._from_path, self._to_path, self._total, self._direction.name))
 
     def __init__(self, from_path, to_path, total, direction):
         super(Download, self).__init__()
