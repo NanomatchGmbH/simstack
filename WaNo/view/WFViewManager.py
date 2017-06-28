@@ -40,8 +40,7 @@ class WFViewManager(QObject):
 
 
     def _show_message(self, msg_type, msg, details=None):
-        MessageDialog(msg_type, msg)
-        print("detailed message: %s" % str(details))
+        MessageDialog(msg_type, msg, details=details)
 
     def show_error(self, msg, details=None):
         self._show_message(MessageDialog.MESSAGE_TYPES.error, msg, details)
