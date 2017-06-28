@@ -65,6 +65,14 @@ OPERATIONS = Enum("OPERATIONS",
 """
 Error codes:
 
+This extends the list of Error Codes provided by pyura with some specific
+UnicoreConnector error codes.
+
+.. note: The order is not guaranteed to be equal in both enum lists.
+    You should not try to compare elements from one list to the other.
+    Only the elements copied from the UnicoreErrorCodes list can be found with
+    the same value which allows easy convertion in this direction.
+
 * NO_ERROR
     No error occurred.
 * AUTH_SETUP
@@ -77,13 +85,12 @@ Error codes:
     The deletion of a file has failed.
 """
 ERROR = Enum("ERROR",
-    """
-    NO_ERROR
-    AUTH_SETUP_FAILED
-    REGISTRY_NOT_CONNECTED
-    JOB_DELETE_FAILED
-    FILE_DELETE_FAILED
-    """,
+    [e.name for e in UnicoreErrorCodes] + [
+            "AUTH_SETUP_FAILED",
+            "REGISTRY_NOT_CONNECTED",
+            "JOB_DELETE_FAILED",
+            "FILE_DELETE_FAILED",
+        ],
     module=__name__
 )
 
