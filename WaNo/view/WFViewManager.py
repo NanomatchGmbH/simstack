@@ -39,20 +39,21 @@ class WFViewManager(QObject):
     _update_timeout             = Signal(name="updateTimeout")
 
 
-    def _show_message(self, msg_type, msg):
+    def _show_message(self, msg_type, msg, details=None):
         MessageDialog(msg_type, msg)
+        print("detailed message: %s" % str(details))
 
-    def show_error(self, msg):
-        self._show_message(MessageDialog.MESSAGE_TYPES.error, msg)
+    def show_error(self, msg, details=None):
+        self._show_message(MessageDialog.MESSAGE_TYPES.error, msg, details)
 
-    def show_info(self, msg):
-        self._show_message(MessageDialog.MESSAGE_TYPES.info, msg)
+    def show_info(self, msg, details=None):
+        self._show_message(MessageDialog.MESSAGE_TYPES.info, msg, details)
 
-    def show_warning(self, msg):
-        self._show_message(MessageDialog.MESSAGE_TYPES.warning, msg)
+    def show_warning(self, msg, details=None):
+        self._show_message(MessageDialog.MESSAGE_TYPES.warning, msg, details)
 
-    def show_critical_error(self, msg):
-        self._show_message(MessageDialog.MESSAGE_TYPES.critical, msg)
+    def show_critical_error(self, msg, details=None):
+        self._show_message(MessageDialog.MESSAGE_TYPES.critical, msg, details)
 
     def show_mainwindow(self):
         self._mainwindow.show()
