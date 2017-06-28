@@ -108,7 +108,10 @@ class UnicoreWorker(TPCThread):
 
         if isinstance(callback, tuple):
             cb_function = callback[0]
-            args += callback[1]
+            if isinstance(callback[1], tuple):
+                args = callback[1] + args
+            else:
+                args = (callback[1],) + args
             kwargs = callback[2]
 
         cb_function(*args, **kwargs)
