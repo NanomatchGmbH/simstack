@@ -5,6 +5,9 @@ from __future__ import print_function
 from __future__ import unicode_literals
 from __future__ import absolute_import
 
+
+import PySide.QtCore as QtCore
+
 # requires python 2.7,
 try:
     import collections
@@ -219,9 +222,17 @@ class MultipleOfModel(AbstractWanoModel):
             for wano in wano_dict.values():
                 wano.update_xml()
 
+import PySide.QtGui as QtGui
+class WaNoModelRootSignal(QtCore.QObject):
+    dataChanged = QtCore.Signal(int, name="dataChanged")
+    def __init__(self):
+        super(WaNoModelRootSignal, self).__init__()
+
+
 
 # This is the parent class and grandfather. Children have to be unique, no lists here
 class WaNoModelRoot(WaNoModelDictLike):
+    dataChanged = QtCore.Signal(str, name="dataChanged")
     def exists_read_load(self,object,filename):
         if os.path.exists(filename):
             object.load(filename)
@@ -238,10 +249,13 @@ class WaNoModelRoot(WaNoModelDictLike):
         self.parent_wf = kwargs["parent_wf"]
         wano_dir_root = kwargs["wano_dir_root"]
         resources_fn = os.path.join(wano_dir_root, "resources.yml")
+        super(WaNoModelRoot, self).__init__(*args, **kwargs)
+        #WaNoModelRootSignal.emit()
+        #wmrs = WaNoModelRootSignal()
+        #self.dataChanged = wmrs.dataChanged
 
         self.resources = ResourceTableModel(parent=None,wano_parent=self)
         self.exists_read_load(self.resources, resources_fn)
-
 
         imports_fn = os.path.join(wano_dir_root, "imports.yml")
         self.import_model = ImportTableModel(parent=None,wano_parent=self)
@@ -253,7 +267,7 @@ class WaNoModelRoot(WaNoModelDictLike):
         self.export_model.make_default_list()
         self.exists_read_load(self.export_model, exports_fn)
 
-        super(WaNoModelRoot, self).__init__(*args, **kwargs)
+
         self.exec_command = self.full_xml.find("WaNoExecCommand").text
         self.rendered_exec_command = ""
         self.input_files = []
@@ -527,6 +541,12 @@ class WaNoModelRoot(WaNoModelDictLike):
         self.prepare_files_submission(rendered_wano, basefolder)
         return jsdl
 
+    def get_value(self,uri):
+        split_uri = uri.split(".")
+        current = self.__getitem__(split_uri[0])
+        for item in split_uri[1:]:
+            current = current[item]
+        return current
 
 class WaNoItemFloatModel(AbstractWanoModel):
     def __init__(self, *args, **kwargs):
@@ -539,6 +559,7 @@ class WaNoItemFloatModel(AbstractWanoModel):
 
     def set_data(self, data):
         self.myfloat = float(data)
+        super(WaNoItemFloatModel, self).set_data(data)
 
     def __getitem__(self, item):
         return None
@@ -593,6 +614,7 @@ class WaNoItemBoolModel(AbstractWanoModel):
 
     def set_data(self, data):
         self.mybool = data
+        super(WaNoItemBoolModel,self).set_data(data)
 
     def get_type_str(self):
         return "Boolean"

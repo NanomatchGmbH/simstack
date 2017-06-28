@@ -71,6 +71,7 @@ class MultipleOfView(AbstractWanoQTView):
             for model in model_dict.values():
                 self.vbox.addWidget(model.view.get_widget())
             break
+        self.set_visible(False)
 
 
 
@@ -111,6 +112,23 @@ class WaNoGroupView(AbstractWanoQTView):
         return self.actual_widget
 
     def init_from_model(self):
+        for model in self.model.wanos():
+            self.vbox.addWidget(model.view.get_widget())
+
+class WaNoConditionalView(AbstractWanoQTView):
+    def __init__(self, *args, **kwargs):
+        super(WaNoConditionalView, self).__init__(*args, **kwargs)
+        #self.actual_widget = QtGui.QWidget(self.qt_parent)
+        self.actual_widget = QtGui.QWidget(parent=self.qt_parent)
+        #self.actual_widget = GroupBoxWithButton(self.qt_parent)
+        self.vbox = QtGui.QVBoxLayout()
+        self.actual_widget.setLayout(self.vbox)
+
+    def get_widget(self):
+        return self.actual_widget
+
+    def init_from_model(self):
+        self.actual_widget.setTitle(self.model.name)
         for model in self.model.wanos():
             self.vbox.addWidget(model.view.get_widget())
 

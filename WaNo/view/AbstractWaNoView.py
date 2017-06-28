@@ -39,6 +39,10 @@ class AbstractWanoQTView(AbstractWanoView):
             self.qt_parent = kwargs["qt_parent"]
         self.actual_widget = None
 
+    def set_visible(self,truefalse):
+        if self.actual_widget:
+            self.actual_widget.setVisible(truefalse)
+
     @abc.abstractmethod
     def get_widget(self):
         return None
