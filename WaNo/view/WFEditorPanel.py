@@ -1474,10 +1474,6 @@ class WFTabsWidget(QtGui.QTabWidget):
         #print (type(self.editor.parent()))
         self.workflow_saved.emit(success, folder)
 
-    def loadFile(self,fileName):
-        #missing workflow instantiation
-        WFWorkflowWidget.changedFlag = False
-
     #def sizeHint(self):
     #    return QtCore.QSize(500,500)
 
