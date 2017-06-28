@@ -1,11 +1,18 @@
+from __future__ import division
 from PySide.QtCore import QObject, QTimer
 from PySide.QtCore import QMutex
 import time
 
 class ViewTimer(QObject):
+    def _unlock_list(self):
+        self._lock.unlock()
+
+    def _lock_list(self):
+        self._lock.lock()
+
     def __timeout(self):
         t = int(time.time())
-        self._lock.lock()
+        self._lock_list()
         elapsed = t - self._last_timeout
         self._last_timeout = t
 
@@ -17,7 +24,7 @@ class ViewTimer(QObject):
                 self.stop()
 
         self._callback(int(elapsed))
-        self._lock.unlock()
+        self._unlock_list()
 
     def __set_or_start(self, interval):
         i = interval * 1000
@@ -32,8 +39,9 @@ class ViewTimer(QObject):
         self._last_timeout = -1
 
     def update_interval(self, interval):
+        print("######################################## timer update start.")
         t = int(time.time())
-        self._lock.lock()
+        self._lock_list()
         if self._timer.isActive():
             remainder = self._due_time - t - interval
 
@@ -49,7 +57,8 @@ class ViewTimer(QObject):
 
         if self._last_timeout < 0:
             self._last_timeout = t
-        self._lock.unlock()
+        self._unlock_list()
+        print("######################################## timer update finished.")
 
     def __init__(self, callback):
         super(ViewTimer, self).__init__()

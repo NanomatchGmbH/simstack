@@ -207,8 +207,8 @@ class ProtectedIndexedList(ProtectedDict):
     def __iter__(self):
         """ Yields an index-value pair for each list element. """
         self._lock.lockForRead()
-        for index, entry in self._values:
-            yield (index, value)
+        for index, entry in self._values.items():
+            yield (index, entry)
         self._lock.unlock()
 
     def set_value(self, value):
@@ -294,6 +294,12 @@ class ProtectedReaderWriterIndexedList(ReaderWriterInstance):
     class _Reader(object):
         def get_value(self, key):
             return self._list_instance.get_value(key)
+
+        def __enter__(self):
+            return self._list_instance.__enter__()
+
+        def __exit__(self, *unused):
+            self._list_instance.__exit__(*unused)
 
         def __iter__(self):
             return self._list_instance.__iter__()
@@ -386,6 +392,16 @@ class UnicoreStateFactory(object):
                     .get_reader_instance().get_value('data_transfers')\
                     .get_reader_instance().get_value(index)
 
+        def data_transfer_iterator(self, base_uri=None):
+            #TODO use base_uri as filter, if given.
+            reg_reader = self._registries.get_reader_instance()
+            for registry in reg_reader:
+                for dl in reg_reader.get_value(registry)\
+                        .get_reader_instance().get_value('data_transfers').get_reader_instance():
+                    yield dl
+
+
+
         def add_data_transfer(self, base_uri, source, dest, storage, direction,
                 state=UnicoreDataTransferStates.PENDING, total=-1, progress=0):
             tmp = {
@@ -393,7 +409,7 @@ class UnicoreStateFactory(object):
                     'dest': dest,
                     'storage': storage,
                     'direction': direction,
-                    'state': state, # running, canceled, pending
+                    'state': state, # running, canceled, pending, done, ...
                     'total': total,
                     'progress': progress,
                     }
@@ -427,8 +443,8 @@ class UnicoreStateFactory(object):
         def get_data_transfer(self, base_uri, index):
             return self._state.get_data_transfer(base_uri, index)
 
-        def get_dl_iterator(self):
-            return self._state.get_list_iterator('dls')
+        def data_transfer_iterator(self, base_uri=None):
+            return self._state.data_transfer_iterator(base_uri)
 
         def __init__(self, state):
             self._state = state
@@ -455,8 +471,8 @@ class UnicoreStateFactory(object):
         return UnicoreStateFactory._instance
 
     @classmethod
-    def get_reader():
-        return UnicoreStateFactory.__Reader(self.__get_instance())
+    def get_reader(self):
+        return UnicoreStateFactory._Reader(self.__get_instance())
 
     @classmethod
     def get_writer(self):

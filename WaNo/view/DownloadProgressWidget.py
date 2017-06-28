@@ -8,6 +8,8 @@ from PySide.QtCore import QSize, Qt
 from enum import Enum
 from os.path import basename
 
+from ..UnicoreState import UnicoreDataTransferStates
+
 class Download(QWidget):
     DIRECTION = Enum("DLDirection",
             """
@@ -41,8 +43,23 @@ class Download(QWidget):
     def is_done(self):
         return self._done
 
-    def set_progress(self, progress):
+    def set_progress(self, progress, total=None):
+        """ Sets the transfer progress.
+
+        The optional total parameter can be used to correct the total value
+        set in the constructor. This is usefull in cases when the widget is
+        constructed before the total is known.
+        Only values larger than the previously set ones are allowed.
+
+        Args:
+            progress (float): current progress of the transfer.
+            total (float):    total file size.
+        """
         self._progress = progress
+        if not total is None and total > self._total:
+            self._total = total
+            self._progressbar.setMaximum(self._total)
+
         if self._progress >= self._total * self.DONE_THRESHOLD:
             self._set_done()
         else:
@@ -77,17 +94,21 @@ class Download(QWidget):
 
         self.setToolTip(
                 '<table>' \
-                '<tr><td><b>Download from:</b></td><td>%s</td></tr>' \
-                '<tr><td><b>Download to:</b></td><td>%s</td></tr>'\
+                '<tr><td><b>From:</b></td><td>%s</td></tr>' \
+                '<tr><td><b>To:</b></td><td>%s</td></tr>'\
                 '<tr><td><b>File size:</b></td><td>%d</td></tr>' \
+                '<tr><td><b>Direction:</b></td><td>%s</td></tr>' \
                 '</table>' % \
-                (self._from_path, self._to_path, self._total))
+                (self._from_path, self._to_path, self._total, self._direction.name))
 
     def __init__(self, from_path, to_path, total, direction):
         super(Download, self).__init__()
         
         self._from_path = from_path
-        self._to_path   = to_path
+        if not to_path is None and not to_path == "":
+            self._to_path = to_path
+        else:
+            self._to_path = basename(from_path)
         self._direction = direction
         self._total     = total
         self._done      = False
@@ -97,17 +118,17 @@ class Download(QWidget):
 
 
 class DownloadProgressWidget(QWidget):
-    def _create_add_widget(self, dl):
+    def _create_add_widget(self, index, dl):
         widget = Download(
-                dl['from'],
-                dl['to'],
+                dl['source'],
+                dl['dest'],
                 dl['total'],
                 Download.DIRECTION(dl['direction']))
         item = QListWidgetItem()
         item.setSizeHint(widget.sizeHint())
         self._list.addItem(item)
         self._list.setItemWidget(item, widget)
-        self._downloads[dl['id']] = {'widget': widget, 'item': item}
+        self._downloads[index] = {'widget': widget, 'item': item}
         return widget
 
     def _sort(self):
@@ -130,18 +151,44 @@ class DownloadProgressWidget(QWidget):
                     self._list.insertItem(new, item)
                     self._list.insertItem(i, tmp)
 
+    @staticmethod
+    def _dl_active(dl):
+        """ Returns True, if the transfer is active (state is running) """
+        return (dl['state'] == UnicoreDataTransferStates.RUNNING)
+
+    @staticmethod
+    def _dl_ended(dl):
+        """ Returs True, if the transfer has ended (state is done, failed or
+        canceled)."""
+        return (not DownloadProgressWidget._dl_active(dl)
+                and dl['state'] != UnicoreDataTransferStates.PENDING)
+
     def update(self):
+        active_total       = 0
+        active_progress    = 0
         #TODO protect from concurent runs.
         if not self.download_status is None:
-            for dl in self.download_status.get_list_iterator('dl'):
-                widget = None
-                if dl['id'] in self._downloads:
-                    widget = self._downloads[dl['id']]['widget']
-                else:
-                    widget = self._create_add_widget(dl)
-                if not widget is None:
-                    widget.set_progress(dl['progress'])
-        #TODO self._sort()
+            for (index, download) in self.download_status.data_transfer_iterator():
+                print("index %d, download: %s" % (index, str(download)))
+                with download.get_reader_instance() as dl:
+
+                    widget = None
+                    if index in self._downloads:
+                        widget = self._downloads[index]['widget']
+                    else:
+                        widget = self._create_add_widget(index, dl)
+
+                    # only update if the transfer is active or about to end.
+                    # Pending transfers do not need updates.
+                    if not widget is None \
+                            and (DownloadProgressWidget._dl_active(dl) \
+                                or (DownloadProgressWidget._dl_ended(dl) \
+                                    and not widget.is_done())) :
+                        widget.set_progress(dl['progress'], dl['total'])
+                        active_total       += dl['total'] if dl['total'] >= 0 else 0
+                        active_progress    += dl['progress']
+            #TODO self._sort()
+        return (active_progress, active_total)
 
     def set_download_status(self, download_status):
         if not download_status is None:
