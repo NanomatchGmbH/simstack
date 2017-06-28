@@ -5,15 +5,18 @@ from __future__ import print_function
 from __future__ import unicode_literals
 from __future__ import absolute_import
 
+from boolexp import Expression
 import abc
 import copy
+import PySide.QtCore as QtCore
 
 class WaNoNotImplementedError(Exception):
     pass
 
 
-class AbstractWanoModel(object):
+class AbstractWanoModel(QtCore.QObject):
     def __init__(self, *args, **kwargs):
+
         self.view = None
         self.root_model = None
         self.is_wano = True
@@ -24,11 +27,39 @@ class AbstractWanoModel(object):
         # if 'view' in kwargs:
         #    self.view = kwargs['view']
         self.parent = kwargs['parent_model']
-
+        self.visibility_condition = None
+        self.visibility_var_path = None
         self.name = kwargs['xml'].attrib["name"]
+
+        self.parse_visibility_condition(kwargs['xml'])
+        super(AbstractWanoModel, self).__init__()
+
+
 
     def set_name(self,new_name):
         self.name = new_name
+
+    def parse_visibility_condition(self,xml):
+        if "visibility_condition" in xml.attrib:
+            self.visibility_condition = xml.attrib["visibility_condition"]
+            self.visibility_var_path  = xml.attrib["visibility_var_path"]
+            self.root_model.dataChanged.connect(self.evaluate_visibility_condition)
+
+    def evaluate_visibility_condition(self,changed_path):
+        # Ok, Plan:
+        # here
+        # we need two more inputs - one: which expression needs to be evaluated, two: what does it need to be replaced with
+        # Then plug this expression to truefalse and we are good to go.
+        # who calls it?
+        #if changed_path != self.visibility_var_path:
+        #    return
+
+        value = self.root_model.get_value(self.visibility_var_path).get_data()
+        #print(self.visibility_condition % value)
+        truefalse = Expression(self.visibility_condition%value).evaluate()
+        self.view.set_visible(truefalse)
+        #print(truefalse,value,changed_path)
+        #print("Path %s changed" % changed_path)
 
     def get_name(self):
         return self.name
@@ -64,12 +95,16 @@ class AbstractWanoModel(object):
         pass
 
     @abc.abstractmethod
+    def set_data(self,data):
+        self.root_model.dataChanged.emit("Test")
+
+
+    @abc.abstractmethod
     def get_type_str(self):
         pass
 
     def render(self, rendered_wano, path, submitdir):
         return self.get_rendered_wano_data()
-
 
     @abc.abstractmethod
     def update_xml(self):
