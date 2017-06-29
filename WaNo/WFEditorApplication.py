@@ -73,6 +73,10 @@ class WFEditorApplication(QThreadCallback):
         if not func is None:
             func(base_uri, error)
         else:
+            if error_msg is None or error_msg == "":
+                error_msg = "Unicore Error for '%s' in operation '%s': %s." % \
+                        (base_uri, uops(operation), uerror(error))
+
             self._view_manager.show_error("General Unicore Error.", error_msg)
 
         self._logger.error("Unicore Error for '%s' in operation '%s': %s." % \
