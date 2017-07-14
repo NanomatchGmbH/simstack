@@ -5,6 +5,8 @@ from __future__ import print_function
 from __future__ import unicode_literals
 from __future__ import absolute_import
 
+from jinja2 import Template
+
 from boolexp import Expression
 import abc
 import copy
@@ -23,6 +25,7 @@ class AbstractWanoModel(QtCore.QObject):
         self.name = "unset"
         #if "root_model" in kwargs:
         self.root_model = kwargs["root_model"]
+
         # The root view has to be set explicitly, otherwise nobody has a parent.
         # if 'view' in kwargs:
         #    self.view = kwargs['view']
@@ -30,7 +33,14 @@ class AbstractWanoModel(QtCore.QObject):
         self.visibility_condition = None
         self.visibility_var_path = None
         self.name = kwargs['xml'].attrib["name"]
-
+        if kwargs["full_path"] == "":
+            from WaNo.model.WaNoModels import WaNoModelRoot
+            if isinstance(self,WaNoModelRoot):
+                self.full_path = ""
+            else:
+                self.full_path = self.name
+        else:
+            self.full_path = kwargs["full_path"] + ".%s" % self.name
         self.parse_visibility_condition(kwargs['xml'])
         super(AbstractWanoModel, self).__init__()
 
@@ -43,23 +53,22 @@ class AbstractWanoModel(QtCore.QObject):
         if "visibility_condition" in xml.attrib:
             self.visibility_condition = xml.attrib["visibility_condition"]
             self.visibility_var_path  = xml.attrib["visibility_var_path"]
+            self.visibility_var_path = Template(self.visibility_var_path).render(path = self.full_path.split("."))
             self.root_model.dataChanged.connect(self.evaluate_visibility_condition)
 
     def evaluate_visibility_condition(self,changed_path):
-        # Ok, Plan:
-        # here
-        # we need two more inputs - one: which expression needs to be evaluated, two: what does it need to be replaced with
-        # Then plug this expression to truefalse and we are good to go.
-        # who calls it?
-        #if changed_path != self.visibility_var_path:
-        #    return
+        print("Changed path <%s> is being evaluated in my path: <%s> with visibility_var_path: %s " % (
+            changed_path, self.full_path, self.visibility_var_path))
+        if changed_path != self.visibility_var_path:
+            return
+
+        print("Changed path <%s> is being evaluated in my path: <%s> with visibility_var_path: %s " % (
+        changed_path, self.full_path, self.visibility_var_path))
 
         value = self.root_model.get_value(self.visibility_var_path).get_data()
         #print(self.visibility_condition % value)
         truefalse = Expression(self.visibility_condition%value).evaluate()
         self.view.set_visible(truefalse)
-        #print(truefalse,value,changed_path)
-        #print("Path %s changed" % changed_path)
 
     def get_name(self):
         return self.name
@@ -96,7 +105,7 @@ class AbstractWanoModel(QtCore.QObject):
 
     @abc.abstractmethod
     def set_data(self,data):
-        self.root_model.dataChanged.emit("Test")
+        self.root_model.dataChanged.emit(self.full_path)
 
 
     @abc.abstractmethod

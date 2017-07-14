@@ -50,7 +50,7 @@ class WaNoFactory(object):
         del cls.postregisterlist[:]
 
     @classmethod
-    def get_objects(cls, xml, root_model, parent_model):
+    def get_objects(cls, xml, root_model, parent_model, current_path):
         from WaNo.model.AbstractWaNoModel import WaNoNotImplementedError
         from WaNo.model.WaNoModels import WaNoItemFloatModel, WaNoModelListLike,\
             WaNoItemStringModel, WaNoItemBoolModel, WaNoModelDictLike, WaNoChoiceModel, \
@@ -82,7 +82,7 @@ class WaNoFactory(object):
             model, view = wano_list[xml.tag]
             vgh = ViewGeneratorHelper(view)
             cls.postregisterlist.append(vgh)
-            m = model(root_model=root_model, parent_model=parent_model, xml=xml)
+            m = model(root_model=root_model, parent_model=parent_model, xml=xml, full_path=current_path)
             vgh.set_model(m)
             m.construct_children()
             return m

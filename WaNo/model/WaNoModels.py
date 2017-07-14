@@ -40,7 +40,7 @@ class WaNoModelDictLike(AbstractWanoModel):
         self.xml = kwargs["xml"]
 
         for child in self.xml:
-            model = WaNo.WaNoFactory.WaNoFactory.get_objects(child, self.root_model, self)
+            model = WaNo.WaNoFactory.WaNoFactory.get_objects(child, self.root_model, self, self.full_path)
             self.wano_dict[child.attrib['name']] = model
 
     def __getitem__(self, item):
@@ -132,11 +132,12 @@ class WaNoModelListLike(AbstractWanoModel):
             self.style = ""
 
         for child in self.xml:
-            model = WaNo.WaNoFactory.WaNoFactory.get_objects(child, self.root_model, self)
+            model = WaNo.WaNoFactory.WaNoFactory.get_objects(child, self.root_model, self, self.full_path)
             # view.set_model(model)
             self.wano_list.append(model)
 
     def __getitem__(self, item):
+        item = int(item)
         return self.wano_list[item]
 
     def get_type_str(self):
@@ -170,13 +171,18 @@ class MultipleOfModel(AbstractWanoModel):
         return len(self.first_xml_child)
 
     def parse_one_child(self,child):
+        #A bug still exists, which allows visibility conditions to be fired prior to the existence of the model
+        #but this is transient.
         wano_temp_dict = collections.OrderedDict()
+        current_id = len(self.list_of_dicts)
+        fp = "%s.%d"%(self.full_path,current_id)
         for cchild in child:
-            model = WaNo.WaNoFactory.WaNoFactory.get_objects(cchild, self.root_model, self)
+            model = WaNo.WaNoFactory.WaNoFactory.get_objects(cchild, self.root_model, self, fp)
             wano_temp_dict[cchild.attrib['name']] = model
         return wano_temp_dict
 
     def __getitem__(self, item):
+        item = int(item)
         return self.list_of_dicts[item]
 
     def __iter__(self):
@@ -209,6 +215,7 @@ class MultipleOfModel(AbstractWanoModel):
         return False
 
     def add_item(self):
+        print("Additem called")
         #print(etree.tostring(self.xml, pretty_print=True).decode("utf-8"))
         my_xml = copy.copy(self.first_xml_child)
         my_xml.attrib["id"] = str(len(self.list_of_dicts))
@@ -247,6 +254,7 @@ class WaNoModelRoot(WaNoModelDictLike):
         self.full_xml = kwargs['xml']
         kwargs['xml'] = self.full_xml.find("WaNoRoot")
         kwargs["root_model"] = self.root_model
+        kwargs["full_path"] = ""
         self.parent_wf = kwargs["parent_wf"]
         wano_dir_root = kwargs["wano_dir_root"]
         resources_fn = os.path.join(wano_dir_root, "resources.yml")

@@ -71,7 +71,7 @@ class MultipleOfView(AbstractWanoQTView):
             for model in model_dict.values():
                 self.vbox.addWidget(model.view.get_widget())
             break
-        self.set_visible(False)
+
 
 
 
