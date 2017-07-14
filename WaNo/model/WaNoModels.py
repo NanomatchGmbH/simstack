@@ -108,6 +108,7 @@ class WaNoChoiceModel(AbstractWanoModel):
     @QtCore.Slot(int)
     def set_chosen(self,choice):
         self.chosen = int(choice)
+        self.set_data(self.choices[self.chosen])
 
     def update_xml(self):
         for child in self.xml.iter("Entry"):
@@ -585,6 +586,7 @@ class WaNoItemIntModel(AbstractWanoModel):
 
     def set_data(self, data):
         self.myint = int(data)
+        super(WaNoItemIntModel,self).set_data(data)
 
     def __getitem__(self, item):
         return None
@@ -649,6 +651,7 @@ class WaNoItemFileModel(AbstractWanoModel):
 
     def set_data(self, data):
         self.mystring = str(data)
+        super(WaNoItemFileModel,self).set_data(data)
 
     def __getitem__(self, item):
         return None
@@ -736,6 +739,7 @@ class WaNoItemStringModel(AbstractWanoModel):
 
     def set_data(self, data):
         self.mystring = str(data)
+        super(WaNoItemStringModel,self).set_data(data)
 
     def __getitem__(self, item):
         return None
