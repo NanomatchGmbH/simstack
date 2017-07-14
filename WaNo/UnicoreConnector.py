@@ -167,7 +167,7 @@ class UnicoreWorker(TPCThread):
         storage_manager = self.registry.get_storage_manager()
 
         storage = storage_manager.create(name=submitname)
-        storage_id = storage[1].get_id()
+        storage_id = storage[3].get_id()
 
         for filename in filewalker(dir_to_upload):
             cp = os.path.commonprefix([dir_to_upload, filename])
@@ -177,7 +177,8 @@ class UnicoreWorker(TPCThread):
             #imports.add_import(filename,relpath)
 
         storage_uri = storage_manager.get_base_uri()
-        err, status, wf = wf_manager.create(storage_id, submitname)
+        status, err, error_message, wf = wf_manager.create(storage_id, submitname)
+
         print("err: %s\nstatus: %s\nwf: %s" % (str(err), str(status), str(wf)))
 
         workflow_id = wf.split("/")[-1]
