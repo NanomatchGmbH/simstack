@@ -23,6 +23,7 @@ import copy
 from PySide import QtCore
 import yaml
 import os
+import sys
 import shutil
 
 from jinja2 import Template, FileSystemLoader, Environment
@@ -694,7 +695,11 @@ class WaNoItemFileModel(AbstractWanoModel):
             destdir = os.path.join(submitdir,rendered_logical_name)
             print("Copying",self.root_model.wano_dir_root,rendered_logical_name,destdir)
             shutil.copy(self.mystring,destdir)
-        return rendered_logical_name
+        if sys.version_info >= (3,0):
+            return rendered_logical_name
+        else:
+            return rendered_logical_name.encode("utf-8")
+
 
 
 class WaNoItemScriptFileModel(WaNoItemFileModel):
