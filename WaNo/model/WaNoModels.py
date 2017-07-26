@@ -225,6 +225,8 @@ class MultipleOfModel(AbstractWanoModel):
         model_dict = self.parse_one_child(my_xml)
         WaNo.WaNoFactory.WaNoFactory.build_views()
         self.list_of_dicts.append(model_dict)
+        self.root_model.datachanged_force()
+
 
     def update_xml(self):
         for wano_dict in self.list_of_dicts:
@@ -560,6 +562,21 @@ class WaNoModelRoot(WaNoModelDictLike):
         for item in split_uri[1:]:
             current = current[item]
         return current
+
+class WaNoVectorModel(AbstractWanoModel):
+    def __init__(self, *args, **kwargs):
+        super(WaNoVectorModel, self).__init__(*args, **kwargs)
+        self.myvalues = float(kwargs['xml'].text)
+        for child in self.xml:
+            my_id = int(child.attrib["id"])
+            value = float(child.text)
+            while (len(self.myvalues) <= my_id):
+                self.myvalues.append(0.0)
+            self.myvalues[my_id] = value
+
+
+
+
 
 class WaNoItemFloatModel(AbstractWanoModel):
     def __init__(self, *args, **kwargs):
