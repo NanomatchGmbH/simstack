@@ -34,6 +34,7 @@ def wano_constructor_helper(wanofile,container_widget,parent_wf):
     wifm.construct_children()
     WaNoFactory.build_views()
     wifv.init_from_model()
+    wifm.dataChanged.emit("force")
     return wifm,wifv
 
 class WaNoFactory(object):

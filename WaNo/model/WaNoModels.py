@@ -306,6 +306,9 @@ class WaNoModelRoot(WaNoModelDictLike):
     def get_output_files(self):
         return self.output_files + [ a[0] for a in self.export_model.get_contents() ]
 
+    def datachanged_force(self):
+        self.dataChanged.emit("force")
+
     @staticmethod
     def construct_from_wano(filename, rootview, parent_wf):
         parser = etree.XMLParser(remove_blank_text=True,remove_comments=True)
