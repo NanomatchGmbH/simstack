@@ -7,15 +7,15 @@ from __future__ import absolute_import
 
 from WaNo.view.MultiselectDropDownList import MultiselectDropDownList
 from WaNo.view.AbstractWaNoView import AbstractWanoQTView, AbstractWanoView
-from Qt import QtGui, QtCore
+from Qt import QtGui, QtCore, QtWidgets
 
-class GroupBoxWithButton(QtGui.QGroupBox):
+class GroupBoxWithButton(QtWidgets.QGroupBox):
     def __init__(self,*args,**kwargs):
         super(GroupBoxWithButton,self).__init__(*args,**kwargs)
-        self.add_button = QtGui.QPushButton("", parent=self)
+        self.add_button = QtWidgets.QPushButton("", parent=self)
         self.add_button.setIcon(QtGui.QIcon.fromTheme("list-add"))
         #self.add_button.setFlat(True)
-        self.remove_button = QtGui.QPushButton("", parent=self)
+        self.remove_button = QtWidgets.QPushButton("", parent=self)
         self.remove_button.setIcon(QtGui.QIcon.fromTheme("list-remove"))
         #self.remove_button.setFlat(True)
         self.add_button.setFixedSize(24,24)
@@ -54,7 +54,7 @@ class MultipleOfView(AbstractWanoQTView):
             """)
 
         # self.actual_widget.setCheckable(True)
-        self.vbox = QtGui.QVBoxLayout()
+        self.vbox = QtWidgets.QVBoxLayout()
         self.actual_widget.setLayout(self.vbox)
         add,rem = self.actual_widget.get_button_objects()
         add.clicked.connect(self.add_button_clicked)
@@ -63,9 +63,9 @@ class MultipleOfView(AbstractWanoQTView):
 
     def add_button_clicked(self):
         self.model.add_item()
-        line = QtGui.QFrame(self.actual_widget)
-        line.setFrameShape(QtGui.QFrame.HLine)
-        line.setFrameShadow(QtGui.QFrame.Sunken)
+        line = QtWidgets.QFrame(self.actual_widget)
+        line.setFrameShape(QtWidgets.QFrame.HLine)
+        line.setFrameShadow(QtWidgets.QFrame.Sunken)
         self.vbox.addWidget(line)
         for model_dict in reversed(self.model):
             for model in model_dict.values():
@@ -91,9 +91,9 @@ class MultipleOfView(AbstractWanoQTView):
         for model_dict in self.model:
             for model in model_dict.values():
                 self.vbox.addWidget(model.view.get_widget())
-            line = QtGui.QFrame(self.actual_widget)
-            line.setFrameShape(QtGui.QFrame.HLine)
-            line.setFrameShadow(QtGui.QFrame.Sunken)
+            line = QtWidgets.QFrame(self.actual_widget)
+            line.setFrameShape(QtWidgets.QFrame.HLine)
+            line.setFrameShadow(QtWidgets.QFrame.Sunken)
             self.vbox.addWidget(line)
         line.deleteLater()
 
@@ -104,8 +104,8 @@ class EmptyView(AbstractWanoView):
 class WaNoGroupView(AbstractWanoQTView):
     def __init__(self, *args, **kwargs):
         super(WaNoGroupView, self).__init__(*args, **kwargs)
-        self.actual_widget = QtGui.QWidget(self.qt_parent)
-        self.vbox = QtGui.QVBoxLayout()
+        self.actual_widget = QtWidgets.QWidget(self.qt_parent)
+        self.vbox = QtWidgets.QVBoxLayout()
         self.actual_widget.setLayout(self.vbox)
 
     def get_widget(self):
@@ -118,10 +118,10 @@ class WaNoGroupView(AbstractWanoQTView):
 class WaNoConditionalView(AbstractWanoQTView):
     def __init__(self, *args, **kwargs):
         super(WaNoConditionalView, self).__init__(*args, **kwargs)
-        #self.actual_widget = QtGui.QWidget(self.qt_parent)
-        self.actual_widget = QtGui.QWidget(parent=self.qt_parent)
+        #self.actual_widget = QtWidgets.QWidget(self.qt_parent)
+        self.actual_widget = QtWidgets.QWidget(parent=self.qt_parent)
         #self.actual_widget = GroupBoxWithButton(self.qt_parent)
-        self.vbox = QtGui.QVBoxLayout()
+        self.vbox = QtWidgets.QVBoxLayout()
         self.actual_widget.setLayout(self.vbox)
 
     def get_widget(self):
@@ -135,8 +135,8 @@ class WaNoConditionalView(AbstractWanoQTView):
 class WaNoBoxView(AbstractWanoQTView):
     def __init__(self, *args, **kwargs):
         super(WaNoBoxView, self).__init__(*args, **kwargs)
-        #self.actual_widget = QtGui.QWidget(self.qt_parent)
-        self.actual_widget = QtGui.QGroupBox(parent=self.qt_parent)
+        #self.actual_widget = QtWidgets.QWidget(self.qt_parent)
+        self.actual_widget = QtWidgets.QGroupBox(parent=self.qt_parent)
         #self.actual_widget = GroupBoxWithButton(self.qt_parent)
         self.actual_widget.setStyleSheet("""
         QGroupBox {
@@ -151,8 +151,8 @@ class WaNoBoxView(AbstractWanoQTView):
         }
         """)
         #self.actual_widget.setCheckable(True)
-        #self.actual_widget.setSizePolicy(QtGui.QSizePolicy.Expanding,QtGui.QSizePolicy.Expanding)
-        self.vbox = QtGui.QVBoxLayout()
+        #self.actual_widget.setSizePolicy(QtWidgets.QSizePolicy.Expanding,QtWidgets.QSizePolicy.Expanding)
+        self.vbox = QtWidgets.QVBoxLayout()
         self.actual_widget.setLayout(self.vbox)
 
     def get_widget(self):
@@ -168,20 +168,20 @@ class WaNoItemIntView(AbstractWanoQTView):
     def __init__(self, *args, **kwargs):
         super(WaNoItemIntView, self).__init__(*args, **kwargs)
         """ Widget code here """
-        self.actual_widget = QtGui.QWidget(self.qt_parent)
-        hbox = QtGui.QHBoxLayout()
+        self.actual_widget = QtWidgets.QWidget(self.qt_parent)
+        hbox = QtWidgets.QHBoxLayout()
         self.actual_widget.setLayout(hbox)
-        self.spinner = QtGui.QSpinBox()
-        # self.line_edit = QtGui.QLineEdit()
+        self.spinner = QtWidgets.QSpinBox()
+        # self.line_edit = QtWidgets.QLineEdit()
         self.spinner.setValue(0)
         self.spinner.setMaximum(1000000000)
         self.spinner.setMinimum(-1000000000)
-        self.label = QtGui.QLabel("ABC")
+        self.label = QtWidgets.QLabel("ABC")
         hbox.addWidget(self.label)
         hbox.addStretch()
         hbox.addWidget(self.spinner)
-        #self.actual_widget.setSizePolicy(QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Expanding)
-        #self.actual_widget.setSizePolicy(QtGui.QSizePolicy.Fixed, QtGui.QSizePolicy.Fixed)
+        #self.actual_widget.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
+        #self.actual_widget.setSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed)
         # hbox.addWidget(self.line_edit)
 
         self.spinner.valueChanged.connect(self.value_changed)
@@ -202,21 +202,21 @@ class WaNoItemFloatView(AbstractWanoQTView):
     def __init__(self, *args, **kwargs):
         super(WaNoItemFloatView, self).__init__(*args, **kwargs)
         """ Widget code here """
-        self.actual_widget = QtGui.QWidget(self.qt_parent)
-        hbox = QtGui.QHBoxLayout()
+        self.actual_widget = QtWidgets.QWidget(self.qt_parent)
+        hbox = QtWidgets.QHBoxLayout()
         self.actual_widget.setLayout(hbox)
-        self.spinner = QtGui.QDoubleSpinBox()
-        # self.line_edit = QtGui.QLineEdit()
+        self.spinner = QtWidgets.QDoubleSpinBox()
+        # self.line_edit = QtWidgets.QLineEdit()
         self.spinner.setValue(0.0)
         self.spinner.setMaximum(10000000000)
         self.spinner.setMinimum(-10000000000)
         self.spinner.setDecimals(5)
         self.spinner.setSingleStep(1.0)
-        #self.actual_widget.setSizePolicy(QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Expanding)
-        #self.actual_widget.setSizePolicy(QtGui.QSizePolicy.Minimum, QtGui.QSizePolicy.Minimum)
-        self.label = QtGui.QLabel("ABC")
-        #self.label.setSizePolicy(QtGui.QSizePolicy.Fixed, QtGui.QSizePolicy.Fixed
-        #self.label.setSizePolicy(QtGui.QSizePolicy.Minimum, QtGui.QSizePolicy.Minimum)
+        #self.actual_widget.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
+        #self.actual_widget.setSizePolicy(QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Minimum)
+        self.label = QtWidgets.QLabel("ABC")
+        #self.label.setSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed
+        #self.label.setSizePolicy(QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Minimum)
         hbox.addWidget(self.label)
         hbox.addStretch()
         hbox.addWidget(self.spinner)
@@ -229,7 +229,7 @@ class WaNoItemFloatView(AbstractWanoQTView):
         #print(self.spinner.sizeHint())
 
         #self.spinner.setMinimumSize(self.spinner.sizeHint())
-        #self.spinner.setSizePolicy(QtGui.QSizePolicy.Minimum, QtGui.QSizePolicy.Minimum)
+        #self.spinner.setSizePolicy(QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Minimum)
         """ Widget code end """
 
     def get_widget(self):
@@ -249,17 +249,17 @@ class WaNoItemBoolView(AbstractWanoQTView):
     def __init__(self, *args, **kwargs):
         super(WaNoItemBoolView, self).__init__(*args, **kwargs)
         """ Widget code here """
-        self.actual_widget = QtGui.QWidget(self.qt_parent)
-        hbox = QtGui.QHBoxLayout()
+        self.actual_widget = QtWidgets.QWidget(self.qt_parent)
+        hbox = QtWidgets.QHBoxLayout()
         self.actual_widget.setLayout(hbox)
-        self.checkbox = QtGui.QCheckBox()
-        self.label = QtGui.QLabel("ABC")
+        self.checkbox = QtWidgets.QCheckBox()
+        self.label = QtWidgets.QLabel("ABC")
         hbox.addWidget(self.label)
         hbox.addStretch()
         hbox.addWidget(self.checkbox)
         # hbox.addWidget(self.line_edit)
 
-        #self.actual_widget.setSizePolicy(QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Expanding)
+        #self.actual_widget.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
 
         self.checkbox.stateChanged.connect(self.state_changed)
         """ Widget code end """
@@ -283,18 +283,18 @@ class WaNoScriptView(AbstractWanoQTView):
     def __init__(self, *args, **kwargs):
         super(WaNoScriptView,self).__init__(*args,**kwargs)
         """ Widget code here """
-        self.actual_widget = QtGui.QWidget(self.qt_parent)
-        vbox = QtGui.QVBoxLayout()
+        self.actual_widget = QtWidgets.QWidget(self.qt_parent)
+        vbox = QtWidgets.QVBoxLayout()
         self.actual_widget.setLayout(vbox)
-        self.menubar = QtGui.QWidget()
-        hbox = QtGui.QHBoxLayout()
+        self.menubar = QtWidgets.QWidget()
+        hbox = QtWidgets.QHBoxLayout()
         self.menubar.setLayout(hbox)
-        self.savelabel = QtGui.QLabel("Save script")
-        self.savebutton = QtGui.QPushButton(QtGui.QIcon.fromTheme("document-save"),"Save Script")
+        self.savelabel = QtWidgets.QLabel("Save script")
+        self.savebutton = QtWidgets.QPushButton(QtGui.QIcon.fromTheme("document-save"),"Save Script")
         self.savebutton.clicked.connect(self.on_save)
         hbox.addWidget(self.savebutton)
         vbox.addWidget(self.menubar)
-        self.textedit = QtGui.QTextEdit()
+        self.textedit = QtWidgets.QTextEdit()
         vbox.addWidget(self.textedit)
         """ Widget code end """
 
@@ -314,10 +314,10 @@ class WaNoItemStringView(AbstractWanoQTView):
     def __init__(self, *args, **kwargs):
         super(WaNoItemStringView, self).__init__(*args, **kwargs)
         """ Widget code here """
-        self.actual_widget = QtGui.QWidget(self.qt_parent)
-        vbox = QtGui.QHBoxLayout()
-        self.lineedit = QtGui.QLineEdit()
-        self.label = QtGui.QLabel("ABC")
+        self.actual_widget = QtWidgets.QWidget(self.qt_parent)
+        vbox = QtWidgets.QHBoxLayout()
+        self.lineedit = QtWidgets.QLineEdit()
+        self.label = QtWidgets.QLabel("ABC")
         vbox.addWidget(self.label)
         vbox.addStretch()
         vbox.addWidget(self.lineedit)
@@ -343,21 +343,21 @@ class WanoQtViewRoot(AbstractWanoQTView):
         self.init_to_scroller()
 
     def init_to_scroller(self):
-        scroll = QtGui.QScrollArea(parent=self.qt_parent)
+        scroll = QtWidgets.QScrollArea(parent=self.qt_parent)
         scroll.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarAsNeeded)
         scroll.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarAsNeeded)
         scroll.setWidgetResizable(True)
-        me = QtGui.QWidget(parent=scroll)
+        me = QtWidgets.QWidget(parent=scroll)
         scroll.setWidget(me)
         # scroll.resize(460,700)
         self.actual_widget = scroll
-        self.vbox = QtGui.QVBoxLayout()
+        self.vbox = QtWidgets.QVBoxLayout()
         # me.setMinimumSize(QtCore.QSize(900, 900))
         me.setLayout(self.vbox)
 
     def init_without_scroller(self):
-        me = QtGui.QWidget(parent=self.qt_parent)
-        self.vbox = QtGui.QVBoxLayout()
+        me = QtWidgets.QWidget(parent=self.qt_parent)
+        self.vbox = QtWidgets.QVBoxLayout()
         me.setLayout(self.vbox)
         self.actual_widget = me
 
@@ -400,21 +400,21 @@ class WaNoItemFileView(AbstractWanoQTView):
     def __init__(self, *args, **kwargs):
         super(WaNoItemFileView, self).__init__(*args, **kwargs)
         """ Widget code here """
-        self.actual_widget = QtGui.QWidget(self.qt_parent)
-        hbox = QtGui.QHBoxLayout()
-        self.lineedit = QtGui.QLineEdit(parent=self.actual_widget)
-        self.label = QtGui.QLabel("ABC",parent=self.actual_widget)
-        self.openfilebutton = QtGui.QPushButton("",parent=self.actual_widget)
+        self.actual_widget = QtWidgets.QWidget(self.qt_parent)
+        hbox = QtWidgets.QHBoxLayout()
+        self.lineedit = QtWidgets.QLineEdit(parent=self.actual_widget)
+        self.label = QtWidgets.QLabel("ABC",parent=self.actual_widget)
+        self.openfilebutton = QtWidgets.QPushButton("",parent=self.actual_widget)
 
-        self.openfilebutton.setIcon(QtGui.QFileIconProvider().icon(QtGui.QFileIconProvider.File))
+        self.openfilebutton.setIcon(QtWidgets.QFileIconProvider().icon(QtWidgets.QFileIconProvider.File))
 
         """
-        self.openwfbutton = QtGui.QPushButton("",parent=self.actual_widget)
+        self.openwfbutton = QtWidgets.QPushButton("",parent=self.actual_widget)
         self.openwfbutton.clicked.connect(self.showWFDialog)
         """
         #begin change
         self.openwfbutton = MultiselectDropDownList(self, autoset_text=False)
-        self.openwfbutton.setIcon(QtGui.QFileIconProvider().icon(QtGui.QFileIconProvider.Network))
+        self.openwfbutton.setIcon(QtWidgets.QFileIconProvider().icon(QtWidgets.QFileIconProvider.Network))
         self.openwfbutton.connect_workaround(self.load_wf_files)
         self.openwfbutton.itemSelectionChanged.connect(self.on_wf_file_change)
 
@@ -430,11 +430,11 @@ class WaNoItemFileView(AbstractWanoQTView):
         self.lineedit.editingFinished.connect(self.line_edited)
         #print(self.actual_widget.minimumSize())
 
-        #self.actual_widget.setSizePolicy(QtGui.QSizePolicy.Fixed, QtGui.QSizePolicy.Fixed)
+        #self.actual_widget.setSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed)
         """ Widget code end """
 
     def showLocalDialog(self):
-        fname, success = QtGui.QFileDialog.getOpenFileName(self.actual_widget, 'Open file', QtCore.QDir.homePath())
+        fname, success = QtWidgets.QFileDialog.getOpenFileName(self.actual_widget, 'Open file', QtCore.QDir.homePath())
         self.lineedit.setText(fname)
         self.line_edited()
 
@@ -488,9 +488,9 @@ class WaNoChoiceView(AbstractWanoQTView):
     def __init__(self, *args, **kwargs):
         super(WaNoChoiceView,self).__init__(*args,**kwargs)
         """ Widget code here """
-        self.actual_widget = QtGui.QGroupBox(self.qt_parent)
-        self.bg = QtGui.QButtonGroup(self.qt_parent)
-        self.vbox = QtGui.QVBoxLayout(self.actual_widget)
+        self.actual_widget = QtWidgets.QGroupBox(self.qt_parent)
+        self.bg = QtWidgets.QButtonGroup(self.qt_parent)
+        self.vbox = QtWidgets.QVBoxLayout(self.actual_widget)
         self.actual_widget.setLayout(self.vbox)
 
         self.actual_widget.setStyleSheet("""
@@ -507,13 +507,13 @@ class WaNoChoiceView(AbstractWanoQTView):
         """)
         self.buttons = []
         self.bg.buttonClicked[int].connect(self.onButtonClicked)
-        ##self.actual_widget.setSizePolicy(QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Expanding)
+        ##self.actual_widget.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
         """" Widget code end """
 
     def init_from_model(self):
         self.actual_widget.setTitle(self.model.name)
         for myid,entry in enumerate(self.model.choices):
-            checkbox = QtGui.QRadioButton(entry,parent=self.actual_widget)
+            checkbox = QtWidgets.QRadioButton(entry,parent=self.actual_widget)
             self.buttons.append(checkbox)
             self.bg.addButton(checkbox,myid)
             self.vbox.addWidget(checkbox)
@@ -531,13 +531,13 @@ class WaNoTabView(AbstractWanoQTView):
     def __init__(self, *args, **kwargs):
         super(WaNoTabView, self).__init__(*args, **kwargs)
         """ Widget code here """
-        self.actual_widget = QtGui.QTabWidget(self.qt_parent)
+        self.actual_widget = QtWidgets.QTabWidget(self.qt_parent)
         """" Widget code end """
 
     def init_from_model(self):
 
         for key, model in self.model.items():
-            scroll = QtGui.QScrollArea(parent=self.actual_widget)
+            scroll = QtWidgets.QScrollArea(parent=self.actual_widget)
             scroll.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarAsNeeded)
             scroll.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarAsNeeded)
             scroll.setWidgetResizable(True)
