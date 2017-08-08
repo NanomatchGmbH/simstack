@@ -1,6 +1,6 @@
 from __future__ import division
-from PySide.QtCore import QObject, QTimer
-from PySide.QtCore import QMutex
+from Qt.QtCore import QObject, QTimer
+from Qt.QtCore import QMutex
 import time
 
 class ViewTimer(QObject):

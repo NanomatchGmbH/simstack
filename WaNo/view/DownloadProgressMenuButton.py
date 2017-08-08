@@ -1,4 +1,4 @@
-from PySide.QtGui import QWidget, QHBoxLayout, QPushButton, QProgressBar
+from Qt.QtWidgets import QWidget, QHBoxLayout, QPushButton, QProgressBar
 
 try:
     from .DropDownWidgetButton import DropDownWidgetPushButton
@@ -56,7 +56,7 @@ class DownloadProgressMenuButton(DropDownWidgetPushButton):
         self.progress.setValue(value)
 
 if __name__ == '__main__':
-    from PySide.QtGui import QApplication, QMainWindow
+    from Qt.QtWidgets import QApplication, QMainWindow
     import sys
     import os
     sys.path.append(os.path.join(os.path.abspath(os.path.curdir), 'WaNo'))

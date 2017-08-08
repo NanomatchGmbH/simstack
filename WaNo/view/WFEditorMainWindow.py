@@ -5,13 +5,15 @@ from __future__ import unicode_literals
 import time
 import os
 
-import PySide.QtGui  as QtGui
-from PySide.QtCore import Signal
+import Qt.QtGui  as QtGui
+import Qt.QtWidgets  as QtWidgets
+
+from Qt.QtCore import Signal
 
 from .WaNoSettings import WaNoUnicoreSettings, WaNoPathSettings
 from .ViewTimer import ViewTimer
 
-from PySide.QtCore import QMutex
+from Qt.QtCore import QMutex
 
 class StatusMessageManager(object):
     def __sort(self):
@@ -72,7 +74,7 @@ class StatusMessageManager(object):
         self._stringlist = []
 
 
-class WFEditorMainWindow(QtGui.QMainWindow):
+class WFEditorMainWindow(QtWidgets.QMainWindow):
     new_file            = Signal(name="NewFile")
     open_file           = Signal(name="OpenFile")
     save                = Signal(name="Save")
@@ -172,7 +174,7 @@ class WFEditorMainWindow(QtGui.QMainWindow):
 
     def action_about(self):
         self.infoLabel.setText("Invoked <b>Help|About</b>")
-        QtGui.QMessageBox.about(self, "About Menu",
+        QtWidgets.QMessageBox.about(self, "About Menu",
                 "The <b>Menu</b> example shows how to create menu-bar menus "
                 "and context menus.")
         
@@ -184,47 +186,47 @@ class WFEditorMainWindow(QtGui.QMainWindow):
         self.run.emit()
 
     def _createActions(self):
-        self.newAct = QtGui.QAction("&New", self,
+        self.newAct = QtWidgets.QAction("&New", self,
                 shortcut=QtGui.QKeySequence.New,
                 statusTip="Create a new file", triggered=self.action_newFile)
 
-        self.openAct = QtGui.QAction("&Open...", self,
+        self.openAct = QtWidgets.QAction("&Open...", self,
                 shortcut=QtGui.QKeySequence.Open,
                 statusTip="Open an existing file", triggered=self.action_open)
 
-        self.saveAct = QtGui.QAction("&Save", self,
+        self.saveAct = QtWidgets.QAction("&Save", self,
                 shortcut=QtGui.QKeySequence.Save,
                 statusTip="Save the document to file", triggered=self.action_save)
         
-        self.saveAsAct = QtGui.QAction("Save &As", self,
+        self.saveAsAct = QtWidgets.QAction("Save &As", self,
                                shortcut=QtGui.QKeySequence.SaveAs,
                 statusTip="Save the document to new file", triggered=self.action_saveAs)
 
-        self.printAct = QtGui.QAction("&Print...", self,
+        self.printAct = QtWidgets.QAction("&Print...", self,
                 shortcut=QtGui.QKeySequence.Print,
                 statusTip="Print the document", triggered=self.action_print_)
 
-        self.exitAct = QtGui.QAction("E&xit", self, shortcut="Ctrl+Q",
+        self.exitAct = QtWidgets.QAction("E&xit", self, shortcut="Ctrl+Q",
                 statusTip="Exit the application", triggered=self.action_close)
 
-        self.runAct = QtGui.QAction("R&un", self, shortcut="Ctrl+R",
+        self.runAct = QtWidgets.QAction("R&un", self, shortcut="Ctrl+R",
                 statusTip="Run the currently active Workflow", triggered=self.action_run)
 
-        self.aboutAct = QtGui.QAction("&Help", self,
+        self.aboutAct = QtWidgets.QAction("&Help", self,
                 statusTip="Show the application's Help box",
                 triggered=self.action_about)
 
-        self.aboutWFEAct = QtGui.QAction("About SimS&tack", self,
+        self.aboutWFEAct = QtWidgets.QAction("About SimS&tack", self,
                 statusTip="About the Nanomatch SimStack Client",
                 triggered=self.action_aboutWFE)
 
-        self.configServAct = QtGui.QAction("&Servers", self,
+        self.configServAct = QtWidgets.QAction("&Servers", self,
                 statusTip="Configure Servers",
                 triggered=self.action_openSettingsDialog)
 
-        self.configPathSettingsAct = QtGui.QAction("&Paths", self,
+        self.configPathSettingsAct = QtWidgets.QAction("&Paths", self,
                statusTip="Configure Paths",
                triggered=self.action_openPathSettingsDialog)
 
-        self.aboutWFEAct.triggered.connect(QtGui.qApp.aboutQt)
+        self.aboutWFEAct.triggered.connect(QtWidgets.QApplication.instance().aboutQt)
         

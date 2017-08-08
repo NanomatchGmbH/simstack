@@ -6,7 +6,8 @@ from __future__ import unicode_literals
 from __future__ import absolute_import
 
 
-import PySide.QtCore as QtCore
+import Qt.QtCore as QtCore
+import Qt.QtGui as QtGui
 
 # requires python 2.7,
 try:
@@ -20,7 +21,7 @@ import WaNo.WaNoFactory
 from lxml import etree
 import copy
 
-from PySide import QtCore
+from Qt import QtCore
 import yaml
 import os
 import sys
@@ -233,7 +234,6 @@ class MultipleOfModel(AbstractWanoModel):
             for wano in wano_dict.values():
                 wano.update_xml()
 
-import PySide.QtGui as QtGui
 class WaNoModelRootSignal(QtCore.QObject):
     dataChanged = QtCore.Signal(int, name="dataChanged")
     def __init__(self):

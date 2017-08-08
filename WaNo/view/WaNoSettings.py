@@ -1,7 +1,7 @@
-from PySide.QtGui import QDialog, QLabel, QGridLayout, QLineEdit, QPushButton, \
+from Qt.QtWidgets import QDialog, QLabel, QGridLayout, QLineEdit, QPushButton, \
         QTabWidget, QWidget, QVBoxLayout, QHBoxLayout, QCheckBox, QTabBar, \
         QToolButton, QFileIconProvider, QFileDialog
-from PySide.QtCore import Signal, QSignalMapper, QDir
+from Qt.QtCore import Signal, QSignalMapper, QDir
 
 
 class WaNoPathSettings(QDialog):

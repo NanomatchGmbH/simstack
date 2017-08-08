@@ -12,8 +12,8 @@ from lxml import etree
 
 
 
-from PySide.QtCore import QThread, Qt
-from PySide.QtCore import Slot, Signal, QObject
+from Qt.QtCore import QThread, Qt
+from Qt.QtCore import Slot, Signal, QObject
 
 from pyura.pyura.HTTPBasicAuthProvider import HTTPBasicAuthProvider
 from pyura.pyura import UnicoreAPI

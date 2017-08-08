@@ -1,9 +1,11 @@
 #from WaNo.lib.DropDownWidgetToolButton import DropDownWidgetToolButton
 
-from PySide.QtGui import QWidget, QGridLayout, QProgressBar, QLabel, QIcon, \
-        QFrame, QSizePolicy, QPalette, QListWidget, QListWidgetItem, \
-		QHBoxLayout, QPalette, QColor
-from PySide.QtCore import QSize, Qt
+from Qt.QtWidgets import QWidget, QGridLayout, QProgressBar, QLabel, \
+        QFrame, QSizePolicy, QListWidget, QListWidgetItem, \
+		QHBoxLayout
+from Qt.QtGui import QPalette, QColor, QIcon
+
+from Qt.QtCore import QSize, Qt
 
 from enum import Enum
 from os.path import basename
@@ -208,7 +210,7 @@ class DownloadProgressWidget(QWidget):
 
 if __name__ == '__main__':
     import sys
-    from PySide.QtGui import QWidget, QHBoxLayout, QApplication, QFileIconProvider
+    from Qt.QtWidgets import QWidget, QHBoxLayout, QApplication, QFileIconProvider
     class DummyDlStatus(object):
         def get_list_iterator(self, key):
             if key in self.lists:

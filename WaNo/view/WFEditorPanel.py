@@ -17,9 +17,10 @@ from enum import Enum
 
 from   lxml import etree
 
-import PySide.QtCore as QtCore
-import PySide.QtGui  as QtGui
-from PySide.QtCore import Signal
+import Qt.QtCore as QtCore
+import Qt.QtGui  as QtGui
+import Qt.QtWidgets  as QtWidgets
+from Qt.QtCore import Signal
 
 import WaNo.WaNoFactory as WaNoFactory
 from WaNo.WaNoSettingsProvider import WaNoSettingsProvider
@@ -80,7 +81,7 @@ class DragDropTargetTracker(object):
         else:
             pass
 
-class WFWaNoWidget(QtGui.QToolButton,DragDropTargetTracker):
+class WFWaNoWidget(QtWidgets.QToolButton,DragDropTargetTracker):
     def __init__(self, text, wano, parent):
         super(WFWaNoWidget, self).__init__(parent)
         DragDropTargetTracker.manual_init(self)
@@ -126,7 +127,7 @@ class WFWaNoWidget(QtGui.QToolButton,DragDropTargetTracker):
     def instantiate_from_folder(cls,folder,wanotype, parent):
         iconpath = os.path.join(folder,wanotype) + ".png"
         if not os.path.isfile(iconpath):
-            icon = QtGui.QFileIconProvider().icon(QtGui.QFileIconProvider.Computer)
+            icon = QtWidgets.QFileIconProvider().icon(QtWidgets.QFileIconProvider.Computer)
             wano_icon = icon.pixmap(icon.actualSize(QtCore.QSize(128, 128)))
         else:
             wano_icon = QtGui.QIcon(iconpath)
@@ -859,7 +860,7 @@ class WFModel(object):
         #element.deleteLater()
 
 
-class SubWorkflowView(QtGui.QFrame):
+class SubWorkflowView(QtWidgets.QFrame):
     def __init__(self, *args, **kwargs):
         self.my_height = 50
         self.my_width = 300
@@ -869,7 +870,7 @@ class SubWorkflowView(QtGui.QFrame):
         self.logical_parent = kwargs['logical_parent']
         parent = kwargs['qt_parent']
         super(SubWorkflowView, self).__init__(parent)
-        self.setFrameStyle(QtGui.QFrame.Panel)
+        self.setFrameStyle(QtWidgets.QFrame.Panel)
         self.setStyleSheet("""
                            QFrame {
                             border: 2px solid black;
@@ -897,7 +898,7 @@ class SubWorkflowView(QtGui.QFrame):
         self.setMinimumWidth(300)
         self.setMinimumWidth(100)
         self.dontplace = False
-        self.setSizePolicy(QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Expanding)
+        self.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
 
     def set_model(self,model):
         self.model = model
@@ -1130,7 +1131,7 @@ class SubWorkflowView(QtGui.QFrame):
         self.relayout()
 
 
-class WorkflowView(QtGui.QFrame):
+class WorkflowView(QtWidgets.QFrame):
     def __init__(self, *args, **kwargs):
         parent = kwargs['qt_parent']
         super(WorkflowView, self).__init__(parent)
@@ -1142,7 +1143,7 @@ class WorkflowView(QtGui.QFrame):
         self.myName = "AbstractWFTabsWidget"
         self.elementSkip = 20  # distance to skip between elements
         self.model = None
-        self.setFrameStyle(QtGui.QFrame.WinPanel | QtGui.QFrame.Sunken)
+        self.setFrameStyle(QtWidgets.QFrame.WinPanel | QtWidgets.QFrame.Sunken)
         self.setMinimumWidth(300)
         self.background_drawn = True
         self.enable_background(True)
@@ -1302,7 +1303,7 @@ class WorkflowView(QtGui.QFrame):
         self.relayout()
 
 
-class WFTabsWidget(QtGui.QTabWidget):
+class WFTabsWidget(QtWidgets.QTabWidget):
     workflow_saved = Signal(bool, str, name="WorkflowSaved")
     changedFlag = False
 
@@ -1333,7 +1334,7 @@ class WFTabsWidget(QtGui.QTabWidget):
         ####bb = self.tabBar().tabButton(0, QtGui.QTabBar.RightSide)
         ####bb.resize(0, 0)
     def createNewEmptyWF(self):
-        scroll = QtGui.QScrollArea(self)
+        scroll = QtWidgets.QScrollArea(self)
         wf = WorkflowView(qt_parent=scroll)
         wf_model = WFModel(editor=self.editor,view=wf)
         wf.set_model(wf_model)
@@ -1348,16 +1349,16 @@ class WFTabsWidget(QtGui.QTabWidget):
     def clear(self):
         #print ("Workflow has changed ? ",WFWorkflowWidget.changedFlag)
         if self.changedFlag:
-            reply = QtGui.QMessageBox(self)
+            reply = QtWidgets.QMessageBox(self)
             reply.setText("The document has been modified.")
             reply.setInformativeText("Do you want to save your changes?")
-            reply.setStandardButtons(QtGui.QMessageBox.Save | QtGui.QMessageBox.Discard | QtGui.QMessageBox.Cancel)
-            reply.setDefaultButton(QtGui.QMessageBox.Save)
+            reply.setStandardButtons(QtWidgets.QMessageBox.Save | QtWidgets.QMessageBox.Discard | QtWidgets.QMessageBox.Cancel)
+            reply.setDefaultButton(QtWidgets.QMessageBox.Save)
             ret = reply.exec_()
 
-            if ret == QtGui.QMessageBox.Cancel:
+            if ret == QtWidgets.QMessageBox.Cancel:
                 return
-            if ret == QtGui.QMessageBox.Save:
+            if ret == QtWidgets.QMessageBox.Save:
                 self.save()
         self.wf.clear()
         self.changedFlag = False
@@ -1392,8 +1393,8 @@ class WFTabsWidget(QtGui.QTabWidget):
             return self.saveFile(fullpath)
 
     def saveAs(self):
-        foldername,ok = QtGui.QInputDialog.getText(self, self.tr("Specify Workflow Name"),
-                                     self.tr("Name"), QtGui.QLineEdit.Normal,
+        foldername,ok = QtWidgets.QInputDialog.getText(self, self.tr("Specify Workflow Name"),
+                                     self.tr("Name"), QtWidgets.QLineEdit.Normal,
                                      "WorkflowName")
 
         if not ok:
@@ -1404,8 +1405,8 @@ class WFTabsWidget(QtGui.QTabWidget):
         fullpath = os.path.join(workflow_path,foldername)
 
         if os.path.exists(fullpath):
-            message = QtGui.QMessageBox.question(self,"Path already exists", "Path %s already exists? Old contents will be removed." %fullpath,QtGui.QMessageBox.Yes|QtGui.QMessageBox.Cancel)
-            if message == QtGui.QMessageBox.Cancel:
+            message = QtWidgets.QMessageBox.question(self,"Path already exists", "Path %s already exists? Old contents will be removed." %fullpath,QtWidgets.QMessageBox.Yes|QtWidgets.QMessageBox.Cancel)
+            if message == QtWidgets.QMessageBox.Cancel:
                 return False
             else:
                 pass
@@ -1414,7 +1415,7 @@ class WFTabsWidget(QtGui.QTabWidget):
         return self.saveFile(fullpath)
 
     def open(self):
-        fileName, filtr = QtGui.QFileDialog(self).getOpenFileName(self,'Open Workflow','.','xml (*.xml *.xm)')
+        fileName, filtr = QtWidgets.QFileDialog(self).getOpenFileName(self,'Open Workflow','.','xml (*.xml *.xm)')
         if fileName:
             print ("Loading Workflow from File:",fileName)
             self.clear()
@@ -1490,7 +1491,7 @@ class WFFileName:
         return os.path.join(self.dirName , self.name + '.' + self.ext)
 
 
-class WFControlWithTopMiddleAndBottom(QtGui.QFrame,DragDropTargetTracker):
+class WFControlWithTopMiddleAndBottom(QtWidgets.QFrame,DragDropTargetTracker):
     def __init__(self,*args,**kwargs):
         parent = kwargs['qt_parent']
         self.logical_parent = kwargs["logical_parent"]
@@ -1501,15 +1502,15 @@ class WFControlWithTopMiddleAndBottom(QtGui.QFrame,DragDropTargetTracker):
         #TIMO: Try this off later, it's not required imho
         self.setAcceptDrops(True)
         self.model = None
-        self.vbox = QtGui.QVBoxLayout(self)
+        self.vbox = QtWidgets.QVBoxLayout(self)
         self.show()
-        self.setSizePolicy(QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Expanding)
+        self.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
         self.initialized = False
 
     def _mockline(self):
-        line = QtGui.QFrame(self)
-        line.setFrameShape(QtGui.QFrame.HLine)
-        line.setFrameShadow(QtGui.QFrame.Sunken)
+        line = QtWidgets.QFrame(self)
+        line.setFrameShape(QtWidgets.QFrame.HLine)
+        line.setFrameShadow(QtWidgets.QFrame.Sunken)
         line.setLineWidth(2)
         return line
 
@@ -1550,7 +1551,7 @@ class WFControlWithTopMiddleAndBottom(QtGui.QFrame,DragDropTargetTracker):
         return None
 
     def set_style(self):
-        self.setFrameStyle(QtGui.QFrame.Panel)
+        self.setFrameStyle(QtWidgets.QFrame.Panel)
         self.setStyleSheet("""
                            QFrame {
                             border: 2px solid black;
@@ -1586,14 +1587,14 @@ class ForEachView(WFControlWithTopMiddleAndBottom):
         self.is_wano = False
 
     def get_top_widget(self):
-        self.topwidget = QtGui.QWidget()
-        self.topLineLayout = QtGui.QHBoxLayout()
+        self.topwidget = QtWidgets.QWidget()
+        self.topLineLayout = QtWidgets.QHBoxLayout()
         self.topwidget.setLayout(self.topLineLayout)
         #b.clicked.connect(self.toggleVisible)
-        self.itername_widget = QtGui.QLineEdit('Iterator Name')
+        self.itername_widget = QtWidgets.QLineEdit('Iterator Name')
         self.itername_widget.editingFinished.connect(self._on_line_edit)
         self.topLineLayout.addWidget(self.itername_widget)
-        self.list_of_variables = QtGui.QLineEdit('')
+        self.list_of_variables = QtWidgets.QLineEdit('')
         self.topLineLayout.addWidget(self.list_of_variables)
         self.open_variables = MultiselectDropDownList(self, text="Import")
         self.open_variables.connect_workaround(self.load_wf_files)
@@ -1651,7 +1652,7 @@ class ParallelView(WFControlWithTopMiddleAndBottom):
     def __init__(self,*args,**kwargs):
         super(ParallelView,self).__init__(*args,**kwargs)
         self.dontplace = False
-        self.splitter = QtGui.QSplitter(QtCore.Qt.Horizontal)
+        self.splitter = QtWidgets.QSplitter(QtCore.Qt.Horizontal)
         self.is_wano = False
 
     def add_new(self):
@@ -1666,11 +1667,11 @@ class ParallelView(WFControlWithTopMiddleAndBottom):
         self.relayout()
 
     def get_top_widget(self):
-        tw = QtGui.QWidget()
-        hor_layout = QtGui.QHBoxLayout()
-        a = QtGui.QPushButton('Add additional parallel pane')
+        tw = QtWidgets.QWidget()
+        hor_layout = QtWidgets.QHBoxLayout()
+        a = QtWidgets.QPushButton('Add additional parallel pane')
         a.clicked.connect(self.add_new)
-        b = QtGui.QPushButton('Remove pane')
+        b = QtWidgets.QPushButton('Remove pane')
         b.clicked.connect(self.delete)
         hor_layout.addWidget(a)
         hor_layout.addWidget(b)

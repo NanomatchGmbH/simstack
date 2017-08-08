@@ -1,4 +1,4 @@
-from PySide.QtGui import QMessageBox
+from Qt.QtWidgets import QMessageBox
 from enum import Enum
 
 class MessageDialog(QMessageBox):
@@ -9,8 +9,8 @@ class MessageDialog(QMessageBox):
         info = 3
 
     _window_titles = ["Critical Error", "Error", "Warning", "Info"]
-    _icons = [QMessageBox.Icon.Critical, QMessageBox.Icon.Critical, QMessageBox.Icon.Warning,
-            QMessageBox.Icon.Information
+    _icons = [QMessageBox.Critical, QMessageBox.Critical, QMessageBox.Warning,
+            QMessageBox.Information
         ]
 
     def __init__(self, msg_type, msg, direct_show=True, parent=None):

@@ -1,6 +1,5 @@
 #!/usr/bin/python
 
-# Import PySide classes
 from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
@@ -9,11 +8,12 @@ import sys
 import copy
 import logging
 
-import PySide.QtCore as QtCore
-import PySide.QtGui  as QtGui
+import Qt.QtCore as QtCore
+import Qt.QtGui  as QtGui
+import Qt.QtWidgets  as QtWidgets
 
 
-class WaNoEditor(QtGui.QTabWidget):
+class WaNoEditor(QtWidgets.QTabWidget):
     changedFlag = False
 
     def __init__(self,editor,parent=None):
@@ -21,7 +21,7 @@ class WaNoEditor(QtGui.QTabWidget):
         self.logger = logging.getLogger('WFELOG')
         self.setMinimumWidth(400)
         self.setMinimumHeight(300)
-        self.setSizePolicy(QtGui.QSizePolicy.Expanding,QtGui.QSizePolicy.Expanding)
+        self.setSizePolicy(QtWidgets.QSizePolicy.Expanding,QtWidgets.QSizePolicy.Expanding)
         self.editor = editor
         self.activeTabs = []
 
@@ -63,7 +63,7 @@ class WaNoEditor(QtGui.QTabWidget):
         # take care of the open 
         if WaNoEditor.changedFlag and len(self.activeTabs) > 1:
             ret = self.closeAction() # save is taken care inside
-            if ret == QtGui.QMessageBox.Cancel: 
+            if ret == QtWidgets.QMessageBox.Cancel: 
                 return False
 
         if len(self.activeTabs) > 1:
@@ -94,12 +94,12 @@ class WaNoEditor(QtGui.QTabWidget):
         if WaNoEditor.changedFlag:
             self.logger.debug("WaNo Content has changed")
             ret = self.closeAction()
-            if ret == QtGui.QMessageBox.Save:
+            if ret == QtWidgets.QMessageBox.Save:
                 # WaNo has changed means WF has changed 
                 from .WFEditorPanel import WFWorkflowWidget
                 WFWorkflowWidget.hasChanged()
                 self.copyContent()
-            elif ret == QtGui.QMessageBox.Cancel:
+            elif ret == QtWidgets.QMessageBox.Cancel:
                 return
         self.editor.deactivateWidget()
         self.clear()
@@ -117,20 +117,20 @@ class WaNoEditor(QtGui.QTabWidget):
         WaNoEditor.changedFlag = False
        
     def closeAction(self):
-        reply = QtGui.QMessageBox(self)
+        reply = QtWidgets.QMessageBox(self)
         reply.setText("The Workflow Active Node Data has changed.")
         reply.setInformativeText("Do you want to save your changes?")
-        reply.setStandardButtons(QtGui.QMessageBox.Save | QtGui.QMessageBox.Discard | QtGui.QMessageBox.Cancel)
-        reply.setDefaultButton(QtGui.QMessageBox.Save)
+        reply.setStandardButtons(QtWidgets.QMessageBox.Save | QtWidgets.QMessageBox.Discard | QtWidgets.QMessageBox.Cancel)
+        reply.setDefaultButton(QtWidgets.QMessageBox.Save)
         ret = reply.exec_()
     
-        if ret == QtGui.QMessageBox.Cancel:
+        if ret == QtWidgets.QMessageBox.Cancel:
             return ret
-        if ret == QtGui.QMessageBox.Save:
+        if ret == QtWidgets.QMessageBox.Save:
             self.copyContent()
         return ret
 
-class ScriptTab(QtGui.QWidget):
+class ScriptTab(QtWidgets.QWidget):
     waNoChangedSig = QtCore.Signal()
     
     def __init__(self, script, importSelection, parent = None):
@@ -140,10 +140,10 @@ class ScriptTab(QtGui.QWidget):
         self.importSelection = importSelection
         self.script = script    
         
-        mainLayout  = QtGui.QVBoxLayout()
+        mainLayout  = QtWidgets.QVBoxLayout()
         
-        topLine = QtGui.QHBoxLayout()
-        self.language = QtGui.QComboBox()
+        topLine = QtWidgets.QHBoxLayout()
+        self.language = QtWidgets.QComboBox()
         languages = ['bash','python','java']
         self.language.addItems(['bash','python','java'])
         idx = 1
@@ -161,11 +161,11 @@ class ScriptTab(QtGui.QWidget):
         
         topLine.addStretch(1)
         if len(importSelection) > 0:
-            button = QtGui.QPushButton('Import')
+            button = QtWidgets.QPushButton('Import')
             topLine.addWidget(button)
             button.clicked.connect(self.addImport)
               
-        self.hiddenButton = QtGui.QCheckBox('hide')
+        self.hiddenButton = QtWidgets.QCheckBox('hide')
         if 'hidden' in self.script.attrib and self.script.attrib['hidden'] == 'True':
             self.hiddenButton.setChecked(True)
                 
@@ -173,12 +173,12 @@ class ScriptTab(QtGui.QWidget):
         self.hiddenButton.clicked.connect(self.changed)
         topLine.addWidget(self.hiddenButton)
         
-        self.editor = QtGui.QTextEdit(script.value)
+        self.editor = QtWidgets.QTextEdit(script.value)
         
         mainLayout.addLayout(topLine)
         
         self.importWidgets = []
-        self.importList = QtGui.QGridLayout()
+        self.importList = QtWidgets.QGridLayout()
         for imp in script.imports:
             self.addImport(imp)
       
@@ -196,11 +196,11 @@ class ScriptTab(QtGui.QWidget):
             importData = ('local',self.importSelection[0],'source')
             
         nn = self.importList.rowCount()
-        localName = QtGui.QLineEdit(importData[0])
+        localName = QtWidgets.QLineEdit(importData[0])
         localName.textChanged.connect(self.changed)       
         self.importList.addWidget(localName,nn+1,0)
         
-        importSelect    = QtGui.QComboBox()
+        importSelect    = QtWidgets.QComboBox()
         importSelect.addItems(self.importSelection)
         self.importList.addWidget(importSelect,nn+1,1)
         
@@ -211,11 +211,11 @@ class ScriptTab(QtGui.QWidget):
             self.logger.error("Could not set current index in import selection of script tab Item#:" + str(nn) + \
                               " key: " + importData[1] + " items: " + str(self.importSelection))
         
-        fromName = QtGui.QLineEdit(importData[2])
+        fromName = QtWidgets.QLineEdit(importData[2])
         fromName.textChanged.connect(self.changed)
         self.importList.addWidget(fromName,nn+1,2)
         
-        delButton = QtGui.QPushButton('delete')
+        delButton = QtWidgets.QPushButton('delete')
         delButton.clicked.connect(self.deleteImport)
         self.importList.addWidget(delButton,nn+1,3)
         
@@ -242,7 +242,7 @@ class ScriptTab(QtGui.QWidget):
         self.script.attrib['language'] = self.language.currentText()
         
         
-class WaNoImportEditor(QtGui.QWidget):
+class WaNoImportEditor(QtWidgets.QWidget):
     def __init__(self,wano,exportedItems, parent = None):
         super(WaNoImportEditor, self).__init__(parent)
         
@@ -252,34 +252,34 @@ class WaNoImportEditor(QtGui.QWidget):
         self.wano          = wano
         
         # main button
-        self.addButton = QtGui.QPushButton('Add')
+        self.addButton = QtWidgets.QPushButton('Add')
         self.addButton.clicked.connect(self.addData)
 
         # scroll area widget contents - layout
-        self.linesLayout = QtGui.QVBoxLayout()        # empty layout to be filled later
+        self.linesLayout = QtWidgets.QVBoxLayout()        # empty layout to be filled later
         self.fillExistingData()  
         
         # scroll area widget contents
-        self.scrollWidget = QtGui.QWidget()
+        self.scrollWidget = QtWidgets.QWidget()
         self.scrollWidget.setLayout(self.linesLayout) # layout is set for widget
        
         #
         # now we make some space at the bottom
         #
-        self.spacingLayout = QtGui.QVBoxLayout()
+        self.spacingLayout = QtWidgets.QVBoxLayout()
         self.spacingLayout.addWidget(self.scrollWidget)
         self.spacingLayout.addStretch(1)
         
-        self.spacingWidget = QtGui.QWidget()
+        self.spacingWidget = QtWidgets.QWidget()
         self.spacingWidget.setLayout(self.spacingLayout) # layout is set for widget
        
                 
         # scroll area
-        self.scrollArea = QtGui.QScrollArea()
+        self.scrollArea = QtWidgets.QScrollArea()
         self.scrollArea.setWidgetResizable(True)
         self.scrollArea.setWidget(self.spacingWidget)
         # main layout
-        self.mainLayout = QtGui.QVBoxLayout()
+        self.mainLayout = QtWidgets.QVBoxLayout()
 
         # add all main to the main vLayout
         self.mainLayout.addWidget(self.addButton)
@@ -292,23 +292,23 @@ class WaNoImportEditor(QtGui.QWidget):
         pos = len(self.data)
         #print 'adding at',pos,self.linesLayout.count()
         
-        singleLineLayout = QtGui.QHBoxLayout()
+        singleLineLayout = QtWidgets.QHBoxLayout()
         
-        buttonKill    = QtGui.QPushButton('X')
+        buttonKill    = QtWidgets.QPushButton('X')
         buttonKill.clicked.connect(self.buttonKillClick)
         self.buttons.append(buttonKill)
         
         if localName == None:
             localName = 'Item'+str(pos)
 
-        localNameWidget  = QtGui.QLineEdit(localName)
+        localNameWidget  = QtWidgets.QLineEdit(localName)
         globalNameWidget = self.getGlobalNameWidget(globalName)
         
         singleLineLayout.addWidget(localNameWidget)
         singleLineLayout.addWidget(globalNameWidget)
         singleLineLayout.addWidget(buttonKill)
         
-        lineWidget = QtGui.QWidget()
+        lineWidget = QtWidgets.QWidget()
         lineWidget.setLayout(singleLineLayout)
         
        
@@ -331,7 +331,7 @@ class WaNoImportEditor(QtGui.QWidget):
         del self.data[idx]
 
     def getGlobalNameWidget(self,globalName):
-        globalNameWidget = QtGui.QComboBox()
+        globalNameWidget = QtWidgets.QComboBox()
         for e in self.exportedItems:
             globalNameWidget.addItem(e)
         # set default if globalName is already defined
@@ -351,7 +351,7 @@ class WaNoExportEditor(WaNoImportEditor):
         pass 
        
     def getGlobalNameWidget(self,globalNameS):
-        return QtGui.QLineEdit()    
+        return QtWidgets.QLineEdit()    
     
     def copyContent(self):
         self.wano.fileExports = {} # erase old stuff
@@ -392,14 +392,14 @@ class WaNoVarImportEditor(WaNoImportEditor):
             self.wano.varImports[localName] = str(glob.currentText())
             
            
-class WaNoItemEditor(QtGui.QWidget):
+class WaNoItemEditor(QtWidgets.QWidget):
     def __init__(self, wano, importSelection, parent = None):
         super(WaNoItemEditor, self).__init__(parent)
         
         self.wano = wano
         
         # scroll area widget contents - layout
-        self.scrollLayout = QtGui.QVBoxLayout()        # empty layout to be filled later
+        self.scrollLayout = QtWidgets.QVBoxLayout()        # empty layout to be filled later
         # left top right bottom
         self.scrollLayout.setContentsMargins(1,1,1,1)
         self.items = []
@@ -415,16 +415,16 @@ class WaNoItemEditor(QtGui.QWidget):
     
         self.scrollLayout.addStretch(1)
         # scroll area widget contents
-        self.scrollWidget = QtGui.QWidget()
+        self.scrollWidget = QtWidgets.QWidget()
         self.scrollWidget.setLayout(self.scrollLayout) # layout is set for widget
 
         # scroll area
-        self.scrollArea = QtGui.QScrollArea()
+        self.scrollArea = QtWidgets.QScrollArea()
         self.scrollArea.setWidgetResizable(True)
         self.scrollArea.setWidget(self.scrollWidget)
 
         # main layout
-        self.mainLayout = QtGui.QVBoxLayout()
+        self.mainLayout = QtWidgets.QVBoxLayout()
         
         # add all main to the main vLayout
         self.mainLayout.addWidget(self.scrollArea)
@@ -462,7 +462,7 @@ if __name__ == '__main__':
     exportedFiles      = ['FILEA','FILEB','FILEC'] + list(wano.fileImports.values())
     exportedVariables  = ['ITER','ACC']
     
-    app = QtGui.QApplication(sys.argv)
+    app = QtWidgets.QApplication(sys.argv)
     wanoe = WaNoEditor(wano,None,exportedFiles,exportedVariables)
     wanoe.show()
     app.exec_()

@@ -5,10 +5,10 @@ from abc import abstractmethod
 
 # imports for tests only.
 # TODO remove when done.
-from PySide.QtCore import QAbstractItemModel, QModelIndex, QFileInfo, Qt, QSize
-from PySide.QtGui import QFileIconProvider, QTreeView
-from PySide.QtGui import *
-import PySide.QtCore
+from Qt.QtCore import QAbstractItemModel, QModelIndex, QFileInfo, Qt, QSize
+from Qt.QtWidgets import QFileIconProvider, QTreeView
+from Qt.QtGui import QIcon, QPainter
+#import Qt.QtCore
 import abc
 import os, sys, time
 from enum import Enum

@@ -10,9 +10,9 @@
 
 import logging
 
-from PySide.QtCore import QAbstractItemModel, QModelIndex, QFileInfo
-from PySide.QtGui import QFileIconProvider
-import PySide.QtCore
+from Qt.QtCore import QAbstractItemModel, QModelIndex, QFileInfo
+from Qt.QtWidgets import QFileIconProvider
+import Qt.QtCore
 import abc
 import shutil
 
@@ -287,10 +287,10 @@ class FileSystemModel(TreeModel):
         if getattr(node, 'ref', None) is None:
             print("node.ref does not exist.")
             return None
-        if role == PySide.QtCore.Qt.DisplayRole and index.column() == 0:
+        if role == Qt.QtCore.Qt.DisplayRole and index.column() == 0:
             return node.ref.name
 
-        if role == PySide.QtCore.Qt.DecorationRole and index.column() == 0:
+        if role == Qt.QtCore.Qt.DecorationRole and index.column() == 0:
             #qfi = QFileInfo(node.ref.abspath)
             #return QFileIconProvider().icon(qfi)
             if node.ref.path_is_file:
@@ -300,7 +300,7 @@ class FileSystemModel(TreeModel):
         return None
 
     def headerData(self, section, orientation, role):
-        if orientation == PySide.QtCore.Qt.Horizontal and role == PySide.QtCore.Qt.DisplayRole and section == 0:
+        if orientation == Qt.QtCore.Qt.Horizontal and role == Qt.QtCore.Qt.DisplayRole and section == 0:
             return 'Name'
         return None
 
@@ -318,8 +318,8 @@ class NamedNode(TreeNode):
 
 if __name__ == '__main__':
     import sys, os, pprint, time
-    from PySide.QtCore import *
-    from PySide.QtGui import *
+    from Qt.QtCore import *
+    from Qt.QtWidgets import *
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     app = QApplication(sys.argv)
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

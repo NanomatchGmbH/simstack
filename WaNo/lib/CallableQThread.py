@@ -3,8 +3,8 @@ from __future__ import print_function
 from __future__ import unicode_literals
 from __future__ import absolute_import
 
-from PySide.QtCore import QThread, QObject
-from PySide.QtCore import Slot, Signal
+from Qt.QtCore import QThread, QObject
+from Qt.QtCore import Slot, Signal
 
 from functools import wraps
 

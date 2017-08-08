@@ -8,7 +8,7 @@ from __future__ import absolute_import
 
 from enum import IntEnum
 
-from PySide import QtGui, QtCore
+from Qt import QtGui, QtCore
 
 import yaml
 import operator

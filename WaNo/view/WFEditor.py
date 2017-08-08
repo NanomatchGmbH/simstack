@@ -1,8 +1,8 @@
 import logging
 import os
-from PySide.QtGui import QWidget, QSizePolicy, QLabel, QSplitter, QHBoxLayout, \
+from Qt.QtWidgets import QWidget, QSizePolicy, QLabel, QSplitter, QHBoxLayout, \
             QTabWidget, QTreeView
-from PySide.QtCore import Qt, Signal
+from Qt.QtCore import Qt, Signal
 
 from .WaNoEditorWidget import WaNoEditor
 from .WFEditorPanel import WFTabsWidget

@@ -1,7 +1,7 @@
-from PySide.QtGui import QWidget, QTreeView, QVBoxLayout, QPushButton, \
-        QAbstractItemView, QMenu, QCursor
-from PySide.QtCore import Signal, QModelIndex, Qt
-#from ..lib.FileSystemTree import FileSystemModel, FileSystemElement
+from Qt.QtWidgets import QWidget, QTreeView, QVBoxLayout, QPushButton, \
+        QAbstractItemView, QMenu
+from Qt.QtGui import QCursor
+from Qt.QtCore import Signal, QModelIndex, Qt
 from enum import Enum
 
 from .WFEditorTreeModels import WFEUnicoreRemoteFileSystemModel as FSModel

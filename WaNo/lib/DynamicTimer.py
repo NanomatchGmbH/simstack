@@ -1,6 +1,6 @@
 from __future__ import division
-from PySide.QtCore import QObject, QTimer, QThread, Signal
-from PySide.QtCore import QMutex
+from Qt.QtCore import QObject, QTimer, QThread, Signal
+from Qt.QtCore import QMutex
 try:
     from .CallableQThread import CallableQThread
 except:
@@ -289,7 +289,7 @@ class DynamicTimer(QObject):
         self._logger.addHandler(ch)
 
 if __name__ == "__main__":
-    from PySide.QtCore import QCoreApplication, QThread
+    from Qt.QtCore import QCoreApplication, QThread
     import ctypes
     ptime = 0
     count = 0

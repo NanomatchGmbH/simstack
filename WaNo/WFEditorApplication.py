@@ -6,8 +6,8 @@ from __future__ import absolute_import
 import logging
 import os
 
-from PySide.QtCore import QObject, Signal
-from PySide import QtCore,QtGui
+from Qt.QtCore import QObject, Signal
+from Qt import QtCore,QtGui
 
 import datetime
 
@@ -417,7 +417,7 @@ class WFEditorApplication(QThreadCallback):
         import platform
         import ctypes
         import threading
-        from PySide.QtCore import QThread
+        from Qt.QtCore import QThread
         if platform.system() == "Linux":
             self._logger.debug("Unicore Thread ID (WFEditorApplication): %d\t%d\t%s" % \
                     (threading.current_thread().ident,

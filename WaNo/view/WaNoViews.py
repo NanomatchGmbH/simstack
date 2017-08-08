@@ -7,7 +7,7 @@ from __future__ import absolute_import
 
 from WaNo.view.MultiselectDropDownList import MultiselectDropDownList
 from WaNo.view.AbstractWaNoView import AbstractWanoQTView, AbstractWanoView
-from PySide import QtGui, QtCore
+from Qt import QtGui, QtCore
 
 class GroupBoxWithButton(QtGui.QGroupBox):
     def __init__(self,*args,**kwargs):

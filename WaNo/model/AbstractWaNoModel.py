@@ -10,7 +10,7 @@ from jinja2 import Template
 from boolexp import Expression
 import abc
 import copy
-import PySide.QtCore as QtCore
+import Qt.QtCore as QtCore
 
 class WaNoNotImplementedError(Exception):
     pass

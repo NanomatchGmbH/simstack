@@ -1,8 +1,7 @@
-from PySide.QtGui import QToolButton, QFontMetrics, QListWidgetItem, QMenu, \
+from Qt.QtWidgets import QToolButton, QListWidgetItem, QMenu, \
         QListWidget, QAbstractItemView, QWidgetAction, QFileIconProvider
-from PySide.QtCore import Qt, Signal
-
-
+from Qt.QtGui import QFontMetrics
+from Qt.QtCore import Qt, Signal
 
 
 try:
@@ -107,7 +106,7 @@ class MultiselectDropDownList(DropDownWidgetPushButton):
 
 if __name__ == '__main__':
     import sys
-    from PySide.QtGui import QWidget, QHBoxLayout, QApplication, QLabel, \
+    from Qt.QtWidgets import QWidget, QHBoxLayout, QApplication, QLabel, \
             QFileIconProvider
     app = QApplication(sys.argv)
     window = QWidget()

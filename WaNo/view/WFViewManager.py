@@ -1,8 +1,8 @@
 from .WFEditorMainWindow import WFEditorMainWindow
 from .WFEditor import WFEditor
 
-from PySide.QtCore import Signal, QObject, QMutex
-from PySide.QtGui import QMessageBox, QFileDialog
+from Qt.QtCore import Signal, QObject, QMutex
+from Qt.QtWidgets import QMessageBox, QFileDialog
 
 from .MessageDialog import MessageDialog
 from .DownloadProgressWidget import DownloadProgressWidget

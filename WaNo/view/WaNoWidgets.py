@@ -5,8 +5,8 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
-import PySide.QtCore as QtCore
-import PySide.QtGui  as QtGui
+import Qt.QtCore as QtCore
+import Qt.QtGui  as QtGui
 
 import logging
 

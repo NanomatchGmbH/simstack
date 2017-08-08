@@ -1,4 +1,4 @@
-from PySide.QtCore import QReadWriteLock, QMutex
+from Qt.QtCore import QReadWriteLock, QMutex
 import copy # for ProtectedDict and ProtectedList
 from enum import Enum
 

@@ -8,12 +8,13 @@ import sys
 import logging
 from lxml import etree
 
-import PySide.QtCore as QtCore
-import PySide.QtGui  as QtGui
+import Qt.QtCore as QtCore
+import Qt.QtGui  as QtGui
+import Qt.QtWidgets  as QtWidgets
 
 
 
-class WFEListWidget(QtGui.QListWidget):
+class WFEListWidget(QtWidgets.QListWidget):
     def __init__(self, parent=None, controls=[]):
         super(WFEListWidget, self).__init__(parent) 
         self.setDragEnabled(True)
@@ -21,7 +22,7 @@ class WFEListWidget(QtGui.QListWidget):
 
     def update_list(self, controls):
         for name, icon in controls:
-            item = QtGui.QListWidgetItem(name)
+            item = QtWidgets.QListWidgetItem(name)
             item.setIcon(QtGui.QIcon(icon))
             self.addItem(item)
         self.myHeight = 10
@@ -30,7 +31,7 @@ class WFEListWidget(QtGui.QListWidget):
     def sizeHint(self):
         return QtCore.QSize(100,self.myHeight)
         
-class WFEWaNoListWidget(QtGui.QListWidget):
+class WFEWaNoListWidget(QtWidgets.QListWidget):
     def __init__(self, parent=None):
         super(WFEWaNoListWidget, self).__init__(parent) 
         self.setDragEnabled(True)
@@ -40,7 +41,7 @@ class WFEWaNoListWidget(QtGui.QListWidget):
     def update_list(self, wanos):
         self.clear()
         for wano in wanos:
-            item = QtGui.QListWidgetItem(wano[0])
+            item = QtWidgets.QListWidgetItem(wano[0])
             wano_icon = wano[3]
             item.setIcon(wano_icon)
             self.addItem(item)
@@ -51,7 +52,7 @@ class WFEWaNoListWidget(QtGui.QListWidget):
     def sizeHint(self):
         return QtCore.QSize(100,max(self.myHeight,200))
     
-class WFEWorkflowistWidget(QtGui.QListWidget):
+class WFEWorkflowistWidget(QtWidgets.QListWidget):
     def __init__(self, parent=None):
         super(WFEWorkflowistWidget, self).__init__(parent) 
         self.logger = logging.getLogger('WFEOG')
@@ -66,7 +67,7 @@ class WFEWorkflowistWidget(QtGui.QListWidget):
         self.clear()
 
         for element in workflows:
-            item = QtGui.QListWidgetItem(element.name)
+            item = QtWidgets.QListWidgetItem(element.name)
 
             item.workflow = element
             self.addItem(item)
