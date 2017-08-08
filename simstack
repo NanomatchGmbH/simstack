@@ -18,8 +18,9 @@ import platform
 import logging
 
 import yaml
-from PySide.QtGui import QApplication,QDesktopServices
-from PySide.QtCore import QTimer
+from Qt.QtWidgets import QApplication
+from Qt.QtCore import QTimer
+import Qt
 
 
 from WaNo.WFEditorApplication import WFEditorApplication
@@ -36,6 +37,18 @@ def signal_handler(*args):
         editor.exit()
 
 
+def get_settings_folder():
+    if Qt.__binding__ == 'PySide':
+        from Qt.QtGui import QDesktopServices
+        return QDesktopServices.storageLocation(QDesktopServices.DataLocation)
+
+    from Qt.QtCore import QStandardPaths
+    rtp = QStandardPaths.standardLocations(QStandardPaths.DataLocation)
+    if isinstance(rtp,list):
+        rtp = rtp[0]
+    return rtp
+
+
 if __name__ == '__main__':   
     signal.signal(signal.SIGINT, signal_handler)
 
@@ -48,7 +61,7 @@ if __name__ == '__main__':
     logging.basicConfig(filename='wfeditor.log',filemode='w',level=logging.INFO)
     logger = logging.getLogger('WFELOG')
 
-    SETTINGS_FOLDER = QDesktopServices.storageLocation(QDesktopServices.DataLocation)
+    SETTINGS_FOLDER = get_settings_folder()
     SETTINGS_FOLDER = path.dirname(SETTINGS_FOLDER)
     SETTINGS_FOLDER = path.join(SETTINGS_FOLDER,_SETTINGS_DIR)
 

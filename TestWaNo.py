@@ -15,7 +15,7 @@ if __name__ == '__main__':
     if not dir_path in sys.path:
         sys.path.append(dir_path)
 
-from PySide import QtGui, QtCore
+from Qt import QtGui, QtCore
 from WaNo.model.WaNoModels import WaNoModelRoot
 from WaNo.view.WaNoViews import WanoQtViewRoot
 from WaNo.WaNoFactory import WaNoFactory
