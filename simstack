@@ -22,6 +22,7 @@ from Qt.QtWidgets import QApplication
 from Qt.QtCore import QTimer
 import Qt
 
+print("Using %s backend."%Qt.__binding__)
 
 from WaNo.WFEditorApplication import WFEditorApplication
 from WaNo.WaNoSettingsProvider import WaNoSettingsProvider
