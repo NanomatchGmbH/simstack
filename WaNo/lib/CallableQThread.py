@@ -28,12 +28,18 @@ class QThreadCallback(QObject):
         self.pseudo_signal.connect(self.pseudo_slot)
 
 
-class CallableQThread(QThread, QThreadCallback):
+
+class CallableQThread(QThreadCallback):
     def start(self):
-        super(CallableQThread, self).start()
+        self.mythread.start()
         # This is crucial for slots of the Thread to be invoked in the thread's
         # context and not in the context of the emitting thread.
-        self.moveToThread(self)
+        self.moveToThread(self.mythread)
 
     def __init__(self):
-        super(CallableQThread, self).__init__()
+        super(CallableQThread,self).__init__()
+        self.mythread=QThread()
+
+if __name__ == '__main__':
+    aaa = QThreadCallback()
+    bbb = CallableQThread()
