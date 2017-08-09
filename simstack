@@ -39,12 +39,13 @@ def signal_handler(*args):
 
 
 def get_settings_folder():
-    if Qt.__binding__ == 'PySide':
-        from Qt.QtGui import QDesktopServices
+    if Qt.IsPySide:
+        from PySide.QtGui import QDesktopServices
         return QDesktopServices.storageLocation(QDesktopServices.DataLocation)
 
-    from Qt.QtCore import QStandardPaths
-    rtp = QStandardPaths.standardLocations(QStandardPaths.DataLocation)
+    import importlib
+    qc = importlib.import_module("%s.QtCore"%Qt.__binding__)
+    rtp = qc.QStandardPaths.standardLocations(qc.QStandardPaths.DataLocation)
     if isinstance(rtp,list):
         rtp = rtp[0]
     return rtp
