@@ -28,7 +28,7 @@ from WaNo.UnicoreConnector import ERROR as uerror
 from WaNo.view.WFEditorPanel import SubmitType
 from WaNo.view.WaNoViews import WanoQtViewRoot
 
-from WaNo.lib.CallableQThread import QThreadCallback
+from WaNo.lib.CallableQThread import QThreadCallback, CallableQThread
 
 try:
     FileNotFoundError
@@ -39,7 +39,7 @@ except:
 from pyura.pyura import Storage
 from collections import namedtuple
 
-class WFEditorApplication(QThreadCallback):
+class WFEditorApplication(CallableQThread):
     exec_unicore_callback_operation = Signal(
             object, dict, object, name="ExecuteUnicoreCallbackOperation")
     exec_unicore_operation = Signal(object, dict, name="ExecuteUnicoreOperation")
