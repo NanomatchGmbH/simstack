@@ -30,7 +30,7 @@ class QThreadCallback(QThread):
 
     def run(self):
         try:
-            super(Worker,self).run()
+            super(QThreadCallback,self).run()
         except NameError as exc:
             sys.stderr.write( "Name Error\n",exc );
         except:
