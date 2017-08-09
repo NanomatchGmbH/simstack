@@ -120,8 +120,7 @@ class WFViewManager(QObject):
         save_to = QFileDialog.getSaveFileName(
                 self._editor,
                 'Download File',
-                '',
-                selectedFilter=''
+                ''
                 )
         if save_to[0]:
             print(save_to)
@@ -134,8 +133,7 @@ class WFViewManager(QObject):
         upload = QFileDialog.getOpenFileName(
                 self._editor,
                 'Select file for upload',
-                '',
-                selectedFilter=''
+                ''
                 )
         if upload[0]:
             print("Going to upload: %s" % str(upload))

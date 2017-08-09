@@ -43,7 +43,7 @@ class WFEWaNoListWidget(QtWidgets.QListWidget):
         for wano in wanos:
             item = QtWidgets.QListWidgetItem(wano[0])
             wano_icon = wano[3]
-            item.setIcon(wano_icon)
+            item.setIcon(QtGui.QIcon(wano_icon))
             self.addItem(item)
             item.WaNo = wano
         self.myHeight = self.count()*10

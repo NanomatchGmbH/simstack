@@ -7,7 +7,7 @@ import logging
 import os
 
 from Qt.QtCore import QObject, Signal
-from Qt import QtCore,QtGui
+from Qt import QtCore,QtGui,QtWidgets
 
 import datetime
 
@@ -377,7 +377,7 @@ class WFEditorApplication(CallableQThread):
                         # Might be a random folder
                         continue
                     if not os.path.isfile(iconpath):
-                        icon = QtGui.QFileIconProvider().icon(QtGui.QFileIconProvider.Computer)
+                        icon = QtWidgets.QFileIconProvider().icon(QtWidgets.QFileIconProvider.Computer)
                         wano_icon = icon.pixmap(icon.actualSize(QtCore.QSize(128, 128)))
                     else:
                         wano_icon = QtGui.QIcon(iconpath)

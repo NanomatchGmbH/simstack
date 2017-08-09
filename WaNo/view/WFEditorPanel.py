@@ -69,7 +69,7 @@ class DragDropTargetTracker(object):
         #self.move(e.globalPos())
         self.drag.targetChanged.connect(self._target_tracker)
         self.newparent = self.parent()
-        dropAction = self.drag.start(QtCore.Qt.MoveAction)
+        dropAction = self.drag.exec_(QtCore.Qt.MoveAction)
 
         #In case the target of the drop changed we are outside the workflow editor
         #In that case we would like to remove ourselves

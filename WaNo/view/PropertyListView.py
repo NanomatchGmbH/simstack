@@ -8,11 +8,20 @@ from __future__ import absolute_import
 
 from enum import IntEnum
 
-from Qt import QtGui, QtCore
+from Qt import QtGui, QtCore, QtWidgets
 
 import yaml
 import operator
 import os
+
+import Qt
+if Qt.__binding__ == 'PySide':
+    #PySide1 only accepts flags as int:
+    def pyside_int_workaround(val):
+        return int(val)
+else:
+    def pyside_int_workaround(val):
+        return val
 
 
 class ResourceTableBase(QtCore.QAbstractTableModel):
@@ -86,7 +95,7 @@ class ExportTableModel(ResourceTableBase):
 
     def flags(self, index):
         defaultflags = QtCore.Qt.ItemFlags()
-        return int(QtCore.Qt.ItemIsEditable | QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsSelectable | defaultflags)
+        return pyside_int_workaround(QtCore.Qt.ItemIsEditable | QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsSelectable | defaultflags)
 
     def rowCount(self, parent=QtCore.QModelIndex()):
         return len(self.mylist) + 1
@@ -166,8 +175,8 @@ class ImportTableModel(ResourceTableBase):
         self.endRemoveRows()
 
     def flags(self, index):
-        defaultflags = int(QtCore.Qt.ItemFlags() | QtCore.Qt.ItemIsSelectable)
-        return int(QtCore.Qt.ItemIsEditable | QtCore.Qt.ItemIsEnabled | defaultflags)
+        defaultflags = pyside_int_workaround(QtCore.Qt.ItemFlags() | QtCore.Qt.ItemIsSelectable)
+        return pyside_int_workaround(QtCore.Qt.ItemIsEditable | QtCore.Qt.ItemIsEnabled | defaultflags)
 
 
     def rowCount(self, parent=QtCore.QModelIndex()):
@@ -237,8 +246,8 @@ class ImportTableModel(ResourceTableBase):
         self.mylist = [
         ]
         self.header = ["Name", "ImportFrom", "Target Filename"]
-        self.alignments = [QtCore.Qt.AlignCenter, int(QtCore.Qt.AlignLeft | QtCore.Qt.AlignVCenter),
-                           int(QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter),QtCore.Qt.AlignCenter]
+        self.alignments = [QtCore.Qt.AlignCenter, pyside_int_workaround(QtCore.Qt.AlignLeft | QtCore.Qt.AlignVCenter),
+                           pyside_int_workaround(QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter),QtCore.Qt.AlignCenter]
 
 
 class ResourceTableModel(ResourceTableBase):
@@ -254,7 +263,7 @@ class ResourceTableModel(ResourceTableBase):
         self.mylist = [
         ]
         self.header = ["Enable", "Property", "Value"]
-        self.alignments = [QtCore.Qt.AlignCenter, int(QtCore.Qt.AlignLeft| QtCore.Qt.AlignVCenter), int(QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter)]
+        self.alignments = [QtCore.Qt.AlignCenter,pyside_int_workaround(QtCore.Qt.AlignLeft| QtCore.Qt.AlignVCenter),pyside_int_workaround(QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter)]
 
 
     def render_to_resource_jsdl(self):
@@ -300,32 +309,32 @@ class ResourceTableModel(ResourceTableBase):
             [False, "Queue", "default"]
         ]
         self.header = ["Enable", "Property", "Value"]
-        self.alignments = [QtCore.Qt.AlignCenter, int(QtCore.Qt.AlignLeft| QtCore.Qt.AlignVCenter), int(QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter)]
+        self.alignments = [QtCore.Qt.AlignCenter, pyside_int_workaround(QtCore.Qt.AlignLeft| QtCore.Qt.AlignVCenter),pyside_int_workaround(QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter)]
 
 
 
-class GlobalFileChooserDelegate(QtGui.QStyledItemDelegate):
+class GlobalFileChooserDelegate(QtWidgets.QStyledItemDelegate):
     def __init__(self, parent):
-        QtGui.QStyledItemDelegate.__init__(self, parent)
+        QtWidgets.QStyledItemDelegate.__init__(self, parent)
 
     def paint(self, painter, option, index):
-        if (option.state & QtGui.QStyle.State_Selected):
+        if (option.state & QtWidgets.QStyle.State_Selected):
             painter.fillRect(option.rect, option.palette.highlight())
         return
 
     def createEditor(self, parent, option, index):
         from WaNo.view.MultiselectDropDownList import MultiselectDropDownList
 
-        custom_widget = QtGui.QWidget(parent)
-        hbl = QtGui.QHBoxLayout()
+        custom_widget = QtWidgets.QWidget(parent)
+        hbl = QtWidgets.QHBoxLayout()
         custom_widget.setLayout(hbl)
 
-        label = QtGui.QLabel(str(index.data()), custom_widget)
+        label = QtWidgets.QLabel(str(index.data()), custom_widget)
         hbl.addWidget(label)
         hbl.addStretch()
         openwfbutton = MultiselectDropDownList(self, autoset_text=False)
         openwfbutton.setFixedSize(28,28)
-        openwfbutton.setIcon(QtGui.QFileIconProvider().icon(QtGui.QFileIconProvider.Network))
+        openwfbutton.setIcon(QtWidgets.QFileIconProvider().icon(QtWidgets.QFileIconProvider.Network))
         openwfbutton.itemSelectionChanged.connect(self.on_wf_file_change)
         openwfbutton.connect_workaround(self.load_wf_files)
         openwfbutton.external_label = label
@@ -335,7 +344,7 @@ class GlobalFileChooserDelegate(QtGui.QStyledItemDelegate):
         #hbl.setSpacing(0)
         hbl.setContentsMargins(0,0,0,0)
         hbl.setAlignment(QtCore.Qt.AlignCenter)
-        hbl.setSizeConstraint(QtGui.QLayout.SetMaximumSize)
+        hbl.setSizeConstraint(QtWidgets.QLayout.SetMaximumSize)
         return custom_widget
 
     def load_wf_files(self):
@@ -371,13 +380,13 @@ class GlobalFileChooserDelegate(QtGui.QStyledItemDelegate):
         self.commitData.emit(self.sender())
 
 
-class FileChooserDelegate(QtGui.QItemDelegate):
+class FileChooserDelegate(QtWidgets.QItemDelegate):
     def __init__(self, parent):
-        QtGui.QItemDelegate.__init__(self, parent)
+        QtWidgets.QItemDelegate.__init__(self, parent)
 
     def paint(self, painter, option, index):
 
-        if (option.state & QtGui.QStyle.State_Selected):
+        if (option.state & QtWidgets.QStyle.State_Selected):
             painter.fillRect(option.rect, option.palette.highlight())
         return
         if index.column() == IMAGE:
@@ -387,20 +396,20 @@ class FileChooserDelegate(QtGui.QItemDelegate):
         #QItemDelegate.paint(self, painter, option, index)
 
     def createEditor(self, parent, option, index):
-        custom_widget = QtGui.QWidget(parent)
-        hbl = QtGui.QHBoxLayout()
+        custom_widget = QtWidgets.QWidget(parent)
+        hbl = QtWidgets.QHBoxLayout()
         custom_widget.setLayout(hbl)
 
-        label = QtGui.QLabel(str(index.data()), custom_widget)
+        label = QtWidgets.QLabel(str(index.data()), custom_widget)
         hbl.addWidget(label)
         hbl.addStretch()
-        combo = QtGui.QPushButton(str(index.data()), custom_widget)
+        combo = QtWidgets.QPushButton(str(index.data()), custom_widget)
         hbl.addWidget(combo)
 
         #hbl.setSpacing(0)
         hbl.setContentsMargins(0,0,0,0)
         hbl.setAlignment(QtCore.Qt.AlignCenter)
-        hbl.setSizeConstraint(QtGui.QLayout.SetMaximumSize)
+        hbl.setSizeConstraint(QtWidgets.QLayout.SetMaximumSize)
         # self.connect(combo, QtCore.SIGNAL("currentIndexChanged(int)"), self, QtCore.SLOT("currentIndexChanged()"))
         #combo.clicked.connect(self.currentIndexChanged)
         return custom_widget
@@ -416,12 +425,12 @@ class FileChooserDelegate(QtGui.QItemDelegate):
     def currentIndexChanged(self):
         self.commitData.emit(self.sender())
 
-class ButtonDelegate(QtGui.QItemDelegate):
+class ButtonDelegate(QtWidgets.QItemDelegate):
     def __init__(self, parent):
-        QtGui.QItemDelegate.__init__(self, parent)
+        QtWidgets.QItemDelegate.__init__(self, parent)
 
     def createEditor(self, parent, option, index):
-        self.combo = QtGui.QPushButton(str(index.data()), parent)
+        self.combo = QtWidgets.QPushButton(str(index.data()), parent)
         # self.connect(combo, QtCore.SIGNAL("currentIndexChanged(int)"), self, QtCore.SLOT("currentIndexChanged()"))
         self.combo.clicked.connect(self.on_button_clicked)
         return self.combo
@@ -445,14 +454,14 @@ class ButtonDelegate(QtGui.QItemDelegate):
     #    self.commitData.emit(self.sender())
 
 
-class CheckBoxDelegate(QtGui.QStyledItemDelegate):
+class CheckBoxDelegate(QtWidgets.QStyledItemDelegate):
     """
     A delegate that places a fully functioning QCheckBox in every
     cell of the column to which it's applied
     """
     def __init__(self, parent):
         super(CheckBoxDelegate,self).__init__(parent)
-        #QtGui.QItemDelegate.__init__(self, parent)
+        #QtWidgets.QItemDelegate.__init__(self, parent)
 
     def createEditor(self, parent, option, index):
         '''
@@ -467,27 +476,27 @@ class CheckBoxDelegate(QtGui.QStyledItemDelegate):
         '''
 
         checked = index.data()
-        check_box_style_option = QtGui.QStyleOptionButton()
+        check_box_style_option = QtWidgets.QStyleOptionButton()
 
         if (index.flags() & QtCore.Qt.ItemIsEditable):
-            check_box_style_option.state |= QtGui.QStyle.State_Enabled
+            check_box_style_option.state |= QtWidgets.QStyle.State_Enabled
         else:
-            check_box_style_option.state |= QtGui.QStyle.State_ReadOnly
+            check_box_style_option.state |= QtWidgets.QStyle.State_ReadOnly
 
         if checked:
-            check_box_style_option.state |= QtGui.QStyle.State_On
+            check_box_style_option.state |= QtWidgets.QStyle.State_On
         else:
-            check_box_style_option.state |= QtGui.QStyle.State_Off
+            check_box_style_option.state |= QtWidgets.QStyle.State_Off
 
         check_box_style_option.rect = self.getCheckBoxRect(option)
 
         # this will not run - hasFlag does not exist
         #if not index.model().hasFlag(index, QtCore.Qt.ItemIsEditable):
-            #check_box_style_option.state |= QtGui.QStyle.State_ReadOnly
+            #check_box_style_option.state |= QtWidgets.QStyle.State_ReadOnly
 
-        check_box_style_option.state |= QtGui.QStyle.State_Enabled
+        check_box_style_option.state |= QtWidgets.QStyle.State_Enabled
 
-        QtGui.QApplication.style().drawControl(QtGui.QStyle.CE_CheckBox, check_box_style_option, painter)
+        QtWidgets.QApplication.style().drawControl(QtWidgets.QStyle.CE_CheckBox, check_box_style_option, painter)
 
     def editorEvent(self, event, model, option, index):
         '''
@@ -524,8 +533,8 @@ class CheckBoxDelegate(QtGui.QStyledItemDelegate):
         model.setData(index, newValue, QtCore.Qt.EditRole)
 
     def getCheckBoxRect(self, option):
-        check_box_style_option = QtGui.QStyleOptionButton()
-        check_box_rect = QtGui.QApplication.style().subElementRect(QtGui.QStyle.SE_CheckBoxIndicator, check_box_style_option, None)
+        check_box_style_option = QtWidgets.QStyleOptionButton()
+        check_box_rect = QtWidgets.QApplication.style().subElementRect(QtWidgets.QStyle.SE_CheckBoxIndicator, check_box_style_option, None)
         check_box_point = QtCore.QPoint (option.rect.x() +
                             option.rect.width() / 2 -
                             check_box_rect.width() / 2,
@@ -534,17 +543,17 @@ class CheckBoxDelegate(QtGui.QStyledItemDelegate):
                             check_box_rect.height() / 2)
         return QtCore.QRect(check_box_point, check_box_rect.size())
 
-class ComboDelegate(QtGui.QItemDelegate):
+class ComboDelegate(QtWidgets.QItemDelegate):
     """
     A delegate that places a fully functioning QComboBox in every
     cell of the column to which it's applied
     """
 
     def __init__(self, parent):
-        QtGui.QItemDelegate.__init__(self, parent)
+        QtWidgets.QItemDelegate.__init__(self, parent)
 
     def createEditor(self, parent, option, index):
-        combo = QtGui.QComboBox(parent)
+        combo = QtWidgets.QComboBox(parent)
         li = []
         li.append("Zero")
         li.append("One")
@@ -568,13 +577,13 @@ class ComboDelegate(QtGui.QItemDelegate):
         self.commitData.emit(self.sender())
 
 
-class TableView(QtGui.QTableView):
+class TableView(QtWidgets.QTableView):
     """
     A simple table to demonstrate the QComboBox delegate.
     """
 
     def __init__(self, *args, **kwargs):
-        QtGui.QTableView.__init__(self, *args, **kwargs)
+        QtWidgets.QTableView.__init__(self, *args, **kwargs)
 
 
         # Set the delegate for column 0 of our table
@@ -588,12 +597,12 @@ class TableView(QtGui.QTableView):
 
 
 
-class ResourceView(QtGui.QTableView):
+class ResourceView(QtWidgets.QTableView):
     """
     A simple table to demonstrate the QComboBox delegate.
     """
     def __init__(self, *args, **kwargs):
-        QtGui.QTableView.__init__(self, *args, **kwargs)
+        QtWidgets.QTableView.__init__(self, *args, **kwargs)
         self.setItemDelegateForColumn(0, CheckBoxDelegate(self))
         #self.setItemDelegateForColumn(2, GlobalFileChooserDelegate(self))
 
@@ -603,16 +612,16 @@ class ResourceView(QtGui.QTableView):
             self.openPersistentEditor(model.index(row, 0))
 
 
-class ImportView(QtGui.QTableView):
+class ImportView(QtWidgets.QTableView):
     """
     A simple table to demonstrate the QComboBox delegate.
     """
     def __init__(self, *args, **kwargs):
-        QtGui.QTableView.__init__(self, *args, **kwargs)
+        QtWidgets.QTableView.__init__(self, *args, **kwargs)
         gfcd = GlobalFileChooserDelegate(self)
         self.setItemDelegateForColumn(1, gfcd)
-        self.setSelectionBehavior(QtGui.QAbstractItemView.SelectRows)
-        self.setSelectionMode(QtGui.QAbstractItemView.SingleSelection)
+        self.setSelectionBehavior(QtWidgets.QAbstractItemView.SelectRows)
+        self.setSelectionMode(QtWidgets.QAbstractItemView.SingleSelection)
         self.verticalHeader().show()
         self.horizontalHeader().show()
         #self.verticalHeader().sectionClicked.connect(self._selectRow)
@@ -643,12 +652,12 @@ class ImportView(QtGui.QTableView):
             self.openPersistentEditor(self.model().index(row, 1))
 
 
-class ExportView(QtGui.QTableView):
+class ExportView(QtWidgets.QTableView):
     """
     A simple table to demonstrate the QComboBox delegate.
     """
     def __init__(self, *args, **kwargs):
-        QtGui.QTableView.__init__(self, *args, **kwargs)
+        QtWidgets.QTableView.__init__(self, *args, **kwargs)
         #gfcd = GlobalFileChooserDelegate(self)
         #self.setItemDelegateForColumn(1, gfcd)
 
@@ -667,15 +676,15 @@ if __name__ == "__main__":
     from sys import argv, exit
 
 
-    class Widget(QtGui.QWidget):
+    class Widget(QtWidgets.QWidget):
         """
         A simple test widget to contain and own the model and table.
         """
 
         def __init__(self, parent=None):
-            QtGui.QWidget.__init__(self, parent)
+            QtWidgets.QWidget.__init__(self, parent)
 
-            l = QtGui.QVBoxLayout(self)
+            l = QtWidgets.QVBoxLayout(self)
 
             self._tm = ResourceTableModel(self)
 
@@ -691,7 +700,7 @@ if __name__ == "__main__":
             self._tv.resizeColumnsToContents()
 
 
-    a = QtGui.QApplication(argv)
+    a = QtWidgets.QApplication(argv)
     w = Widget()
     w.show()
     w.raise_()
