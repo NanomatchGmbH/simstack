@@ -110,7 +110,7 @@ class WFWaNoWidget(QtWidgets.QToolButton,DragDropTargetTracker):
         self.setStyleSheet(stylesheet) # + widgetColors['WaNo'])
         self.setToolButtonStyle(QtCore.Qt.ToolButtonTextUnderIcon)
         self.setText(text)
-        self.setIcon(wano[3])
+        self.setIcon(QtGui.QIcon(wano[3]))
         #self.setAutoFillBackground(True)
         #self.setColor(QtCore.Qt.lightGray)
         self.wano = copy.copy(wano)
