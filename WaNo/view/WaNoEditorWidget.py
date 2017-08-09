@@ -28,7 +28,7 @@ class WaNoEditor(QtWidgets.QTabWidget):
         self.tabWidget = self
         self.setTabsClosable(True)
 
-        QtCore.QObject.connect(self,QtCore.SIGNAL('tabCloseRequested(int)'), self.closeTab)
+        self.tabCloseRequested.connect(self.closeTab)
 
     @QtCore.Slot(int)
     def closeTab(self,myid):
