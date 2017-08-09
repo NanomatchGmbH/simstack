@@ -141,7 +141,7 @@ class WaNoRegistrySettings(QWidget):
         self.__password     = QLineEdit(self)
         self.__workflows    = QLineEdit(self)
 
-        self.__password.setEchoMode(QLineEdit.EchoMode.PasswordEchoOnEdit)
+        self.__password.setEchoMode(QLineEdit.PasswordEchoOnEdit)
 
         self.__cb_show_password = QCheckBox(self)
         self.__cb_show_password.setText("show")
