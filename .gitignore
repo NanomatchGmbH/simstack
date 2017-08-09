@@ -72,6 +72,8 @@ target/
 external/pyura*
 external/requests*
 external/enum*
+external/boolexp*
+external/qtpy*
 
 #Pyside files
 .idea/*
