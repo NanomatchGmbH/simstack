@@ -74,6 +74,7 @@ external/requests*
 external/enum*
 external/boolexp*
 external/qtpy*
+external/Qt.py
 
 #Pyside files
 .idea/*
