@@ -1,4 +1,4 @@
-from PySide.QtCore import QAbstractItemModel, QModelIndex
+from Qt.QtCore import QAbstractItemModel, QModelIndex
 from enum import Enum
 from abc import abstractmethod
 
