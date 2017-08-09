@@ -108,9 +108,9 @@ class WaNoRegistrySettings(QWidget):
 
     def __on_password_show(self):
         if (self.__cb_show_password.isChecked()):
-            self.__password.setEchoMode(QLineEdit.EchoMode.Normal)
+            self.__password.setEchoMode(QLineEdit.Normal)
         else:
-            self.__password.setEchoMode(QLineEdit.EchoMode.PasswordEchoOnEdit)
+            self.__password.setEchoMode(QLineEdit.PasswordEchoOnEdit)
 
     def __on_default_set(self):
         self.default_set.emit(self.__cb_default.isChecked())
