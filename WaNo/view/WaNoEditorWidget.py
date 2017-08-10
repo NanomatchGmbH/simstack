@@ -81,12 +81,10 @@ class WaNoEditor(QtWidgets.QTabWidget):
         return True
 
     def remove_if_open(self,wano_view):
-        for i in range(0,self.tabWidget.count()):
-            if wano_view.get_widget() is self.tabWidget.widget(i):
-                self.closeTab(i)
-            else:
-                print(type(wano_view))
-                print(type(self.tabWidget.widget(i).widget()))
+        if wano_view.get_widget() is self.tabWidget.widget(0):
+            for i in range(self.tabWidget.count() - 1, -1, -1):
+                self.tabWidget.closeTab(i)
+
 
 
        
