@@ -1150,11 +1150,14 @@ class WorkflowView(QtWidgets.QFrame):
         self.dont_place = False
 
     def enable_background(self,on):
-        style_sheet_without_background = "background-color: " + widgetColors['MainEditor'] + """ ;
+        on = True
+        style_sheet_without_background = "QFrame { background-color: " + widgetColors['MainEditor'] + """ ;
             %s
             background-repeat: no-repeat;
             background-attachment: fixed;
-            background-position: center;  """
+            background-position: center;  
+            }
+            """
         if on:
             self.background_drawn = True
             script_path = os.path.dirname(os.path.realpath(__file__))
@@ -1222,7 +1225,6 @@ class WorkflowView(QtWidgets.QFrame):
     #Manually paint the lines:
     def paintEvent(self, event):
         super(WorkflowView,self).paintEvent(event)
-
         painter = QtGui.QPainter(self)
         painter.setBrush(QtGui.QBrush(QtCore.Qt.blue))
         sy = self.elementSkip
