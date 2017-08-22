@@ -8,15 +8,20 @@ from __future__ import absolute_import
 from WaNo.view.MultiselectDropDownList import MultiselectDropDownList
 from WaNo.view.AbstractWaNoView import AbstractWanoQTView, AbstractWanoView
 from Qt import QtGui, QtCore, QtWidgets
+import os
 
 class GroupBoxWithButton(QtWidgets.QGroupBox):
     def __init__(self,*args,**kwargs):
         super(GroupBoxWithButton,self).__init__(*args,**kwargs)
+        script_path = os.path.dirname(os.path.realpath(__file__))
+        media_path = os.path.join(script_path, "..", "Media")
+        listaddpath = os.path.join(media_path, "list-add.png")
         self.add_button = QtWidgets.QPushButton("", parent=self)
-        self.add_button.setIcon(QtGui.QIcon.fromTheme("list-add"))
+        self.add_button.setIcon(QtGui.QIcon(listaddpath))
         #self.add_button.setFlat(True)
+        listremovepath = os.path.join(media_path, "list-remove.png")
         self.remove_button = QtWidgets.QPushButton("", parent=self)
-        self.remove_button.setIcon(QtGui.QIcon.fromTheme("list-remove"))
+        self.remove_button.setIcon(QtGui.QIcon(listremovepath))
         #self.remove_button.setFlat(True)
         self.add_button.setFixedSize(24,24)
         self.remove_button.setFixedSize(24, 24)
