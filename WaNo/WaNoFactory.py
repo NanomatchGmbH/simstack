@@ -58,7 +58,7 @@ class WaNoFactory(object):
             MultipleOfModel, WaNoItemFileModel, WaNoItemIntModel, WaNoItemScriptFileModel
         from WaNo.view.WaNoViews import WaNoItemFloatView, WaNoBoxView, WaNoItemStringView, \
             WaNoItemBoolView, WaNoItemFileView, WaNoChoiceView, MultipleOfView, WaNoItemIntView,\
-            WaNoTabView, WaNoGroupView, WaNoScriptView
+            WaNoTabView, WaNoGroupView, WaNoScriptView, WaNoDropDownView
 
         wano_list = {
             "WaNoFloat": (WaNoItemFloatModel, WaNoItemFloatView),
@@ -71,6 +71,7 @@ class WaNoFactory(object):
             "WaNoBool": (WaNoItemBoolModel, WaNoItemBoolView),
             "WaNoFile": (WaNoItemFileModel, WaNoItemFileView),
             "WaNoChoice": (WaNoChoiceModel, WaNoChoiceView),
+            "WaNoDropDown": (WaNoChoiceModel, WaNoDropDownView),
             "WaNoMultipleOf": (MultipleOfModel,MultipleOfView),
             "WaNoScript": (WaNoItemScriptFileModel, WaNoScriptView),
             "WaNoTabs": (WaNoModelDictLike,WaNoTabView)

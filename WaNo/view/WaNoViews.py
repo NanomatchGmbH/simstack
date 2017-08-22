@@ -484,6 +484,39 @@ class WaNoItemFileView(AbstractWanoQTView):
         self.model.set_data(self.lineedit.text())
 
 
+
+
+class WaNoDropDownView(AbstractWanoQTView):
+    def __init__(self, *args, **kwargs):
+        super(WaNoDropDownView,self).__init__(*args,**kwargs)
+        """ Widget code here """
+        self.actual_widget = QtWidgets.QWidget(self.qt_parent)
+
+        self.combobox = QtWidgets.QComboBox(self.actual_widget)
+        self.combobox.currentIndexChanged[int].connect(self.onButtonClicked)
+
+        hbox = QtWidgets.QHBoxLayout()
+        self.actual_widget.setLayout(hbox)
+        self.label = QtWidgets.QLabel("Combo")
+        hbox.addWidget(self.label)
+        hbox.addStretch()
+        hbox.addWidget(self.combobox)
+        """" Widget code end """
+
+    def init_from_model(self):
+        self.label.setText(self.model.name)
+        for myid,entry in enumerate(self.model.choices):
+            self.combobox.addItem(entry)
+
+        self.combobox.setCurrentIndex(self.model.chosen)
+
+    def onButtonClicked(self, id):
+        self.model.set_chosen(id)
+
+    def get_widget(self):
+        return self.actual_widget
+
+
 class WaNoChoiceView(AbstractWanoQTView):
     def __init__(self, *args, **kwargs):
         super(WaNoChoiceView,self).__init__(*args,**kwargs)
