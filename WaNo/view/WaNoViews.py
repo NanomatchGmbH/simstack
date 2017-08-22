@@ -488,8 +488,90 @@ class WaNoItemFileView(AbstractWanoQTView):
     def line_edited(self):
         self.model.set_data(self.lineedit.text())
 
+class OnlyFloatDelegate(QtWidgets.QItemDelegate):
+    def createEditor(self, parent, option, index):
+        return QtWidgets.QDoubleSpinBox(parent)
+
+class WaNoMatrixFloatView(AbstractWanoQTView):
+    def __init__(self, *args, **kwargs):
+        super(WaNoMatrixFloatView,self).__init__(*args,**kwargs)
+        self.has_col_header = False
+        self.has_row_header = False
+        """ Widget code here """
+        self.actual_widget = QtWidgets.QWidget(self.qt_parent)
+
+        self.tablewidget = QtWidgets.QTableWidget(1,3,self.actual_widget)
+        delegate=OnlyFloatDelegate()
+        self.tablewidget.setItemDelegate(delegate)
+        self.tablewidget.verticalHeader().setVisible(False)
+        self.tablewidget.horizontalHeader().setVisible(False)
+        self.tablewidget.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOff)
+        self.tablewidget.setSizePolicy(QtWidgets.QSizePolicy.Minimum,QtWidgets.QSizePolicy.Minimum)
+        #self.tablewidget.horizontalHeader().setMinimumSectionSize(1)
+        #self.tablewidget.verticalHeader().setMinimumSectionSize(1)
+        #self.tablewidget.horizontalHeader().setDefaultSectionSize(1)
+        self.tablewidget.verticalHeader().setDefaultSectionSize(24)
+        self.tablewidget.horizontalHeader().setFixedHeight(20)
+        #self.tablewidget.verticalHeader().setSectionResiz
+        self.tablewidget.verticalHeader().setSectionResizeMode(QtWidgets.QHeaderView.Fixed)
+        self.tablewidget.horizontalHeader().setSectionResizeMode(QtWidgets.QHeaderView.Stretch)
+        #self.tablewidget.resizeColumnsToContents()
+        #self.tablewidget.resizeRowsToContents()
 
 
+
+        hbox = QtWidgets.QHBoxLayout()
+        self.actual_widget.setLayout(hbox)
+        self.label = QtWidgets.QLabel("Table")
+        hbox.addWidget(self.label)
+        hbox.addStretch()
+        hbox.addWidget(self.tablewidget)
+        self.tablewidget.cellChanged.connect(self.cellChanged)
+        """" Widget code end """
+
+    def cellChanged(self,i,j):
+        self.model.storage[i,j] = float(self.tablewidget.item(i,j).text())
+
+    def reset_table(self):
+        self.tablewidget.clear()
+        self.tablewidget.setRowCount(self.model.rows)
+        self.tablewidget.setColumnCount(self.model.cols)
+
+        if not self.model.col_header is None:
+            self.has_col_header = True
+            self.tablewidget.setHorizontalHeaderLabels(self.model.col_header)
+            self.tablewidget.horizontalHeader().setVisible(True)
+
+        if not self.model.row_header is None:
+            self.has_row_header = True
+            self.tablewidget.setVerticalHeaderLabels(self.model.row_header)
+            self.tablewidget.verticalHeader().setVisible(True)
+
+        for i in range(0, self.tablewidget.rowCount()):
+            for j in range(0, self.tablewidget.columnCount()):
+                item = QtWidgets.QTableWidgetItem()
+                self.tablewidget.setItem(i, j, item)
+                self.tablewidget.item(i, j).setTextAlignment(QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter)
+        extra_size = 2
+        if self.has_row_header:
+            extra_size = 2 + 20
+        self.tablewidget.setFixedHeight(24*self.tablewidget.rowCount() + extra_size)
+
+    def init_from_model(self):
+        self.label.setText(self.model.name)
+        self.tablewidget.blockSignals(True)
+        self.reset_table()
+
+        storage = self.model.storage
+        for i in range(storage.shape[0]):
+            for j in range(storage.shape[1]):
+                self.tablewidget.item(i,j).setText(str(storage[i,j]))
+
+        self.tablewidget.blockSignals(False)
+        return
+
+    def get_widget(self):
+        return self.actual_widget
 
 class WaNoDropDownView(AbstractWanoQTView):
     def __init__(self, *args, **kwargs):

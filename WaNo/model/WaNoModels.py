@@ -26,12 +26,15 @@ import yaml
 import os
 import sys
 import shutil
+import ast
 
 from jinja2 import Template, FileSystemLoader, Environment
 
 from WaNo.view.PropertyListView import ResourceTableModel,ImportTableModel,ExportTableModel
 
 from pyura.pyura.WorkflowXMLConverter import JSDLtoXML
+
+import numpy as np
 
 
 
@@ -120,6 +123,45 @@ class WaNoChoiceModel(AbstractWanoModel):
 
             if self.chosen == myid:
                 child.attrib["chosen"] = "True"
+
+class WaNoMatrixModel(AbstractWanoModel):
+    def __init__(self, *args, **kwargs):
+        super(WaNoMatrixModel, self).__init__(*args, **kwargs)
+        self.xml = kwargs["xml"]
+        self.rows = int(self.xml.attrib["rows"])
+        self.cols = int(self.xml.attrib["cols"])
+        self.col_header = None
+        if "col_header" in self.xml.attrib:
+            self.col_header = self.xml.attrib["col_header"].split(";")
+        self.row_header = None
+        if "row_header" in self.xml.attrib:
+            self.row_header = self.xml.attrib["row_header"].split(";")
+
+        try:
+            self.storage = self._fromstring(self.xml.text)
+
+        except Exception as e:
+            print(e)
+            self.storage = np.zeros((self.rows, self.cols))
+        print(self.storage)
+
+    def _tostring(self, ar):
+        return np.array2string(ar, separator=',')
+
+    def _fromstring(self,stri):
+        list_of_lists = ast.literal_eval(stri)
+        return np.array(list_of_lists,dtype=np.float64)
+
+    def __getitem__(self):
+        return self._tostring(self.storage)
+
+    def get_type_str(self):
+        return None
+
+    def update_xml(self):
+        self.xml.text = self._tostring(self.storage)
+        print(self.xml.text)
+
 
 class WaNoModelListLike(AbstractWanoModel):
     def __init__(self, *args, **kwargs):
