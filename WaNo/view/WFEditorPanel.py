@@ -1150,7 +1150,6 @@ class WorkflowView(QtWidgets.QFrame):
         self.dont_place = False
 
     def enable_background(self,on):
-        on = True
         style_sheet_without_background = "QFrame { background-color: " + widgetColors['MainEditor'] + """ ;
             %s
             background-repeat: no-repeat;
