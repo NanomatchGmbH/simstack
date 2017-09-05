@@ -141,7 +141,6 @@ class WaNoMatrixModel(AbstractWanoModel):
             self.storage = self._fromstring(self.xml.text)
 
         except Exception as e:
-            print(e)
             self.storage = np.zeros((self.rows, self.cols))
         print(self.storage)
 
@@ -152,7 +151,7 @@ class WaNoMatrixModel(AbstractWanoModel):
         list_of_lists = ast.literal_eval(stri)
         return np.array(list_of_lists,dtype=np.float64)
 
-    def __getitem__(self):
+    def __getitem__(self,item):
         return self._tostring(self.storage)
 
     def get_type_str(self):
@@ -160,7 +159,6 @@ class WaNoMatrixModel(AbstractWanoModel):
 
     def update_xml(self):
         self.xml.text = self._tostring(self.storage)
-        print(self.xml.text)
 
 
 class WaNoModelListLike(AbstractWanoModel):
