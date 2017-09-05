@@ -407,8 +407,8 @@ class WaNoModelRoot(WaNoModelDictLike):
                     mypath = "%s.%s" % (mypath, key)
                 self.wano_walker_paths(parent=wano,path=mypath,output=output)
         else:
-            #print("%s %s" % (path, parent.get_data()))
-            output.append((path,parent.get_type_str()))
+            if parent.visible():
+                output.append((path,parent.get_type_str()))
         return output
 
     def wano_walker(self, parent = None, path = ""):
@@ -418,6 +418,8 @@ class WaNoModelRoot(WaNoModelDictLike):
         if hasattr(parent,'items') and hasattr(parent,'listlike'):
             my_list = []
             for key, wano in parent.items():
+                if hasattr(wano,'visible') and not wano.visible():
+                    continue
                 mypath = copy.copy(path)
                 if mypath == "":
                     mypath = "%s" % (key)
@@ -428,6 +430,8 @@ class WaNoModelRoot(WaNoModelDictLike):
         elif hasattr(parent,'items'):
             my_dict = {}
             for key,wano in parent.items():
+                if hasattr(wano, 'visible') and not wano.visible():
+                    continue
                 mypath = copy.copy(path)
                 if hasattr(wano,"name"):
                     #Actual dict
@@ -450,6 +454,8 @@ class WaNoModelRoot(WaNoModelDictLike):
         if hasattr(parent,'items') and hasattr(parent,'listlike'):
             my_list = []
             for key, wano in parent.items():
+                if hasattr(wano, 'visible') and not wano.visible():
+                    continue
                 mypath = copy.copy(path)
                 if mypath == "":
                     mypath = "%s" % (key)
@@ -460,6 +466,8 @@ class WaNoModelRoot(WaNoModelDictLike):
         elif hasattr(parent,'items'):
             my_dict = {}
             for key,wano in parent.items():
+                if hasattr(wano, 'visible') and not wano.visible():
+                    continue
                 mypath = copy.copy(path)
                 if hasattr(wano,"name"):
                     #Actual dict

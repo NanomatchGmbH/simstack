@@ -32,6 +32,7 @@ class AbstractWanoModel(QtCore.QObject):
         self.parent = kwargs['parent_model']
         self.visibility_condition = None
         self.visibility_var_path = None
+        self.isvisible = True
         self.name = kwargs['xml'].attrib["name"]
         if kwargs["full_path"] == "":
             from WaNo.model.WaNoModels import WaNoModelRoot
@@ -44,7 +45,8 @@ class AbstractWanoModel(QtCore.QObject):
         self.parse_visibility_condition(kwargs['xml'])
         super(AbstractWanoModel, self).__init__()
 
-
+    def visible(self):
+        return self.isvisible
 
     def set_name(self,new_name):
         self.name = new_name
@@ -70,6 +72,7 @@ class AbstractWanoModel(QtCore.QObject):
         #print(self.visibility_condition % value)
         truefalse = Expression(self.visibility_condition%value).evaluate()
         self.view.set_visible(truefalse)
+        self.isvisible = truefalse
 
     def get_name(self):
         return self.name
