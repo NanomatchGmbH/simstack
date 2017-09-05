@@ -600,7 +600,8 @@ class UnicoreConnector(CallableQThread):
 
         worker = None
         registry = None
-        if base_uri in self.workers:
+        #if base_uri in self.workers:
+        if False:
             #TODO worker might has died. We should check this and recreate it.
             worker = self.workers[base_uri]['worker']
             #TODO add get_registry method to UnicoreAPI, since we might want to
