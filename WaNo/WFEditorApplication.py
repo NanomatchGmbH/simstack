@@ -60,7 +60,7 @@ class WFEditorApplication(CallableQThread):
             msg = "Unknown Error."
         self._view_manager.show_error("%s%s" % (msg_title, msg))
 
-    def _on_unicore_error(self, base_uri, operation, error):
+    def _on_unicore_error(self, base_uri, operation, error, error_msg=None):
         func = None
 
         if operation == uops.CONNECT_REGISTRY:
@@ -73,7 +73,11 @@ class WFEditorApplication(CallableQThread):
         if not func is None:
             func(base_uri, error)
         else:
-            self._view_manager.show_error("General Unicore Error.")
+            if error_msg is None or error_msg == "":
+                error_msg = "Unicore Error for '%s' in operation '%s': %s." % \
+                        (base_uri, uops(operation), uerror(error))
+
+            self._view_manager.show_error("General Unicore Error.", error_msg)
 
         self._logger.error("Unicore Error for '%s' in operation '%s': %s." % \
                 (base_uri, uops(operation), uerror(error)))

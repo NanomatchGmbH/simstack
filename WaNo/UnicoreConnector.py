@@ -65,6 +65,14 @@ OPERATIONS = Enum("OPERATIONS",
 """
 Error codes:
 
+This extends the list of Error Codes provided by pyura with some specific
+UnicoreConnector error codes.
+
+.. note: The order is not guaranteed to be equal in both enum lists.
+    You should not try to compare elements from one list to the other.
+    Only the elements copied from the UnicoreErrorCodes list can be found with
+    the same value which allows easy convertion in this direction.
+
 * NO_ERROR
     No error occurred.
 * AUTH_SETUP
@@ -77,13 +85,12 @@ Error codes:
     The deletion of a file has failed.
 """
 ERROR = Enum("ERROR",
-    """
-    NO_ERROR
-    AUTH_SETUP_FAILED
-    REGISTRY_NOT_CONNECTED
-    JOB_DELETE_FAILED
-    FILE_DELETE_FAILED
-    """,
+    [e.name for e in UnicoreErrorCodes] + [
+            "AUTH_SETUP_FAILED",
+            "REGISTRY_NOT_CONNECTED",
+            "JOB_DELETE_FAILED",
+            "FILE_DELETE_FAILED",
+        ],
     module=__name__
 )
 
@@ -101,7 +108,10 @@ class UnicoreWorker(TPCThread):
 
         if isinstance(callback, tuple):
             cb_function = callback[0]
-            args += callback[1]
+            if isinstance(callback[1], tuple):
+                args = callback[1] + args
+            else:
+                args = (callback[1],) + args
             kwargs = callback[2]
 
         cb_function(*args, **kwargs)
@@ -130,7 +140,7 @@ class UnicoreWorker(TPCThread):
 
 
     @TPCThread._from_other_thread
-    def run_single_job(self, wano_dir, name):
+    def run_single_job(self, wano_dir, name, error_callback):
         job_manager = self.registry.get_job_manager()
         imports = JobManager.Imports()
         storage_manager = self.registry.get_storage_manager()
@@ -148,26 +158,32 @@ class UnicoreWorker(TPCThread):
         com = splitcont[0]
         arguments = splitcont[1:]
 
-        err, newjob = job_manager.create(com,
+        status, err, error_message, newjob = job_manager.create(com,
                                          arguments=arguments,
                                          imports = imports,
                                          environment=[],
                                          name=name
                                          )
-        #TODO error handling
+        if (err != UnicoreErrorCodes.NO_ERROR or not status in range(200, 300)):
+            self._exec_callback(error_callback, err, error_message)
+            return
 
         job_manager.upload_imports(newjob,storage_manager)
         wd = newjob.get_working_dir()
         job_manager.start(newjob)
 
     @TPCThread._from_other_thread
-    def run_workflow_job(self, submitname, dir_to_upload, xml):
-        #TODO error handling
+    def run_workflow_job(self, submitname, dir_to_upload, xml, error_callback):
+        # NOTE: error_callback already contains args (base_uri and operation)
         wf_manager = self.registry.get_workflow_manager()
         storage_manager = self.registry.get_storage_manager()
 
-        storage = storage_manager.create(name=submitname)
-        storage_id = storage[3].get_id()
+        status, err, error_message, storage = storage_manager.create(name=submitname)
+        if (err != UnicoreErrorCodes.NO_ERROR or not status in range(200, 300)):
+            self._exec_callback(error_callback, err, error_message)
+            return
+
+        storage_id = storage[1].get_id()
 
         for filename in filewalker(dir_to_upload):
             cp = os.path.commonprefix([dir_to_upload, filename])
@@ -178,6 +194,9 @@ class UnicoreWorker(TPCThread):
 
         storage_uri = storage_manager.get_base_uri()
         status, err, error_message, wf = wf_manager.create(storage_id, submitname)
+        if (err != UnicoreErrorCodes.NO_ERROR or not status in range(200, 300)):
+            self._exec_callback(error_callback, err, error_message)
+            return
 
         print("err: %s\nstatus: %s\nwf: %s" % (str(err), str(status), str(wf)))
 
@@ -451,11 +470,11 @@ class UnicoreUpload(UnicoreDataTransfer):
 
 
 class UnicoreConnector(CallableQThread):
-    error = Signal(str, int, int, name="UnicoreError")
+    error = Signal(str, int, int, str, name="UnicoreError")
 
     AUTH_TYPES = _AUTH_TYPES
-    def _emit_error(self, base_uri, operation, error):
-        self.error.emit(base_uri, operation.value, error.value)
+    def _emit_error(self, base_uri, operation, error, message=None):
+        self.error.emit(base_uri, operation.value, error.value, message)
 
     def get_authprovider(self, auth_type, username, password):
         auth_provider = None
@@ -626,12 +645,19 @@ class UnicoreConnector(CallableQThread):
     def run_single_job(self, base_uri, wano_dir, name):
         worker = self._get_error_or_fail(base_uri)
         if not worker is None:
-            worker.run_single_job(wano_dir, name)
+            worker.run_single_job(
+                    wano_dir,
+                    name,
+                    (self._emit_error, (base_uri, OPERATIONS.RUN_SINGLE_JOB), {}))
 
     def run_workflow_job(self, base_uri, submitname, dir_to_upload, xml):
         worker = self._get_error_or_fail(base_uri)
         if not worker is None:
-            worker.run_workflow_job(submitname, dir_to_upload, xml)
+            worker.run_workflow_job(
+                    submitname,
+                    dir_to_upload,
+                    xml,
+                    (self._emit_error, (base_uri, OPERATIONS.RUN_WORKFLOW_JOB), {}))
 
     def update_job_list(self, base_uri, callback=(None, (), {})):
         worker = self._get_error_or_fail(base_uri)
