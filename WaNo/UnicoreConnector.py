@@ -183,7 +183,11 @@ class UnicoreWorker(TPCThread):
             self._exec_callback(error_callback, err, error_message)
             return
 
-        storage_id = storage[1].get_id()
+        try:
+            storage_id = storage[1].get_id()
+        except:
+            storage_id = storage.get_id()
+        
 
         for filename in filewalker(dir_to_upload):
             cp = os.path.commonprefix([dir_to_upload, filename])
@@ -259,14 +263,18 @@ class UnicoreWorker(TPCThread):
 
         jobs = [job_manager.get_by_id(jobid) for jobid in wf.get_jobs()]
         print("jobs for wf: %s." % jobs)
-
-        files = [{
+        files = []
+        for job in jobs:
+            if job != None:
+                files.append({
                     'id': job.get_id(),
                     'name': job.get_name(),
                     'type': 'j',
                     'path': job.get_working_dir(),
                     'status': job.get_status()
-                } for job in jobs]
+                })
+        if len(files) == 0:
+            print("No files found in workflow")
 
         #print("jobs:\n\n\n\n%s\n\n\n" % job_manager.get_list())
         print("Got files for wf: %s" % files)
