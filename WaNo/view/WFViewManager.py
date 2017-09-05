@@ -30,9 +30,9 @@ class WFViewManager(QObject):
     request_saved_workflows_update = Signal(str, name="requestSavedWorkflowsUpdate")
     download_file_to            = Signal(str, str, name="downloadFileTo")
     upload_file                 = Signal(str, str, name="uploadFile")
-    delete_file                 = Signal(str, name="deleetFile")
-    delete_job                  = Signal(str, name="deleetJob")
-    abort_job                   = Signal(str, name="deleetJob")
+    delete_file                 = Signal(str, name="deleteFile")
+    delete_job                  = Signal(str, name="deleteJob")
+    abort_job                   = Signal(str, name="abortJob")
     delete_workflow             = Signal(str, name="deleteWorkflow")
     abort_workflow              = Signal(str, name="abortWorkflow")
     # for internal use only
