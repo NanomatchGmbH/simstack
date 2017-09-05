@@ -62,13 +62,21 @@ class WFEditorApplication(CallableQThread):
 
     def _on_unicore_error(self, base_uri, operation, error, error_msg=None):
         func = None
+        # Not connected error is always the same and trumps everything:
+        if (error == uerror.REGISTRY_NOT_CONNECTED.value):
+            msg = "Registry not connected, please connect to a UNICORE server first."
+            self._view_manager.show_error("%s" % msg)
+            #No logging required in this case
+            return
 
-        if operation == uops.CONNECT_REGISTRY:
+        elif operation == uops.CONNECT_REGISTRY.value:
             func = self._on_unicore_connect_error
-        elif operation == uops.DISCONNECT_REGISTRY:
+        elif operation == uops.DISCONNECT_REGISTRY.value:
             func = self._on_unicore_connect_error
-        elif operation == uops.RUN_SINGLE_JOB:
+        elif operation == uops.RUN_SINGLE_JOB.value:
             func = self._on_unicore_run_single_job_error
+        elif operation in [uops.UPDATE_WF_LIST.value,uops.UPDATE_WF_JOB_LIST.value,uops.UPDATE_DIR_LIST.value,uops.RUN_WORKFLOW_JOB.value]:
+             func = self._on_unicore_run_single_job_error
 
         if not func is None:
             func(base_uri, error)
