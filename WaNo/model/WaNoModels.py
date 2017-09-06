@@ -407,8 +407,8 @@ class WaNoModelRoot(WaNoModelDictLike):
                     mypath = "%s.%s" % (mypath, key)
                 self.wano_walker_paths(parent=wano,path=mypath,output=output)
         else:
-            if parent.visible():
-                output.append((path,parent.get_type_str()))
+
+            output.append((path,parent.get_type_str()))
         return output
 
     def wano_walker(self, parent = None, path = ""):
@@ -418,8 +418,6 @@ class WaNoModelRoot(WaNoModelDictLike):
         if hasattr(parent,'items') and hasattr(parent,'listlike'):
             my_list = []
             for key, wano in parent.items():
-                if hasattr(wano,'visible') and not wano.visible():
-                    continue
                 mypath = copy.copy(path)
                 if mypath == "":
                     mypath = "%s" % (key)
@@ -430,8 +428,6 @@ class WaNoModelRoot(WaNoModelDictLike):
         elif hasattr(parent,'items'):
             my_dict = {}
             for key,wano in parent.items():
-                if hasattr(wano, 'visible') and not wano.visible():
-                    continue
                 mypath = copy.copy(path)
                 if hasattr(wano,"name"):
                     #Actual dict
@@ -454,8 +450,6 @@ class WaNoModelRoot(WaNoModelDictLike):
         if hasattr(parent,'items') and hasattr(parent,'listlike'):
             my_list = []
             for key, wano in parent.items():
-                if hasattr(wano, 'visible') and not wano.visible():
-                    continue
                 mypath = copy.copy(path)
                 if mypath == "":
                     mypath = "%s" % (key)
@@ -466,8 +460,6 @@ class WaNoModelRoot(WaNoModelDictLike):
         elif hasattr(parent,'items'):
             my_dict = {}
             for key,wano in parent.items():
-                if hasattr(wano, 'visible') and not wano.visible():
-                    continue
                 mypath = copy.copy(path)
                 if hasattr(wano,"name"):
                     #Actual dict
@@ -744,7 +736,10 @@ class WaNoItemFileModel(AbstractWanoModel):
         return self.is_local_file
 
     def get_type_str(self):
-        return "File"
+        if self.visible():
+            return "File"
+        else:
+            return "String"
 
     def update_xml(self):
         self.xml.text = self.mystring
@@ -757,6 +752,11 @@ class WaNoItemFileModel(AbstractWanoModel):
 
     def render(self, rendered_wano, path, submitdir):
         rendered_logical_name = Template(self.logical_name).render(wano=rendered_wano, path=path)
+        if not self.visible():
+            if sys.version_info >= (3, 0):
+                return rendered_logical_name
+            else:
+                return rendered_logical_name.encode("utf-8")
         #Upload and copy
         #print(submitdir)
         if self.is_local_file:
