@@ -482,6 +482,8 @@ class UnicoreConnector(CallableQThread):
 
     AUTH_TYPES = _AUTH_TYPES
     def _emit_error(self, base_uri, operation, error, message=None):
+        if message is None:
+            message = ""
         self.error.emit(base_uri, operation.value, error.value, message)
 
     def get_authprovider(self, auth_type, username, password):
