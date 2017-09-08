@@ -440,8 +440,10 @@ class WaNoItemFileView(AbstractWanoQTView):
 
     def showLocalDialog(self):
         fname, success = QtWidgets.QFileDialog.getOpenFileName(self.actual_widget, 'Open file', QtCore.QDir.homePath())
-        self.lineedit.setText(fname)
-        self.line_edited()
+        if success:
+            self.lineedit.setText(fname)
+            self.model.set_local(True)
+            self.line_edited()
 
     """
     def showWFDialog(self):
@@ -454,10 +456,10 @@ class WaNoItemFileView(AbstractWanoQTView):
         print(type(wf))
         importable_files = wf.assemble_files("")
         self.openwfbutton.set_items(importable_files)
-        self.model.set_local(False)
 
     def on_wf_file_change(self):
         self.lineedit.setText(" ".join(self.openwfbutton.get_selection()))
+        self.model.set_local(False)
         self.line_edited()
 
     """
