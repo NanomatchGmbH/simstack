@@ -39,6 +39,8 @@ def signal_handler(*args):
 
 
 def get_settings_folder():
+    if os.path.isdir(os.path.join("config",_SETTINGS_DIR)):
+        return "config"
     if Qt.IsPySide:
         from PySide.QtGui import QDesktopServices
         return QDesktopServices.storageLocation(QDesktopServices.DataLocation)
@@ -64,13 +66,12 @@ if __name__ == '__main__':
     logger = logging.getLogger('WFELOG')
 
     SETTINGS_FOLDER = get_settings_folder()
-    SETTINGS_FOLDER = path.dirname(SETTINGS_FOLDER)
     SETTINGS_FOLDER = path.join(SETTINGS_FOLDER,_SETTINGS_DIR)
 
     if not path.isdir(SETTINGS_FOLDER):
         os.makedirs(SETTINGS_FOLDER)
+
     SETTINGS_FILE = path.join(SETTINGS_FOLDER,_SETTINGS_FILE)
-    print(SETTINGS_FILE)
     settings = WaNoSettingsProvider.get_instance(SETTINGS_FILE)
     if path.exists(SETTINGS_FILE):
         with open(SETTINGS_FILE, 'r') as infile:
