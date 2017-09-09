@@ -486,11 +486,12 @@ class UnicoreConnector(CallableQThread):
             message = ""
         self.error.emit(base_uri, operation.value, error.value, message)
 
-    def get_authprovider(self, auth_type, username, password):
+    def get_authprovider(self, auth_type, username, password, ca_package = None):
+
         auth_provider = None
 
         if auth_type == UnicoreConnector.AUTH_TYPES.HTTP:
-            auth_provider = HTTPBasicAuthProvider(username, password)
+            auth_provider = HTTPBasicAuthProvider(username, password, ca_package = ca_package)
 
         return auth_provider
 
@@ -500,11 +501,12 @@ class UnicoreConnector(CallableQThread):
 
     @staticmethod
     def create_connect_args(username, password, base_uri,
-            auth_type=_AUTH_TYPES.HTTP, wf_uri=None):
+            auth_type=_AUTH_TYPES.HTTP, ca_package = None, wf_uri=None):
         return {'args': (username, password, base_uri),
                 'kwargs': {
                         'con_settings': {
                                 'auth_type': auth_type,
+                                'ca_package': ca_package,
                                 'wf_uri': wf_uri
                             }
                     }
@@ -591,7 +593,7 @@ class UnicoreConnector(CallableQThread):
         ##### END TODO
 
         auth_provider = self.get_authprovider(
-                con_settings['auth_type'], username, password)
+                con_settings['auth_type'], username, password, ca_package=con_settings['ca_package'])
         if auth_provider is None:
             self.logger.error("Could not get auth provider.")
             self._emit_error(

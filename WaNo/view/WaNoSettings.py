@@ -100,6 +100,9 @@ class WaNoRegistrySettings(QWidget):
     def get_default(self):
         return self.__cb_default.isChecked()
 
+    def get_ca_package(self):
+        return self.__ca_package.text()
+
     def get_workflows(self):
         return self.__workflows.text()
 
@@ -110,15 +113,21 @@ class WaNoRegistrySettings(QWidget):
         if (self.__cb_show_password.isChecked()):
             self.__password.setEchoMode(QLineEdit.Normal)
         else:
-            self.__password.setEchoMode(QLineEdit.PasswordEchoOnEdit)
+            self.__password.setEchoMode(QLineEdit.Password)
 
     def __on_default_set(self):
         self.default_set.emit(self.__cb_default.isChecked())
+
+    def __on_show_cert_filepicker(self):
+        fname, success = QFileDialog.getOpenFileName(self, 'Select cacert.pem', QDir.homePath())
+        if success:
+            self.__ca_package.setText(fname)
 
     def __connect_signals(self):
         self.__registryName.editingFinished.connect(self.__on_title_edited)
         self.__cb_show_password.stateChanged.connect(self.__on_password_show)
         self.__cb_default.stateChanged.connect(self.__on_default_set)
+        self.__cert_openfilebutton.pressed.connect(self.__on_show_cert_filepicker)
 
     def __init_ui(self):
         grid = QGridLayout(self)
@@ -127,21 +136,24 @@ class WaNoRegistrySettings(QWidget):
         self.__label_baseUri        = QLabel(self)
         self.__label_username       = QLabel(self)
         self.__label_password       = QLabel(self)
+        self.__label_ca_package     = QLabel(self)
         self.__label_workflows      = QLabel(self)
 
         self.__label_registryName.setText("<b>Registry Name</b>")
         self.__label_baseUri.setText("<b>Base URI</b>")
         self.__label_username.setText("<b>Username</b>")
         self.__label_password.setText("<b>Password</b>")
+        self.__label_ca_package.setText("<b>Certificate Path</b>")
         self.__label_workflows.setText("<b>Workflow Link</b>")
 
         self.__registryName = QLineEdit(self)
         self.__baseUri      = QLineEdit(self)
         self.__username     = QLineEdit(self)
         self.__password     = QLineEdit(self)
+        self.__ca_package   = QLineEdit(self)
         self.__workflows    = QLineEdit(self)
 
-        self.__password.setEchoMode(QLineEdit.PasswordEchoOnEdit)
+        self.__password.setEchoMode(QLineEdit.Password)
 
         self.__cb_show_password = QCheckBox(self)
         self.__cb_show_password.setText("show")
@@ -151,29 +163,37 @@ class WaNoRegistrySettings(QWidget):
         self.__cb_default.setText("is default")
         self.__cb_default.setChecked(False)
 
+        self.__cert_openfilebutton = QPushButton("",parent=self)
+
+        self.__cert_openfilebutton.setIcon(QFileIconProvider().icon(QFileIconProvider.File))
+
         grid.addWidget(self.__label_registryName, 0, 0)
         grid.addWidget(self.__label_baseUri     , 1, 0)
         grid.addWidget(self.__label_username    , 2, 0)
         grid.addWidget(self.__label_password    , 3, 0)
-        grid.addWidget(self.__label_workflows   , 4, 0)
+        grid.addWidget(self.__label_ca_package  , 4, 0)
+        grid.addWidget(self.__label_workflows   , 5, 0)
 
         grid.addWidget(self.__registryName,         0, 1 )
         grid.addWidget(self.__baseUri,              1, 1 )
         grid.addWidget(self.__username,             2, 1 )
         grid.addWidget(self.__password,             3, 1 )
         grid.addWidget(self.__cb_show_password,     3, 2 )
-        grid.addWidget(self.__workflows,            4, 1 )
+        grid.addWidget(self.__ca_package,           4, 1 )
+        grid.addWidget(self.__cert_openfilebutton,  4, 2 )
+        grid.addWidget(self.__workflows,            5, 1 )
 
         self.setLayout(grid)
 
     def set_default(self, is_default):
         self.__cb_default.setChecked(is_default)
 
-    def set_fields(self, name, uri, user, password, workflows, is_default):
+    def set_fields(self, name, uri, user, password, ca_package, workflows, is_default):
         self.__registryName.setText(name)
         self.__baseUri.setText(uri)
         self.__username.setText(user)
         self.__password.setText(password)
+        self.__ca_package.setText(ca_package)
         self.__workflows.setText(workflows)
         self.set_default(is_default)
 
@@ -235,6 +255,7 @@ class WaNoUnicoreSettings(QDialog):
                         tabWidget.get_uri(),
                         tabWidget.get_user(),
                         tabWidget.get_password(),
+                        tabWidget.get_ca_package(),
                         tabWidget.get_workflows(),
                         tabWidget.get_default()
                     )
@@ -242,13 +263,14 @@ class WaNoUnicoreSettings(QDialog):
 
         return registries
 
-    def __build_registry_settings(self, name, uri, user, password, workflows,
+    def __build_registry_settings(self, name, uri, user, password, ca_package, workflows,
             default):
         return {
                 'name': name,
                 'baseURI': uri,
                 'username': user,
                 'password': password,
+                'ca_package': ca_package,
                 'workflows': workflows,
                 'default': default
             }
@@ -325,9 +347,11 @@ class WaNoUnicoreSettings(QDialog):
                         registry['baseURI'],
                         registry['username'],
                         registry['password'],
+                        registry['ca_package'] if 'ca_package' in registry else '',
                         registry['workflows'] if 'workflows' in registry else '',
                         registry['is_default']
-                    )
+                )
+
 
             if (len(config) > 0):
                 self.__tabs.setCurrentIndex(1) # not 0, because of tab buttons

@@ -120,6 +120,10 @@ class WFEditorApplication(CallableQThread):
                     registry['workflows']
                 )
             self.__settings.set_value(
+                    "%s.%s" % (settings_path, SETTING_KEYS['registry.ca_package']),
+                    registry['ca_package']
+                )
+            self.__settings.set_value(
                     "%s.%s" % (settings_path, SETTING_KEYS['registry.is_default']),
                     registry['default']
                 )
@@ -493,9 +497,12 @@ class WFEditorApplication(CallableQThread):
             )
 
         if self._unicore is None:
+            if SETTING_KEYS['registry.ca_package'] not in registry:
+                registry[SETTING_KEYS['registry.ca_package']] = ""
             auth_provider = HTTPBasicAuthProvider(
                     registry[SETTING_KEYS['registry.username']],
-                    registry[SETTING_KEYS['registry.password']]
+                    registry[SETTING_KEYS['registry.password']],
+                    ca_package = registry[SETTING_KEYS['registry.ca_package']]
                 )
             self._unicore = UnicoreAPI.add_registry(
                     registry[SETTING_KEYS['registry.baseURI']],
@@ -508,6 +515,7 @@ class WFEditorApplication(CallableQThread):
                         registry[SETTING_KEYS['registry.username']],
                         registry[SETTING_KEYS['registry.password']],
                         registry[SETTING_KEYS['registry.baseURI']],
+                        ca_package = registry[SETTING_KEYS['registry.ca_package']],
                         wf_uri = registry[SETTING_KEYS['registry.workflows']]
                     ),
                 (self._cb_connect, (), {'registry': registry})
