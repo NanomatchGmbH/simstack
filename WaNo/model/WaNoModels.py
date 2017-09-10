@@ -142,7 +142,7 @@ class WaNoMatrixModel(AbstractWanoModel):
 
         except Exception as e:
             self.storage = np.zeros((self.rows, self.cols))
-        print(self.storage)
+        #print(self.storage)
 
     def _tostring(self, ar):
         return np.array2string(ar, separator=',')
@@ -156,6 +156,9 @@ class WaNoMatrixModel(AbstractWanoModel):
 
     def get_type_str(self):
         return None
+
+    def get_data(self):
+        return self._tostring(self.storage)
 
     def update_xml(self):
         self.xml.text = self._tostring(self.storage)
@@ -501,6 +504,7 @@ class WaNoModelRoot(WaNoModelDictLike):
     def prepare_files_submission(self,rendered_wano, basefolder):
         render_wano_filename = os.path.join(basefolder,"rendered_wano.yml")
         with open(render_wano_filename,'w') as outfile:
+
             outfile.write(yaml.safe_dump(rendered_wano,default_flow_style=False))
 
         submit_script_filename = os.path.join(basefolder,"submit_command.sh")
