@@ -126,3 +126,9 @@ class AbstractWanoModel(QtCore.QObject):
     def construct_children(self):
         pass
 
+    def disconnectSignals(self):
+        if self.visibility_condition != None:
+            self.root_model.dataChanged.disconnect(self.evaluate_visibility_condition)
+            self.visibility_condition = None
+
+

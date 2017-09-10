@@ -85,6 +85,11 @@ class WaNoModelDictLike(AbstractWanoModel):
         for wano in self.wano_dict.values():
             wano.update_xml()
 
+    def disconnectSignals(self):
+        super(WaNoModelDictLike,self).disconnectSignals()
+        for wano in self.wano_dict.values():
+            wano.disconnectSignals()
+
 
 class WaNoChoiceModel(AbstractWanoModel):
     def __init__(self, *args, **kwargs):
@@ -198,6 +203,11 @@ class WaNoModelListLike(AbstractWanoModel):
         for wano in self.wano_list:
             wano.update_xml()
 
+    def disconnectSignals(self):
+        super(WaNoModelListLike,self).disconnectSignals()
+        for wano in self.wano_list:
+            wano.disconnectSignals()
+
 
 class MultipleOfModel(AbstractWanoModel):
     def __init__(self, *args, **kwargs):
@@ -250,17 +260,21 @@ class MultipleOfModel(AbstractWanoModel):
 
     def delete_item(self):
         if len(self.list_of_dicts) > 1:
+            before = self.root_model.blockSignals(True)
+            for wano in self.list_of_dicts[-1].values():
+                wano.disconnectSignals()
             self.list_of_dicts.pop()
-            #print(etree.tostring(self.xml,pretty_print=True).decode("utf-8"))
             for child in reversed(self.xml):
                 self.xml.remove(child)
                 break
-            #print(etree.tostring(self.xml, pretty_print=True).decode("utf-8"))
+
+            self.root_model.blockSignals(before)
+            self.root_model.datachanged_force()
+
             return True
         return False
 
     def add_item(self):
-        print("Additem called")
         before = self.root_model.blockSignals(True)
         #print(etree.tostring(self.xml, pretty_print=True).decode("utf-8"))
         my_xml = copy.copy(self.first_xml_child)
@@ -278,6 +292,11 @@ class MultipleOfModel(AbstractWanoModel):
         for wano_dict in self.list_of_dicts:
             for wano in wano_dict.values():
                 wano.update_xml()
+
+    def disconnectSignals(self):
+        for wano_dict in self.list_of_dicts:
+            for wano in wano_dict.values():
+                wano.disconnectSignals()
 
 class WaNoModelRootSignal(QtCore.QObject):
     dataChanged = QtCore.Signal(int, name="dataChanged")
