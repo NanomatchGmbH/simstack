@@ -9,6 +9,10 @@ except:
 from enum import Enum
 import time
 import math
+try:
+    from math import gcd
+except ImportError:
+    from fractions import gcd
 import sys
 import logging
 
@@ -17,7 +21,7 @@ import ctypes
 import threading
 
 def least_common_multiple(a, b):
-    return a * b // math.gcd(a, b)
+    return a * b // gcd(a, b)
 
 def write_output(text):
     sys.stdout.write("\r%s" % text);
