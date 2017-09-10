@@ -261,6 +261,7 @@ class MultipleOfModel(AbstractWanoModel):
 
     def add_item(self):
         print("Additem called")
+        before = self.root_model.blockSignals(True)
         #print(etree.tostring(self.xml, pretty_print=True).decode("utf-8"))
         my_xml = copy.copy(self.first_xml_child)
         my_xml.attrib["id"] = str(len(self.list_of_dicts))
@@ -269,6 +270,7 @@ class MultipleOfModel(AbstractWanoModel):
         model_dict = self.parse_one_child(my_xml)
         WaNo.WaNoFactory.WaNoFactory.build_views()
         self.list_of_dicts.append(model_dict)
+        self.root_model.blockSignals(before)
         self.root_model.datachanged_force()
 
 
@@ -534,7 +536,6 @@ class WaNoModelRoot(WaNoModelDictLike):
 
         for (varname,type,var) in fvl:
             if type == "File":
-                print("HERE",varname,type,var)
                 if var[1].startswith("c9m:"):
                     filejsdl = JSDLtoXML.xml_datastaging_from_source(filename=var[0], overwrite=False,source_uri=var[1])
                 elif var[1].endswith("_VALUE}"):
@@ -617,9 +618,6 @@ class WaNoVectorModel(AbstractWanoModel):
             while (len(self.myvalues) <= my_id):
                 self.myvalues.append(0.0)
             self.myvalues[my_id] = value
-
-
-
 
 
 class WaNoItemFloatModel(AbstractWanoModel):
