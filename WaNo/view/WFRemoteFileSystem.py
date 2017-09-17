@@ -118,9 +118,9 @@ class WFRemoteFileSystem(QWidget):
                 self.__request_tree_entry_update(index, filePath, index_type)
 
         else:
-            print("index invalid: %s, status: %s" % (model_index,
-                model_index.isValid() if not model_index is None else None))
-            #TODO remove
+            pass
+            #print("index invalid: %s, status: %s" % (model_index,
+            #    model_index.isValid() if not model_index is None else None))
 
     def __request_header_entry_update(self, index, path, index_type):
         self.__current_requests.update( {path: index} )
