@@ -389,7 +389,7 @@ class WaNoModelRoot(WaNoModelDictLike):
         self.wano_dir_root = os.path.dirname(filename)
         success = False
         try:
-            with open(filename,'w') as outfile:
+            with open(filename,'w',newline='\n') as outfile:
                 outfile.write(etree.tostring(self.full_xml,pretty_print=True).decode("utf-8"))
             success = True
             resources_fn = os.path.join(self.wano_dir_root, "resources.yml")
@@ -524,57 +524,54 @@ class WaNoModelRoot(WaNoModelDictLike):
 
     def prepare_files_submission(self,rendered_wano, basefolder):
         render_wano_filename = os.path.join(basefolder,"rendered_wano.yml")
-        with open(render_wano_filename,'w') as outfile:
+        with open(render_wano_filename,'w',newline='\n') as outfile:
 
             outfile.write(yaml.safe_dump(rendered_wano,default_flow_style=False))
 
         submit_script_filename = os.path.join(basefolder,"submit_command.sh")
-        with open(submit_script_filename, 'w') as outfile:
+        with open(submit_script_filename, 'w',newline='\n') as outfile:
             outfile.write(self.rendered_exec_command)
 
-        template_loader = FileSystemLoader(searchpath="/")
-        template_env = Environment(loader = template_loader)
+
 
         for remote_file,local_file in self.input_files:
             comp_filename = os.path.join(self.wano_dir_root,local_file)
             comp_filename = os.path.abspath(comp_filename)
-            if not os.path.exists(comp_filename):
+            comp_dir = os.path.dirname(comp_filename)
+            comp_basename = os.path.basename(comp_filename)
+            template_loader = FileSystemLoader(searchpath=comp_dir)
+            template_env = Environment(loader = template_loader,newline_sequence='\n')
+            if not os.path.exists(os.path.join(comp_dir,comp_basename)):
                 print("File <%s> not found on disk, please check for spaces before or after the filename."%comp_filename)
                 raise OSError("File <%s> not found on disk, please check for spaces before or after the filename."%comp_filename)
-            template = template_env.get_template(comp_filename)
+            template = template_env.get_template(comp_basename)
             outfile = os.path.join(basefolder,remote_file)
-            with open(outfile,'w') as outfile:
+            with open(outfile,'w',newline='\n') as outfile:
                 outfile.write(template.render(wano = rendered_wano))
 
     def flat_variable_list_to_jsdl(self,fvl,basedir,stageout_basedir):
         files = []
-        print("CONVERTING FVL to JDSL")
         for myid,(logical_filename, source) in enumerate(self.input_files):
             fvl.append(("IFILE%d"%(myid),"File",(logical_filename,source)))
-            #print("Trying to add ",logical_filename,source)
-
 
         for (varname,type,var) in fvl:
             if type == "File":
+                log_path_on_cluster = var[1].replace('\\','/')
                 if var[1].startswith("c9m:"):
-                    filejsdl = JSDLtoXML.xml_datastaging_from_source(filename=var[0], overwrite=False,source_uri=var[1])
+                    filejsdl = JSDLtoXML.xml_datastaging_from_source(filename=var[0], overwrite=False,source_uri=log_path_on_cluster)
                 elif var[1].endswith("_VALUE}"):
                     filejsdl = JSDLtoXML.xml_datastaging_from_source(filename=var[0], overwrite=False,
-                                                                     source_uri=var[1])
+                                                                     source_uri=log_path_on_cluster)
                 else:
-                    #filejsdl = JSDLtoXML.xml_datastaging_from_source(filename=var[0], overwrite=False,source_uri="%s/%s"%(basedir, var[0]))
-
                     filejsdl = JSDLtoXML.xml_datastaging_from_source(filename=var[0], overwrite=False,
                                                                      source_uri="BFT:${STORAGE_ID}#%s/%s" % (
                                                          stageout_basedir, var[0]))
-
 
                 files.append(filejsdl)
             else:
                 #These should be NON posix arguments in the end
                 varname.replace(".","_")
                 #not yet done, TODO: TIMO!
-        #filejsdl = JSDLtoXML.xml_datastaging_from_source(filename="rendered_wano.yml", overwrite=False, source_uri="c9m:${WORKFLOW_ID}/%s/%s"%(stageout_basedir,"rendered_wano.yml"))
         filejsdl = JSDLtoXML.xml_datastaging_from_source(filename="rendered_wano.yml", overwrite=False,
                                                          source_uri="BFT:${STORAGE_ID}#%s/%s" % (
                                                          stageout_basedir, "rendered_wano.yml"))
@@ -611,7 +608,7 @@ class WaNoModelRoot(WaNoModelDictLike):
         # We do two render passes, in case the rendering reset some values:
         fvl = []
         rendered_wano = self.wano_walker_render_pass(rendered_wano,submitdir=submitdir,flat_variable_list=fvl)
-        self.rendered_exec_command = Template(self.exec_command).render(wano = rendered_wano)
+        self.rendered_exec_command = Template(self.exec_command,newline_sequence='\n').render(wano = rendered_wano)
         self.rendered_exec_command = self.rendered_exec_command.strip(' \t\n\r')
         jsdl = self.flat_variable_list_to_jsdl(fvl, submitdir,stageout_basedir)
         return rendered_wano,jsdl
@@ -773,7 +770,7 @@ class WaNoItemFileModel(AbstractWanoModel):
         return self.logical_name
 
     def render(self, rendered_wano, path, submitdir):
-        rendered_logical_name = Template(self.logical_name).render(wano=rendered_wano, path=path)
+        rendered_logical_name = Template(self.logical_name,newline_sequence='\n').render(wano=rendered_wano, path=path)
         if not self.visible():
             if sys.version_info >= (3, 0):
                 return rendered_logical_name
@@ -804,7 +801,7 @@ class WaNoItemScriptFileModel(WaNoItemFileModel):
         return os.path.join(root_dir, self.mystring)
 
     def save_text(self,text):
-        with open(self.get_path(),'w') as outfile:
+        with open(self.get_path(),'w',newline='\n') as outfile:
             outfile.write(text)
 
     def get_type_str(self):
@@ -815,7 +812,7 @@ class WaNoItemScriptFileModel(WaNoItemFileModel):
         content = ""
         try:
             #print("Reading script from ",fullpath)
-            with open(fullpath,'r') as infile:
+            with open(fullpath,'r',newline='\n') as infile:
                 content = infile.read()
             #print("Contents were",content)
             return content
@@ -823,10 +820,10 @@ class WaNoItemScriptFileModel(WaNoItemFileModel):
             return ""
 
     def render(self, rendered_wano, path, submitdir):
-        rendered_logical_name = Template(self.logical_name).render(wano=rendered_wano, path=path)
+        rendered_logical_name = Template(self.logical_name,newline_sequence='\n').render(wano=rendered_wano, path=path)
         destfile = os.path.join(submitdir, rendered_logical_name)
 
-        with open(destfile,'w') as out:
+        with open(destfile,'w',newline='\n') as out:
             out.write(self.get_as_text())
         return rendered_logical_name
 
