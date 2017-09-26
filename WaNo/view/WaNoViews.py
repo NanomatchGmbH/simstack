@@ -439,8 +439,8 @@ class WaNoItemFileView(AbstractWanoQTView):
         """ Widget code end """
 
     def showLocalDialog(self):
-        fname, success = QtWidgets.QFileDialog.getOpenFileName(self.actual_widget, 'Open file', QtCore.QDir.homePath())
-        if success:
+        fname, _ = QtWidgets.QFileDialog.getOpenFileName(self.actual_widget, 'Open file', QtCore.QDir.homePath())
+        if fname:
             self.lineedit.setText(fname)
             self.model.set_local(True)
             self.line_edited()
