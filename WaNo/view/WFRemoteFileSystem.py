@@ -54,7 +54,23 @@ class WFRemoteFileSystem(QWidget):
             self.__fs_model.removeSubRows(index)
             # remove request
             self.__current_requests.pop(filePath)
-
+            #To Debug:
+            """
+            Traceback (most recent call last):
+              File "D:\simstack_installer\simstack\simstack\WaNo\lib\CallableQThread.py", line 17, in pseudo_slot
+                function(*args, **kwargs)
+              File "D:\simstack_installer\simstack\simstack\WaNo\WFEditorApplication.py", line 182, in _on_fs_job_list_updated
+                self._view_manager.update_job_list(jobs)
+              File "D:\simstack_installer\simstack\simstack\WaNo\view\WFViewManager.py", line 104, in update_job_list
+                self._editor.update_job_list(jobs)
+              File "D:\simstack_installer\simstack\simstack\WaNo\view\WFEditor.py", line 200, in update_job_list
+                self.remoteFileTree.update_job_list(jobs)
+              File "D:\simstack_installer\simstack\simstack\WaNo\view\WFRemoteFileSystem.py", line 43, in update_job_list
+                self.update_file_tree_node(self._JOB_PATH, jobs)
+              File "D:\simstack_installer\simstack\simstack\WaNo\view\WFRemoteFileSystem.py", line 59, in update_file_tree_node
+                subelements.sort(key=lambda k: k['name'])
+            TypeError: '<' not supported between instances of 'NoneType' and 'str'
+            """
             if not subelements is None and len(subelements) > 0:
                 subelements.sort(key=lambda k: k['name'])
                 i=subelements[0]
