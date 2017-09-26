@@ -7,7 +7,7 @@ from abc import abstractmethod
 # TODO remove when done.
 from Qt.QtCore import QAbstractItemModel, QModelIndex, QFileInfo, Qt, QSize
 from Qt.QtWidgets import QFileIconProvider, QTreeView
-from Qt.QtGui import QIcon, QPainter
+from Qt.QtGui import QIcon, QPainter, QColor, qGray, QPixmap
 #import Qt.QtCore
 import abc
 import os, sys, time
@@ -238,7 +238,9 @@ class DataTreeModel(QAbstractItemModel):
         if grandparent is None:
             return QModelIndex()
         row = grandparent.rowOfChild(parent)
-       
+        if row < 0:
+            print("Impossible condition in DataTreeModel, please debug")
+            return QModelIndex()
         assert row != - 1
         return self.createIndex(row, 0, parent)
 
@@ -395,14 +397,27 @@ class WFEUnicoreRemoteFileSystemModel(WFEFileSystemModel):
     HEADER_TYPE_JOB         = DATA_TYPE.SEPARATOR3
     HEADER_TYPE_WORKFLOW    = DATA_TYPE.SEPARATOR4
 
+    def pixmap_to_grayscale(self,pixmap):
+        image = pixmap.toImage()
+        #data = image.bits()
+        #data.setsize(image.byteCount())
+        for i in range(0,image.width()):
+            for j in range(0, image.height()):
+                pixel = image.pixel(i,j)
+                gray_value = qGray(pixel)
+                gray_value = 255 - gray_value
+                image.setPixel(i,j,QColor(gray_value,gray_value,gray_value, 255).rgba())
+        return QPixmap.fromImage(image)
+            
+    
     def colorize_icon(self,icon,color):
         if isinstance(icon,QIcon):
             pixmap = icon.pixmap(QSize(16,16))
-            #color = QColor.QC
+            pixmap = self.pixmap_to_grayscale(pixmap)          
             painter = QPainter()
             painter.begin(pixmap)
-            painter.setCompositionMode(painter.RasterOp_SourceAndDestination)
-            painter.fillRect(pixmap.rect(),color)
+            painter.setCompositionMode(painter.CompositionMode_Screen)
+            painter.fillRect(pixmap.rect(),color)            
             painter.end()
             return QIcon(pixmap)
 
