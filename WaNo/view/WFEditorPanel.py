@@ -131,8 +131,12 @@ class WFWaNoWidget(QtWidgets.QToolButton,DragDropTargetTracker):
             wano_icon = icon.pixmap(icon.actualSize(QtCore.QSize(128, 128)))
         else:
             wano_icon = QtGui.QIcon(iconpath)
+        uuid = os.path.basename(folder)
         wano = [wanotype,folder,os.path.join(folder,wanotype) + ".xml", wano_icon]
-        return cls(text=wano[0], wano=wano, parent=parent)
+        returnobject = cls(text=wano[0], wano=wano, parent=parent)
+        #overwrite old uuid
+        returnobject.uuid=uuid
+        return returnobject
 
     def place_elements(self):
         pass
