@@ -77,7 +77,7 @@ class DragDropTargetTracker(object):
         #if (self.newparent != self.parent()):
         #    print(type(self.newparent),type(self.parent()))
         #    print ("I am outside of drop")
-            self.parent().removeElement(self)
+            self.parent().removeElement(self.model)
         else:
             pass
 
@@ -276,7 +276,7 @@ class WFItemListInterface(object):
         myid = self.elements.index(element)
         self.elements.remove(element)
         del self.elementnames[myid]
-        #element.deleteLater()
+        element.view.deleteLater()
 
 class WFItemModel(object):
     def render_to_simple_wf(self,submitdir,jobdir):
@@ -861,7 +861,7 @@ class WFModel(object):
         myid = self.elements.index(element)
         self.elements.remove(element)
         del self.elementnames[myid]
-        #element.deleteLater()
+        element.view.deleteLater()
 
 
 class SubWorkflowView(QtWidgets.QFrame):
