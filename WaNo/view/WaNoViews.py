@@ -532,7 +532,7 @@ class WaNoMatrixFloatView(AbstractWanoQTView):
         """" Widget code end """
 
     def cellChanged(self,i,j):
-        self.model.storage[i,j] = float(self.tablewidget.item(i,j).text())
+        self.model.storage[i][j] = float(self.tablewidget.item(i,j).text())
 
     def reset_table(self):
         self.tablewidget.clear()
@@ -565,9 +565,9 @@ class WaNoMatrixFloatView(AbstractWanoQTView):
         self.reset_table()
 
         storage = self.model.storage
-        for i in range(storage.shape[0]):
-            for j in range(storage.shape[1]):
-                self.tablewidget.item(i,j).setText(str(storage[i,j]))
+        for i in range(len(storage)):
+            for j in range(len(storage[0])):
+                self.tablewidget.item(i,j).setText(str(storage[i][j]))
 
         self.tablewidget.blockSignals(False)
         return

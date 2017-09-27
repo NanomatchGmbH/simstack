@@ -34,10 +34,6 @@ from WaNo.view.PropertyListView import ResourceTableModel,ImportTableModel,Expor
 
 from pyura.pyura.WorkflowXMLConverter import JSDLtoXML
 
-import numpy as np
-
-
-
 class WaNoModelDictLike(AbstractWanoModel):
     def __init__(self, *args, **kwargs):
         super(WaNoModelDictLike, self).__init__(*args, **kwargs)
@@ -146,15 +142,31 @@ class WaNoMatrixModel(AbstractWanoModel):
             self.storage = self._fromstring(self.xml.text)
 
         except Exception as e:
-            self.storage = np.zeros((self.rows, self.cols))
-        #print(self.storage)
+            self.storage = [ [] for i in range(self.rows) ]
+            for i in range(self.rows):
+                self.storage[i] = []
+                for j in range(self.cols):
+                    self.storage[i].append(0.0)
 
     def _tostring(self, ar):
-        return np.array2string(ar, separator=',')
+        returnstring = "[ "
+        for row in ar:
+            returnstring += "[ "
+            for val in row[:-1]:
+                returnstring += " %g ," %val
+            returnstring +=" %g ] , " %row[-1]
+        returnstring = returnstring[:-3]
+        returnstring += " ] "
+        return returnstring
 
     def _fromstring(self,stri):
         list_of_lists = ast.literal_eval(stri)
-        return np.array(list_of_lists,dtype=np.float64)
+        if not isinstance(list_of_lists,list):
+            raise SyntaxError("Expected list of lists")
+        for i in range(len(list_of_lists)):
+            for j in range(len(list_of_lists[i])):
+                list_of_lists[i][j] = float(list_of_lists[i][j])
+        return list_of_lists
 
     def __getitem__(self,item):
         return self._tostring(self.storage)
@@ -343,11 +355,9 @@ class WaNoModelRoot(WaNoModelDictLike):
         self.export_model.make_default_list()
         self.exists_read_load(self.export_model, exports_fn)
 
-
         self.exec_command = self.full_xml.find("WaNoExecCommand").text
         self.rendered_exec_command = ""
         self.input_files = []
-
 
         self.wano_dir_root = kwargs["wano_dir_root"]
         for child in self.full_xml.findall("./WaNoInputFiles/WaNoInputFile"):
