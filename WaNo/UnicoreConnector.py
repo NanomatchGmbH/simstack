@@ -598,7 +598,7 @@ class UnicoreConnector(CallableQThread):
             #TODO add get_registry method to UnicoreAPI, since we might want to
             # update the auth provider or something...
             registry = self.workers[base_uri]['registry']
-            reg_state = self.unicore_state.get_registry_state(base_uri)
+            reg_state = self.unicore_state.get_writeable_registry_state(base_uri)
         else:
             registry = UnicoreAPI.add_registry(base_uri, auth_provider)
 
