@@ -455,6 +455,9 @@ class UnicoreStateFactory(object):
         def add_registry(self, base_uri, username, state=UnicoreConnectionStates.DISCONNECTED):
             return self._state.add_registry(base_uri, username, state).get_writer_instance()
 
+        def get_writeable_registry_state(self, base_uri):
+            return self._state.get_registry_state(base_uri).get_writer_instance()
+
         def add_data_transfer(self, base_uri, source, dest, storage, direction,
                 state=UnicoreDataTransferStates.PENDING, total=-1, progress=0):
             return self._state.add_data_transfer(base_uri, source, dest, storage,
