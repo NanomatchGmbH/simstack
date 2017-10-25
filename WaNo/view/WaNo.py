@@ -22,7 +22,8 @@ class WorkflowControlElement(object):
             if c.tag != 'Base':
                 self.logger.error("Found Tag ",c.tag, " in control block")
             else:
-                w = WorkFlow(c)
+                print("Not implemented yet")
+                #w = WorkFlow(c)
                 #self.wf[count].parse(c)
                 count += 1
                 #self.wf.append(e)
