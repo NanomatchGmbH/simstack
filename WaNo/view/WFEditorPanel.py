@@ -550,9 +550,9 @@ class ForEachModel(WFItemModel):
 
 
         for myfile in self.filelist:
-            globalpath = "c9m:${WORKFLOW_ID}/%s/" % os.path.dirname(myfile)
-            basename = os.path.basename(myfile)
-            filesets.append(WFtoXML.xml_fileset(base=globalpath,include=basename,exclude=""))
+            gpath = "c9m:${WORKFLOW_ID}/%s/" % os.path.dirname(myfile)
+            bn = os.path.basename(myfile)
+            filesets.append(WFtoXML.xml_fileset(base=gpath , inclusion_list=bn , exclude="" ) )
 
         #print(submitdir,jobdir,"WFFOREACH")
         if jobdir == "":
