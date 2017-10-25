@@ -487,7 +487,7 @@ class WFEUnicoreRemoteFileSystemModel(WFEFileSystemModel):
             if has_parent_type:
                 rv = parent
             else:
-                rv = self._recursive_find_parent(parent, parent_type)
+                rv = self._recursive_find_parent(parent, parent_types)
 
         return rv
 
