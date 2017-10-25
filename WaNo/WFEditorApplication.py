@@ -3,6 +3,7 @@ from __future__ import print_function
 from __future__ import unicode_literals
 from __future__ import absolute_import
 
+
 import logging
 import os
 
@@ -188,6 +189,19 @@ class WFEditorApplication(CallableQThread):
                 UnicoreConnector.create_update_job_list_args(base_uri),
                 (self._on_fs_job_list_updated, (), {})
             )
+
+
+    @QThreadCallback.callback
+    def _on_resources_updated(self, base_uri, resources):
+        print(resources.get_queues())
+
+    def _on_resources_update_request(self):
+        base_uri = self._get_current_base_uri()
+        self.exec_unicore_callback_operation.emit(
+                uops.UPDATE_RESOURCES,
+                UnicoreConnector.create_update_resources_args(base_uri),
+                (self._on_resources_updated, (), {})
+        )
 
     @QThreadCallback.callback
     def _on_workflow_list_updated(self, base_uri, workflows):
@@ -720,6 +734,14 @@ class WFEditorApplication(CallableQThread):
 
         self._unicore_connector.error.connect(self._on_unicore_error)
 
+    def exec_by_time(cutoff_time):
+        timestamp = int(time.time())
+        if timestamp > cutoff_time:
+            print("License time expired, please renew, Exiting.")
+            sys.exit(45)
+
+    def license_check()
+        pass
 
     def __init__(self, settings):
         super(WFEditorApplication, self).__init__()

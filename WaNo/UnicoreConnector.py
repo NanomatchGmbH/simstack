@@ -58,6 +58,7 @@ OPERATIONS = Enum("OPERATIONS",
     ABORT_WORKFLOW
     DOWNLOAD_FILE
     UPLOAD_FILE
+    UPDATE_RESOURCES 
     """,
     module=__name__
 )
@@ -121,6 +122,8 @@ class UnicoreWorker(TPCThread):
     def connect(self, callback, username, password, base_uri, con_settings):
         import platform
         import ctypes
+        from pyura.pyura import SiteManager
+        
         if platform.system() == "Linux":
             self._logger.debug("UnicoreWorker Thread ID(connect): %d\t%d" % \
                     (threading.current_thread().ident,
@@ -217,6 +220,14 @@ class UnicoreWorker(TPCThread):
         print("err: %s, status: %s, wf_manager: %s" % (err, status, wf))
         #### TIMO HERE
         wf_manager.run(wf.split('/')[-1], xmlstring)
+
+    @TPCThread._from_other_thread
+    def update_resources(self, callback, base_uri):
+        self._logger.debug("Querying resources.")
+        site_manager = self.registry.get_site_manager()
+        site_manager.update_list()
+        resources = site_manager.get_selected().get_resources()
+        self._exec_callback(callback, base_uri, resources)
 
     @TPCThread._from_other_thread
     def update_job_list(self, callback, base_uri):
@@ -535,6 +546,10 @@ class UnicoreConnector(CallableQThread):
         return data
 
     @staticmethod
+    def create_update_resources_args(base_uri):
+        return UnicoreConnector.create_basic_args(base_uri)
+
+    @staticmethod
     def create_update_job_list_args(base_uri):
         return UnicoreConnector.create_basic_args(base_uri)
 
@@ -677,6 +692,11 @@ class UnicoreConnector(CallableQThread):
         if not worker is None:
             worker.update_job_list(callback, base_uri)
 
+    def update_resources(self, base_uri, callback=(None, (), {})):
+        worker = self._get_error_or_fail(base_uri)
+        if not worker is None:
+            worker.update_resources(callback, base_uri)
+
     def update_workflow_list(self, base_uri, callback=(None, (), {})):
         worker = self._get_error_or_fail(base_uri)
         if not worker is None:
@@ -793,6 +813,8 @@ class UnicoreConnector(CallableQThread):
             self.download_file(*data['args'], callback=callback)
         elif operation == ops.UPLOAD_FILE:
             self.upload_file(*data['args'], callback=callback)
+        elif operation == ops.UPDATE_RESOURCES:
+            self.update_resources(*data['args'], callback=callback)
         else:
             self.logger.error("Got unknown operation: %s" % ops(operation) \
                     if isinstance(operation, int) else str(operation))

@@ -312,7 +312,7 @@ class ProtectedReaderWriterIndexedList(ReaderWriterInstance):
             return self._list_instance.set_value(value)
 
         def del_value(self, key):
-            return self._list_instance.del_value(value)
+            return self._list_instance.del_value(key)
 
         def __init__(self, instance):
             super(ProtectedReaderWriterIndexedList._Writer, self).__init__(instance)
