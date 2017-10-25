@@ -5,6 +5,7 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 import sys
+import os
 import copy
 import logging
 
@@ -380,8 +381,9 @@ class WaNoVarImportEditor(WaNoImportEditor):
         super(WaNoVarImportEditor, self).__init__(wano,exportedItems,parent)
         
     def fillExistingData(self):
-        for localName in wano.varImports:
-            self.addData(localName,wano.varImports[k]) 
+        print("broken function, please review")
+        #for localName in wano.varImports:
+        #    self.addData(localName,wano.varImports[k]) 
             
     def copyContent(self):
         self.wano.varImports = {} # erase old stuff
