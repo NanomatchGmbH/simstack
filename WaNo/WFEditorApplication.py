@@ -740,7 +740,7 @@ class WFEditorApplication(CallableQThread):
             print("License time expired, please renew, Exiting.")
             sys.exit(45)
 
-    def license_check()
+    def license_check():
         pass
 
     def __init__(self, settings):
