@@ -251,12 +251,12 @@ class WaNoUnicoreSettings(QDialog):
             tabWidget = self.__tabs.widget(index)
             registries.append(
                     self.__build_registry_settings(
-                        tabWidget.get_name(),
-                        tabWidget.get_uri(),
-                        tabWidget.get_user(),
-                        tabWidget.get_password(),
-                        tabWidget.get_ca_package(),
-                        tabWidget.get_workflows(),
+                        tabWidget.get_name().strip(),
+                        tabWidget.get_uri().strip(),
+                        tabWidget.get_user().strip(),
+                        tabWidget.get_password().strip(),
+                        tabWidget.get_ca_package().strip(),
+                        tabWidget.get_workflows().strip(),
                         tabWidget.get_default()
                     )
                 )
