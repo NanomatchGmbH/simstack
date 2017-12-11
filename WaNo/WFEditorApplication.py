@@ -9,7 +9,8 @@ import os
 
 from Qt.QtCore import QObject, Signal
 from Qt import QtCore,QtGui,QtWidgets
-
+import sys
+import time
 import datetime
 
 from WaNo import WaNoFactory
