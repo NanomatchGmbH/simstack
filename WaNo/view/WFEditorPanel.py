@@ -1160,13 +1160,15 @@ class WorkflowView(QtWidgets.QFrame):
             background-attachment: fixed;
             background-position: center;  
             }
-            """
+        """
         if on:
             self.background_drawn = True
             script_path = os.path.dirname(os.path.realpath(__file__))
             media_path = os.path.join(script_path, "..", "Media")
             imagepath = os.path.join(media_path, "Logo_NanoMatch200.png")
-            self.setStyleSheet(style_sheet_without_background % "background-image: url(%s) ;" % imagepath)
+            imagepath = imagepath.replace("\\","/")
+            background_sheet = style_sheet_without_background % "background-image: url(\"%s\") ;" % imagepath
+            self.setStyleSheet(background_sheet)
         else:
             self.background_drawn = False
             self.setStyleSheet(style_sheet_without_background % "")
