@@ -39,7 +39,7 @@ class mod_build_ext(build_ext):
         mod_compiler(self.compiler)
         return build_ext.build_extension(self,ext)
 
-COMPILE_DIR="compile/"
+COMPILE_DIR="compile"
 try:
     os.makedirs(COMPILE_DIR)
 except OSError as e:
