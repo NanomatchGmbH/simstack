@@ -4,6 +4,8 @@ from os import path
 import os
 import sys
 
+from os.path import join
+
 if __name__ == '__main__':
     #In case pyura is hosted in the external directory, we append the path on our own
     dir_path = os.path.dirname(os.path.realpath(__file__))
@@ -38,6 +40,18 @@ def signal_handler(*args):
         editor.exit()
 
 
+def get_temp_folder():
+    if Qt.IsPySide:
+        from PySide.QtGui import QDesktopServices
+        return QDesktopServices.storageLocation(QDesktopServices.DataLocation)
+
+    import importlib
+    qc = importlib.import_module("%s.QtCore"%Qt.__binding__)
+    rtp = qc.QStandardPaths.standardLocations(qc.QStandardPaths.TempLocation)
+    if isinstance(rtp,list):
+        rtp = rtp[0]
+    return rtp
+
 def get_settings_folder():
     if os.path.isdir(os.path.join("config",_SETTINGS_DIR)):
         return "config"
@@ -62,7 +76,8 @@ if __name__ == '__main__':
         ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(myappid)
         
     app = QApplication(sys.argv)
-    logging.basicConfig(filename='wfeditor.log',filemode='w',level=logging.INFO)
+    tempfile = join(get_temp_folder(),"wfeditor.log")
+    logging.basicConfig(filename=tempfile,filemode='w',level=logging.INFO)
     logger = logging.getLogger('WFELOG')
 
     SETTINGS_FOLDER = get_settings_folder()
