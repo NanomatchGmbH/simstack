@@ -1,5 +1,5 @@
-IF EXIST %CD%\anaconda3 GOTO RUN_SIMSTACK
-echo "Running preinstall"
-%CD%\install-simstack.bat
-:RUN_SIMSTACK
-%CD%\anaconda3\python.exe %CD%\simstack\simstack
+SETLOCAL ENABLEEXTENSIONS
+SET me=%~n0
+SET parent=%~dp0
+
+"%parent%\anaconda3\python.exe" "%parent%\simstack\simstack"
