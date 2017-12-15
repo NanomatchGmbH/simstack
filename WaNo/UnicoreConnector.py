@@ -214,8 +214,8 @@ class UnicoreWorker(TPCThread):
         xmlstring = etree.tostring(xml,pretty_print=False).decode("utf-8").replace("${WORKFLOW_ID}",workflow_id)
         xmlstring = xmlstring.replace("${STORAGE_ID}","%s%s"%(storage_management_uri,storage_id))
 
-        with open("wf.xml",'w') as wfo:
-            wfo.write(xmlstring)
+        #with open("wf.xml",'w') as wfo:
+        #    wfo.write(xmlstring)
 
         print("err: %s, status: %s, wf_manager: %s" % (err, status, wf))
         #### TIMO HERE
