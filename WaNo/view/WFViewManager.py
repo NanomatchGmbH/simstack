@@ -1,7 +1,10 @@
+from os import path
+
 from .WFEditorMainWindow import WFEditorMainWindow
 from .WFEditor import WFEditor
 
-from Qt.QtCore import Signal, QObject, QMutex
+import Qt
+from Qt.QtCore import Signal, QObject, QMutex, QFileInfo
 from Qt.QtWidgets import QMessageBox, QFileDialog
 
 from .MessageDialog import MessageDialog
@@ -117,13 +120,15 @@ class WFViewManager(QObject):
         self.open_registry_settings.emit()
 
     def _on_file_download(self, filepath):
+        mybase = path.basename(filepath)
+        print(filepath)
         save_to = QFileDialog.getSaveFileName(
                 self._editor,
                 'Download File',
-                ''
+                path.join(self.last_used_path,mybase)
                 )
         if save_to[0]:
-            print(save_to)
+            self.last_used_path = QFileInfo(filepath).path();
             print("Save file to: %s." % save_to[0])
             self.download_file_to.emit(filepath, save_to[0])
             self._view_timer.add_callback(self._update_timeout.emit,
@@ -227,6 +232,18 @@ class WFViewManager(QObject):
         self._dl_progress_bar.setMinimumWidth(75)
         self._mainwindow.statusBar().addPermanentWidget(self._dl_progress_bar)
 
+    @staticmethod
+    def get_homedir():
+        if Qt.IsPySide:
+            from PySide.QtGui import QDesktopServices
+            return QDesktopServices.storageLocation(QDesktopServices.HomeLocation)
+
+        import importlib
+        qc = importlib.import_module("%s.QtCore" % Qt.__binding__)
+        rtp = qc.QStandardPaths.standardLocations(qc.QStandardPaths.HomeLocation)
+        if isinstance(rtp, list):
+            rtp = rtp[0]
+        return rtp
 
     def __init__(self, unicore_state):
         super(WFViewManager, self).__init__()
@@ -240,5 +257,6 @@ class WFViewManager(QObject):
                 "lock": QMutex(),
                 "to_delete": 0
             }
+        self.last_used_path = self.get_homedir()
 
         self._connect_signals()

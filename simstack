@@ -43,7 +43,7 @@ def signal_handler(*args):
 def get_temp_folder():
     if Qt.IsPySide:
         from PySide.QtGui import QDesktopServices
-        return QDesktopServices.storageLocation(QDesktopServices.DataLocation)
+        return QDesktopServices.storageLocation(QDesktopServices.TempLocation)
 
     import importlib
     qc = importlib.import_module("%s.QtCore"%Qt.__binding__)
