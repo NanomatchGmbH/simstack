@@ -121,7 +121,7 @@ class WFViewManager(QObject):
 
     def _on_file_download(self, filepath):
         mybase = path.basename(filepath)
-        print(filepath)
+        #print(filepath)
         save_to = QFileDialog.getSaveFileName(
                 self._editor,
                 'Download File',
@@ -129,7 +129,7 @@ class WFViewManager(QObject):
                 )
         if save_to[0]:
             self.last_used_path = QFileInfo(filepath).path();
-            print("Save file to: %s." % save_to[0])
+            #print("Save file to: %s." % save_to[0])
             self.download_file_to.emit(filepath, save_to[0])
             self._view_timer.add_callback(self._update_timeout.emit,
                     self._dl_update_interval)
