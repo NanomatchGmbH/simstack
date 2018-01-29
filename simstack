@@ -18,6 +18,7 @@ import ctypes
 import signal
 import platform
 import logging
+import uuid
 
 import yaml
 from Qt.QtWidgets import QApplication
@@ -76,7 +77,7 @@ if __name__ == '__main__':
         ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(myappid)
         
     app = QApplication(sys.argv)
-    tempfile = join(get_temp_folder(),"wfeditor.log")
+    tempfile = join(get_temp_folder(),"%s-wfeditor.log"%uuid.uuid4())
     logging.basicConfig(filename=tempfile,filemode='w',level=logging.INFO)
     logger = logging.getLogger('WFELOG')
 
