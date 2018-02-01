@@ -267,6 +267,9 @@ class UnicoreWorker(TPCThread):
     def update_workflow_job_list(self, callback, base_uri, wfid):
         wf_manager = self.registry.get_workflow_manager()
         wf = wf_manager.get_by_id(wfid)
+        if wf == None:
+            #this is most probably a deletion and then update, don't do anything
+            return
         wf.update()
 
         job_manager = self.registry.get_job_manager()
