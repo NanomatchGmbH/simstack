@@ -119,7 +119,7 @@ class DataTreeModel(QAbstractItemModel):
         self._root = DataNode('root node')
         self._columns = 1
         self._items = []
-
+        self.junk = []
 
     def getNodeByIndex(self, index):
         return index.internalPointer() if index.isValid() else self._root
@@ -165,7 +165,7 @@ class DataTreeModel(QAbstractItemModel):
 
     def removeSubRows(self, index):
         result = False
-        if index.isValid:
+        if index.isValid():
             node = self.getNodeByIndex(index)
             result = self.removeRows(0, len(node), index)
         return result
@@ -251,7 +251,11 @@ class DataTreeModel(QAbstractItemModel):
         raise NotImplementedError()
 
     def addNode(self, data, parent=None):
-        return self.createNode(data, self._root if parent is None else parent)
+        temp = self.createNode(data, self._root if parent is None else parent)
+        #This is a huge memory leak. Currently it's the only way and I have to talk about it with Flo when he's back
+
+        self.junk.append(temp)
+        return temp
 
 
 class WFEFileSystemEntry(DataNode):
