@@ -590,6 +590,7 @@ class WaNoDropDownView(AbstractWanoQTView):
         hbox.addWidget(self.label)
         hbox.addStretch()
         hbox.addWidget(self.combobox)
+        self.init = False
         """" Widget code end """
 
     def init_from_model(self):
@@ -597,10 +598,13 @@ class WaNoDropDownView(AbstractWanoQTView):
         for myid,entry in enumerate(self.model.choices):
             self.combobox.addItem(entry)
 
+
         self.combobox.setCurrentIndex(self.model.chosen)
+        self.init = True
 
     def onButtonClicked(self, id):
-        self.model.set_chosen(id)
+        if self.init:
+            self.model.set_chosen(id)
 
     def get_widget(self):
         return self.actual_widget
