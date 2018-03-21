@@ -34,6 +34,19 @@ from WaNo.view.PropertyListView import ResourceTableModel,ImportTableModel,Expor
 
 from pyura.pyura.WorkflowXMLConverter import JSDLtoXML
 
+
+def mkdir_p(path):
+    import errno
+
+    try:
+        os.makedirs(path)
+    except OSError as exc:  # Python >2.5
+        if exc.errno == errno.EEXIST and os.path.isdir(path):
+            pass
+        else:
+            raise
+
+
 class WaNoModelDictLike(AbstractWanoModel):
     def __init__(self, *args, **kwargs):
         super(WaNoModelDictLike, self).__init__(*args, **kwargs)
@@ -551,11 +564,18 @@ class WaNoModelRoot(WaNoModelDictLike):
             comp_basename = os.path.basename(comp_filename)
             template_loader = FileSystemLoader(searchpath=comp_dir)
             template_env = Environment(loader = template_loader,newline_sequence='\n')
-            if not os.path.exists(os.path.join(comp_dir,comp_basename)):
+            joined_filename = os.path.join(comp_dir,comp_basename)
+            #print(joined_filename)
+            if not os.path.exists(os.path.join(joined_filename)):
                 print("File <%s> not found on disk, please check for spaces before or after the filename."%comp_filename)
                 raise OSError("File <%s> not found on disk, please check for spaces before or after the filename."%comp_filename)
-            template = template_env.get_template(comp_basename)
+            #print(remote_file)
+            template = template_env.get_template(local_file)
             outfile = os.path.join(basefolder,remote_file)
+            #print(outfile, "AFTER")
+            dirn=os.path.dirname(outfile)
+            #print(dirn,"DIRNAME")
+            mkdir_p(dirn)
             with open(outfile,'w',newline='\n') as outfile:
                 outfile.write(template.render(wano = rendered_wano))
 
