@@ -11,12 +11,14 @@ from Qt import QtGui, QtCore, QtWidgets
 from WaNo.model.WaNoModels import WaNoModelRoot
 from WaNo.view.WaNoViews import WanoQtViewRoot
 from WaNo.WaNoFactory import WaNoFactory
+from WaNo.WFEditorApplication import WFEditorApplication as wea
 
 class TestWaNo(QtWidgets.QWidget):
     def __init__(self,wanofile):
         super(TestWaNo, self).__init__()
         self.wanofile = wanofile
         self.initUI()
+        wea.license_check()
 
     def initUI(self):
         scroller = QtWidgets.QScrollArea(parent=self)
