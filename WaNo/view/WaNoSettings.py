@@ -119,8 +119,8 @@ class WaNoRegistrySettings(QWidget):
         self.default_set.emit(self.__cb_default.isChecked())
 
     def __on_show_cert_filepicker(self):
-        fname, success = QFileDialog.getOpenFileName(self, 'Select cacert.pem', QDir.homePath())
-        if success:
+        fname , _ = QFileDialog.getOpenFileName(self, 'Select cacert.pem', QDir.homePath())
+        if fname:
             self.__ca_package.setText(fname)
 
     def __connect_signals(self):
