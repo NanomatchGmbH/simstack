@@ -735,17 +735,21 @@ class WFEditorApplication(CallableQThread):
 
         self._unicore_connector.error.connect(self._on_unicore_error)
 
+    @staticmethod
     def exec_by_time(cutoff_time):
         timestamp = int(time.time())
         if timestamp > cutoff_time:
             print("License time expired, please renew, Exiting.")
             sys.exit(45)
 
-    def license_check():
+    @classmethod
+    def license_check(cls):
+        #cls.exec_by_time(1530396000)
         pass
 
     def __init__(self, settings):
         super(WFEditorApplication, self).__init__()
+        self.license_check()
 
         self.__settings     = settings
 
