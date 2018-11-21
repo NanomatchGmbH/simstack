@@ -56,7 +56,7 @@ class WaNoFactory(object):
         from WaNo.model.WaNoModels import WaNoItemFloatModel, WaNoModelListLike,\
             WaNoItemStringModel, WaNoItemBoolModel, WaNoModelDictLike, WaNoChoiceModel, \
             MultipleOfModel, WaNoItemFileModel, WaNoItemIntModel, WaNoItemScriptFileModel, \
-            WaNoMatrixModel
+            WaNoMatrixModel, WaNoThreeRandomLetters
         from WaNo.view.WaNoViews import WaNoItemFloatView, WaNoBoxView, WaNoItemStringView, \
             WaNoItemBoolView, WaNoItemFileView, WaNoChoiceView, MultipleOfView, WaNoItemIntView,\
             WaNoTabView, WaNoGroupView, WaNoScriptView, WaNoDropDownView, WaNoMatrixFloatView
@@ -76,7 +76,8 @@ class WaNoFactory(object):
             "WaNoDropDown": (WaNoChoiceModel, WaNoDropDownView),
             "WaNoMultipleOf": (MultipleOfModel,MultipleOfView),
             "WaNoScript": (WaNoItemScriptFileModel, WaNoScriptView),
-            "WaNoTabs": (WaNoModelDictLike,WaNoTabView)
+            "WaNoTabs": (WaNoModelDictLike,WaNoTabView),
+            "WaNoThreeRandomLetters": (WaNoThreeRandomLetters,WaNoItemStringView)
         }
 
         if xml.tag not in wano_list:

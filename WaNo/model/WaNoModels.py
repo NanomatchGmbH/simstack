@@ -10,6 +10,8 @@ import Qt.QtCore as QtCore
 import Qt.QtGui as QtGui
 
 # requires python 2.7,
+#from pyura.pyura.helpers import trace_to_logger
+
 try:
     import collections
 except ImportError as e:
@@ -494,6 +496,17 @@ class WaNoModelRoot(WaNoModelDictLike):
         if (parent == None):
             parent = self
         #print(type(parent))
+        """
+        import traceback
+        parent_type_string = None
+        if hasattr(parent,"get_type_str"):
+            parent_type_string = parent.get_type_str()
+        if parent_type_string is None:
+            parent_type_string = "None"
+        if parent_type_string == "File":
+            print("In path",path,"depth:",path.count(".")+2,parent_type_string)
+        """
+        #traceback.print_stack()
         if hasattr(parent,'items') and hasattr(parent,'listlike'):
             my_list = []
             for key, wano in parent.items():
@@ -643,6 +656,7 @@ class WaNoModelRoot(WaNoModelDictLike):
         jsdl = self.flat_variable_list_to_jsdl(fvl, submitdir,stageout_basedir)
         return rendered_wano,jsdl
 
+    #@trace_to_logger
     def render_and_write_input_files(self,basefolder,stageout_basedir = ""):
         rendered_wano,jsdl = self.render_wano(basefolder,stageout_basedir)
         self.prepare_files_submission(rendered_wano, basefolder)
@@ -879,6 +893,37 @@ class WaNoItemStringModel(AbstractWanoModel):
 
     def update_xml(self):
         self.xml.text = self.mystring
+
+    def __repr__(self):
+        return repr(self.mystring)
+
+class WaNoThreeRandomLetters(WaNoItemStringModel):
+    def __init__(self, *args, **kwargs):
+        super(WaNoThreeRandomLetters, self).__init__(*args, **kwargs)
+        self.xml = kwargs['xml']
+        self.mystring = kwargs['xml'].text
+        if self.mystring == "" or self.mystring is None:
+            self.mystring = self._generate_default_string()
+            print("Generating default string %s"%(self.mystring))
+            self.set_data(self.mystring)
+        else:
+            print("already found string <%s>"%self.mystring)
+
+    def _generate_default_string(self):
+        from random import choice
+        import string
+        only_letters = string.ascii_uppercase
+        letters_and_numbers = string.ascii_uppercase + string.digits
+        return "".join([choice(only_letters),choice(letters_and_numbers),choice(letters_and_numbers)])
+
+    def set_data(self, data):
+        self.mystring = str(data)
+        if len(self.mystring) > 3:
+            self.mystring = self.mystring[0:3]
+            if self.view != None:
+                self.view.init_from_model()
+        super(WaNoThreeRandomLetters,self).set_data(self.mystring)
+
 
     def __repr__(self):
         return repr(self.mystring)
