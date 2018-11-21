@@ -24,6 +24,7 @@ import yaml
 from Qt.QtWidgets import QApplication
 from Qt.QtCore import QTimer
 import Qt
+import traceback
 
 print("Using %s backend."%Qt.__binding__)
 
@@ -65,6 +66,7 @@ def get_settings_folder():
     rtp = qc.QStandardPaths.standardLocations(qc.QStandardPaths.DataLocation)
     if isinstance(rtp,list):
         rtp = rtp[0]
+    print(rtp)
     return rtp
 
 
@@ -104,5 +106,13 @@ if __name__ == '__main__':
     timer = QTimer()
     timer.start(500)  # You may change this if you wish.
     timer.timeout.connect(lambda: None)  # Let the interpreter run each 500 ms.
+    try:
+        exitcode = app.exec_()
+    except Exception as e:
+        exc_type, exc_value, exc_traceback = sys.exc_info()
+        with open(tempfile,a) as out:
+            out.write("The client has crashed. Please send the following traceback to Nanomatch:\n")
+            traceback.print_tb(exc_traceback, limit=None,file=out)
+            out.write(str(e)+"\n")
 
-    sys.exit(app.exec_())
+    sys.exit(exitcode)
