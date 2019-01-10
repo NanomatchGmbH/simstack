@@ -31,6 +31,7 @@ from WaNo.view.WFEditorPanel import SubmitType
 from WaNo.view.WaNoViews import WanoQtViewRoot
 
 from WaNo.lib.CallableQThread import QThreadCallback, CallableQThread
+from pyura.pyura.helpers import trace_to_logger
 
 try:
     FileNotFoundError
@@ -449,12 +450,6 @@ class WFEditorApplication(CallableQThread):
         import ctypes
         import threading
         from Qt.QtCore import QThread
-        if platform.system() == "Linux":
-            self._logger.debug("Unicore Thread ID (WFEditorApplication): %d\t%d\t%s" % \
-                    (threading.current_thread().ident,
-                    ctypes.CDLL('libc.so.6').syscall(186),
-                    str(QThread.currentThreadId())))
-        ### END TODO
 
         if registry is None:
             self._logger.error("Callback did not get expected data.")
@@ -536,6 +531,7 @@ class WFEditorApplication(CallableQThread):
                 (self._cb_connect, (), {'registry': registry})
             )
 
+    @trace_to_logger
     def _run(self):
         name        = None
         jobtype     = None
