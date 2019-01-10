@@ -80,6 +80,14 @@ class AbstractWanoModel(QtCore.QObject):
     def get_parent(self):
         return self.parent
 
+    @property
+    def listlike(self):
+        return False
+
+    @property
+    def dictlike(self):
+        return False
+
     # To access Wanomodels belonging to this one:
     # <Box>
     #   <Float name="me" />

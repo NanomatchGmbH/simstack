@@ -22,6 +22,7 @@ from WaNo.model.AbstractWaNoModel import AbstractWanoModel
 import WaNo.WaNoFactory
 from lxml import etree
 import copy
+from boolexp import Expression
 
 from Qt import QtCore
 import yaml
@@ -58,6 +59,10 @@ class WaNoModelDictLike(AbstractWanoModel):
         for child in self.xml:
             model = WaNo.WaNoFactory.WaNoFactory.get_objects(child, self.root_model, self, self.full_path)
             self.wano_dict[child.attrib['name']] = model
+
+    @property
+    def dictlike(self):
+        return True
 
     def __getitem__(self, item):
         return self.wano_dict[item]
@@ -140,6 +145,51 @@ class WaNoChoiceModel(AbstractWanoModel):
             if self.chosen == myid:
                 child.attrib["chosen"] = "True"
 
+class WaNoDynamicChoiceModel(WaNoChoiceModel):
+    def __init__(self, *args, **kwargs):
+        super(WaNoDynamicChoiceModel,self).__init__(*args,**kwargs)
+        self._collection_path = self.xml.attrib["collection_path"]
+        self._subpath = self.xml.attrib["subpath"]
+        self.choices = ["uninitialized"]
+        self.chosen = int(self.xml.attrib["chosen"])
+        self.root_model.dataChanged.connect(self._update_choices)
+        self._updating = False
+
+    def _update_choices(self, changed_path):
+        if not changed_path.startswith(self._collection_path) and not changed_path == "force":
+            return
+
+        self._updating = True
+        wano_listlike = self.root_model.get_value(self._collection_path)
+        self.choices = []
+        numchoices = len(wano_listlike)
+        for myid in range(0,numchoices):
+            query_string = "%s.%d.%s"% (self._collection_path,myid,self._subpath)
+            self.choices.append(self.root_model.get_value(query_string).get_data())
+        if len(self.choices) == 0:
+            self.choices = ["uninitialized"]
+
+        if len(self.choices) <= self.chosen:
+            self.chosen = 0
+
+        #Workaround because set_chosen kills chosen
+        self.view.init_from_model()
+
+        self._updating = False
+
+
+    @QtCore.Slot(int)
+    def set_chosen(self,choice):
+        if self._updating:
+            return
+        self.chosen = int(choice)
+        self.set_data(self.choices[self.chosen])
+
+
+    def update_xml(self):
+        self.xml.attrib["chosen"] = str(self.chosen)
+
+
 class WaNoMatrixModel(AbstractWanoModel):
     def __init__(self, *args, **kwargs):
         super(WaNoMatrixModel, self).__init__(*args, **kwargs)
@@ -201,7 +251,6 @@ class WaNoModelListLike(AbstractWanoModel):
         super(WaNoModelListLike, self).__init__(*args, **kwargs)
         self.wano_list = []
         self.xml = kwargs["xml"]
-        self.listlike = True
 
         if "style" in self.xml.attrib:
             self.style = self.xml.attrib["style"]
@@ -212,6 +261,13 @@ class WaNoModelListLike(AbstractWanoModel):
             model = WaNo.WaNoFactory.WaNoFactory.get_objects(child, self.root_model, self, self.full_path)
             # view.set_model(model)
             self.wano_list.append(model)
+
+    @property
+    def listlike(self):
+        return True
+
+    def __len__(self):
+        return len(self.wano_list)
 
     def __getitem__(self, item):
         item = int(item)
@@ -235,6 +291,56 @@ class WaNoModelListLike(AbstractWanoModel):
         for wano in self.wano_list:
             wano.disconnectSignals()
 
+class WaNoSwitchModel(WaNoModelListLike):
+    def __init__(self, *args, **kwargs):
+        super(WaNoSwitchModel, self).__init__(*args, **kwargs)
+        self._switch_name_list = []
+        self._names_list = []
+        for child in self.xml:
+            switch_name = child.attrib["switch_name"]
+            name = child.attrib["name"]
+            self._names_list.append(name)
+            print(switch_name)
+            self._switch_name_list.append(switch_name)
+        self._switch_path = None
+
+        self._visible_thing = 0
+        self.name = self._names_list[self._visible_thing]
+
+        self._parse_switch_conditions(self.xml)
+
+    @property
+    def listlike(self):
+        #Overwriting from inherited class, because we don't want to be treated like a list
+        return False
+
+    def get_selected_view(self):
+        #return self.wano_dict[self._visible_thing].view
+        return self.wano_list[self._visible_thing].view
+
+    def _evaluate_switch_condition(self,changed_path):
+        if changed_path != self._switch_path:
+            return
+        visible_thing_string = self.root_model.get_value(self._switch_path).get_data()
+        try:
+            visible_thing = self._switch_name_list.index(visible_thing_string)
+            self._visible_thing = visible_thing
+            self.name = self._names_list[self._visible_thing]
+            self.view.init_from_model()
+        except ValueError as e:
+            pass
+
+    def get_type_str(self):
+        return self.wano_list[self._visible_thing].get_type_str()
+
+    def get_data(self):
+        return self.wano_list[self._visible_thing].get_data()
+
+    def _parse_switch_conditions(self,xml):
+        self._switch_path  = xml.attrib["switch_path"]
+        self.visibility_var_path = Template(self._switch_path).render(path = self.full_path.split("."))
+        self.root_model.dataChanged.connect(self._evaluate_switch_condition)
+
 
 class MultipleOfModel(AbstractWanoModel):
     def __init__(self, *args, **kwargs):
@@ -242,7 +348,6 @@ class MultipleOfModel(AbstractWanoModel):
         self.xml = kwargs["xml"]
         self.first_xml_child = None
         self.list_of_dicts = []
-        self.listlike = True
         for child in self.xml:
             if self.first_xml_child is None:
                 self.first_xml_child = child
@@ -251,6 +356,10 @@ class MultipleOfModel(AbstractWanoModel):
 
     def numitems_per_add(self):
         return len(self.first_xml_child)
+
+    @property
+    def listlike(self):
+        return True
 
     def parse_one_child(self,child):
         #A bug still exists, which allows visibility conditions to be fired prior to the existence of the model
@@ -281,6 +390,9 @@ class MultipleOfModel(AbstractWanoModel):
 
     def get_type_str(self):
         return None
+
+    def __len__(self):
+        return len(self.list_of_dicts)
 
     def set_data(self, list_of_dicts):
         self.list_of_dicts = list_of_dicts
@@ -433,7 +545,7 @@ class WaNoModelRoot(WaNoModelDictLike):
     def wano_walker_paths(self,parent = None, path = "" , output = []):
         if (parent == None):
             parent = self
-        if hasattr(parent,'items') and hasattr(parent,'listlike'):
+        if parent.listlike:
             my_list = []
             for key, wano in parent.items():
                 mypath = copy.copy(path)
@@ -442,8 +554,8 @@ class WaNoModelRoot(WaNoModelDictLike):
                 else:
                     mypath = "%s.%s" % (mypath, key)
                 self.wano_walker_paths(parent=wano, path=mypath,output=output)
-        elif hasattr(parent,'items'):
 
+        elif parent.dictlike:
             for key,wano in parent.items():
                 mypath = copy.copy(path)
                 if hasattr(wano,"name"):
@@ -464,7 +576,7 @@ class WaNoModelRoot(WaNoModelDictLike):
         if (parent == None):
             parent = self
         #print(type(parent))
-        if hasattr(parent,'items') and hasattr(parent,'listlike'):
+        if parent.listlike:
             my_list = []
             for key, wano in parent.items():
                 mypath = copy.copy(path)
@@ -474,7 +586,7 @@ class WaNoModelRoot(WaNoModelDictLike):
                     mypath = "%s.%s" % (mypath, key)
                 my_list.append(self.wano_walker(parent=wano, path=mypath))
             return my_list
-        elif hasattr(parent,'items'):
+        elif parent.dictlike:
             my_dict = {}
             for key,wano in parent.items():
                 mypath = copy.copy(path)
@@ -507,7 +619,7 @@ class WaNoModelRoot(WaNoModelDictLike):
             print("In path",path,"depth:",path.count(".")+2,parent_type_string)
         """
         #traceback.print_stack()
-        if hasattr(parent,'items') and hasattr(parent,'listlike'):
+        if parent.listlike:
             my_list = []
             for key, wano in parent.items():
                 mypath = copy.copy(path)
@@ -517,7 +629,7 @@ class WaNoModelRoot(WaNoModelDictLike):
                     mypath = "%s.%s" % (mypath, key)
                 my_list.append(self.wano_walker_render_pass(rendered_wano,parent=wano, path=mypath,submitdir=submitdir,flat_variable_list=flat_variable_list))
             return my_list
-        elif hasattr(parent,'items'):
+        elif parent.dictlike:
             my_dict = {}
             for key,wano in parent.items():
                 mypath = copy.copy(path)
@@ -923,7 +1035,6 @@ class WaNoThreeRandomLetters(WaNoItemStringModel):
             if self.view != None:
                 self.view.init_from_model()
         super(WaNoThreeRandomLetters,self).set_data(self.mystring)
-
 
     def __repr__(self):
         return repr(self.mystring)

@@ -117,8 +117,36 @@ class WaNoGroupView(AbstractWanoQTView):
         return self.actual_widget
 
     def init_from_model(self):
+        self.vbox.clear()
         for model in self.model.wanos():
             self.vbox.addWidget(model.view.get_widget())
+
+class WaNoSwitchView(AbstractWanoQTView):
+    def __init__(self, *args, **kwargs):
+        super(WaNoSwitchView, self).__init__(*args, **kwargs)
+        self._current_widget = QtWidgets.QWidget(self.qt_parent)
+        self._current_view = None
+
+    def get_widget(self):
+        print("In get widget")
+        mv = self.model.get_selected_view()
+        if self._current_view != None:
+            self._current_view.set_visible(False)
+
+        if mv != None:
+            if self._current_view == None:
+                self._current_widget.deleteLater()
+                self._init = True
+            self._current_view = mv
+            self._current_view.set_visible(True)
+            self._current_widget = mv.get_widget()
+        return self._current_widget
+
+    def init_from_model(self):
+        for m_id,model in self.model.wanos():
+            model.view.get_widget().setParent(self.qt_parent)
+            model.view.set_visible(False)
+        self.model.parent.view.init_from_model()
 
 class WaNoConditionalView(AbstractWanoQTView):
     def __init__(self, *args, **kwargs):
@@ -391,9 +419,11 @@ class WanoQtViewRoot(AbstractWanoQTView):
         return self.exportview
 
     def init_from_model(self):
+        while self.vbox.count() > 0:
+            self.vbox.removeItem(self.vbox.takeAt(0))
+
         from WaNo.view.WaNoViews import WaNoTabView
         for key, model in self.model.wano_dict.items():
-
             if isinstance(model.view,WaNoTabView):
                 self.init_without_scroller()
 
@@ -594,11 +624,10 @@ class WaNoDropDownView(AbstractWanoQTView):
         """" Widget code end """
 
     def init_from_model(self):
+        self.combobox.clear()
         self.label.setText(self.model.name)
         for myid,entry in enumerate(self.model.choices):
             self.combobox.addItem(entry)
-
-
         self.combobox.setCurrentIndex(self.model.chosen)
         self.init = True
 

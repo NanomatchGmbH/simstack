@@ -56,10 +56,11 @@ class WaNoFactory(object):
         from WaNo.model.WaNoModels import WaNoItemFloatModel, WaNoModelListLike,\
             WaNoItemStringModel, WaNoItemBoolModel, WaNoModelDictLike, WaNoChoiceModel, \
             MultipleOfModel, WaNoItemFileModel, WaNoItemIntModel, WaNoItemScriptFileModel, \
-            WaNoMatrixModel, WaNoThreeRandomLetters
+            WaNoMatrixModel, WaNoThreeRandomLetters, WaNoSwitchModel, WaNoDynamicChoiceModel
         from WaNo.view.WaNoViews import WaNoItemFloatView, WaNoBoxView, WaNoItemStringView, \
             WaNoItemBoolView, WaNoItemFileView, WaNoChoiceView, MultipleOfView, WaNoItemIntView,\
-            WaNoTabView, WaNoGroupView, WaNoScriptView, WaNoDropDownView, WaNoMatrixFloatView
+            WaNoTabView, WaNoGroupView, WaNoScriptView, WaNoDropDownView, WaNoMatrixFloatView, \
+            WaNoSwitchView
 
         wano_list = {
             "WaNoFloat": (WaNoItemFloatModel, WaNoItemFloatView),
@@ -69,6 +70,7 @@ class WaNoFactory(object):
             "WaNoListBox": (WaNoModelListLike, WaNoBoxView),
             "WaNoBox": (WaNoModelDictLike, WaNoBoxView),
             "WaNoDictBox": (WaNoModelDictLike, WaNoBoxView),
+            "WaNoSwitch": (WaNoSwitchModel, WaNoSwitchView),
             "WaNoGroup": (WaNoModelDictLike, WaNoGroupView),
             "WaNoBool": (WaNoItemBoolModel, WaNoItemBoolView),
             "WaNoFile": (WaNoItemFileModel, WaNoItemFileView),
@@ -76,6 +78,7 @@ class WaNoFactory(object):
             "WaNoDropDown": (WaNoChoiceModel, WaNoDropDownView),
             "WaNoMultipleOf": (MultipleOfModel,MultipleOfView),
             "WaNoScript": (WaNoItemScriptFileModel, WaNoScriptView),
+            "WaNoDynamicDropDown":(WaNoDynamicChoiceModel,WaNoDropDownView),
             "WaNoTabs": (WaNoModelDictLike,WaNoTabView),
             "WaNoThreeRandomLetters": (WaNoThreeRandomLetters,WaNoItemStringView)
         }
