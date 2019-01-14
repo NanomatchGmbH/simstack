@@ -545,7 +545,9 @@ class WaNoModelRoot(WaNoModelDictLike):
     def wano_walker_paths(self,parent = None, path = "" , output = []):
         if (parent == None):
             parent = self
-        if parent.listlike:
+
+        listlike, dictlike = self._listlike_dictlike(parent)
+        if listlike:
             my_list = []
             for key, wano in parent.items():
                 mypath = copy.copy(path)
@@ -555,7 +557,7 @@ class WaNoModelRoot(WaNoModelDictLike):
                     mypath = "%s.%s" % (mypath, key)
                 self.wano_walker_paths(parent=wano, path=mypath,output=output)
 
-        elif parent.dictlike:
+        elif dictlike:
             for key,wano in parent.items():
                 mypath = copy.copy(path)
                 if hasattr(wano,"name"):
@@ -576,7 +578,8 @@ class WaNoModelRoot(WaNoModelDictLike):
         if (parent == None):
             parent = self
         #print(type(parent))
-        if parent.listlike:
+        listlike, dictlike = self._listlike_dictlike(parent)
+        if listlike:
             my_list = []
             for key, wano in parent.items():
                 mypath = copy.copy(path)
@@ -586,7 +589,7 @@ class WaNoModelRoot(WaNoModelDictLike):
                     mypath = "%s.%s" % (mypath, key)
                 my_list.append(self.wano_walker(parent=wano, path=mypath))
             return my_list
-        elif parent.dictlike:
+        elif dictlike:
             my_dict = {}
             for key,wano in parent.items():
                 mypath = copy.copy(path)
@@ -604,6 +607,18 @@ class WaNoModelRoot(WaNoModelDictLike):
             #print("%s %s" % (path, parent.get_data()))
             return parent.get_rendered_wano_data()
 
+    def _listlike_dictlike(self,myobject):
+        if isinstance(myobject,collections.OrderedDict) or isinstance(myobject,dict):
+            listlike = False
+            dictlike = True
+        elif isinstance(myobject,list):
+            listlike = True
+            dictlike = False
+        else:
+            listlike = myobject.listlike
+            dictlike = myobject.dictlike
+        return listlike, dictlike
+
     def wano_walker_render_pass(self, rendered_wano, parent = None, path = "",submitdir="", flat_variable_list = None):
         if (parent == None):
             parent = self
@@ -618,8 +633,9 @@ class WaNoModelRoot(WaNoModelDictLike):
         if parent_type_string == "File":
             print("In path",path,"depth:",path.count(".")+2,parent_type_string)
         """
-        #traceback.print_stack()
-        if parent.listlike:
+
+        listlike,dictlike = self._listlike_dictlike(parent)
+        if listlike:
             my_list = []
             for key, wano in parent.items():
                 mypath = copy.copy(path)
@@ -629,7 +645,7 @@ class WaNoModelRoot(WaNoModelDictLike):
                     mypath = "%s.%s" % (mypath, key)
                 my_list.append(self.wano_walker_render_pass(rendered_wano,parent=wano, path=mypath,submitdir=submitdir,flat_variable_list=flat_variable_list))
             return my_list
-        elif parent.dictlike:
+        elif dictlike:
             my_dict = {}
             for key,wano in parent.items():
                 mypath = copy.copy(path)
