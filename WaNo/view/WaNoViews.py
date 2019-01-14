@@ -117,7 +117,6 @@ class WaNoGroupView(AbstractWanoQTView):
         return self.actual_widget
 
     def init_from_model(self):
-        self.vbox.clear()
         for model in self.model.wanos():
             self.vbox.addWidget(model.view.get_widget())
 
