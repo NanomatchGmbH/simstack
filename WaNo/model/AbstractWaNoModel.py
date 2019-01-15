@@ -65,8 +65,8 @@ class AbstractWanoModel(QtCore.QObject):
             if changed_path != "force":
                 return
 
-        print("Changed path <%s> is being evaluated in my path: <%s> with visibility_var_path: %s " % (
-        changed_path, self.full_path, self.visibility_var_path))
+        #print("Changed path <%s> is being evaluated in my path: <%s> with visibility_var_path: %s " % (
+        #changed_path, self.full_path, self.visibility_var_path))
 
         value = self.root_model.get_value(self.visibility_var_path).get_data()
         #print(self.visibility_condition % value)

@@ -439,7 +439,6 @@ class WaNoItemFileView(AbstractWanoQTView):
         self.lineedit = QtWidgets.QLineEdit(parent=self.actual_widget)
         self.label = QtWidgets.QLabel("ABC",parent=self.actual_widget)
         self.openfilebutton = QtWidgets.QPushButton("",parent=self.actual_widget)
-
         self.openfilebutton.setIcon(QtWidgets.QFileIconProvider().icon(QtWidgets.QFileIconProvider.File))
 
         """
@@ -623,12 +622,15 @@ class WaNoDropDownView(AbstractWanoQTView):
         """" Widget code end """
 
     def init_from_model(self):
+        chosen_before = self.model.chosen
         self.combobox.clear()
         self.label.setText(self.model.name)
         for myid,entry in enumerate(self.model.choices):
             self.combobox.addItem(entry)
         self.combobox.setCurrentIndex(self.model.chosen)
         self.init = True
+        self.model.set_chosen(chosen_before)
+
 
     def onButtonClicked(self, id):
         if self.init:
