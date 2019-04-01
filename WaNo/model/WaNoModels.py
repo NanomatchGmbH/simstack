@@ -183,7 +183,8 @@ class WaNoDynamicChoiceModel(WaNoChoiceModel):
         if self._updating:
             return
         self.chosen = int(choice)
-        self.set_data(self.choices[self.chosen])
+        if len (self.choices) > self.chosen:
+            self.set_data(self.choices[self.chosen])
 
 
     def update_xml(self):
