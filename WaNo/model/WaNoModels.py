@@ -339,7 +339,7 @@ class WaNoSwitchModel(WaNoModelListLike):
 
     def _parse_switch_conditions(self,xml):
         self._switch_path  = xml.attrib["switch_path"]
-        self.visibility_var_path = Template(self._switch_path).render(path = self.full_path.split("."))
+        self._switch_path = Template(self._switch_path).render(path = self.full_path.split("."))
         self.root_model.dataChanged.connect(self._evaluate_switch_condition)
 
 
