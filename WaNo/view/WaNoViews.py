@@ -127,7 +127,6 @@ class WaNoSwitchView(AbstractWanoQTView):
         self._current_view = None
 
     def get_widget(self):
-        print("In get widget")
         mv = self.model.get_selected_view()
         if self._current_view != None:
             self._current_view.set_visible(False)

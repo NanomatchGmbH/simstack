@@ -465,6 +465,7 @@ class WaNoModelRoot(WaNoModelDictLike):
         self.parent_wf = kwargs["parent_wf"]
         wano_dir_root = kwargs["wano_dir_root"]
         resources_fn = os.path.join(wano_dir_root, "resources.yml")
+        self._outputfile_callbacks = []
         super(WaNoModelRoot, self).__init__(*args, **kwargs)
         #WaNoModelRootSignal.emit()
         #wmrs = WaNoModelRootSignal()
@@ -487,6 +488,7 @@ class WaNoModelRoot(WaNoModelDictLike):
         self.rendered_exec_command = ""
         self.input_files = []
 
+
         self.wano_dir_root = kwargs["wano_dir_root"]
         for child in self.full_xml.findall("./WaNoInputFiles/WaNoInputFile"):
             self.input_files.append((child.attrib["logical_filename"],child.text))
@@ -507,8 +509,14 @@ class WaNoModelRoot(WaNoModelDictLike):
     def get_export_model(self):
         return self.export_model
 
+    def register_outputfile_callback(self,function):
+        self._outputfile_callbacks.append(function)
+
     def get_output_files(self):
-        return self.output_files + [ a[0] for a in self.export_model.get_contents() ]
+        output_files = self.output_files + [ a[0] for a in self.export_model.get_contents() ]
+        for callback in self._outputfile_callbacks:
+            output_files += callback()
+        return output_files
 
     def datachanged_force(self):
         self.dataChanged.emit("force")
@@ -1006,6 +1014,16 @@ class WaNoItemStringModel(AbstractWanoModel):
         super(WaNoItemStringModel, self).__init__(*args, **kwargs)
         self.xml = kwargs['xml']
         self.mystring = kwargs['xml'].text
+        self._output_filestring = ""
+        if 'dynamic_output' in self.xml.attrib:
+            self._output_filestring=self.xml.attrib["dynamic_output"]
+            self.root_model.register_outputfile_callback(self.get_extra_output_files)
+
+    def get_extra_output_files(self):
+        extra_output_files = []
+        if self._output_filestring != "":
+            extra_output_files.append(self._output_filestring%self.mystring)
+        return extra_output_files
 
     def get_data(self):
         return self.mystring
