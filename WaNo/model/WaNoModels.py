@@ -292,6 +292,30 @@ class WaNoModelListLike(AbstractWanoModel):
         for wano in self.wano_list:
             wano.disconnectSignals()
 
+class WaNoNoneModel(AbstractWanoModel):
+    def __init__(self, *args, **kwargs):
+        super(WaNoNoneModel, self).__init__(*args, **kwargs)
+        self.xml = kwargs['xml']
+
+    def get_data(self):
+        return ""
+
+    def set_data(self, data):
+        ""
+
+    def __getitem__(self, item):
+        return None
+
+    def get_type_str(self):
+        return "String"
+
+    def update_xml(self):
+        pass
+
+    def __repr__(self):
+        return ""
+
+
 class WaNoSwitchModel(WaNoModelListLike):
     def __init__(self, *args, **kwargs):
         super(WaNoSwitchModel, self).__init__(*args, **kwargs)

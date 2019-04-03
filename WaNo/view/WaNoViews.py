@@ -194,6 +194,33 @@ class WaNoBoxView(AbstractWanoQTView):
         for model in self.model.wanos():
             self.vbox.addWidget(model.view.get_widget())
 
+class WaNoNone(AbstractWanoQTView):
+    def __init__(self, *args, **kwargs):
+        super(WaNoNone, self).__init__(*args, **kwargs)
+        self.actual_widget = QtWidgets.QFrame(parent=self.qt_parent)
+        #self.actual_widget.layout().setContentsMargins(0, 0, 0, 0)
+
+    def get_widget(self):
+        return self.actual_widget
+
+    def init_from_model(self):
+        pass
+
+class WaNoInvisibleBoxView(AbstractWanoQTView):
+    def __init__(self, *args, **kwargs):
+        super(WaNoInvisibleBoxView, self).__init__(*args, **kwargs)
+        self.actual_widget = QtWidgets.QFrame(parent=self.qt_parent)
+
+        self.vbox = QtWidgets.QVBoxLayout()
+        self.actual_widget.setLayout(self.vbox)
+        self.actual_widget.layout().setContentsMargins(0, 0, 0, 0)
+
+    def get_widget(self):
+        return self.actual_widget
+
+    def init_from_model(self):
+        for model in self.model.wanos():
+            self.vbox.addWidget(model.view.get_widget())
 
 class WaNoItemIntView(AbstractWanoQTView):
     def __init__(self, *args, **kwargs):
