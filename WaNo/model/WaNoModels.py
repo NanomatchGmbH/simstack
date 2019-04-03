@@ -153,9 +153,12 @@ class WaNoDynamicChoiceModel(WaNoChoiceModel):
         self.choices = ["uninitialized"]
         self.chosen = int(self.xml.attrib["chosen"])
         self.root_model.dataChanged.connect(self._update_choices)
+        self._connected = True
         self._updating = False
 
     def _update_choices(self, changed_path):
+        if not self._connected:
+            return 
         if not changed_path.startswith(self._collection_path) and not changed_path == "force":
             return
 
@@ -180,6 +183,8 @@ class WaNoDynamicChoiceModel(WaNoChoiceModel):
 
     @QtCore.Slot(int)
     def set_chosen(self,choice):
+        if not self._connected:
+            return
         if self._updating:
             return
         self.chosen = int(choice)
@@ -189,6 +194,14 @@ class WaNoDynamicChoiceModel(WaNoChoiceModel):
 
     def update_xml(self):
         self.xml.attrib["chosen"] = str(self.chosen)
+
+    def disconnectSignals(self):
+        if self.visibility_condition != None:
+            self.root_model.dataChanged.disconnect(self.evaluate_visibility_condition)
+            self.visibility_condition = None
+
+        self.root_model.dataChanged.disconnect(self._update_choices)
+        self._connected = False
 
 
 class WaNoMatrixModel(AbstractWanoModel):
@@ -325,7 +338,6 @@ class WaNoSwitchModel(WaNoModelListLike):
             switch_name = child.attrib["switch_name"]
             name = child.attrib["name"]
             self._names_list.append(name)
-            print(switch_name)
             self._switch_name_list.append(switch_name)
         self._switch_path = None
 
@@ -365,6 +377,17 @@ class WaNoSwitchModel(WaNoModelListLike):
         self._switch_path  = xml.attrib["switch_path"]
         self._switch_path = Template(self._switch_path).render(path = self.full_path.split("."))
         self.root_model.dataChanged.connect(self._evaluate_switch_condition)
+
+    def disconnectSignals(self):
+        if self.visibility_condition != None:
+            self.root_model.dataChanged.disconnect(self.evaluate_visibility_condition)
+            self.visibility_condition = None
+
+        if self._switch_path != None:
+            self.root_model.dataChanged.disconnect(self._evaluate_switch_condition)
+        super(WaNoSwitchModel,self).disconnectSignals()
+
+
 
 
 class MultipleOfModel(AbstractWanoModel):
