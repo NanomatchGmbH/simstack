@@ -65,27 +65,28 @@ class MultipleOfView(AbstractWanoQTView):
         add.clicked.connect(self.add_button_clicked)
         rem.clicked.connect(self.remove_button_clicked)
 
+        #List of bar widgets nobody else takes care about (for later deletion)
+        self._list_of_bar_widgets = []
+
 
     def add_button_clicked(self):
         self.model.add_item()
-        line = QtWidgets.QFrame(self.actual_widget)
-        line.setFrameShape(QtWidgets.QFrame.HLine)
-        line.setFrameShadow(QtWidgets.QFrame.Sunken)
-        self.vbox.addWidget(line)
-        for model_dict in reversed(self.model):
-            for model in model_dict.values():
-                self.vbox.addWidget(model.view.get_widget())
-            break
-
-
-
+        self.init_from_model()
+        return
 
     def remove_button_clicked(self):
-        removed = self.model.delete_item()
+        if self.model.last_item_check():
+            #Only one item left here, do nothing.
+            return
+
+
         numwidgets = self.vbox.count()
-        if removed:
-            for i in range(0,self.model.numitems_per_add()+1):
-                self.vbox.itemAt(numwidgets - 1 - i).widget().deleteLater()
+
+        for i in range(0,self.model.numitems_per_add()+1):
+            item = self.vbox.itemAt(numwidgets - 1 - i)
+            self.vbox.removeItem(item)
+        removed = self.model.delete_item()
+        assert removed
 
     def get_widget(self):
         return self.actual_widget
@@ -93,14 +94,30 @@ class MultipleOfView(AbstractWanoQTView):
 
     def init_from_model(self):
         self.actual_widget.setTitle(self.model.name)
-        for model_dict in self.model:
-            for model in model_dict.values():
-                self.vbox.addWidget(model.view.get_widget())
-            line = QtWidgets.QFrame(self.actual_widget)
-            line.setFrameShape(QtWidgets.QFrame.HLine)
-            line.setFrameShadow(QtWidgets.QFrame.Sunken)
-            self.vbox.addWidget(line)
-        line.deleteLater()
+        vbcount= self.vbox.count()
+
+        for i in range(0, vbcount):
+            myid = vbcount - 1  -i
+            item = self.vbox.itemAt(myid)
+            self.vbox.removeItem(item)
+
+
+        while len(self._list_of_bar_widgets) > 0:
+            mywidget = self._list_of_bar_widgets.pop()
+            mywidget.deleteLater()
+
+        nummodels = len(self.model)
+        for mdictid, model_dict in enumerate(self.model):
+            for mname, my_model in model_dict.items():
+                self.vbox.addWidget(my_model.view.get_widget())
+
+            if mdictid != nummodels - 1:
+                line = QtWidgets.QFrame(self.actual_widget)
+                line.setFrameShape(QtWidgets.QFrame.HLine)
+                line.setFrameShadow(QtWidgets.QFrame.Sunken)
+                self.vbox.addWidget(line)
+                self._list_of_bar_widgets.append(line)
+
 
 class EmptyView(AbstractWanoView):
     def __init__(self,*args,**kwargs):
@@ -123,27 +140,30 @@ class WaNoGroupView(AbstractWanoQTView):
 class WaNoSwitchView(AbstractWanoQTView):
     def __init__(self, *args, **kwargs):
         super(WaNoSwitchView, self).__init__(*args, **kwargs)
-        self._current_widget = QtWidgets.QWidget(self.qt_parent)
+        self._current_widget = None
         self._current_view = None
 
     def get_widget(self):
         mv = self.model.get_selected_view()
-        if self._current_view != None:
-            self._current_view.set_visible(False)
+        if mv == self._current_view and self._current_widget != None and self._current_view != None:
+            pass
+        elif mv != None:
+            if self._current_view != None:
+                self._current_view.set_visible(False)
 
-        if mv != None:
-            if self._current_view == None:
-                self._current_widget.deleteLater()
-                self._init = True
             self._current_view = mv
             self._current_view.set_visible(True)
             self._current_widget = mv.get_widget()
         return self._current_widget
 
     def init_from_model(self):
-        for m_id,model in self.model.wanos():
-            model.view.get_widget().setParent(self.qt_parent)
+        for _,model in self.model.wanos():
+            model.view.get_widget().setParent(None)
             model.view.set_visible(False)
+        visible_widget = self.get_widget()
+        assert self._current_view is not None
+        visible_widget.setParent(self.qt_parent)
+        self._current_view.set_visible(True)
         self.model.parent.view.init_from_model()
 
 class WaNoConditionalView(AbstractWanoQTView):
@@ -166,9 +186,7 @@ class WaNoConditionalView(AbstractWanoQTView):
 class WaNoBoxView(AbstractWanoQTView):
     def __init__(self, *args, **kwargs):
         super(WaNoBoxView, self).__init__(*args, **kwargs)
-        #self.actual_widget = QtWidgets.QWidget(self.qt_parent)
         self.actual_widget = QtWidgets.QGroupBox(parent=self.qt_parent)
-        #self.actual_widget = GroupBoxWithButton(self.qt_parent)
         self.actual_widget.setStyleSheet("""
         QGroupBox {
             border: 1px solid gray;
@@ -198,6 +216,9 @@ class WaNoNone(AbstractWanoQTView):
     def __init__(self, *args, **kwargs):
         super(WaNoNone, self).__init__(*args, **kwargs)
         self.actual_widget = QtWidgets.QFrame(parent=self.qt_parent)
+        self.vbox = QtWidgets.QVBoxLayout()
+        self.actual_widget.setLayout(self.vbox)
+        self.actual_widget.layout().setContentsMargins(0, 0, 0, 0)
         #self.actual_widget.layout().setContentsMargins(0, 0, 0, 0)
 
     def get_widget(self):
