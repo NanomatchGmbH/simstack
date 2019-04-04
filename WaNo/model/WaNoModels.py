@@ -356,7 +356,7 @@ class WaNoSwitchModel(WaNoModelListLike):
         return self.wano_list[self._visible_thing].view
 
     def _evaluate_switch_condition(self,changed_path):
-        if changed_path != self._switch_path:
+        if changed_path != self._switch_path and not changed_path == "force":
             return
         visible_thing_string = self.root_model.get_value(self._switch_path).get_data()
         try:
@@ -378,6 +378,11 @@ class WaNoSwitchModel(WaNoModelListLike):
         self._switch_path = Template(self._switch_path).render(path = self.full_path.split("."))
         self.root_model.dataChanged.connect(self._evaluate_switch_condition)
 
+    def decommission(self):
+        self.disconnectSignals()
+        for wano in self.wano_list:
+            wano.decommission()
+
     def disconnectSignals(self):
         if self.visibility_condition != None:
             self.root_model.dataChanged.disconnect(self.evaluate_visibility_condition)
@@ -385,8 +390,6 @@ class WaNoSwitchModel(WaNoModelListLike):
 
         if self._switch_path != None:
             self.root_model.dataChanged.disconnect(self._evaluate_switch_condition)
-        super(WaNoSwitchModel,self).disconnectSignals()
-
 
 
 
@@ -408,6 +411,12 @@ class MultipleOfModel(AbstractWanoModel):
     @property
     def listlike(self):
         return True
+
+    def number_of_multiples(self):
+        return len(self.list_of_dicts)
+
+    def last_item_check(self):
+        return len(self.list_of_dicts) == 1
 
     def parse_one_child(self,child):
         #A bug still exists, which allows visibility conditions to be fired prior to the existence of the model
@@ -449,7 +458,7 @@ class MultipleOfModel(AbstractWanoModel):
         if len(self.list_of_dicts) > 1:
             before = self.root_model.blockSignals(True)
             for wano in self.list_of_dicts[-1].values():
-                wano.disconnectSignals()
+                wano.decommission()
             self.list_of_dicts.pop()
             for child in reversed(self.xml):
                 self.xml.remove(child)
