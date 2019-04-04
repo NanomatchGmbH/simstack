@@ -349,7 +349,23 @@ class WaNoSwitchModel(WaNoModelListLike):
     @property
     def listlike(self):
         #Overwriting from inherited class, because we don't want to be treated like a list
-        return False
+        return self.wano_list[self._visible_thing].listlike
+
+    @property
+    def dictlike(self):
+        return self.wano_list[self._visible_thing].dictlike
+
+    def __getitem__(self, item):
+        return self.wano_list[self._visible_thing].__getitem__(item)
+
+    def __iter__(self):
+        return self.wano_list[self._visible_thing].__iter__()
+
+    def items(self):
+        return self.wano_list[self._visible_thing].items()
+
+    def __reversed__(self):
+        return self.wano_list[self._visible_thing].__reversed__()
 
     def get_selected_view(self):
         #return self.wano_dict[self._visible_thing].view
@@ -679,9 +695,12 @@ class WaNoModelRoot(WaNoModelDictLike):
         elif isinstance(myobject,list):
             listlike = True
             dictlike = False
-        else:
+
+        if hasattr(myobject,"listlike"):
             listlike = myobject.listlike
+        if hasattr(myobject, "dictlike"):
             dictlike = myobject.dictlike
+
         return listlike, dictlike
 
     def wano_walker_render_pass(self, rendered_wano, parent = None, path = "",submitdir="", flat_variable_list = None):
@@ -726,7 +745,7 @@ class WaNoModelRoot(WaNoModelDictLike):
             return my_dict
         else:
             # We should avoid merging and splitting. It's useless, we only need splitpath anyways
-            splitpath=path.split(".")
+            splitpath = path.split(".")
             #path is complete here, return path
             rendered_parent =  parent.render(rendered_wano,splitpath, submitdir=submitdir)
             if flat_variable_list is not None:
