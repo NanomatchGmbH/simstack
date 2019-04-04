@@ -131,6 +131,11 @@ class AbstractWanoModel(QtCore.QObject):
     def update_xml(self):
         pass
 
+    def decommission(self):
+        self.disconnectSignals()
+        if self.view != None:
+            self.view.decommission()
+
     def construct_children(self):
         pass
 

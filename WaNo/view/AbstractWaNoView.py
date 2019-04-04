@@ -50,3 +50,8 @@ class AbstractWanoQTView(AbstractWanoView):
     def set_model(self, model):
         super(AbstractWanoQTView, self).set_model(model)
 
+    def decommission(self):
+        widget = self.get_widget()
+        if widget != None:
+            widget.deleteLater()
+
