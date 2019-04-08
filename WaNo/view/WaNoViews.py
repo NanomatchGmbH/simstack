@@ -79,14 +79,9 @@ class MultipleOfView(AbstractWanoQTView):
             #Only one item left here, do nothing.
             return
 
-
-        numwidgets = self.vbox.count()
-
-        for i in range(0,self.model.numitems_per_add()+1):
-            item = self.vbox.itemAt(numwidgets - 1 - i)
-            self.vbox.removeItem(item)
         removed = self.model.delete_item()
         assert removed
+        self.init_from_model()
 
     def get_widget(self):
         return self.actual_widget
