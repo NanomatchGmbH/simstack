@@ -21,7 +21,7 @@ import logging
 import uuid
 
 import yaml
-from Qt.QtWidgets import QApplication
+from Qt.QtWidgets import QApplication, QStyleFactory
 from Qt.QtCore import QTimer
 import Qt
 import traceback
@@ -79,6 +79,9 @@ if __name__ == '__main__':
         ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(myappid)
         
     app = QApplication(sys.argv)
+    if platform.system() == 'Darwin':
+        # OSX QT bug here, if we don't force the style to Fusion, things like the resource table won't work.
+        app.setStyle(QStyleFactory.create("Fusion"))
     tempfile = join(get_temp_folder(),"%s-wfeditor.log"%uuid.uuid4())
     logging.basicConfig(filename=tempfile,filemode='w',level=logging.INFO)
     logger = logging.getLogger('WFELOG')
