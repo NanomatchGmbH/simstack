@@ -176,7 +176,8 @@ class WaNoDynamicChoiceModel(WaNoChoiceModel):
             self.chosen = 0
 
         #Workaround because set_chosen kills chosen
-        self.view.init_from_model()
+        if not self.view is None:
+            self.view.init_from_model()
 
         self._updating = False
 
