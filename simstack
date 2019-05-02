@@ -22,7 +22,7 @@ import uuid
 
 import yaml
 from Qt.QtWidgets import QApplication, QStyleFactory
-from Qt.QtCore import QTimer
+from Qt.QtCore import QTimer, QLocale
 import Qt
 import traceback
 
@@ -54,6 +54,9 @@ def get_temp_folder():
         rtp = rtp[0]
     return rtp
 
+def override_locale():
+    QLocale.setDefault(QLocale(QLocale.English, QLocale.UnitedStates))
+
 def get_settings_folder():
     if os.path.isdir(os.path.join("config",_SETTINGS_DIR)):
         return "config"
@@ -73,6 +76,7 @@ def get_settings_folder():
 if __name__ == '__main__':   
     signal.signal(signal.SIGINT, signal_handler)
 
+    override_locale()
     myappid = 'Nanomatch.WorkFlowEditor.Developer.V10' # arbitrary string
 
     if platform.system() == 'Windows':
