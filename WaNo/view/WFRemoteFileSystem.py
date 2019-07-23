@@ -1,5 +1,5 @@
 from Qt.QtWidgets import QWidget, QTreeView, QVBoxLayout, QPushButton, \
-        QAbstractItemView, QMenu
+        QAbstractItemView, QMenu, QApplication
 from Qt.QtGui import QCursor
 from Qt.QtCore import Signal, QModelIndex, Qt
 from enum import Enum
@@ -223,6 +223,20 @@ class WFRemoteFileSystem(QWidget):
             job = self.__fs_model.get_id(index)
             self.delete_job.emit(job)
 
+    def __on_jobid_copy(self):
+        #TODO modify to handle all selected.
+        index = self.__fileTree.selectedIndexes()[0]
+        if not index is None \
+                and self.__fs_model.get_type(index) == FSModel.DATA_TYPE_JOB:
+            print("got id: %s" % self.__fs_model.get_id(index))
+            job = self.__fs_model.get_id(index)
+            cb = QApplication.clipboard()
+            cb.clear(mode=cb.Clipboard )
+            cb.clear(mode=cb.Selection )
+            cb.setText("%s"%job, mode=cb.Clipboard)
+            cb.setText("%s"%job, mode=cb.Selection)
+            print(job)
+
     def __on_cm_abort_job(self):
         #TODO modify to handle all selected.
         index = self.__fileTree.selectedIndexes()[0]
@@ -274,6 +288,8 @@ class WFRemoteFileSystem(QWidget):
         action_1.triggered.connect(self.__on_cm_delete_job)
         action_2=menu.addAction("Abort Job")
         action_2.triggered.connect(self.__on_cm_abort_job)
+        action_2=menu.addAction("Copy JobID to clipboard")
+        action_2.triggered.connect(self.__on_jobid_copy)
 
     def __context_menu(self, pos):
         index = self.__fileTree.indexAt(pos)
