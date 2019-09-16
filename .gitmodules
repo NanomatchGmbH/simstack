@@ -1,0 +1,3 @@
+[submodule "SimStackServer"]
+	path = SimStackServer
+	url = git@int-wenzelvcs.int.kit.edu:projects/simstackserver.git
