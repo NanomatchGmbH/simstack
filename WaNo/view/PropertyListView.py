@@ -265,6 +265,36 @@ class ResourceTableModel(ResourceTableBase):
         self.header = ["Enable", "Property", "Value"]
         self.alignments = [QtCore.Qt.AlignCenter,pyside_int_workaround(QtCore.Qt.AlignLeft| QtCore.Qt.AlignVCenter),pyside_int_workaround(QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter)]
 
+    def render_to_simstack_server_model(self):
+        from SimStackServer.WorkflowModel import Resources
+
+        ppn = None
+        if self.mylist[self.ROWTYPE.ppn][0] == True:
+            ppn = self.mylist[self.ROWTYPE.ppn][2]
+
+        numnodes = None
+        if self.mylist[self.ROWTYPE.numnodes][0] == True:
+            numnodes = self.mylist[self.ROWTYPE.numnodes][2]
+
+        mem = None
+        if self.mylist[self.ROWTYPE.mem][0] == True:
+            mem = float(self.mylist[self.ROWTYPE.mem][2])
+
+        time = None
+        if self.mylist[self.ROWTYPE.time][0] == True:
+            time = self.mylist[self.ROWTYPE.time][2]
+
+        queue = None
+        if self.mylist[self.ROWTYPE.queue][0] == True:
+            queue = self.mylist[self.ROWTYPE.queue][2]
+
+
+        return Resources(
+            cpus_per_node=ppn, nodes=numnodes,
+            memory=mem, walltime = time,
+            queue = queue
+        )
+
 
     def render_to_resource_jsdl(self):
         from pyura.pyura.WorkflowXMLConverter import JSDLtoXML
