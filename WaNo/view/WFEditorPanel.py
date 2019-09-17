@@ -23,6 +23,7 @@ import Qt.QtWidgets  as QtWidgets
 from Qt.QtCore import Signal
 
 import WaNo.WaNoFactory as WaNoFactory
+from SimStackServer.WorkflowModel import WorkflowExecModule, Workflow, DirectedGraph, WorkflowElementList
 from WaNo.WaNoSettingsProvider import WaNoSettingsProvider
 from WaNo.Constants import SETTING_KEYS
 
@@ -186,8 +187,8 @@ class WFWaNoWidget(QtWidgets.QToolButton,DragDropTargetTracker):
     def render(self,basefolder,stageout_basedir=""):
         #myfolder = os.path.join(basefolder,self.uuid)
         print("rendering wano with stageout_basedir %s" %stageout_basedir)
-        jsdl = self.wano_model.render_and_write_input_files(basefolder,stageout_basedir=stageout_basedir)
-        return jsdl
+        jsdl, wem = self.wano_model.render_and_write_input_files_newmodel(basefolder,stageout_basedir=stageout_basedir)
+        return jsdl, wem
 
 
 
@@ -672,10 +673,11 @@ class WFModel(object):
         activities = []
         transitions = []
         swfs = []
-        start = WFtoXML.xml_start()
-        activities.append(start)
+        #start = WFtoXML.xml_start()
+        #parent_xml = etree.Element()
 
-        fromid = start.attrib["Id"]
+
+        fromid = "0"
         for myid, (ele, elename) in enumerate(zip(self.elements, self.elementnames)):
             if ele.is_wano:
                 wano_dir = os.path.join(jobdir, self.element_to_name(ele))
@@ -683,22 +685,37 @@ class WFModel(object):
                     os.makedirs(wano_dir)
                 except OSError:
                     pass
-                jsdl = ele.render(wano_dir, stageout_basedir=elename)
-                jsdl_xml=WFtoXML.xml_jsdl(jsdl=jsdl)
-                toid = jsdl_xml.attrib["Id"]
-                activities.append(jsdl_xml)
+                jsdl, wem = ele.render(wano_dir, stageout_basedir=elename)
+                wem : WorkflowExecModule
+                print(wem.uid)
+                """
+                with open("%s_wem.xml"%myid,'w') as outfile:
+                    parent = etree.Element("root")
+                    wem.to_xml(parent)
+                    outfile.write(etree.tostring(parent,encoding = "unicode", pretty_print=True))
+                """
+                #jsdl_xml=WFtoXML.xml_jsdl(jsdl=jsdl)
+                toid = wem.uid
+                activities.append(["WorkflowExecModule",wem])
             else:
                 #only subworkflow remaining
                 swf = ele.render_to_simple_wf(submitdir,jobdir,path ="")
                 toid = swf.attrib["Id"]
                 swfs.append(swf)
 
-            transition = WFtoXML.xml_transition(From=fromid, To=toid)
-            transitions.append(transition)
+            #transition = WFtoXML.xml_transition(From=fromid, To=toid)
+            print((fromid,toid))
+            transitions.append((fromid, toid))
             fromid = toid
             #out.write(ele.uuid + "\n")
-        docs = WFtoXML.xml_documentation(Name=self.wf_name)
-        wf = WFtoXML.xml_workflow(Transition=transitions,Activity=activities,SubWorkflow=swfs,Documentation = docs)
+        #docs = WFtoXML.xml_documentation(Name=self.wf_name)
+        wf = Workflow(elements = WorkflowElementList(activities), graph = DirectedGraph( transitions))
+        xml = etree.Element("Workflow")
+        wf.to_xml(parent_element=xml)
+        with open("newflow.xml",'w') as outfile:
+            outfile.write(etree.tostring(xml,pretty_print=True,encoding = "unicode"))
+
+
         return wf
 
 
@@ -706,7 +723,6 @@ class WFModel(object):
     #The files will be export to c9m:${WORKFLOW_ID}/the file name below
     def assemble_files(self,path):
         myfiles = []
-        print("Assembling in WFModel root")
         for myid,(ele,name) in enumerate(zip(self.elements,self.elementnames)):
             if ele.is_wano:
                 for file in ele.wano_model.get_output_files():
@@ -796,19 +812,6 @@ class WFModel(object):
             os.makedirs(jobdir)
         except OSError:
             pass
-
-        """
-        if len(self.elements) == 1:
-            ele = self.elements[0]
-            if ele.is_wano:
-                wano_dir = os.path.join(jobdir, self.elementnames[0])
-                try:
-                    os.makedirs(wano_dir)
-                except OSError:
-                    pass
-                ele.render(wano_dir)
-                return SubmitType.SINGLE_WANO,wano_dir,None
-        """ #currently disabled until we can better take care of single job resources
 
         wf_xml = self.render_to_simple_wf(submitdir,jobdir)
 

@@ -551,6 +551,8 @@ class WFEditorApplication(CallableQThread):
         #    self.run_job(directory,name)
         #    self._view_manager.show_status_message("Started job: %s" % name)
         if jobtype == SubmitType.WORKFLOW or jobtype == SubmitType.SINGLE_WANO:
+            print("job submission disabled.")
+            return
             #print("Running Workflows not yet implemented")
             self.run_workflow(wf_xml,directory,name)
             self._view_manager.show_status_message("Started workflow: %s" % name)
@@ -780,8 +782,6 @@ class WFEditorApplication(CallableQThread):
         self._view_manager  = WFViewManager(UnicoreStateFactory.get_reader())
 
         self._current_registry_index = 0
-
-	# TODO model
         self.wanos = []
 
         UnicoreAPI.init()
