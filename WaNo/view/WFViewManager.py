@@ -164,7 +164,7 @@ class WFViewManager(QObject):
         #self._dl_progress_widget.update()
         self._dl_progress_bar.update()
 
-        print("WFViewManager -> update: %d" % (ctypes.CDLL('libc.so.6').syscall(186)))
+        #print("WFViewManager -> update: %d" % (ctypes.CDLL('libc.so.6').syscall(186)))
 
         # Note: This is required to have at least one additional view update
         # after a transfer has completed.
