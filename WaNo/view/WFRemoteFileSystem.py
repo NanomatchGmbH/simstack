@@ -131,6 +131,9 @@ class WFRemoteFileSystem(QWidget):
             self.request_job_list_update.emit()
         elif index_type == FSModel.HEADER_TYPE_WORKFLOW:
             self.request_worflow_list_update.emit()
+        elif index_type == FSModel.HEADER_TYPE_DIRECTORY:
+            #self.request_directory_update(path).emit()
+            self.__request_tree_entry_update(index,path,index_type)
         else:
             print("wrong type : %s" % index_type)
 
@@ -156,6 +159,8 @@ class WFRemoteFileSystem(QWidget):
             wf_id = self.__fs_model.get_id(index)
             self.request_worflow_update.emit(wf_id)
         elif index_type == FSModel.DATA_TYPE_DIRECTORY:
+            self.request_directory_update.emit(abspath)
+        elif index_type == FSModel.HEADER_TYPE_DIRECTORY:
             self.request_directory_update.emit(abspath)
         elif index_type == FSModel.DATA_TYPE_FILE:
             # We don't need to remember this one.

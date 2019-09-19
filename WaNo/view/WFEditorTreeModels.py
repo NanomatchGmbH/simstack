@@ -39,6 +39,7 @@ class DATA_TYPE(Enum):
     WF_FAILED = 17
     WF_SUCCESSFUL = 18
     WF_ABORTED = 19
+    UNDELETEABLE_DIRECTORY = 20
 
 JOB_STATUS_TO_DATA_TYPE = {
     JobStatus.READY : DATA_TYPE.JOB_READY,
@@ -310,7 +311,7 @@ class WFEFileSystemModel(DataTreeModel):
         icon = None
         if icon_type == DATA_TYPE.FILE:
             icon = QFileIconProvider().icon(QFileIconProvider.File)
-        elif icon_type == DATA_TYPE.DIRECTORY:
+        elif icon_type == DATA_TYPE.DIRECTORY or icon_type == DATA_TYPE.UNDELETEABLE_DIRECTORY:
             icon = QFileIconProvider().icon(QFileIconProvider.Folder)
         elif icon_type == DATA_TYPE.LOADING:
             icon = QFileIconProvider().icon(QFileIconProvider.File)
@@ -400,6 +401,7 @@ class WFEUnicoreRemoteFileSystemModel(WFEFileSystemModel):
     DATA_TYPE_WORKFLOW      = DATA_TYPE.SEPARATOR2
     HEADER_TYPE_JOB         = DATA_TYPE.SEPARATOR3
     HEADER_TYPE_WORKFLOW    = DATA_TYPE.SEPARATOR4
+    HEADER_TYPE_DIRECTORY   = DATA_TYPE.UNDELETEABLE_DIRECTORY
 
     def pixmap_to_grayscale(self,pixmap):
         image = pixmap.toImage()
@@ -540,7 +542,12 @@ class WFEUnicoreRemoteFileSystemModel(WFEFileSystemModel):
                 WFEFileSystemEntry.createData(
                         "Jobs",
                         'abs',
-                        self.HEADER_TYPE_JOB)
+                        self.HEADER_TYPE_JOB),
+                WFEFileSystemEntry.createData(
+                        "Home",
+                        '.',
+                        self.HEADER_TYPE_DIRECTORY)
+
             ]
         rv = self.insertDataRows(
                 0,

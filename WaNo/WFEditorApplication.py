@@ -211,11 +211,13 @@ class WFEditorApplication(CallableQThread):
 
     def _on_fs_job_update_request(self, path):
         registry = self._get_current_registry()
-        self.exec_unicore_callback_operation.emit(
-                uops.UPDATE_DIR_LIST,
-                (registry,path),
+        print("Got a request to update %s"%path)
+
+
+        self._unicore_connector.update_dir_list(registry,path,
                 (self._on_fs_list_updated, (), {})
-            )
+        )
+
 
     def _on_fs_worflow_update_request(self, wfid):
         self._logger.debug("Querying %s from Unicore Registry" % wfid)
@@ -287,12 +289,9 @@ class WFEditorApplication(CallableQThread):
                 self._on_fs_job_update_request(to_update)
 
     def _on_fs_delete_file(self, filename):
-        base_uri = self._get_current_base_uri()
-        self.exec_unicore_callback_operation.emit(
-                uops.DELETE_FILE,
-                SSHConnector.create_delete_file_args(base_uri, filename),
-                (self._on_file_deleted, (), { 'to_del': filename } )
-            )
+        registry = self._get_current_registry()
+        self._unicore_connector.delete_file(registry, filename, (self._on_file_deleted, (), { 'to_del': filename } ))
+
 
     @QThreadCallback.callback
     def _on_job_deleted(self, base_uri, status, err, job=""):

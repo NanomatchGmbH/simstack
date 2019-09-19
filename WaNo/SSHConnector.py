@@ -732,15 +732,24 @@ class SSHConnector(CallableQThread):
 
     def update_dir_list(self, registry, path, callback=(None, (), {})):
         print(registry)
+        cm = self._get_cm(registry)
+        files = cm.list_dir(path)
+        self._exec_callback(callback, registry, path, files)
+
         return
         worker = self._get_error_or_fail(base_uri)
         if not worker is None:
             worker.list_dir(callback, base_uri, path)
 
-    def delete_file(self, base_uri, filename, callback=(None, (), {})):
-        worker = self._get_error_or_fail(base_uri)
-        if not worker is None:
-            worker.delete_file(callback, base_uri, filename)
+    def delete_file(self, registry, filename, callback=(None, (), {})):
+        cm = self._get_cm(registry)
+        print("about to delete %s"%filename)
+        if cm.is_directory(filename):
+            cm.rmtree(filename)
+        else:
+            cm.delete_file(filename)
+        self._exec_callback(callback, registry, filename, UnicoreErrorCodes.NO_ERROR)
+
 
     def delete_job(self, base_uri, job, callback=(None, (), {})):
         worker = self._get_error_or_fail(base_uri)
@@ -818,7 +827,7 @@ class SSHConnector(CallableQThread):
             toupload = [upload_files]
 
         for local_file in toupload:
-            cm.put_file(local_file, destination, progress_callback)
+            cm.put_file(local_file, destination)
 
     def unicore_operation(self, operation, data, callback=(None, (), {})):
         ops = OPERATIONS
