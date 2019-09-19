@@ -8,6 +8,7 @@ import threading
 import shlex
 import os
 from enum import Enum
+from os.path import dirname
 from pprint import pprint
 
 import paramiko
@@ -571,7 +572,7 @@ class SSHConnector(CallableQThread):
         if not "port" in registry:
             registry["port"] = 22
         if not "calculation_basepath" in registry:
-            registry["calculation_basepath"] = "$HOME/simstack_server_files"
+            registry["calculation_basepath"] = "simstack_workspace"
         if not "queueing_system" in registry:
             registry["queueing_system"] = "torque"
             print("this has to be configurable")
@@ -632,15 +633,82 @@ class SSHConnector(CallableQThread):
                     name,
                     (self._emit_error, (base_uri, OPERATIONS.RUN_SINGLE_JOB), {}))
 
-    def run_workflow_job(self, registry, submitname, dir_to_upload, xml):
+    def run_workflow_job(self, registry, submitname, dir_to_upload, xml, progress_callback = None, callback = None):
+
+
 
 
         #run workflow
+        """
         worker.run_workflow_job(
                 submitname,
                 dir_to_upload,
                 xml,
                 (self._emit_error, (base_uri, OPERATIONS.RUN_WORKFLOW_JOB), {}))
+
+            # NOTE: error_callback already contains args (base_uri and operation)
+            wf_manager = self.registry.get_workflow_manager()
+            storage_manager = self.registry.get_storage_manager()
+
+            status, err, error_message, storage = storage_manager.create(name=submitname)
+
+
+        if (err != UnicoreErrorCodes.NO_ERROR or not status in range(200, 300)):
+            self._exec_callback(error_callback, err, error_message)
+            return
+
+        try:
+            storage_id = storage[1].get_id()
+        except:
+            storage_id = storage.get_id()
+        """
+        cm = self._get_cm(registry)
+        counter = 0
+
+
+        real_submitname = submitname
+        while cm.exists(real_submitname):
+            counter+=1
+            print("File %s already exists. This is unlikely but possible, when submitting lots of workflows. Trying a different filename." % (real_submitname))
+            real_submitname = submitname + "_Nr_%d"%counter
+
+            if counter == 15:
+                raise FileExistsError("File %s already exists. Stopping to find a new file. This is highly unlikely. Please report to Nanomatch."%(real_submitname))
+
+        submitname = real_submitname
+
+        for filename in filewalker(dir_to_upload):
+            cp = os.path.commonprefix([dir_to_upload, filename])
+            relpath = os.path.relpath(filename, cp)
+            submitpath = submitname + '/' + relpath
+            print("Uploading '%s' to '%s'" %(filename, submitpath))
+            mydir = dirname(submitpath)
+            print(mydir)
+            cm.mkdir_p(mydir)
+            print("made mydir")
+            cm.put_file(filename,submitpath)
+
+            #                storage_manager.upload_file(filename, storage_id=storage_id, remote_filename=relpath)
+            # imports.add_import(filename,relpath)
+
+
+
+        #print("err: %s\nstatus: %s\nwf: %s" % (str(err), str(status), str(wf)))
+
+        #workflow_id = wf.split("/")[-1]
+
+        #storage_management_uri = storage_manager.get_storage_management_uri()
+
+        #xmlstring = etree.tostring(xml, pretty_print=False).decode("utf-8").replace("${WORKFLOW_ID}", workflow_id)
+        #xmlstring = xmlstring.replace("${STORAGE_ID}", "%s%s" % (storage_management_uri, storage_id))
+
+        # with open("wf.xml",'w') as wfo:
+        #    wfo.write(xmlstring)
+
+        #print("err: %s, status: %s, wf_manager: %s" % (err, status, wf))
+        #### TIMO HERE
+        #wf_manager.run(wf.split('/')[-1], xmlstring)
+
 
     def update_job_list(self, base_uri, callback=(None, (), {})):
         worker = self._get_error_or_fail(base_uri)
@@ -728,18 +796,29 @@ class SSHConnector(CallableQThread):
         transfers[index].submit(executor)
 
 
-    def download_file(self, base_uri, download, local_dest, callback=(None, (), {})):
-        self._data_transfer(
-                base_uri, local_dest, download, Direction.DOWNLOAD, callback)
+    def download_file(self, registry, download_files, local_dest, progress_callback = None, callback=(None, (), {})):
+        cm = self._get_cm(registry)
+        todl = download_files
+        if isinstance(download_files, str):
+            todl = [download_files]
 
+        for remote_file in todl:
+            cm.get_file(remote_file, local_dest, progress_callback)
 
-    def upload_files(self, registry, upload_file, destination, callback=(None, (), {})):
+    def _get_cm(self, registry) -> ClusterManager:
+        name = registry["name"]
+        if not name in self._clustermanagers:
+            raise ConnectionError("Clustermanager %s was not connected."%name)
+        return self._clustermanagers[name]
 
-        pass
+    def upload_files(self, registry, upload_files, destination, progress_callback = None, callback=(None, (), {})):
+        cm = self._get_cm(registry)
+        toupload = upload_files
+        if isinstance(upload_files, str):
+            toupload = [upload_files]
 
-    def __old_upload_file(self, base_uri, upload_file, destination, callback=(None, (), {})):
-        self._data_transfer(
-                base_uri, upload_file, destination, Direction.UPLOAD, callback)
+        for local_file in toupload:
+            cm.put_file(local_file, destination, progress_callback)
 
     def unicore_operation(self, operation, data, callback=(None, (), {})):
         ops = OPERATIONS

@@ -248,28 +248,25 @@ class WFEditorApplication(CallableQThread):
 
     def _on_fs_download(self, from_path, to_path):
         registry = self._get_current_registry()
-        self.exec_unicore_callback_operation.emit(
-                uops.DOWNLOAD_FILE,
-                {
-                    "registry": registry,
-                  "from_path": from_path,
-                  "to_path": to_path
-                },
-                (self._view_manager.on_download_complete, (
-                    registry, from_path, to_path), {})
-            )
+        self._unicore_connector.download_file(registry,
+                                              from_path,
+                                              to_path,
+                                              callback=(self._view_manager.on_download_complete,
+                                                        (registry, from_path, to_path)
+                                                        ,{})
+        )
 
-    def _on_fs_upload(self, local_file, dest_dir):
-        base_uri = self._get_current_base_uri()
-        self.exec_unicore_callback_operation.emit(
-                uops.UPLOAD_FILE,
-                SSHConnector.create_data_transfer_args(
-                        base_uri,
-                        local_file,
-                        dest_dir),
-                (self._view_manager.on_upload_complete, (
-                    base_uri, local_file, dest_dir), {})
-            )
+
+    def _on_fs_upload(self, local_files, dest_dir):
+        registry = self._get_current_registry()
+
+        self._unicore_connector.upload_files(
+            registry,
+            local_files,
+            dest_dir,
+            (self._view_manager.on_upload_complete, (
+                registry, local_files, dest_dir), {})
+        )
 
     @QThreadCallback.callback
     def _on_file_deleted(self, base_uri, status, err, to_del=""):
@@ -474,31 +471,26 @@ class WFEditorApplication(CallableQThread):
         #self._set_unicore_disconnected()
 
         registry = self._get_current_registry()
-        self.exec_unicore_callback_operation.emit(
-                uops.DISCONNECT_REGISTRY,
-                registry,
-                (self._cb_disconnect, (), {'registry': registry})
-            )
-
+        self._unicore_connector.disconnect_registry(
+            registry,
+            (self._cb_disconnect,(),{'registry': registry})
+        )
 
     def _connect_unicore(self, index, no_status_update=False):
-        success = False
         if not no_status_update:
             self._set_unicore_connecting()
 
         self._set_current_registry_index(index)
-        registry    = self._get_current_registry()
-
+        registry = self._get_current_registry()
         self._logger.info("Connecting to registry '%s'." % \
                 registry[SETTING_KEYS['registry.name']]
             )
 
+        self._unicore_connector.connect_registry(
+            registry,
+            (self._cb_connect,(),{'registry': registry})
+        )
 
-        self.exec_unicore_callback_operation.emit(
-                uops.CONNECT_REGISTRY,
-                registry,
-                (self._cb_connect, (), {'registry': registry})
-            )
 
     @trace_to_logger
     def _run(self):
@@ -520,8 +512,6 @@ class WFEditorApplication(CallableQThread):
         #    self.run_job(directory,name)
         #    self._view_manager.show_status_message("Started job: %s" % name)
         if jobtype == SubmitType.WORKFLOW or jobtype == SubmitType.SINGLE_WANO:
-            print("job submission disabled.")
-            return
             #print("Running Workflows not yet implemented")
             self.run_workflow(wf_xml,directory,name)
             self._view_manager.show_status_message("Started workflow: %s" % name)
@@ -533,20 +523,13 @@ class WFEditorApplication(CallableQThread):
             pass
 
     def run_workflow(self, xml, directory, name):
-        base_uri = self._get_current_base_uri()
+        registry= self._get_current_registry()
         now = datetime.datetime.now()
-        nowstr = now.strftime("%Y-%m-%d %H:%M:%S")
-        submitname = "WF %s submitted at %s" %(name, nowstr)
+        nowstr = now.strftime("%Y-%m-%d-%H:%M:%S")
+        submitname = "%s-%s" %(nowstr, name)
         to_upload = os.path.join(directory,"jobs")
+        self._unicore_connector.run_workflow_job(registry,submitname,to_upload,xml)
 
-        self.exec_unicore_operation.emit(
-                uops.RUN_WORKFLOW_JOB,
-                SSHConnector.create_workflow_job_args(
-                    base_uri,
-                    submitname,
-                    to_upload,
-                    xml)
-                )
 
 
     def run_job(self, wano_dir, name):
