@@ -687,7 +687,7 @@ class WFModel(object):
                     pass
                 jsdl, wem = ele.render(wano_dir, stageout_basedir=elename)
                 wem : WorkflowExecModule
-                print(wem.uid)
+                #print(wem.uid)
                 """
                 with open("%s_wem.xml"%myid,'w') as outfile:
                     parent = etree.Element("root")
@@ -704,7 +704,7 @@ class WFModel(object):
                 swfs.append(swf)
 
             #transition = WFtoXML.xml_transition(From=fromid, To=toid)
-            print((fromid,toid))
+            #print((fromid,toid))
             transitions.append((fromid, toid))
             fromid = toid
             #out.write(ele.uuid + "\n")
@@ -712,11 +712,11 @@ class WFModel(object):
         wf = Workflow(elements = WorkflowElementList(activities), graph = DirectedGraph( transitions))
         xml = etree.Element("Workflow")
         wf.to_xml(parent_element=xml)
-        with open("newflow.xml",'w') as outfile:
-            outfile.write(etree.tostring(xml,pretty_print=True,encoding = "unicode"))
+        #with open("newflow.xml",'w') as outfile:
+        #    outfile.write(etree.tostring(xml,pretty_print=True,encoding = "unicode"))
 
 
-        return wf
+        return xml
 
 
     #this function assembles all files relative to the workflow root

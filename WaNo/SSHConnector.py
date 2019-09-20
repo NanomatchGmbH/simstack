@@ -681,12 +681,17 @@ class SSHConnector(CallableQThread):
             cp = os.path.commonprefix([dir_to_upload, filename])
             relpath = os.path.relpath(filename, cp)
             submitpath = submitname + '/' + relpath
-            print("Uploading '%s' to '%s'" %(filename, submitpath))
+            #print("Uploading '%s' to '%s'" %(filename, submitpath))
             mydir = dirname(submitpath)
-            print(mydir)
             cm.mkdir_p(mydir)
-            print("made mydir")
             cm.put_file(filename,submitpath)
+
+        with cm.remote_open("rendered_workflow.xml",'wt') as outfile:
+            outfile.write(etree.tostring(xml, encoding = "utf8", pretty_print=True))
+
+
+
+        # Fopen
 
             #                storage_manager.upload_file(filename, storage_id=storage_id, remote_filename=relpath)
             # imports.add_import(filename,relpath)
@@ -731,19 +736,12 @@ class SSHConnector(CallableQThread):
             worker.update_workflow_job_list(callback, base_uri, wfid)
 
     def update_dir_list(self, registry, path, callback=(None, (), {})):
-        print(registry)
         cm = self._get_cm(registry)
         files = cm.list_dir(path)
         self._exec_callback(callback, registry, path, files)
 
-        return
-        worker = self._get_error_or_fail(base_uri)
-        if not worker is None:
-            worker.list_dir(callback, base_uri, path)
-
     def delete_file(self, registry, filename, callback=(None, (), {})):
         cm = self._get_cm(registry)
-        print("about to delete %s"%filename)
         if cm.is_directory(filename):
             cm.rmtree(filename)
         else:
