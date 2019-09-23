@@ -353,7 +353,6 @@ class UnicoreWorker(TPCThread):
         self.abort_or_delete_workflow(callback, base_uri, workflow,
                 self.OPERATIONS.ABORT)
 
-                    #TODO remove, debug only
     def start(self):
         super(UnicoreWorker, self).start()
         import platform
@@ -635,33 +634,6 @@ class SSHConnector(CallableQThread):
 
     def run_workflow_job(self, registry, submitname, dir_to_upload, xml, progress_callback = None, callback = None):
 
-
-
-
-        #run workflow
-        """
-        worker.run_workflow_job(
-                submitname,
-                dir_to_upload,
-                xml,
-                (self._emit_error, (base_uri, OPERATIONS.RUN_WORKFLOW_JOB), {}))
-
-            # NOTE: error_callback already contains args (base_uri and operation)
-            wf_manager = self.registry.get_workflow_manager()
-            storage_manager = self.registry.get_storage_manager()
-
-            status, err, error_message, storage = storage_manager.create(name=submitname)
-
-
-        if (err != UnicoreErrorCodes.NO_ERROR or not status in range(200, 300)):
-            self._exec_callback(error_callback, err, error_message)
-            return
-
-        try:
-            storage_id = storage[1].get_id()
-        except:
-            storage_id = storage.get_id()
-        """
         cm = self._get_cm(registry)
         counter = 0
 
@@ -680,40 +652,14 @@ class SSHConnector(CallableQThread):
         for filename in filewalker(dir_to_upload):
             cp = os.path.commonprefix([dir_to_upload, filename])
             relpath = os.path.relpath(filename, cp)
-            submitpath = submitname + '/' + relpath
-            #print("Uploading '%s' to '%s'" %(filename, submitpath))
+            submitpath = submitname + '/' + "workflow_data" + '/'+ relpath
+            print("Uploading '%s' to '%s'" %(filename, submitpath))
             mydir = dirname(submitpath)
             cm.mkdir_p(mydir)
             cm.put_file(filename,submitpath)
 
-        with cm.remote_open("rendered_workflow.xml",'wt') as outfile:
+        with cm.remote_open(real_submitname + "/" + "rendered_workflow.xml",'wt') as outfile:
             outfile.write(etree.tostring(xml, encoding = "utf8", pretty_print=True))
-
-
-
-        # Fopen
-
-            #                storage_manager.upload_file(filename, storage_id=storage_id, remote_filename=relpath)
-            # imports.add_import(filename,relpath)
-
-
-
-        #print("err: %s\nstatus: %s\nwf: %s" % (str(err), str(status), str(wf)))
-
-        #workflow_id = wf.split("/")[-1]
-
-        #storage_management_uri = storage_manager.get_storage_management_uri()
-
-        #xmlstring = etree.tostring(xml, pretty_print=False).decode("utf-8").replace("${WORKFLOW_ID}", workflow_id)
-        #xmlstring = xmlstring.replace("${STORAGE_ID}", "%s%s" % (storage_management_uri, storage_id))
-
-        # with open("wf.xml",'w') as wfo:
-        #    wfo.write(xmlstring)
-
-        #print("err: %s, status: %s, wf_manager: %s" % (err, status, wf))
-        #### TIMO HERE
-        #wf_manager.run(wf.split('/')[-1], xmlstring)
-
 
     def update_job_list(self, base_uri, callback=(None, (), {})):
         worker = self._get_error_or_fail(base_uri)

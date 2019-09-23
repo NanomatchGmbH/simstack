@@ -3,6 +3,7 @@ from __future__ import print_function
 from __future__ import unicode_literals
 from __future__ import absolute_import
 
+import datetime
 import os
 
 import logging
@@ -685,6 +686,7 @@ class WFModel(object):
                     os.makedirs(wano_dir)
                 except OSError:
                     pass
+                #stageout_basedir = "wanos/%s" % (elename)
                 jsdl, wem = ele.render(wano_dir, stageout_basedir=elename)
                 wem : WorkflowExecModule
                 #print(wem.uid)
@@ -802,11 +804,25 @@ class WFModel(object):
                 model.read_from_disk(full_foldername=foldername, xml_subelement=child)
         self.view.updateGeometry()
 
-    def render(self):
+    def render(self, given_name):
         assert (self.foldername is not None)
+        now = datetime.datetime.now()
+        nowstr = now.strftime("%Y-%m-%d-%H:%M:%S")
+        submitname = "%s-%s" %(nowstr, given_name)
+        submitdir = os.path.join(self.foldername,"Submitted",submitname)
+        counter = 0
+        while os.path.exists(submitdir):
+            datetime.time.sleep(1.1)
+            now = datetime.datetime.now()
+            nowstr = now.strftime("%Y-%m-%d-%H:%M:%S")
+            submitname = "%s-%s" % (nowstr, given_name)
+            submitdir = os.path.join(self.foldername, "Submitted", submitname)
+            counter += 1
+            if counter == 10:
+                raise FileExistsError("Submit directory %s already exists."%submitdir)
 
-        submitdir = os.path.join(self.foldername,"Submitted",str(uuid.uuid4()))
-        jobdir = os.path.join(submitdir,"jobs")
+        jobdir = os.path.join(submitdir,"workflow_data")
+
 
         try:
             os.makedirs(jobdir)
@@ -1384,7 +1400,9 @@ class WFTabsWidget(QtWidgets.QTabWidget):
             raise FileNotFoundError("Please save your workflow first")
 
         self.save()
-        jobtype,directory,workflow_xml = self.currentWidget().widget().model.render()
+        #name,jobtype,directory,wf_xml = editor.run()
+
+        jobtype,directory,workflow_xml = self.currentWidget().widget().model.render(given_name = name)
         return name,jobtype,directory,workflow_xml
 
     def currentTabText(self):

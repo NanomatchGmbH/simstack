@@ -526,7 +526,7 @@ class WFEditorApplication(CallableQThread):
         now = datetime.datetime.now()
         nowstr = now.strftime("%Y-%m-%d-%H:%M:%S")
         submitname = "%s-%s" %(nowstr, name)
-        to_upload = os.path.join(directory,"jobs")
+        to_upload = os.path.join(directory,"workflow_data")
         self._unicore_connector.run_workflow_job(registry,submitname,to_upload,xml)
 
 

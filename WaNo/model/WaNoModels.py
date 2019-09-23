@@ -5,6 +5,7 @@ from __future__ import print_function
 from __future__ import unicode_literals
 from __future__ import absolute_import
 
+from pprint import pprint
 
 import Qt.QtCore as QtCore
 import Qt.QtGui as QtGui
@@ -755,16 +756,25 @@ class WaNoModelRoot(WaNoModelDictLike):
                 if parent.get_type_str() == "File":
                     filename = parent.get_data()
                     if parent.get_local():
-                        to_upload = os.path.join(submitdir, "jobs")
+                        to_upload = os.path.join(submitdir, "workflow_data")
                         cp = os.path.commonprefix([to_upload, filename])
                         relpath = os.path.relpath(filename, cp)
+                        print("Here is the local copy path?", filename, cp, relpath)
                         #print("relpath was: %s"%relpath)
                         #filename= "c9m:${WORKFLOW_ID}/%s" % relpath
                         #filename = "BFT:${STORAGE_ID}/%s" % relpath
-                        filename = relpath
+                        filename = os.path.join("inputs",relpath)
                         #Absolute filenames will be replace with BFT:STORAGEID etc. below.
                     elif not filename.endswith("_VALUE}"):
-                        filename = "c9m:${WORKFLOW_ID}/%s" % filename
+                        #print("here is an iterator path", filename)
+                        last_slash = filename.rfind("/")
+                        first_part = filename[0:last_slash]
+                        second_part = filename[last_slash+1:]
+                        # We cut this here to add the outputs folder. This is a bit hacky - we should differentiate between display name and
+                        # name on cluster
+                        filename = "c9m:${STORAGE_ID}/workflow_data/%s/outputs/%s"%(first_part,second_part)
+                        #print("Cut filename to %s"%filename)
+                        #filename = "c9m:${WORKFLOW_ID}/%s" % filename
 
                     rendered_parent_jsdl = (rendered_parent,filename)
 
@@ -773,14 +783,15 @@ class WaNoModelRoot(WaNoModelDictLike):
 
 
     def prepare_files_submission(self,rendered_wano, basefolder):
+        basefolder = os.path.join(basefolder,"inputs")
+        mkdir_p(basefolder)
         render_wano_filename = os.path.join(basefolder,"rendered_wano.yml")
         with open(render_wano_filename,'w',newline='\n') as outfile:
-
             outfile.write(yaml.safe_dump(rendered_wano,default_flow_style=False))
 
-        submit_script_filename = os.path.join(basefolder,"submit_command.sh")
-        with open(submit_script_filename, 'w',newline='\n') as outfile:
-            outfile.write(self.rendered_exec_command)
+        #submit_script_filename = os.path.join(basefolder,"submit_command.sh")
+        #with open(submit_script_filename, 'w',newline='\n') as outfile:
+        #    outfile.write(self.rendered_exec_command)
 
 
 
@@ -816,60 +827,35 @@ class WaNoModelRoot(WaNoModelDictLike):
 
         for myid,(logical_filename, source) in enumerate(self.input_files):
             fvl.append(("IFILE%d"%(myid),"File",(logical_filename,source)))
-            local_stagein_files.append([logical_filename,source])
+            #local_stagein_files.append([logical_filename,source])
 
         for (varname,type,var) in fvl:
             if type == "File":
                 log_path_on_cluster = var[1].replace('\\','/')
                 if var[1].startswith("c9m:"):
-                    filejsdl = JSDLtoXML.xml_datastaging_from_source(filename=var[0], overwrite=False,source_uri=log_path_on_cluster)
                     runtime_stagein_files.append([var[0],log_path_on_cluster])
                 elif var[1].endswith("_VALUE}"):
-                    filejsdl = JSDLtoXML.xml_datastaging_from_source(filename=var[0], overwrite=False,
-                                                                     source_uri=log_path_on_cluster)
+
                     runtime_stagein_files.append([var[0], log_path_on_cluster])
                 else:
-                    filejsdl = JSDLtoXML.xml_datastaging_from_source(filename=var[0], overwrite=False,
-                                                                     source_uri="BFT:${STORAGE_ID}#%s/%s" % (
-                                                         stageout_basedir, var[0]))
-                    runtime_stagein_files.append([var[0], "${STORAGE_ID}#%s/%s"% (stageout_basedir, var[0])])
-
-                files.append(filejsdl)
+                    runtime_stagein_files.append([var[0], "${STORAGE}/workflow_data/%s/inputs/%s"% (stageout_basedir, var[0])])
             else:
                 #These should be NON posix arguments in the end
                 varname.replace(".","_")
-                #not yet done, TODO: TIMO!
-        filejsdl = JSDLtoXML.xml_datastaging_from_source(filename="rendered_wano.yml", overwrite=False,
-                                                         source_uri="BFT:${STORAGE_ID}#%s/%s" % (
-                                                         stageout_basedir, "rendered_wano.yml"))
-        runtime_stagein_files.append(["rendered_wano.yml","${STORAGE_ID}#%s/%s" % (stageout_basedir, "rendered_wano.yml")])
-
-        #### TIMO HERE
-        files.append(filejsdl)
+        runtime_stagein_files.append(["rendered_wano.yml","${STORAGE}/workflow_data/%s/inputs/%s" % (stageout_basedir, "rendered_wano.yml")])
 
         for otherfiles in self.get_import_model().get_contents():
             name,importloc,tostage = otherfiles[0],otherfiles[1],otherfiles[2]
             if importloc.endswith("_VALUE}"):
-                filejsdl = JSDLtoXML.xml_datastaging_from_source(filename=name, overwrite=False,
-                                                                 source_uri=importloc)
                 runtime_stagein_files.append([name,importloc])
             else:
-                filejsdl = JSDLtoXML.xml_datastaging_from_source(filename=tostage , overwrite=False,
-                                                             source_uri="c9m:${WORKFLOW_ID}/%s"%importloc )
-                runtime_stagein_files.append([tostage, "${WORKFLOW_ID}/%s"%importloc])
-            files.append(filejsdl)
+                #This might still be broken
+                #print("In runtime stagein ${STORAGE}/workflow_data/%s"%importloc)
+                runtime_stagein_files.append([tostage, "${STORAGE}/workflow_data/%s"%importloc])
 
 
         for filename in self.output_files + [ a[0] for a in self.export_model.get_contents() ]:
-            filejsdl = JSDLtoXML.xml_datastaging_to_target(filename=filename, overwrite=True,
-                                                           target_uri="c9m:${WORKFLOW_ID}/%s/%s"%(stageout_basedir,filename))
-
-            runtime_stageout_files.append([filename,"${WORKFLOW_ID}/%s/%s"%(stageout_basedir,filename)])
-            files.append(filejsdl)
-
-        xml_app = JSDLtoXML.xml_application(self.rendered_exec_command)
-        resources = self.resources.render_to_resource_jsdl()
-        job_desc = JSDLtoXML.xml_job_description(self.name,xml_app,datastagings=files,resource=resources)
+            runtime_stageout_files.append([filename,"${STORAGE}/workflow_data/%s/outputs/%s"%(stageout_basedir,filename)])
 
         _runtime_stagein_files = []
         for ft in runtime_stagein_files:
@@ -880,20 +866,22 @@ class WaNoModelRoot(WaNoModelDictLike):
         for ft in runtime_stageout_files:
             _runtime_stageout_files.append(["StringList",StringList(ft)])
         runtime_stageout_files = _runtime_stageout_files
-       
+
+        """
         _local_stagein_files = []
         for ft in local_stagein_files:
             _local_stagein_files.append(["StringList",StringList(ft)])
         local_stagein_files = _local_stagein_files
+        """
 
         
         wem = WorkflowExecModule(resources = self.resources.render_to_simstack_server_model(),
-                           inputs = WorkflowElementList(runtime_stagein_files + local_stagein_files),
+                           inputs = WorkflowElementList(runtime_stagein_files),# + local_stagein_files),
                            outputs = WorkflowElementList(runtime_stageout_files) ,
                            exec_command = self.rendered_exec_command,
                            dependencies = WorkflowElementList())
 
-        return job_desc, wem
+        return None , wem, local_stagein_files
         #print(etree.tostring(job_desc, pretty_print=True).decode("utf-8"))
 
     def render_wano(self,submitdir,stageout_basedir=""):
@@ -904,8 +892,8 @@ class WaNoModelRoot(WaNoModelDictLike):
         rendered_wano = self.wano_walker_render_pass(rendered_wano,submitdir=submitdir,flat_variable_list=fvl)
         self.rendered_exec_command = Template(self.exec_command,newline_sequence='\n').render(wano = rendered_wano)
         self.rendered_exec_command = self.rendered_exec_command.strip(' \t\n\r')
-        jsdl, wem = self.flat_variable_list_to_jsdl(fvl, submitdir,stageout_basedir)
-        return rendered_wano,jsdl, wem
+        jsdl, wem, local_stagein_files = self.flat_variable_list_to_jsdl(fvl, submitdir,stageout_basedir)
+        return rendered_wano,jsdl, wem, local_stagein_files
 
     #@trace_to_logger
     def render_and_write_input_files(self,basefolder,stageout_basedir = ""):
@@ -914,7 +902,7 @@ class WaNoModelRoot(WaNoModelDictLike):
         return jsdl
 
     def render_and_write_input_files_newmodel(self,basefolder,stageout_basedir = ""):
-        rendered_wano, jsdl, wem = self.render_wano(basefolder, stageout_basedir)
+        rendered_wano, jsdl, wem, local_stagein_files = self.render_wano(basefolder, stageout_basedir)
         self.prepare_files_submission(rendered_wano, basefolder)
         return jsdl, wem
 
@@ -1079,9 +1067,11 @@ class WaNoItemFileModel(AbstractWanoModel):
         #Upload and copy
         #print(submitdir)
         if self.is_local_file:
-            destdir = os.path.join(submitdir,rendered_logical_name)
-            print("Copying",self.root_model.wano_dir_root,rendered_logical_name,destdir)
-            shutil.copy(self.mystring,destdir)
+            destdir = os.path.join(submitdir,"inputs")
+            mkdir_p(destdir)
+            destfile = os.path.join(destdir, rendered_logical_name)
+            #print("Copying",self.root_model.wano_dir_root,rendered_logical_name,destdir)
+            shutil.copy(self.mystring,destfile)
         if sys.version_info >= (3,0):
             return rendered_logical_name
         else:
