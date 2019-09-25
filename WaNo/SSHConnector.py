@@ -659,7 +659,7 @@ class SSHConnector(CallableQThread):
             cm.put_file(filename,submitpath)
 
         with cm.remote_open(real_submitname + "/" + "rendered_workflow.xml",'wt') as outfile:
-            outfile.write(etree.tostring(xml, encoding = "utf8", pretty_print=True))
+            outfile.write(etree.tostring(xml, encoding = "utf8", pretty_print=True).decode().replace("c9m:","").replace("${STORAGE}",submitname))
 
     def update_job_list(self, base_uri, callback=(None, (), {})):
         worker = self._get_error_or_fail(base_uri)

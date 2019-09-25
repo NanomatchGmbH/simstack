@@ -711,7 +711,7 @@ class WFModel(object):
             fromid = toid
             #out.write(ele.uuid + "\n")
         #docs = WFtoXML.xml_documentation(Name=self.wf_name)
-        wf = Workflow(elements = WorkflowElementList(activities), graph = DirectedGraph( transitions))
+        wf = Workflow(elements = WorkflowElementList(activities), graph = DirectedGraph( transitions), name=self.wf_name, storage="${STORAGE}")
         xml = etree.Element("Workflow")
         wf.to_xml(parent_element=xml)
         #with open("newflow.xml",'w') as outfile:

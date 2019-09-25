@@ -772,7 +772,7 @@ class WaNoModelRoot(WaNoModelDictLike):
                         second_part = filename[last_slash+1:]
                         # We cut this here to add the outputs folder. This is a bit hacky - we should differentiate between display name and
                         # name on cluster
-                        filename = "c9m:${STORAGE_ID}/workflow_data/%s/outputs/%s"%(first_part,second_part)
+                        filename = "c9m:${STORAGE}/workflow_data/%s/outputs/%s"%(first_part,second_part)
                         #print("Cut filename to %s"%filename)
                         #filename = "c9m:${WORKFLOW_ID}/%s" % filename
 
