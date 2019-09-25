@@ -688,6 +688,7 @@ class WFModel(object):
                     pass
                 #stageout_basedir = "wanos/%s" % (elename)
                 jsdl, wem = ele.render(wano_dir, stageout_basedir=elename)
+                wem.set_given_name(elename)
                 wem : WorkflowExecModule
                 #print(wem.uid)
                 """

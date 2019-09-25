@@ -744,7 +744,7 @@ class WaNoModelRoot(WaNoModelDictLike):
                     mypath="%s" %(key)
                 else:
                     mypath = "%s.%s" % (mypath, key)
-                my_dict[key] = self.wano_walker_render_pass(rendered_wano,parent=wano, path=mypath, submitdir=submitdir,flat_variable_list=flat_variable_list)
+                my_dict[key] = self.wano_walker_render_pass(rendered_wano,parent=wano, path=mypath, submitdir=submitdir, flat_variable_list=flat_variable_list)
             return my_dict
         else:
             # We should avoid merging and splitting. It's useless, we only need splitpath anyways
@@ -759,7 +759,6 @@ class WaNoModelRoot(WaNoModelDictLike):
                         to_upload = os.path.join(submitdir, "workflow_data")
                         cp = os.path.commonprefix([to_upload, filename])
                         relpath = os.path.relpath(filename, cp)
-                        print("Here is the local copy path?", filename, cp, relpath)
                         #print("relpath was: %s"%relpath)
                         #filename= "c9m:${WORKFLOW_ID}/%s" % relpath
                         #filename = "BFT:${STORAGE_ID}/%s" % relpath
@@ -875,11 +874,11 @@ class WaNoModelRoot(WaNoModelDictLike):
         """
 
         
-        wem = WorkflowExecModule(resources = self.resources.render_to_simstack_server_model(),
+        wem = WorkflowExecModule(given_name = self.name, resources = self.resources.render_to_simstack_server_model(),
                            inputs = WorkflowElementList(runtime_stagein_files),# + local_stagein_files),
                            outputs = WorkflowElementList(runtime_stageout_files) ,
-                           exec_command = self.rendered_exec_command,
-                           dependencies = WorkflowElementList())
+                           exec_command = self.rendered_exec_command
+                           )
 
         return None , wem, local_stagein_files
         #print(etree.tostring(job_desc, pretty_print=True).decode("utf-8"))
