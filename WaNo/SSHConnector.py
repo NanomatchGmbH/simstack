@@ -573,7 +573,7 @@ class SSHConnector(CallableQThread):
         if not "calculation_basepath" in registry:
             registry["calculation_basepath"] = "simstack_workspace"
         if not "queueing_system" in registry:
-            registry["queueing_system"] = "torque"
+            registry["queueing_system"] = "pbs"
             print("this has to be configurable")
 
         if not name in self._clustermanagers:

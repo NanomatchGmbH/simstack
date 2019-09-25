@@ -1086,10 +1086,12 @@ class WaNoItemScriptFileModel(WaNoItemFileModel):
         self.logical_name = self.mystring
 
     def get_path(self):
-        root_dir = self.root_model.wano_dir_root
+        root_dir = os.path.join(self.root_model.wano_dir_root,"inputs")
         return os.path.join(root_dir, self.mystring)
 
     def save_text(self,text):
+        root_dir = os.path.join(self.root_model.wano_dir_root, "inputs")
+        mkdir_p(root_dir)
         with open(self.get_path(),'w',newline='\n') as outfile:
             outfile.write(text)
 
@@ -1110,9 +1112,12 @@ class WaNoItemScriptFileModel(WaNoItemFileModel):
 
     def render(self, rendered_wano, path, submitdir):
         rendered_logical_name = Template(self.logical_name,newline_sequence='\n').render(wano=rendered_wano, path=path)
-        destfile = os.path.join(submitdir, rendered_logical_name)
+        destdir = os.path.join(submitdir, "inputs")
+        mkdir_p(destdir)
+        destfile = os.path.join(destdir, rendered_logical_name)
 
-        with open(destfile,'w',newline='\n') as out:
+
+        with open(destfile,'wt',newline='\n') as out:
             out.write(self.get_as_text())
         return rendered_logical_name
 
