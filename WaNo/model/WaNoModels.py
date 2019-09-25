@@ -849,8 +849,16 @@ class WaNoModelRoot(WaNoModelDictLike):
                 runtime_stagein_files.append([name,importloc])
             else:
                 #This might still be broken
-                #print("In runtime stagein ${STORAGE}/workflow_data/%s"%importloc)
-                runtime_stagein_files.append([tostage, "${STORAGE}/workflow_data/%s"%importloc])
+
+
+                last_slash = importloc.rfind("/")
+                first_part = importloc[0:last_slash]
+                second_part = importloc[last_slash + 1:]
+                # We cut this here to add the outputs folder. This is a bit hacky - we should differentiate between display name and
+                # name on cluster
+                filename = "${STORAGE}/workflow_data/%s/outputs/%s" % (first_part, second_part)
+                #print("In runtime stagein %s"%filename)
+                runtime_stagein_files.append([tostage, filename])
 
 
         for filename in self.output_files + [ a[0] for a in self.export_model.get_contents() ]:
