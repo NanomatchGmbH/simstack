@@ -661,8 +661,9 @@ class SSHConnector(CallableQThread):
         with cm.remote_open(real_submitname + "/" + "rendered_workflow.xml",'wt') as outfile:
             outfile.write(etree.tostring(xml, encoding = "utf8", pretty_print=True).decode()
                           .replace("c9m:","")
-                          .replace("${STORAGE}",submitname)
-                          .replace("${BASEFOLDER}",cm.get_calculation_basepath())
+                          .replace("${STORAGE}/","")
+                          .replace("${BASEFOLDER}",cm.get_calculation_basepath() + '/' + submitname)
+                          .replace("${QUEUE}", cm.get_queueing_system())
                           )
 
     def update_job_list(self, base_uri, callback=(None, (), {})):
