@@ -35,7 +35,7 @@ from WaNo.WFEditorApplication import WFEditorApplication
 from WaNo.WaNoSettingsProvider import WaNoSettingsProvider
 
 _SETTINGS_DIR="NanoMatch"
-_SETTINGS_FILE="clientsettings.yml"
+_SETTINGS_FILE="ssh_clientsettings.yml"
 
 editor = None
 

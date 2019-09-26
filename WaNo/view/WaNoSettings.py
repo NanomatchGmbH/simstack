@@ -1,6 +1,6 @@
 from Qt.QtWidgets import QDialog, QLabel, QGridLayout, QLineEdit, QPushButton, \
         QTabWidget, QWidget, QVBoxLayout, QHBoxLayout, QCheckBox, QTabBar, \
-        QToolButton, QFileIconProvider, QFileDialog
+        QToolButton, QFileIconProvider, QFileDialog, QComboBox
 from Qt.QtCore import Signal, QSignalMapper, QDir
 
 
@@ -94,6 +94,15 @@ class WaNoRegistrySettings(QWidget):
     def get_user(self):
         return self.__username.text()
 
+    def get_calculation_basepath(self):
+        return self.__calculation_basepath.text()
+
+    def get_software_directory(self):
+        return self.__software_directory.text()
+
+    def get_queueing_system(self):
+        return self.__queueing_system.currentText()
+
     def get_default(self):
         return self.__cb_default.isChecked()
 
@@ -115,6 +124,10 @@ class WaNoRegistrySettings(QWidget):
         self.__label_registryName   = QLabel(self)
         self.__label_baseUri        = QLabel(self)
         self.__label_username       = QLabel(self)
+        self.__label_calculation_basepath = QLabel(self)
+        self.__label_software_directory = QLabel(self)
+        self.__label_queueing_system = QLabel(self)
+
         #self.__label_password       = QLabel(self)
         #self.__label_ca_package     = QLabel(self)
         #self.__label_workflows      = QLabel(self)
@@ -122,15 +135,26 @@ class WaNoRegistrySettings(QWidget):
         self.__label_registryName.setText("<b>Registry Name</b>")
         self.__label_baseUri.setText("<b>Base URI</b>")
         self.__label_username.setText("<b>Username</b>")
-        #self.__label_password.setText("<b>Password</b>")
+        self.__label_calculation_basepath.setText("<b>Basepath</b>")
+        self.__label_software_directory.setText("<b>Software directory on cluster</b>")
+        self.__label_queueing_system.setText("<b>Queueing System</b>")
+
         #self.__label_ca_package.setText("<b>Certificate Path</b>")
         #self.__label_workflows.setText("<b>Workflow Link</b>")
 
         self.__registryName = QLineEdit(self)
         self.__baseUri      = QLineEdit(self)
         self.__username     = QLineEdit(self)
-        #self.__password     = QLineEdit(self)
-        #self.__ca_package   = QLineEdit(self)
+        self.__calculation_basepath     = QLineEdit(self)
+        self.__software_directory = QLineEdit(self)
+        self.__queueing_system = QComboBox(self)
+
+
+        qs = self.__queueing_system
+        qs.addItem("pbs")
+        qs.addItem("slurm")
+        qs.addItem("lsf")
+
         #self.__workflows    = QLineEdit(self)
 
         #self.__password.setEchoMode(QLineEdit.Password)
@@ -150,28 +174,33 @@ class WaNoRegistrySettings(QWidget):
         grid.addWidget(self.__label_registryName, 0, 0)
         grid.addWidget(self.__label_baseUri     , 1, 0)
         grid.addWidget(self.__label_username    , 2, 0)
-        #grid.addWidget(self.__label_password    , 3, 0)
+        grid.addWidget(self.__label_calculation_basepath    , 3, 0)
         #grid.addWidget(self.__label_ca_package  , 3, 0)
-        #grid.addWidget(self.__label_workflows   , 4, 0)
+        grid.addWidget(self.__label_queueing_system   , 4, 0)
+        grid.addWidget(self.__label_software_directory, 5, 0)
 
         grid.addWidget(self.__registryName,         0, 1 )
         grid.addWidget(self.__baseUri,              1, 1 )
         grid.addWidget(self.__username,             2, 1 )
-        #grid.addWidget(self.__password,             3, 1 )
-        #grid.addWidget(self.__cb_show_password,     3, 2 )
-        #grid.addWidget(self.__ca_package,           4, 1 )
-        #grid.addWidget(self.__cert_openfilebutton,  4, 2 )
-        #grid.addWidget(self.__workflows,            5, 1 )
-
+        grid.addWidget(self.__calculation_basepath,             3, 1 )
+        grid.addWidget(self.__queueing_system,      4, 1 )
+        grid.addWidget(self.__software_directory, 5, 1)
+        self.__software_directory.setText("/home/nanomatch/nanomatch")
+        self.__calculation_basepath.setText("simstack_workspace")
         self.setLayout(grid)
 
     def set_default(self, is_default):
         self.__cb_default.setChecked(is_default)
 
-    def set_fields(self, name, uri, user, is_default):
+
+    def set_fields(self, name, uri, user, calculation_basepath, queueing_system, software_directory, is_default):
         self.__registryName.setText(name)
         self.__baseUri.setText(uri)
         self.__username.setText(user)
+        self.__queueing_system.setCurrentText(queueing_system)
+        self.__software_directory.setText(software_directory)
+        self.__calculation_basepath.setText(calculation_basepath)
+
         #self.__password.setText(password)
         #self.__ca_package.setText(ca_package)
         #self.__workflows.setText(workflows)
@@ -234,23 +263,23 @@ class WaNoUnicoreSettings(QDialog):
                         tabWidget.get_name().strip(),
                         tabWidget.get_uri().strip(),
                         tabWidget.get_user().strip(),
-                        #tabWidget.get_password().strip(),
-                        #tabWidget.get_ca_package().strip(),
-                        #tabWidget.get_workflows().strip(),
+                        tabWidget.get_calculation_basepath().strip(),
+                        tabWidget.get_queueing_system().strip(),
+                        tabWidget.get_software_directory().strip(),
                         tabWidget.get_default()
                     )
                 )
 
         return registries
 
-    def __build_registry_settings(self, name, uri, user, default):
+    def __build_registry_settings(self, name, uri, user, calculation_basepath, queueing_system, software_directory, default):
         return {
                 'name': name,
                 'baseURI': uri,
                 'username': user,
-                #'password': password,
-                #'ca_package': ca_package,
-                #'workflows': workflows,
+                'calculation_basepath': calculation_basepath,
+                'queueing_system' : queueing_system,
+                'software_directory': software_directory,
                 'default': default
             }
 
@@ -325,9 +354,9 @@ class WaNoUnicoreSettings(QDialog):
                         registry['name'],
                         registry['baseURI'],
                         registry['username'],
-                        #registry['password'],
-                        #registry['ca_package'] if 'ca_package' in registry else '',
-                        #registry['workflows'] if 'workflows' in registry else '',
+                        registry['calculation_basepath'],
+                        registry['queueing_system'],
+                        registry['software_directory'],
                         registry['is_default']
                 )
 

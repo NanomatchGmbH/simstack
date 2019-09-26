@@ -4,9 +4,9 @@ SETTING_KEYS = {
         'registry.name'         : 'name',
         'registry.username'     : 'username',
         'registry.baseURI'      : 'baseURI',
-        'registry.password'     : 'password',
-        'registry.ca_package'   : 'ca_package',
-        'registry.workflows'    : 'workflows',
+        'registry.calculation_basepath'      : 'calculation_basepath',
+        'registry.software_directory'      : 'software_directory',
+        'registry.queueing_system'      : 'queueing_system',
         'registry.is_default'   : 'is_default',
 
         'wanoRepo'              : 'WaNo_Repository_Path',

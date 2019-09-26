@@ -115,6 +115,18 @@ class WFEditorApplication(CallableQThread):
                     registry['username']
                 )
             self.__settings.set_value(
+                    "%s.%s" % (settings_path, SETTING_KEYS['registry.calculation_basepath']),
+                    registry['calculation_basepath']
+                )
+            self.__settings.set_value(
+                "%s.%s" % (settings_path, SETTING_KEYS['registry.software_directory']),
+                registry['software_directory']
+            )
+            self.__settings.set_value(
+                "%s.%s" % (settings_path, SETTING_KEYS['registry.queueing_system']),
+                registry['queueing_system']
+            )
+            self.__settings.set_value(
                     "%s.%s" % (settings_path, SETTING_KEYS['registry.is_default']),
                     registry['default']
                 )
