@@ -566,7 +566,7 @@ class SSHConnector(CallableQThread):
         serverproc = registry["software_directory"] + '/V2/SimStackServer/SimStackServer.py'
         if not cm.exists(pythonproc) or not cm.exists(serverproc):
             return UnicoreErrorCodes.CONN_TIMEOUT
-        command = "nohup %s %s &"%(pythonproc, serverproc)
+        command = "%s %s"%(pythonproc, serverproc)
         print(command)
         cm.exec_command(command)
         return UnicoreErrorCodes.NO_ERROR
