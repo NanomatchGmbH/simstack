@@ -19,7 +19,7 @@ from lxml import etree
 from Qt.QtCore import QThread, Qt
 from Qt.QtCore import Slot, Signal, QObject
 
-from SimStackServer import ClusterManager
+from SimStackServer.ClusterManager import ClusterManager
 from pyura.pyura.HTTPBasicAuthProvider import HTTPBasicAuthProvider
 from pyura.pyura import UnicoreAPI
 from pyura.pyura.Constants import ErrorCodes as UnicoreErrorCodes
@@ -559,9 +559,19 @@ class SSHConnector(CallableQThread):
         data['args'] += (from_path, to_path)
         return data
 
+    def start_server(self, registry, callback=(None, (), {})):
+        cm = self._get_cm(registry)
+        cm: ClusterManager
+        pythonproc = registry["software_directory"] + '/V2/local_anaconda/bin/python'
+        serverproc = registry["software_directory"] + '/V2/SimStackServer/SimStackServer.py'
+        if not cm.exists(pythonproc) or not cm.exists(serverproc):
+            return UnicoreErrorCodes.CONN_TIMEOUT
+        command = "nohup %s %s &"%(pythonproc, serverproc)
+        print(command)
+        cm.exec_command(command)
+        return UnicoreErrorCodes.NO_ERROR
 
-
-    def connect_registry(self, registry, callback=(None, (), {}), con_settings=None):
+    def connect_registry(self, registry, callback=(None, (), {})):
 
         name = registry["name"]
         error = UnicoreErrorCodes.NO_ERROR
@@ -573,7 +583,7 @@ class SSHConnector(CallableQThread):
 
         if not name in self._clustermanagers:
 
-            cm = ClusterManager.ClusterManager(url = registry["baseURI"],
+            cm = ClusterManager(url = registry["baseURI"],
                                                port = registry["port"],
                                                calculation_basepath=registry["calculation_basepath"],
                                                user=registry["username"],
@@ -590,10 +600,14 @@ class SSHConnector(CallableQThread):
             except paramiko.ssh_exception.SSHException as e:
                 statusmessage = str(e)
                 error = UnicoreErrorCodes.CONN_ERROR
+            try:
+                returncode_serverstart = self.start_server(registry)
+            except Exception as e:
+                raise e
         else:
             print("Already connected, will not connect again.")
 
-        self._exec_callback(callback,registry["baseURI"], error, statusmessage)
+        self._exec_callback(callback, registry["baseURI"], error, statusmessage)
 
 
 
