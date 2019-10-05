@@ -210,12 +210,8 @@ class WFEditorApplication(CallableQThread):
         self._view_manager.update_workflow_list(workflows)
 
     def _on_fs_worflow_list_update_request(self):
-        base_uri = self._get_current_base_uri()
-        self.exec_unicore_callback_operation.emit(
-                uops.UPDATE_WF_LIST,
-                SSHConnector.create_update_workflow_list_args(base_uri),
-                (self._on_workflow_list_updated, (), {})
-            )
+        registry = self._get_current_registry()
+        self._unicore_connector.update_workflow_list(registry,  (self._on_workflow_list_updated, (), {}) )
 
     @QThreadCallback.callback
     def _on_fs_list_updated(self, base_uri, path, files):
@@ -231,14 +227,12 @@ class WFEditorApplication(CallableQThread):
         )
 
 
-    def _on_fs_worflow_update_request(self, wfid):
+    def _on_fs_workflow_update_request(self, wfid):
         self._logger.debug("Querying %s from Unicore Registry" % wfid)
-        base_uri = self._get_current_base_uri()
-        self.exec_unicore_callback_operation.emit(
-                uops.UPDATE_WF_JOB_LIST,
-                SSHConnector.create_update_workflow_job_list_args(base_uri, wfid),
+        registry = self._get_current_registry()
+        self._unicore_connector.update_workflow_job_list(registry, wfid,
                 (self._on_fs_list_updated, (), {})
-            )
+        )
 
     def _on_fs_directory_update_request(self, path):
         self._logger.debug("Querying %s from Unicore Registry" % path)
@@ -341,6 +335,9 @@ class WFEditorApplication(CallableQThread):
 
     @QThreadCallback.callback
     def _on_workflow_aborted(self, base_uri, status, err, workflow=""):
+        print("here")
+
+        """
         if err == UnicoreErrorCodes.NO_ERROR:
             self._on_fs_worflow_list_update_request()
         else:
@@ -349,6 +346,7 @@ class WFEditorApplication(CallableQThread):
                 "Registry returned status: %s." % \
                 (workflow, str(status.name))
             )
+        """
 
     def _on_fs_delete_job(self, job):
         base_uri = self._get_current_base_uri()
@@ -367,22 +365,16 @@ class WFEditorApplication(CallableQThread):
             )
 
     def _on_fs_delete_workflow(self, workflow):
-        base_uri = self._get_current_base_uri()
-
-        self.exec_unicore_callback_operation.emit(
-                uops.DELETE_WORKFLOW,
-                SSHConnector.create_delete_workflow_args(base_uri, workflow),
+        registry = self._get_current_registry()
+        self._unicore_connector.delete_workflow(registry,workflow,
                 (self._on_workflow_deleted, (), { 'workflow': workflow})
-            )
+        )
 
     def _on_fs_abort_workflow(self, workflow):
-        base_uri = self._get_current_base_uri()
-
-        self.exec_unicore_callback_operation.emit(
-                uops.ABORT_WORKFLOW,
-                SSHConnector.create_abort_workflow_args(base_uri, workflow),
+        registry = self._get_current_registry()
+        self._unicore_connector.abort_workflow(registry, workflow,
                 (self._on_workflow_aborted, (), { 'workflow': workflow})
-            )
+        )
 
     ############################################################################
     #                                                                          #
@@ -683,7 +675,7 @@ class WFEditorApplication(CallableQThread):
         self._view_manager.request_job_list_update.connect(self._on_fs_job_list_update_request)
         self._view_manager.request_worflow_list_update.connect(self._on_fs_worflow_list_update_request)
         self._view_manager.request_job_update.connect(self._on_fs_job_update_request)
-        self._view_manager.request_worflow_update.connect(self._on_fs_worflow_update_request)
+        self._view_manager.request_worflow_update.connect(self._on_fs_workflow_update_request)
         self._view_manager.request_directory_update.connect(self._on_fs_directory_update_request)
         self._view_manager.request_saved_workflows_update.connect(self._on_saved_workflows_update_request)
         self._view_manager.download_file_to.connect(self._on_fs_download)

@@ -567,8 +567,8 @@ class SSHConnector(CallableQThread):
         if not cm.exists(pythonproc) or not cm.exists(serverproc):
             return UnicoreErrorCodes.CONN_TIMEOUT
         command = "%s %s"%(pythonproc, serverproc)
-        print(command)
-        cm.exec_command(command)
+        #print(command)
+        cm.connect_zmq_tunnel(command)
         return UnicoreErrorCodes.NO_ERROR
 
     def connect_registry(self, registry, callback=(None, (), {})):
@@ -667,13 +667,17 @@ class SSHConnector(CallableQThread):
             cm.mkdir_p(mydir)
             cm.put_file(filename,submitpath)
 
-        with cm.remote_open(real_submitname + "/" + "rendered_workflow.xml",'wt') as outfile:
+        wf_yml_name = real_submitname + "/" + "rendered_workflow.xml"
+        with cm.remote_open(wf_yml_name,'wt') as outfile:
             outfile.write(etree.tostring(xml, encoding = "utf8", pretty_print=True).decode()
                           .replace("c9m:","")
                           .replace("${STORAGE}/","")
+                          .replace("${SUBMIT_NAME}",real_submitname)
                           .replace("${BASEFOLDER}",cm.get_calculation_basepath() + '/' + submitname)
                           .replace("${QUEUE}", cm.get_queueing_system())
                           )
+        cm.submit_wf(wf_yml_name)
+
 
     def update_job_list(self, base_uri, callback=(None, (), {})):
         worker = self._get_error_or_fail(base_uri)
@@ -685,15 +689,15 @@ class SSHConnector(CallableQThread):
         if not worker is None:
             worker.update_resources(callback, base_uri)
 
-    def update_workflow_list(self, base_uri, callback=(None, (), {})):
-        worker = self._get_error_or_fail(base_uri)
-        if not worker is None:
-            worker.update_workflow_list(callback, base_uri)
+    def update_workflow_list(self, registry, callback=(None, (), {})):
+        cm = self._get_cm(registry)
+        workflows = cm.get_workflow_list()
+        self._exec_callback(callback, registry, workflows)
 
-    def update_workflow_job_list(self, base_uri, wfid, callback=(None, (), {})):
-        worker = self._get_error_or_fail(base_uri)
-        if not worker is None:
-            worker.update_workflow_job_list(callback, base_uri, wfid)
+    def update_workflow_job_list(self, registry, wfid, callback=(None, (), {})):
+        cm = self._get_cm(registry)
+        files = cm.get_workflow_job_list(wfid)
+        self._exec_callback(callback, registry, wfid, files)
 
     def update_dir_list(self, registry, path, callback=(None, (), {})):
         cm = self._get_cm(registry)
@@ -719,15 +723,18 @@ class SSHConnector(CallableQThread):
         if not worker is None:
             worker.abort_job(callback, base_uri, job)
 
-    def delete_workflow(self, base_uri, workflow, callback=(None, (), {})):
-        worker = self._get_error_or_fail(base_uri)
-        if not worker is None:
-            worker.delete_workflow(callback, base_uri, workflow)
+    def delete_workflow(self, registry, workflow_submitname, callback=(None, (), {})):
+        cm = self._get_cm(registry)
+        cm.delete_wf(workflow_submitname)
+        #worker = self._get_error_or_fail(base_uri)
+        #if not worker is None:
+        #    worker.delete_workflow(callback, base_uri, workflow)
 
-    def abort_workflow(self, base_uri, workflow, callback=(None, (), {})):
-        worker = self._get_error_or_fail(base_uri)
-        if not worker is None:
-            worker.abort_workflow(callback, base_uri, workflow)
+    def abort_workflow(self, registry, workflow_submitname, callback=(None, (), {})):
+        cm = self._get_cm(registry)
+        cm.abort_wf(workflow_submitname)
+        self.logger.debug("Sending Workflow Abort message for workflows %s"%workflow_submitname)
+
 
     def _data_transfer(self, base_uri, localfile, remotefile, direction,
             callback=(None, (), {})):

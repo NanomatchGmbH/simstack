@@ -540,10 +540,6 @@ class WFEUnicoreRemoteFileSystemModel(WFEFileSystemModel):
                         'abs',
                         self.HEADER_TYPE_WORKFLOW),
                 WFEFileSystemEntry.createData(
-                        "Jobs",
-                        'abs',
-                        self.HEADER_TYPE_JOB),
-                WFEFileSystemEntry.createData(
                         "Home",
                         '.',
                         self.HEADER_TYPE_DIRECTORY)

@@ -247,7 +247,6 @@ class WFRemoteFileSystem(QWidget):
         index = self.__fileTree.selectedIndexes()[0]
         if not index is None \
                 and self.__fs_model.get_type(index) == FSModel.DATA_TYPE_WORKFLOW:
-            print("got id: %s" % self.__fs_model.get_id(index))
             workflow = self.__fs_model.get_id(index)
             self.abort_workflow.emit(workflow)
 
