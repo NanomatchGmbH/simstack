@@ -4,6 +4,7 @@ from __future__ import unicode_literals
 from __future__ import absolute_import
 
 import datetime
+import time
 import os
 
 import logging
@@ -818,7 +819,7 @@ class WFModel(object):
         submitdir = os.path.join(self.foldername,"Submitted",submitname)
         counter = 0
         while os.path.exists(submitdir):
-            datetime.time.sleep(1.1)
+            time.sleep(1.1)
             now = datetime.datetime.now()
             nowstr = now.strftime("%Y-%m-%d-%H:%M:%S")
             submitname = "%s-%s" % (nowstr, given_name)
