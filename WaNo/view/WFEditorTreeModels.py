@@ -13,9 +13,11 @@ import abc
 import os, sys, time
 from enum import Enum
 
-from pyura.pyura.Constants import JobStatus
+
 
 ########################
+from SimStackServer.MessageTypes import JobStatus
+
 
 class DATA_TYPE(Enum):
     FILE        = 0

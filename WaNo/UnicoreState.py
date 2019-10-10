@@ -2,13 +2,12 @@ from Qt.QtCore import QReadWriteLock, QMutex
 import copy # for ProtectedDict and ProtectedList
 from enum import Enum
 
+from SimStackServer.MessageTypes import ConnectionState
+
+
 class UnicoreStateValues(object):
     CONNECTION      = "connection"
 
-try:
-    from pyura.pyura.Constants import ConnectionState as UnicoreConnectionStates
-except:
-    from lib.pyura.pyura.Constants import ConnectionState as UnicoreConnectionStates
 
 class ProtectedValue(object):
     def __get_value(self, unlock=True):
@@ -347,7 +346,7 @@ class UnicoreStateFactory(object):
 
     class __UnicoreState(object):
         def add_registry(self, base_uri, username,
-                state=UnicoreConnectionStates.DISCONNECTED):
+                state=ConnectionState.DISCONNECTED):
             tmp = {
                     'base_uri': base_uri,
                     'username': username,
@@ -452,7 +451,7 @@ class UnicoreStateFactory(object):
     class _Writer(_Reader):
         """Note: we do not want to catch any errors. They should be passed to the user."""
 
-        def add_registry(self, base_uri, username, state=UnicoreConnectionStates.DISCONNECTED):
+        def add_registry(self, base_uri, username, state=ConnectionState.DISCONNECTED):
             return self._state.add_registry(base_uri, username, state).get_writer_instance()
 
         def get_writeable_registry_state(self, base_uri):

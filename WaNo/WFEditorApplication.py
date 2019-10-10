@@ -13,12 +13,9 @@ import sys
 import time
 import datetime
 
+from SimStackServer.MessageTypes import ErrorCodes
+from SimStackServer.Util.FileUtilities import trace_to_logger
 from WaNo import WaNoFactory
-from pyura.pyura import UnicoreAPI
-from pyura.pyura.HTTPBasicAuthProvider import HTTPBasicAuthProvider
-from pyura.pyura.Constants import ErrorCodes as UnicoreErrorCodes
-
-from pyura.pyura import JobManager
 
 from WaNo.view.WFViewManager import WFViewManager
 from WaNo.WaNoGitRevision import get_git_revision
@@ -31,15 +28,12 @@ from WaNo.view.WFEditorPanel import SubmitType
 from WaNo.view.WaNoViews import WanoQtViewRoot
 
 from WaNo.lib.CallableQThread import QThreadCallback, CallableQThread
-from pyura.pyura.helpers import trace_to_logger
 
 try:
     FileNotFoundError
 except:
     FileNotFoundError = EnvironmentError
 
-#TODO remove, testing only
-from pyura.pyura import Storage
 from collections import namedtuple
 
 class WFEditorApplication(CallableQThread):
@@ -166,20 +160,6 @@ class WFEditorApplication(CallableQThread):
     def _on_registry_disconnect(self):
         self._disconnect_unicore()
 
-    #FIXME remove
-    def fake_storage_manager_get_list(self):
-        print("fake_storage_manager_get_list")
-        return [Storage('timo_Home'), Storage('Foo')]
-
-    #FIXME remove
-    def fake_storage_manager_get_file_list(storage_id, path):
-        l = ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m",
-                "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z"]
-        import random
-        random.shuffle(l)
-        return [''.join(l[:random.randint(0,len(l))]) for i in range(0, random.randint(0, 6))]
-
-
     @QThreadCallback.callback
     def _on_fs_job_list_updated(self, base_uri, jobs):
         self._view_manager.update_job_list(jobs)
@@ -279,7 +259,7 @@ class WFEditorApplication(CallableQThread):
     @QThreadCallback.callback
     def _on_file_deleted(self, base_uri, status, err, to_del=""):
         to_update = os.path.dirname(to_del)
-        if err != UnicoreErrorCodes.NO_ERROR:
+        if err != ErrorCodes.NO_ERROR:
             self._view_manager.show_error(
                     "Failed to delete job '%s'\n"\
                     "Registry returned status: %s." % \
@@ -301,7 +281,7 @@ class WFEditorApplication(CallableQThread):
 
     @QThreadCallback.callback
     def _on_job_deleted(self, base_uri, status, err, job=""):
-        if err == UnicoreErrorCodes.NO_ERROR:
+        if err == ErrorCodes.NO_ERROR:
             self._on_fs_job_list_update_request()
         else:
             self._view_manager.show_error(
@@ -313,7 +293,7 @@ class WFEditorApplication(CallableQThread):
 
     @QThreadCallback.callback
     def _on_job_aborted(self, base_uri, status, err, job=""):
-        if err == UnicoreErrorCodes.NO_ERROR:
+        if err == ErrorCodes.NO_ERROR:
             self._on_fs_job_list_update_request()
         else:
             self._view_manager.show_error(
@@ -324,7 +304,7 @@ class WFEditorApplication(CallableQThread):
 
     @QThreadCallback.callback
     def _on_workflow_deleted(self, base_uri, status, err, workflow=""):
-        if err == UnicoreErrorCodes.NO_ERROR:
+        if err == ErrorCodes.NO_ERROR:
             self._on_fs_worflow_list_update_request()
         else:
             self._view_manager.show_error(
@@ -439,7 +419,7 @@ class WFEditorApplication(CallableQThread):
             self._logger.error("Callback did not get expected data.")
             return
 
-        if error == UnicoreErrorCodes.NO_ERROR:
+        if error == ErrorCodes.NO_ERROR:
             self._logger.info("Connected.")
             self._set_unicore_connected()
         else:
@@ -738,8 +718,6 @@ class WFEditorApplication(CallableQThread):
 
         self._current_registry_index = 0
         self.wanos = []
-
-        UnicoreAPI.init()
 
         self._connect_signals()
 

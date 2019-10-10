@@ -278,7 +278,7 @@ class ResourceTableModel(ResourceTableBase):
 
         mem = None
         if self.mylist[self.ROWTYPE.mem][0] == True:
-            mem = float(self.mylist[self.ROWTYPE.mem][2])
+            mem = int(float(self.mylist[self.ROWTYPE.mem][2]))
 
         time = None
         if self.mylist[self.ROWTYPE.time][0] == True:
@@ -295,33 +295,6 @@ class ResourceTableModel(ResourceTableBase):
             queue = queue
         )
 
-
-    def render_to_resource_jsdl(self):
-        from pyura.pyura.WorkflowXMLConverter import JSDLtoXML
-        ppn = None
-        if self.mylist[self.ROWTYPE.ppn][0] == True:
-            ppn = self.mylist[self.ROWTYPE.ppn][2]
-
-        numnodes = None
-        if self.mylist[self.ROWTYPE.numnodes][0] == True:
-            numnodes = self.mylist[self.ROWTYPE.numnodes][2]
-
-        mem = None
-        if self.mylist[self.ROWTYPE.mem][0] == True:
-            mem = float(self.mylist[self.ROWTYPE.mem][2])
-            mem *= 1024 * 1024
-
-        time = None
-        if self.mylist[self.ROWTYPE.time][0] == True:
-            time = self.mylist[self.ROWTYPE.time][2]
-
-        queue = None
-        if self.mylist[self.ROWTYPE.queue][0] == True:
-            queue = self.mylist[self.ROWTYPE.queue][2]
-
-        return JSDLtoXML.xml_resources(IndividualCPUCount=ppn,TotalResourceCount=numnodes,
-                                       IndividualPhysicalMemory=mem,
-                                       Queue=queue, IndividualCPUTime=time)
 
     def flags(self, index):
         if (index.column() == 1):

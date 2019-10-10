@@ -34,10 +34,10 @@ class WFRemoteFileSystem(QWidget):
         self.__fileTree.setHeaderHidden(True)
         self.__fileTree.setSelectionBehavior(QAbstractItemView.SelectRows)
         self.__fileTree.setContextMenuPolicy(Qt.CustomContextMenu)
-        self.__btn_reload.setText("Reload")
+        #self.__btn_reload.setText("Reload")
 
         layout.addWidget(self.__fileTree)
-        layout.addWidget(self.__btn_reload)
+        #layout.addWidget(self.__btn_reload)
 
     def update_job_list(self, jobs):
         self.update_file_tree_node(self._JOB_PATH, jobs)
@@ -301,8 +301,8 @@ class WFRemoteFileSystem(QWidget):
         elif index_type == FSModel.DATA_TYPE_DIRECTORY:
             self.__create_directory_context_menu(menu, index)
         elif index_type == FSModel.DATA_TYPE_JOB:
-            self.__create_job_context_menu(menu, index)
-            menu.addSeparator()
+            #self.__create_job_context_menu(menu, index)
+            #menu.addSeparator()
             self.__create_directory_context_menu(menu, index)
         elif index_type == FSModel.DATA_TYPE_WORKFLOW:
             self.__create_workflow_context_menu(menu,index)

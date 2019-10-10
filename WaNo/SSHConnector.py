@@ -20,11 +20,7 @@ from Qt.QtCore import QThread, Qt
 from Qt.QtCore import Slot, Signal, QObject
 
 from SimStackServer.ClusterManager import ClusterManager
-from pyura.pyura.HTTPBasicAuthProvider import HTTPBasicAuthProvider
-from pyura.pyura import UnicoreAPI
-from pyura.pyura.Constants import ErrorCodes as UnicoreErrorCodes
-from pyura.pyura import JobManager
-from pyura.pyura.Constants import ConnectionState as UnicoreConnectionStates
+from SimStackServer.MessageTypes import ErrorCodes
 
 from WaNo.lib.FileSystemTree import filewalker
 from WaNo.lib.CallableQThread import CallableQThread
@@ -91,7 +87,7 @@ SSHConnector error codes.
     The deletion of a file has failed.
 """
 ERROR = Enum("ERROR",
-    [e.name for e in UnicoreErrorCodes] + [
+    [e.name for e in ErrorCodes] + [
             "AUTH_SETUP_FAILED",
             "REGISTRY_NOT_CONNECTED",
             "JOB_DELETE_FAILED",
@@ -126,42 +122,7 @@ class UnicoreWorker(TPCThread):
     @TPCThread._from_other_thread
     def connect(self, callback, username, password, base_uri, con_settings):
         print("Not used anymore")
-
         #self._exec_callback(callback, base_uri, err, status)
-
-
-    @TPCThread._from_other_thread
-    def run_single_job(self, wano_dir, name, error_callback):
-        job_manager = self.registry.get_job_manager()
-        imports = JobManager.Imports()
-        storage_manager = self.registry.get_storage_manager()
-        execfile = os.path.join(wano_dir,"submit_command.sh")
-        for filename in filewalker(wano_dir):
-            relpath = os.path.relpath(filename,wano_dir)
-            imports.add_import(filename,relpath)
-
-        contents = ""
-        with open(execfile) as com:
-            contents = com.read()
-
-        splitcont = shlex.split(contents.strip(" \t\n\r"))
-
-        com = splitcont[0]
-        arguments = splitcont[1:]
-
-        status, err, error_message, newjob = job_manager.create(com,
-                                         arguments=arguments,
-                                         imports = imports,
-                                         environment=[],
-                                         name=name
-                                         )
-        if (err != UnicoreErrorCodes.NO_ERROR or not status in range(200, 300)):
-            self._exec_callback(error_callback, err, error_message)
-            return
-
-        job_manager.upload_imports(newjob,storage_manager)
-        wd = newjob.get_working_dir()
-        job_manager.start(newjob)
 
     @TPCThread._from_other_thread
     def run_workflow_job(self, submitname, dir_to_upload, xml, error_callback):
@@ -170,7 +131,7 @@ class UnicoreWorker(TPCThread):
         storage_manager = self.registry.get_storage_manager()
 
         status, err, error_message, storage = storage_manager.create(name=submitname)
-        if (err != UnicoreErrorCodes.NO_ERROR or not status in range(200, 300)):
+        if (err != ErrorCodes.NO_ERROR or not status in range(200, 300)):
             self._exec_callback(error_callback, err, error_message)
             return
 
@@ -189,7 +150,7 @@ class UnicoreWorker(TPCThread):
 
         storage_uri = storage_manager.get_base_uri()
         status, err, error_message, wf = wf_manager.create(storage_id, submitname)
-        if (err != UnicoreErrorCodes.NO_ERROR or not status in range(200, 300)):
+        if (err != ErrorCodes.NO_ERROR or not status in range(200, 300)):
             self._exec_callback(error_callback, err, error_message)
             return
 
@@ -565,16 +526,16 @@ class SSHConnector(CallableQThread):
         pythonproc = registry["software_directory"] + '/V2/local_anaconda/bin/python'
         serverproc = registry["software_directory"] + '/V2/SimStackServer/SimStackServer.py'
         if not cm.exists(pythonproc) or not cm.exists(serverproc):
-            return UnicoreErrorCodes.CONN_TIMEOUT
+            return ErrorCodes.CONN_TIMEOUT
         command = "%s %s"%(pythonproc, serverproc)
         #print(command)
         cm.connect_zmq_tunnel(command)
-        return UnicoreErrorCodes.NO_ERROR
+        return ErrorCodes.NO_ERROR
 
     def connect_registry(self, registry, callback=(None, (), {})):
 
         name = registry["name"]
-        error = UnicoreErrorCodes.NO_ERROR
+        error = ErrorCodes.NO_ERROR
         statusmessage = ""
 
         #print(registry)
@@ -595,11 +556,11 @@ class SSHConnector(CallableQThread):
         if not cm.is_connected():
             try:
                 cm.connect()
-                error = UnicoreErrorCodes.NO_ERROR
+                error = ErrorCodes.NO_ERROR
                 statusmessage = "Connected."
             except paramiko.ssh_exception.SSHException as e:
                 statusmessage = str(e)
-                error = UnicoreErrorCodes.CONN_ERROR
+                error = ErrorCodes.CONN_ERROR
             try:
                 returncode_serverstart = self.start_server(registry)
             except Exception as e:
@@ -626,7 +587,7 @@ class SSHConnector(CallableQThread):
 
     def disconnect_registry(self, registry, callback):
         name = registry["name"]
-        error = UnicoreErrorCodes.NO_ERROR
+        error = ErrorCodes.NO_ERROR
         statusmessage = ""
         if name in self._clustermanagers:
             cm = self._clustermanagers[name]
@@ -710,7 +671,7 @@ class SSHConnector(CallableQThread):
             cm.rmtree(filename)
         else:
             cm.delete_file(filename)
-        self._exec_callback(callback, registry, filename, UnicoreErrorCodes.NO_ERROR)
+        self._exec_callback(callback, registry, filename, ErrorCodes.NO_ERROR)
 
 
     def delete_job(self, base_uri, job, callback=(None, (), {})):

@@ -37,9 +37,6 @@ from jinja2 import Template, FileSystemLoader, Environment
 
 from WaNo.view.PropertyListView import ResourceTableModel,ImportTableModel,ExportTableModel
 
-from pyura.pyura.WorkflowXMLConverter import JSDLtoXML
-
-
 def mkdir_p(path):
     import errno
 

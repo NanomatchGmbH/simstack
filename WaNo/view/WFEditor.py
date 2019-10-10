@@ -95,7 +95,7 @@ class WFEditor(QWidget):
         self.setLayout(layout)
 
         self.wanoListWidget = WFEWaNoListWidget(self)
-        self.ctrlListWidget = WFEListWidget(self, self._controls)
+        #self.ctrlListWidget = WFEListWidget(self, self._controls)
         self.workflowListWidget = WFEWorkflowistWidget(self)
 
         self.remoteFileTree = WFRemoteFileSystem(self)
@@ -115,11 +115,11 @@ class WFEditor(QWidget):
         leftPanel.addWidget(self.workflowListWidget)
         leftPanel.setStretchFactor(3, 1)
         #4
-        leftPanel.addWidget(QLabel('Controls'))
-        leftPanel.setStretchFactor(4, 0)
+        #leftPanel.addWidget(QLabel('Controls'))
+        #leftPanel.setStretchFactor(4, 0)
         #5
-        leftPanel.addWidget(self.ctrlListWidget)
-        leftPanel.setStretchFactor(5, 1)
+        #leftPanel.addWidget(self.ctrlListWidget)
+        #leftPanel.setStretchFactor(5, 1)
 
 
         self.settingsAndFilesTabs = QTabWidget()

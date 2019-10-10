@@ -36,8 +36,6 @@ from collections import OrderedDict
 from WaNo.view.WFEditorWidgets import WFEWaNoListWidget, WFEListWidget
 from WaNo.lib.FileSystemTree import copytree
 
-from pyura.pyura.WorkflowXMLConverter import WFtoXML
-
 #def mapClassToTag(name):
 #    xx = name.replace('Widget','')
 #    return xx[2:]
