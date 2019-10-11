@@ -21,11 +21,6 @@ cd simstack_src
 rm -rf build compile
 $MYPWD/anaconda3/bin/python ./setup.py install --prefix=../compiled_client/
 rm -rf build compile
-cd external
-rm -rf build compile
-$MYPWD/anaconda3/bin/python ./setup_pyura.py install --prefix=../../compiled_client
-rm -rf build compile
-cd $MYPWD
 
 mkdir installer_package
 cp -r compiled_client/lib/python3.6/site-packages/* installer_package/
