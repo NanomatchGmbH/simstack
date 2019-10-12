@@ -4,6 +4,7 @@ from __future__ import unicode_literals
 from __future__ import absolute_import
 
 import logging
+import socket
 import threading
 import shlex
 import os
@@ -14,7 +15,7 @@ from pprint import pprint
 import paramiko
 from lxml import etree
 
-
+from zmq.error import Again
 
 from Qt.QtCore import QThread, Qt
 from Qt.QtCore import Slot, Signal, QObject
@@ -30,7 +31,7 @@ from WaNo.lib.BetterThreadPoolExecutor import BetterThreadPoolExecutor
 from WaNo.UnicoreState import UnicoreDataTransferStates
 from WaNo.UnicoreState import UnicoreDataTransferDirection as Direction
 from WaNo.UnicoreHelpers import extract_storage_path
-
+from functools import wraps
 
 """ Number of data transfer workers per regisrtry. """
 MAX_DT_WORKERS_PER_REGISTRY = 3
@@ -97,6 +98,26 @@ ERROR = Enum("ERROR",
 )
 
 
+
+def eagain_catcher(f):
+    @wraps(f)
+    def wrapper(self, *args, **kwds):
+        try:
+            return f(self, *args, **kwds)
+        except Again as e:
+            from WaNo.view.WFViewManager import WFViewManager
+            message = "Connection Error, please try reconnecting Client."
+            WFViewManager.show_error(message)
+        except socket.timeout as e:
+            from WaNo.view.WFViewManager import WFViewManager
+            message = "Caught connection exception %s: SSH socket timed out. Please try reconnecting Client." % (e)
+            WFViewManager.show_error(message)
+        except OSError as e:
+            from WaNo.view.WFViewManager import WFViewManager
+            #print(type(e))
+            message = "Caught connection exception %s: %s. Try reconnecting Client."%(type(e),e)
+            WFViewManager.show_error(message)
+    return wrapper
 
 class UnicoreWorker(TPCThread):
     OPERATIONS = Enum("Operations",
@@ -532,8 +553,8 @@ class SSHConnector(CallableQThread):
         cm.connect_zmq_tunnel(command)
         return ErrorCodes.NO_ERROR
 
+    @eagain_catcher
     def connect_registry(self, registry, callback=(None, (), {})):
-
         name = registry["name"]
         error = ErrorCodes.NO_ERROR
         statusmessage = ""
@@ -558,20 +579,26 @@ class SSHConnector(CallableQThread):
                 cm.connect()
                 error = ErrorCodes.NO_ERROR
                 statusmessage = "Connected."
+                returncode_serverstart = self.start_server(registry)
             except paramiko.ssh_exception.SSHException as e:
                 statusmessage = str(e)
                 error = ErrorCodes.CONN_ERROR
-            try:
-                returncode_serverstart = self.start_server(registry)
-            except Exception as e:
-                raise e
+                del self._clustermanagers[name]
+            except Again as e:
+                statusmessage = "Connection Error, please try reconnecting Client."
+                error = ErrorCodes.CONN_ERROR
+                del self._clustermanagers[name]
+            except socket.timeout as e:
+                statusmessage = "Caught connection exception %s: SSH socket timed out. Please try reconnecting Client." % (e)
+                error = ErrorCodes.CONN_ERROR
+                del self._clustermanagers[name]
+            except OSError as e:
+                statusmessage = "Caught connection exception %s: SSH socket timed out. Please try reconnecting Client." % (e)
+                error = ErrorCodes.CONN_ERROR
+                del self._clustermanagers[name]
         else:
             print("Already connected, will not connect again.")
-
         self._exec_callback(callback, registry["baseURI"], error, statusmessage)
-
-
-
 
     def _get_error_or_fail(self, base_uri):
         worker = None
@@ -583,7 +610,6 @@ class SSHConnector(CallableQThread):
                     OPERATIONS.RUN_SINGLE_JOB,
                     ERROR.REGISTRY_NOT_CONNECTED)
         return worker
-
 
     def disconnect_registry(self, registry, callback):
         name = registry["name"]
@@ -602,6 +628,7 @@ class SSHConnector(CallableQThread):
                     name,
                     (self._emit_error, (base_uri, OPERATIONS.RUN_SINGLE_JOB), {}))
 
+    @eagain_catcher
     def run_workflow_job(self, registry, submitname, dir_to_upload, xml, progress_callback = None, callback = None):
 
         cm = self._get_cm(registry)
@@ -650,21 +677,25 @@ class SSHConnector(CallableQThread):
         if not worker is None:
             worker.update_resources(callback, base_uri)
 
+    @eagain_catcher
     def update_workflow_list(self, registry, callback=(None, (), {})):
         cm = self._get_cm(registry)
         workflows = cm.get_workflow_list()
         self._exec_callback(callback, registry, workflows)
 
+    @eagain_catcher
     def update_workflow_job_list(self, registry, wfid, callback=(None, (), {})):
         cm = self._get_cm(registry)
         files = cm.get_workflow_job_list(wfid)
         self._exec_callback(callback, registry, wfid, files)
 
+    @eagain_catcher
     def update_dir_list(self, registry, path, callback=(None, (), {})):
         cm = self._get_cm(registry)
         files = cm.list_dir(path)
         self._exec_callback(callback, registry, path, files)
 
+    @eagain_catcher
     def delete_file(self, registry, filename, callback=(None, (), {})):
         cm = self._get_cm(registry)
         if cm.is_directory(filename):
@@ -672,7 +703,6 @@ class SSHConnector(CallableQThread):
         else:
             cm.delete_file(filename)
         self._exec_callback(callback, registry, filename, ErrorCodes.NO_ERROR)
-
 
     def delete_job(self, base_uri, job, callback=(None, (), {})):
         worker = self._get_error_or_fail(base_uri)
@@ -684,6 +714,7 @@ class SSHConnector(CallableQThread):
         if not worker is None:
             worker.abort_job(callback, base_uri, job)
 
+    @eagain_catcher
     def delete_workflow(self, registry, workflow_submitname, callback=(None, (), {})):
         cm = self._get_cm(registry)
         cm.delete_wf(workflow_submitname)
@@ -691,6 +722,7 @@ class SSHConnector(CallableQThread):
         #if not worker is None:
         #    worker.delete_workflow(callback, base_uri, workflow)
 
+    @eagain_catcher
     def abort_workflow(self, registry, workflow_submitname, callback=(None, (), {})):
         cm = self._get_cm(registry)
         cm.abort_wf(workflow_submitname)
@@ -730,7 +762,7 @@ class SSHConnector(CallableQThread):
             transfers[index] = UnicoreDownload(registry, transfer_state, callback)
         transfers[index].submit(executor)
 
-
+    @eagain_catcher
     def download_file(self, registry, download_files, local_dest, progress_callback = None, callback=(None, (), {})):
         cm = self._get_cm(registry)
         todl = download_files
@@ -746,6 +778,7 @@ class SSHConnector(CallableQThread):
             raise ConnectionError("Clustermanager %s was not connected."%name)
         return self._clustermanagers[name]
 
+    @eagain_catcher
     def upload_files(self, registry, upload_files, destination, progress_callback = None, callback=(None, (), {})):
         cm = self._get_cm(registry)
         toupload = upload_files

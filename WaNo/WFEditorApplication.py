@@ -460,10 +460,15 @@ class WFEditorApplication(CallableQThread):
         )
 
     def _connect_unicore(self, index, no_status_update=False):
+        if index == -1:
+            message = "No server definition selected. Please define a server in the Configuration -> Servers Dialog."
+            WFViewManager.show_error(message)
+            return
         if not no_status_update:
             self._set_unicore_connecting()
 
         self._set_current_registry_index(index)
+
         registry = self._get_current_registry()
         self._logger.info("Connecting to registry '%s'." % \
                 registry[SETTING_KEYS['registry.name']]
