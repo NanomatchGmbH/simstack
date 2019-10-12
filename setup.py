@@ -3,6 +3,9 @@ from __future__ import print_function
 from distutils.core import setup
 from distutils.extension import Extension
 from Cython.Distutils import build_ext
+from Cython.Distutils import Options
+
+Options.language_level ="3"
 
 import shutil,os
 import glob
