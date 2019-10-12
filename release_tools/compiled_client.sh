@@ -22,8 +22,18 @@ rm -rf build compile
 $MYPWD/anaconda3/bin/python ./setup.py install --prefix=../compiled_client/
 rm -rf build compile
 
+cd $MYPWD
+cd simstack_src/SimStackServer
+git archive --format zip --output $MYPWD/compiled_client/lib/python3.7/site-packages/SimStackServer.zip --prefix=SimStackServer/ master
+cd $MYPWD/compiled_client/lib/python3.7/site-packages/
+unzip SimStackServer.zip
+rm SimStackServer.zip
+
+
+cd $MYPWD
+
 mkdir installer_package
-cp -r compiled_client/lib/python3.6/site-packages/* installer_package/
+cp -r compiled_client/lib/python3.7/site-packages/* installer_package/
 rm -rf compiled_client
 cp -r simstack_src/WaNo/ctrl_img installer_package/WaNo/
 cp -r simstack_src/WaNo/wano_img installer_package/WaNo/

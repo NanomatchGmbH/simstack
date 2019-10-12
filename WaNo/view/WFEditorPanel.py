@@ -283,7 +283,7 @@ class WFItemModel(object):
     def render_to_simple_wf(self,submitdir,jobdir):
         activities = []
         transitions = []
-        wf = WFtoXML.xml_subworkflow(Transition=transitions,Activity=activities)
+        #wf = WFtoXML.xml_subworkflow(Transition=transitions,Activity=activities)
 
     #this function assembles all files relative to the workflow root
     #The files will be export to c9m:${WORKFLOW_ID}/the file name below
@@ -315,6 +315,8 @@ class SubWFModel(WFItemModel,WFItemListInterface):
         return self.wf_root
 
     def render_to_simple_wf(self,submitdir,jobdir,path):
+        raise NotImplementedError("Not Implemented")
+        """
         activities = []
         transitions = []
         swfs = []
@@ -340,7 +342,7 @@ class SubWFModel(WFItemModel,WFItemListInterface):
                     pass
                 stageout_basedir = "%s/%s" %(basepath,elename)
                 jsdl = ele.render(wano_dir, stageout_basedir=stageout_basedir)
-                jsdl_xml = WFtoXML.xml_jsdl(jsdl=jsdl)
+                #jsdl_xml = WFtoXML.xml_jsdl(jsdl=jsdl)
                 toid = jsdl_xml.attrib["Id"]
 
                 activities.append(jsdl_xml)
@@ -360,8 +362,9 @@ class SubWFModel(WFItemModel,WFItemListInterface):
             fromid = toid
             # out.write(ele.uuid + "\n")
 
-        wf = WFtoXML.xml_subworkflow(Transition=transitions, Activity=activities,SubWorkflow=swfs)
+        #wf = WFtoXML.xml_subworkflow(Transition=transitions, Activity=activities,SubWorkflow=swfs)
         return wf
+        """
 
     def assemble_files(self, path):
         # this function assembles all files relative to the workflow root
@@ -446,6 +449,8 @@ class ParallelModel(WFItemModel):
 
 
     def render_to_simple_wf(self,submitdir,jobdir,path = ""):
+        raise NotImplementedError("Function not implemented.")
+        """
         split_activity = WFtoXML.xml_split()
         splitid = split_activity.attrib["Id"]
         transitions = []
@@ -467,10 +472,11 @@ class ParallelModel(WFItemModel):
 
             swf_xml = swfm.render_to_simple_wf(submitdir,inner_jobdir,path = inner_path)
             swf_id = swf_xml.attrib["Id"]
-            transitions.append(WFtoXML.xml_transition(From=splitid,To=swf_id))
+            #transitions.append(WFtoXML.xml_transition(From=splitid,To=swf_id))
             swfs.append(swf_xml)
 
-        return WFtoXML.xml_subworkflow(Transition=transitions,SubWorkflow=swfs)
+        """
+        return None #WFtoXML.xml_subworkflow(Transition=transitions,SubWorkflow=swfs)
 
         #-> self.subwfmodel.render_to_simple_wf(submitdir,jobdir,path = path)
         #-> return WFtoXML.xml_subwfforeach(IteratorName=self.name,IterSet=filesets,SubWorkflow=swf,Id=muuid)
@@ -544,6 +550,8 @@ class ForEachModel(WFItemModel):
         self.filelist = filelist
 
     def render_to_simple_wf(self,submitdir,jobdir,path = ""):
+        raise NotImplementedError("Not implemented")
+        """
 
         filesets = []
         muuid = str(uuid.uuid4())
@@ -553,7 +561,7 @@ class ForEachModel(WFItemModel):
         for myfile in self.filelist:
             gpath = "c9m:${WORKFLOW_ID}/%s/" % os.path.dirname(myfile)
             bn = os.path.basename(myfile)
-            filesets.append(WFtoXML.xml_fileset(base=gpath , inclusion_list=bn , exclude="" ) )
+            #filesets.append(WFtoXML.xml_fileset(base=gpath , inclusion_list=bn , exclude="" ) )
 
         #print(submitdir,jobdir,"WFFOREACH")
         if jobdir == "":
@@ -569,7 +577,8 @@ class ForEachModel(WFItemModel):
         swf.attrib["Type"] = "LOOP_BODY"
         swf.attrib["Id"] = muuid_body
         swf.attrib["IteratorName"] = self.itername
-        return WFtoXML.xml_subwfforeach(IteratorName=self.itername,IterSet=filesets,SubWorkflow=swf,Id=muuid)
+        """
+        return None #WFtoXML.xml_subwfforeach(IteratorName=self.itername,IterSet=filesets,SubWorkflow=swf,Id=muuid)
 
     def assemble_files(self,path):
         myfiles = []

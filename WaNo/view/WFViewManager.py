@@ -131,8 +131,8 @@ class WFViewManager(QObject):
             self.last_used_path = QFileInfo(filepath).path();
             #print("Save file to: %s." % save_to[0])
             self.download_file_to.emit(filepath, save_to[0])
-            self._view_timer.add_callback(self._update_timeout.emit,
-                    self._dl_update_interval)
+            #self._view_timer.add_callback(self._update_timeout.emit,
+            #        self._dl_update_interval)
 
     def _on_file_upload(self, dirpath):
         upload = QFileDialog.getOpenFileName(
@@ -143,8 +143,8 @@ class WFViewManager(QObject):
         if upload[0]:
             print("Going to upload: %s" % str(upload))
             self.upload_file.emit(upload[0], dirpath)
-            self._view_timer.add_callback(self._update_timeout.emit,
-                    self._dl_update_interval)
+            #self._view_timer.add_callback(self._update_timeout.emit,
+            #        self._dl_update_interval)
 
     def _on_workflow_saved(self, success, folder):
         if not success:
