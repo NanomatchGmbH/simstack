@@ -546,8 +546,11 @@ class SSHConnector(CallableQThread):
         cm: ClusterManager
         pythonproc = registry["software_directory"] + '/V2/local_anaconda/bin/python'
         serverproc = registry["software_directory"] + '/V2/SimStackServer/SimStackServer.py'
-        if not cm.exists(pythonproc) or not cm.exists(serverproc):
-            return ErrorCodes.CONN_TIMEOUT
+        if not cm.exists(pythonproc):
+            raise FileNotFoundError("%s pythonproc was not found. Please check, whether the software directory in Configuration->Servers is correct and postinstall.sh was run"%pythonproc)
+        if not cm.exists(serverproc):
+            raise FileNotFoundError("%s serverproc was not found. Please check, whether the software directory in Configuration->Servers is correct and the file exists" % serverproc)
+
         command = "%s %s"%(pythonproc, serverproc)
         #print(command)
         cm.connect_zmq_tunnel(command)
@@ -590,6 +593,10 @@ class SSHConnector(CallableQThread):
                 del self._clustermanagers[name]
             except socket.timeout as e:
                 statusmessage = "Caught connection exception %s: SSH socket timed out. Please try reconnecting Client." % (e)
+                error = ErrorCodes.CONN_ERROR
+                del self._clustermanagers[name]
+            except FileNotFoundError as e:
+                statusmessage = "Did not find file, Exception was:\n%s" % (e)
                 error = ErrorCodes.CONN_ERROR
                 del self._clustermanagers[name]
             except OSError as e:
