@@ -600,7 +600,7 @@ class SSHConnector(CallableQThread):
                 error = ErrorCodes.CONN_ERROR
                 del self._clustermanagers[name]
             except OSError as e:
-                statusmessage = "Caught connection exception %s: SSH socket timed out. Please try reconnecting Client." % (e)
+                statusmessage = "Caught generic exception %s. Please reconnect and try again and if it reappears report to Nanomatch" % (e)
                 error = ErrorCodes.CONN_ERROR
                 del self._clustermanagers[name]
         else:
@@ -720,6 +720,10 @@ class SSHConnector(CallableQThread):
         worker = self._get_error_or_fail(base_uri)
         if not worker is None:
             worker.abort_job(callback, base_uri, job)
+
+    def get_workflow_url(self, registry, workflow):
+        cm = self._get_cm(registry)
+        return cm.get_url_for_workflow(workflow)
 
     @eagain_catcher
     def delete_workflow(self, registry, workflow_submitname, callback=(None, (), {})):

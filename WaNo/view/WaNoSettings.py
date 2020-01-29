@@ -103,6 +103,9 @@ class WaNoRegistrySettings(QWidget):
     def get_queueing_system(self):
         return self.__queueing_system.currentText()
 
+    def get_default_queue(self):
+        return self.__default_queue_name.text()
+
     def get_default(self):
         return self.__cb_default.isChecked()
 
@@ -127,6 +130,7 @@ class WaNoRegistrySettings(QWidget):
         self.__label_calculation_basepath = QLabel(self)
         self.__label_software_directory = QLabel(self)
         self.__label_queueing_system = QLabel(self)
+        self.__label_default_queue_name = QLabel(self)
 
         #self.__label_password       = QLabel(self)
         #self.__label_ca_package     = QLabel(self)
@@ -138,6 +142,7 @@ class WaNoRegistrySettings(QWidget):
         self.__label_calculation_basepath.setText("<b>Basepath</b>")
         self.__label_software_directory.setText("<b>Software directory on cluster</b>")
         self.__label_queueing_system.setText("<b>Queueing System</b>")
+        self.__label_default_queue_name.setText("<b>Default Queue Name</b>")
 
         #self.__label_ca_package.setText("<b>Certificate Path</b>")
         #self.__label_workflows.setText("<b>Workflow Link</b>")
@@ -148,7 +153,7 @@ class WaNoRegistrySettings(QWidget):
         self.__calculation_basepath     = QLineEdit(self)
         self.__software_directory = QLineEdit(self)
         self.__queueing_system = QComboBox(self)
-
+        self.__default_queue_name = QLineEdit(self)
 
         qs = self.__queueing_system
         qs.addItem("pbs")
@@ -178,6 +183,8 @@ class WaNoRegistrySettings(QWidget):
         #grid.addWidget(self.__label_ca_package  , 3, 0)
         grid.addWidget(self.__label_queueing_system   , 4, 0)
         grid.addWidget(self.__label_software_directory, 5, 0)
+        grid.addWidget(self.__label_default_queue_name, 6, 0)
+
 
         grid.addWidget(self.__registryName,         0, 1 )
         grid.addWidget(self.__baseUri,              1, 1 )
@@ -185,6 +192,7 @@ class WaNoRegistrySettings(QWidget):
         grid.addWidget(self.__calculation_basepath,             3, 1 )
         grid.addWidget(self.__queueing_system,      4, 1 )
         grid.addWidget(self.__software_directory, 5, 1)
+        grid.addWidget(self.__default_queue_name, 6, 1)
         self.__software_directory.setText("/home/nanomatch/nanomatch")
         self.__calculation_basepath.setText("simstack_workspace")
         self.setLayout(grid)
@@ -193,13 +201,14 @@ class WaNoRegistrySettings(QWidget):
         self.__cb_default.setChecked(is_default)
 
 
-    def set_fields(self, name, uri, user, calculation_basepath, queueing_system, software_directory, is_default):
+    def set_fields(self, name, uri, user, calculation_basepath, queueing_system, software_directory, default_queue_name, is_default):
         self.__registryName.setText(name)
         self.__baseUri.setText(uri)
         self.__username.setText(user)
         self.__queueing_system.setCurrentText(queueing_system)
         self.__software_directory.setText(software_directory)
         self.__calculation_basepath.setText(calculation_basepath)
+        self.__default_queue_name.setText(default_queue_name)
 
         #self.__password.setText(password)
         #self.__ca_package.setText(ca_package)
@@ -266,22 +275,25 @@ class WaNoUnicoreSettings(QDialog):
                         tabWidget.get_calculation_basepath().strip(),
                         tabWidget.get_queueing_system().strip(),
                         tabWidget.get_software_directory().strip(),
+                        tabWidget.get_default_queue().strip(),
                         tabWidget.get_default()
                     )
                 )
 
         return registries
 
-    def __build_registry_settings(self, name, uri, user, calculation_basepath, queueing_system, software_directory, default):
-        return {
+    def __build_registry_settings(self, name, uri, user, calculation_basepath, queueing_system, software_directory, default_queue, default):
+        returndict = {
                 'name': name,
                 'baseURI': uri,
                 'username': user,
                 'calculation_basepath': calculation_basepath,
                 'queueing_system' : queueing_system,
                 'software_directory': software_directory,
+                'default_queue': default_queue,
                 'default': default
             }
+        return returndict
 
     def __add_tab(self, name, index):
         tabWidget = WaNoRegistrySettings()
@@ -343,12 +355,27 @@ class WaNoUnicoreSettings(QDialog):
                 t.set_default(False)
             self.__ignore_default_signal = False
 
+    @staticmethod
+    def __set_unset_registry_defaults(registry):
+        defaults = {}
+        # Name, baseURI, username, is_default do not have defaults, we crash in case they aren't set.
+        defaults['calculation_basepath'] = "simstack_workspace"
+        defaults['queueing_system'] = "slurm"
+        defaults['software_directory'] = "/home/nanomatch/nanomatch"
+        defaults['default_queue'] = "default"
+
+        for key in defaults.keys():
+            if key not in registry:
+                registry[key] = defaults[key]
+
+
     def __update(self, config):
         if self.__tabs is None:
             raise RuntimeError("WaNoUnicoreSettings not initialized correctly")
 
         if not config is None and len(config) > 0:
             for i, registry in enumerate(config):
+                self.__set_unset_registry_defaults(registry)
                 tabWidget = self.__add_tab(registry['name'], i)
                 tabWidget.set_fields(
                         registry['name'],
@@ -357,6 +384,7 @@ class WaNoUnicoreSettings(QDialog):
                         registry['calculation_basepath'],
                         registry['queueing_system'],
                         registry['software_directory'],
+                        registry['default_queue'],
                         registry['is_default']
                 )
 
@@ -387,7 +415,7 @@ class WaNoUnicoreSettings(QDialog):
         layout.addWidget(self.__btn_cancel)
         self.setLayout(layout)
 
-        self.setMinimumSize(420, 420)
+        self.setMinimumSize(420, 520)
 
     def __init__(self, config):
         super(WaNoUnicoreSettings, self).__init__()

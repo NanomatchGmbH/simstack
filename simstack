@@ -24,6 +24,7 @@ import logging
 import uuid
 
 import yaml
+import PyQt5.QtWebEngineWidgets
 from Qt.QtWidgets import QApplication, QStyleFactory
 from Qt.QtCore import QTimer, QLocale
 import Qt
@@ -84,7 +85,10 @@ if __name__ == '__main__':
 
     if platform.system() == 'Windows':
         ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(myappid)
-        
+
+    import Qt.QtCore as QtCore
+    QtCore.QCoreApplication.setAttribute(QtCore.Qt.AA_ShareOpenGLContexts)
+
     app = QApplication(sys.argv)
     if platform.system() == 'Darwin':
         # OSX QT bug here, if we don't force the style to Fusion, things like the resource table won't work.
@@ -100,6 +104,7 @@ if __name__ == '__main__':
         os.makedirs(SETTINGS_FOLDER)
 
     SETTINGS_FILE = path.join(SETTINGS_FOLDER,_SETTINGS_FILE)
+    print("Loading settings from %s"%SETTINGS_FILE)
     settings = WaNoSettingsProvider.get_instance(SETTINGS_FILE)
     if path.exists(SETTINGS_FILE):
         with open(SETTINGS_FILE, 'r') as infile:

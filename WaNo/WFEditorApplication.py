@@ -121,6 +121,10 @@ class WFEditorApplication(CallableQThread):
                 registry['queueing_system']
             )
             self.__settings.set_value(
+                "%s.%s" % (settings_path, SETTING_KEYS['registry.default_queue']),
+                registry['default_queue']
+            )
+            self.__settings.set_value(
                     "%s.%s" % (settings_path, SETTING_KEYS['registry.is_default']),
                     registry['default']
                 )
@@ -344,6 +348,26 @@ class WFEditorApplication(CallableQThread):
                 (self._on_job_aborted, (), { 'job': job})
             )
 
+    def _on_fs_browse_workflow(self, workflow):
+        registry = self._get_current_registry()
+        #print("Im workflow",workflow)
+        myurl = self._unicore_connector.get_workflow_url(registry, workflow)
+        print(myurl)
+        from PyQt5.QtWebEngineWidgets import QWebEngineView
+
+        from Qt.QtCore import QUrl
+        import Qt.QtCore as QtCore
+
+        web = QWebEngineView(parent=self._view_manager.get_editor())
+
+        web.setWindowFlags(web.windowFlags() | QtCore.Qt.Window)
+        web.load(QUrl(myurl))
+        web.window().resize(800,600)
+        web.show()
+        #self._unicore_connector.delete_workflow(registry,workflow,
+        #        (self._on_workflow_deleted, (), { 'workflow': workflow})
+        #)
+
     def _on_fs_delete_workflow(self, workflow):
         registry = self._get_current_registry()
         self._unicore_connector.delete_workflow(registry,workflow,
@@ -513,7 +537,7 @@ class WFEditorApplication(CallableQThread):
     def run_workflow(self, xml, directory, name):
         registry= self._get_current_registry()
         now = datetime.datetime.now()
-        nowstr = now.strftime("%Y-%m-%d-%H:%M:%S")
+        nowstr = now.strftime("%Y-%m-%d-%Hh%Mm%Ss")
         submitname = "%s-%s" %(nowstr, name)
         to_upload = os.path.join(directory,"workflow_data")
         self._unicore_connector.run_workflow_job(registry,submitname,to_upload,xml)
@@ -667,6 +691,7 @@ class WFEditorApplication(CallableQThread):
         self._view_manager.upload_file.connect(self._on_fs_upload)
         self._view_manager.delete_job.connect(self._on_fs_delete_job)
         self._view_manager.abort_job.connect(self._on_fs_abort_job)
+        self._view_manager.browse_workflow.connect(self._on_fs_browse_workflow)
         self._view_manager.delete_workflow.connect(self._on_fs_delete_workflow)
         self._view_manager.abort_workflow.connect(self._on_fs_abort_workflow)
         self._view_manager.delete_file.connect(self._on_fs_delete_file)
@@ -728,4 +753,8 @@ class WFEditorApplication(CallableQThread):
 
         self.__start()
         self._logger.info("Logging Tab Enabled Version: " + get_git_revision())
+
+
+
+
 
