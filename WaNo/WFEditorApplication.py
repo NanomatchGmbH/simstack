@@ -513,7 +513,7 @@ class WFEditorApplication(CallableQThread):
     def run_workflow(self, xml, directory, name):
         registry= self._get_current_registry()
         now = datetime.datetime.now()
-        nowstr = now.strftime("%Y-%m-%d-%H:%M:%S")
+        nowstr = now.strftime("%Y-%m-%d-%Hh%Mm%Ss")
         submitname = "%s-%s" %(nowstr, name)
         to_upload = os.path.join(directory,"workflow_data")
         self._unicore_connector.run_workflow_job(registry,submitname,to_upload,xml)
