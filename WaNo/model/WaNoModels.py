@@ -1062,6 +1062,7 @@ class WaNoItemFileModel(AbstractWanoModel):
         return self.logical_name
 
     def render(self, rendered_wano, path, submitdir):
+        self.view.line_edited()
         rendered_logical_name = Template(self.logical_name,newline_sequence='\n').render(wano=rendered_wano, path=path)
         if not self.visible():
             if sys.version_info >= (3, 0):
