@@ -663,6 +663,7 @@ class WFEditorApplication(CallableQThread):
     ############################################################################
     def exit(self):
         self._view_manager.exit()
+        self._unicore_connector.exit()
 
     ############################################################################
     #                            init                                          #
@@ -696,6 +697,8 @@ class WFEditorApplication(CallableQThread):
         self._view_manager.abort_workflow.connect(self._on_fs_abort_workflow)
         self._view_manager.delete_file.connect(self._on_fs_delete_file)
 
+        self._view_manager.exit_client.connect(self._client_about_to_exit)
+
         self._unicore_connector.error.connect(self._on_unicore_error)
 
     @staticmethod
@@ -709,6 +712,9 @@ class WFEditorApplication(CallableQThread):
     def license_check(cls):
         #cls.exec_by_time(1530396000)
         pass
+
+    def _client_about_to_exit(self):
+       self._unicore_connector.exit()
 
     def __init__(self, settings):
         super(WFEditorApplication, self).__init__()

@@ -25,6 +25,7 @@ class WFViewManager(QObject):
     disconnect_registry     = Signal(name='disconnectRegistry')
     connect_registry        = Signal(int, name='connectRegistry')
     run_clicked             = Signal(name='runClicked')
+    exit_client             = Signal(name='exitClient')
     request_job_list_update     = Signal(name="requestJobListUpdate")
     request_worflow_list_update = Signal(name="requestWorkflowListUpdate")
     request_job_update          = Signal(str, name="requestJobUpdate")
@@ -115,12 +116,6 @@ class WFViewManager(QObject):
     def update_workflow_list(self, wfs):
         self._editor.update_workflow_list(wfs)
 
-    def exit(self):
-        if QMessageBox.question(None, '', "Are you sure you want to quit?",
-                                QMessageBox.Yes | QMessageBox.No,
-                                QMessageBox.No) == QMessageBox.Yes:
-            self._mainwindow.exit()
-
     def test(self):
         print("WFViewManager")
         self.open_registry_settings.emit()
@@ -199,13 +194,13 @@ class WFViewManager(QObject):
         self._mainwindow.save_as.connect(self.open_dialog_save_workflow_as)
         self._mainwindow.run.connect(self.run_clicked)
         self._mainwindow.new_file.connect(self.open_new_workflow)
-        self._mainwindow.exit_client.connect(self.exit)
 
         # Forwarded signals
         self._mainwindow.save_registries.connect(self.save_registries)
         self._mainwindow.save_paths.connect(self.save_paths)
         self._mainwindow.open_registry_settings.connect(self.open_registry_settings)
         self._mainwindow.open_path_settings.connect(self.open_path_settings)
+        self._mainwindow.exit_client.connect(self.exit_client)
         self._editor.registry_changed.connect(self.registry_changed)
         self._editor.connect_registry.connect(self.connect_registry)
         self._editor.disconnect_registry.connect(self.disconnect_registry)
@@ -229,6 +224,10 @@ class WFViewManager(QObject):
 
     def get_editor(self):
         return self._editor
+
+    def exit(self):
+        #Placeholder for ViewManager teardowns
+        pass
 
     def _init_dl_progressbar(self, unicore_state):
         self._dl_progress_widget = DownloadProgressWidget(self._mainwindow, unicore_state)

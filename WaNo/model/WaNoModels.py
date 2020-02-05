@@ -33,7 +33,7 @@ import sys
 import shutil
 import ast
 
-from jinja2 import Template, FileSystemLoader, Environment
+from jinja2 import Template, FileSystemLoader, Environment, UndefinedError
 
 from WaNo.view.PropertyListView import ResourceTableModel,ImportTableModel,ExportTableModel
 
@@ -811,7 +811,12 @@ class WaNoModelRoot(WaNoModelDictLike):
             #print(dirn,"DIRNAME")
             mkdir_p(dirn)
             with open(outfile,'w',newline='\n') as outfile:
-                outfile.write(template.render(wano = rendered_wano))
+                try:
+                    outfile.write(template.render(wano = rendered_wano))
+                except UndefinedError as e:
+                    with open(joined_filename,'rt') as infile:
+                        mytext = infile.read()
+                    outfile.write(mytext)
 
     def flat_variable_list_to_jsdl(self,fvl,basedir,stageout_basedir):
         files = []
@@ -881,7 +886,7 @@ class WaNoModelRoot(WaNoModelDictLike):
         
         wem = WorkflowExecModule(given_name = self.name, resources = self.resources.render_to_simstack_server_model(),
                            inputs = WorkflowElementList(runtime_stagein_files),# + local_stagein_files),
-                           outputs = WorkflowElementList(runtime_stageout_files) ,
+                           outputs = WorkflowElementList(runtime_stageout_files),
                            exec_command = self.rendered_exec_command
                            )
 

@@ -690,6 +690,10 @@ class SSHConnector(CallableQThread):
         workflows = cm.get_workflow_list()
         self._exec_callback(callback, registry, workflows)
 
+    def exit(self):
+        for cm in self._clustermanagers.values():
+            cm.disconnect()
+
     @eagain_catcher
     def update_workflow_job_list(self, registry, wfid, callback=(None, (), {})):
         cm = self._get_cm(registry)

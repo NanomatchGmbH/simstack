@@ -14,6 +14,7 @@ from .WaNoSettings import WaNoUnicoreSettings, WaNoPathSettings
 from .ViewTimer import ViewTimer
 
 from Qt.QtCore import QMutex
+from Qt.QtWidgets import QMessageBox
 
 class StatusMessageManager(object):
     def __sort(self):
@@ -128,7 +129,19 @@ class WFEditorMainWindow(QtWidgets.QMainWindow):
     def show_status_message(self, message, duration):
         self._status_manager.add_message(message, duration)
 
+    def closeEvent(self, event):
+        if QMessageBox.question(None, '', "Are you sure you want to quit?",
+                                QMessageBox.Yes | QMessageBox.No,
+                                QMessageBox.No) == QMessageBox.Yes:
+
+            event.accept()
+            self.exit()
+        else:
+            event.ignore()
+
+
     def exit(self):
+        self.exit_client.emit()
         self._status_manager.stop()
         self.close()
 
@@ -170,7 +183,7 @@ class WFEditorMainWindow(QtWidgets.QMainWindow):
         self.infoLabel.setText("Invoked <b>File|Print</b>")
 
     def action_close(self):
-        self.exit_client.emit()
+        self.exit()
 
     def action_about(self):
         self.infoLabel.setText("Invoked <b>Help|About</b>")
