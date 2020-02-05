@@ -165,7 +165,7 @@ class WFEditor(QWidget):
         self.remoteFileTree.upload_file_to.connect(self.upload_file_to)
         self.remoteFileTree.delete_job.connect(self.delete_job)
         self.remoteFileTree.abort_job.connect(self.abort_job)
-        self.remoteFileTree.browse_workflow.connect(self.browse_workflow)
+        self.remoteFileTree.browse.connect(self.browse_workflow)
         self.remoteFileTree.delete_workflow.connect(self.delete_workflow)
         self.remoteFileTree.abort_workflow.connect(self.abort_workflow)
         self.remoteFileTree.delete_file.connect(self.delete_file)

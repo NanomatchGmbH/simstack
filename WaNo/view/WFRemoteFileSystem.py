@@ -21,7 +21,7 @@ class WFRemoteFileSystem(QWidget):
     delete_file                 = Signal(str, name="deleteFile")
     delete_job                  = Signal(str, name="deleteJob")
     abort_job                   = Signal(str, name="abortJob")
-    browse_workflow             = Signal(str, name="browseWorkflow")
+    browse                      = Signal(str, str, name="browse")
     delete_workflow             = Signal(str, name="deleteWorkflow")
     abort_workflow              = Signal(str, name="abortWorkflow")
     _WF_PATH                    = '?wf?'
@@ -236,13 +236,20 @@ class WFRemoteFileSystem(QWidget):
             job = self.__fs_model.get_id(index)
             self.abort_job.emit(job)
 
-    def __on_cm_browse_workflow(self):
+    def __on_cm_browse(self):
         index = self.__fileTree.selectedIndexes()[0]
-        if not index is None \
-                and self.__fs_model.get_type(index) == FSModel.DATA_TYPE_WORKFLOW:
+        if not index is None and self.__fs_model.get_type(index) == FSModel.DATA_TYPE_WORKFLOW or self.__fs_model.get_type(index) == FSModel.DATA_TYPE_DIRECTORY:
+            #Workflow and directory treatment is equivalent
             print("got id: %s" % self.__fs_model.get_id(index))
             workflow = self.__fs_model.get_id(index)
-            self.browse_workflow.emit(workflow)
+            self.browse.emit(workflow, "")
+        elif not index is None and self.__fs_model.get_type(index) == FSModel.DATA_TYPE_JOB:
+            print("got job id: %s" % self.__fs_model.get_id(index))
+            wfindex = self.__fs_model.get_parent_workflow(index)
+            workflow = self.__fs_model.getNodeByIndex(wfindex)
+            job = self.__fs_model.get_id(index)
+            jobnode = self.__fs_model.getNodeByIndex(index)
+            self.browse.emit(jobnode.getAbsolutePath(),"")
 
     def __on_cm_delete_workflow(self):
         index = self.__fileTree.selectedIndexes()[0]
@@ -267,15 +274,18 @@ class WFRemoteFileSystem(QWidget):
         action_2.triggered.connect(self.__on_cm_delete_file)
 
     def __create_directory_context_menu(self, menu, index):
-        action_1=menu.addAction("Upload File")
-        action_1.triggered.connect(self.__on_cm_upload)
+        action_1=menu.addAction("Browse Directory")
+        action_1.triggered.connect(self.__on_cm_browse)
 
-        action_2=menu.addAction("Delete Directory")
-        action_2.triggered.connect(self.__on_cm_delete_file)
+        action_2=menu.addAction("Upload File")
+        action_2.triggered.connect(self.__on_cm_upload)
+
+        action_3=menu.addAction("Delete Directory")
+        action_3.triggered.connect(self.__on_cm_delete_file)
 
     def __create_workflow_context_menu(self, menu, index):
         action_1 = menu.addAction("Browse Workflow")
-        action_1.triggered.connect(self.__on_cm_browse_workflow)
+        action_1.triggered.connect(self.__on_cm_browse)
         action_1=menu.addAction("Delete Workflow")
         action_1.triggered.connect(self.__on_cm_delete_workflow)
         action_1=menu.addAction("Abort Workflow")
