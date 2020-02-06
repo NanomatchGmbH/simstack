@@ -606,7 +606,7 @@ class WFEditorApplication(CallableQThread):
 
     def _set_current_registry_index(self, index):
         self._current_registry_index = index if not index is None \
-                and index > 0 and index < len(self._get_registry_names()) \
+                and index >= 0 and index < len(self._get_registry_names()) \
                 else self._get_default_registry()
 
     def _get_current_registry_index(self):
