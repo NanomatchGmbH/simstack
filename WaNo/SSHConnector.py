@@ -544,8 +544,14 @@ class SSHConnector(CallableQThread):
     def start_server(self, registry, callback=(None, (), {})):
         cm = self._get_cm(registry)
         cm: ClusterManager
-        pythonproc = registry["software_directory"] + '/V2/local_anaconda/bin/python'
-        serverproc = registry["software_directory"] + '/V2/SimStackServer/SimStackServer.py'
+        software_dir = registry["software_directory"]
+        VDIR = cm.get_newest_version_directory(software_dir)
+        software_dir += '/' + VDIR
+        if VDIR != "V2":
+            pythonproc = software_dir + '/local_anaconda/envs/nanomatch_server/bin/python'
+        else:
+            pythonproc = software_dir + '/local_anaconda/bin/python'
+        serverproc = software_dir + '/SimStackServer/SimStackServer.py'
         if not cm.exists(pythonproc):
             raise FileNotFoundError("%s pythonproc was not found. Please check, whether the software directory in Configuration->Servers is correct and postinstall.sh was run"%pythonproc)
         if not cm.exists(serverproc):
