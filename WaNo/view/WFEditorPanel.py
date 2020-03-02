@@ -361,6 +361,7 @@ class SubWFModel(WFItemModel,WFItemListInterface):
             # out.write(ele.uuid + "\n")
 
         #wf = WFtoXML.xml_subworkflow(Transition=transitions, Activity=activities,SubWorkflow=swfs)
+        wf = None
         return wf
 
 
