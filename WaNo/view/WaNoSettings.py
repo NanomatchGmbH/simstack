@@ -1,13 +1,14 @@
 from Qt.QtWidgets import QDialog, QLabel, QGridLayout, QLineEdit, QPushButton, \
         QTabWidget, QWidget, QVBoxLayout, QHBoxLayout, QCheckBox, QTabBar, \
         QToolButton, QFileIconProvider, QFileDialog, QComboBox
+from Qt.QtGui import QIntValidator
 from Qt.QtCore import Signal, QSignalMapper, QDir
 
 
 class WaNoPathSettings(QDialog):
     def __init__(self,pathsettings,parent):
         self.pathsettings = pathsettings
-        print(self.pathsettings)
+        #print(self.pathsettings)
         super(WaNoPathSettings,self).__init__(parent=parent)
         self.__init_ui()
 
@@ -91,6 +92,9 @@ class WaNoRegistrySettings(QWidget):
     def get_uri(self):
         return self.__baseUri.text()
 
+    def get_port(self):
+        return self.__port.text()
+
     def get_user(self):
         return self.__username.text()
 
@@ -126,6 +130,7 @@ class WaNoRegistrySettings(QWidget):
 
         self.__label_registryName   = QLabel(self)
         self.__label_baseUri        = QLabel(self)
+        self.__label_port           = QLabel(self)
         self.__label_username       = QLabel(self)
         self.__label_calculation_basepath = QLabel(self)
         self.__label_software_directory = QLabel(self)
@@ -138,6 +143,7 @@ class WaNoRegistrySettings(QWidget):
 
         self.__label_registryName.setText("<b>Registry Name</b>")
         self.__label_baseUri.setText("<b>Base URI</b>")
+        self.__label_port.setText("<b>Port</b>")
         self.__label_username.setText("<b>Username</b>")
         self.__label_calculation_basepath.setText("<b>Basepath</b>")
         self.__label_software_directory.setText("<b>Software directory on cluster</b>")
@@ -149,6 +155,9 @@ class WaNoRegistrySettings(QWidget):
 
         self.__registryName = QLineEdit(self)
         self.__baseUri      = QLineEdit(self)
+        self.__port         = QLineEdit(self)
+        validator = QIntValidator(1, 65536, self)
+        self.__port.setValidator(validator)
         self.__username     = QLineEdit(self)
         self.__calculation_basepath     = QLineEdit(self)
         self.__software_directory = QLineEdit(self)
@@ -178,21 +187,23 @@ class WaNoRegistrySettings(QWidget):
 
         grid.addWidget(self.__label_registryName, 0, 0)
         grid.addWidget(self.__label_baseUri     , 1, 0)
-        grid.addWidget(self.__label_username    , 2, 0)
-        grid.addWidget(self.__label_calculation_basepath    , 3, 0)
+        grid.addWidget(self.__label_port, 2, 0)
+        grid.addWidget(self.__label_username    , 3, 0)
+        grid.addWidget(self.__label_calculation_basepath    , 4, 0)
         #grid.addWidget(self.__label_ca_package  , 3, 0)
-        grid.addWidget(self.__label_queueing_system   , 4, 0)
-        grid.addWidget(self.__label_software_directory, 5, 0)
-        grid.addWidget(self.__label_default_queue_name, 6, 0)
+        grid.addWidget(self.__label_queueing_system   , 5, 0)
+        grid.addWidget(self.__label_software_directory, 6, 0)
+        grid.addWidget(self.__label_default_queue_name, 7, 0)
 
 
         grid.addWidget(self.__registryName,         0, 1 )
         grid.addWidget(self.__baseUri,              1, 1 )
-        grid.addWidget(self.__username,             2, 1 )
-        grid.addWidget(self.__calculation_basepath,             3, 1 )
-        grid.addWidget(self.__queueing_system,      4, 1 )
-        grid.addWidget(self.__software_directory, 5, 1)
-        grid.addWidget(self.__default_queue_name, 6, 1)
+        grid.addWidget(self.__port,                  2, 1)
+        grid.addWidget(self.__username,             3, 1 )
+        grid.addWidget(self.__calculation_basepath,             4, 1 )
+        grid.addWidget(self.__queueing_system,      5, 1 )
+        grid.addWidget(self.__software_directory, 6, 1)
+        grid.addWidget(self.__default_queue_name, 7, 1)
         self.__software_directory.setText("/home/nanomatch/nanomatch")
         self.__calculation_basepath.setText("simstack_workspace")
         self.setLayout(grid)
@@ -201,9 +212,10 @@ class WaNoRegistrySettings(QWidget):
         self.__cb_default.setChecked(is_default)
 
 
-    def set_fields(self, name, uri, user, calculation_basepath, queueing_system, software_directory, default_queue_name, is_default):
+    def set_fields(self, name, uri, port, user, calculation_basepath, queueing_system, software_directory, default_queue_name, is_default):
         self.__registryName.setText(name)
         self.__baseUri.setText(uri)
+        self.__port.setText(str(port))
         self.__username.setText(user)
         self.__queueing_system.setCurrentText(queueing_system)
         self.__software_directory.setText(software_directory)
@@ -271,6 +283,7 @@ class WaNoUnicoreSettings(QDialog):
                     self.__build_registry_settings(
                         tabWidget.get_name().strip(),
                         tabWidget.get_uri().strip(),
+                        tabWidget.get_port().strip(),
                         tabWidget.get_user().strip(),
                         tabWidget.get_calculation_basepath().strip(),
                         tabWidget.get_queueing_system().strip(),
@@ -282,10 +295,11 @@ class WaNoUnicoreSettings(QDialog):
 
         return registries
 
-    def __build_registry_settings(self, name, uri, user, calculation_basepath, queueing_system, software_directory, default_queue, default):
+    def __build_registry_settings(self, name, uri, port, user, calculation_basepath, queueing_system, software_directory, default_queue, default):
         returndict = {
                 'name': name,
                 'baseURI': uri,
+                'port': port,
                 'username': user,
                 'calculation_basepath': calculation_basepath,
                 'queueing_system' : queueing_system,
@@ -363,6 +377,7 @@ class WaNoUnicoreSettings(QDialog):
         defaults['queueing_system'] = "slurm"
         defaults['software_directory'] = "/home/nanomatch/nanomatch"
         defaults['default_queue'] = "default"
+        defaults['port'] = 22
 
         for key in defaults.keys():
             if key not in registry:
@@ -380,6 +395,7 @@ class WaNoUnicoreSettings(QDialog):
                 tabWidget.set_fields(
                         registry['name'],
                         registry['baseURI'],
+                        registry['port'],
                         registry['username'],
                         registry['calculation_basepath'],
                         registry['queueing_system'],

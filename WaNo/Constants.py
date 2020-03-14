@@ -3,6 +3,7 @@ SETTING_KEYS = {
         'registries'            : 'registries',
         'registry.name'         : 'name',
         'registry.username'     : 'username',
+        'registry.port'         : 'port',
         'registry.baseURI'      : 'baseURI',
         'registry.calculation_basepath'      : 'calculation_basepath',
         'registry.software_directory'      : 'software_directory',

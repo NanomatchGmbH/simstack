@@ -105,6 +105,10 @@ class WFEditorApplication(CallableQThread):
                     registry['baseURI']
                 )
             self.__settings.set_value(
+                "%s.%s" % (settings_path, SETTING_KEYS['registry.port']),
+                registry['port']
+            )
+            self.__settings.set_value(
                     "%s.%s" % (settings_path, SETTING_KEYS['registry.username']),
                     registry['username']
                 )

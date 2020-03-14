@@ -568,18 +568,14 @@ class SSHConnector(CallableQThread):
         error = ErrorCodes.NO_ERROR
         statusmessage = ""
 
-        #print(registry)
         if not "port" in registry:
             registry["port"] = 22
 
         if not name in self._clustermanagers:
 
-            cm = ClusterManager(url = registry["baseURI"],
-                                               port = registry["port"],
-                                               calculation_basepath=registry["calculation_basepath"],
-                                               user=registry["username"],
-                                               queueing_system=registry["queueing_system"]
-            )
+            cm = ClusterManager(url=registry["baseURI"], port=registry["port"],
+                                calculation_basepath=registry["calculation_basepath"], user=registry["username"],
+                                queueing_system=registry["queueing_system"], default_queue=registry["default_queue"])
             self._clustermanagers[name] = cm
         else:
             cm = self._clustermanagers[name]
@@ -676,6 +672,7 @@ class SSHConnector(CallableQThread):
                           .replace("${SUBMIT_NAME}",real_submitname)
                           .replace("${BASEFOLDER}",cm.get_calculation_basepath() + '/' + submitname)
                           .replace("${QUEUE}", cm.get_queueing_system())
+                          .replace("${QUEUE_NAME}",cm.get_default_queue())
                           )
         cm.submit_wf(wf_yml_name)
 

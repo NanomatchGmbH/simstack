@@ -287,6 +287,8 @@ class ResourceTableModel(ResourceTableBase):
         queue = None
         if self.mylist[self.ROWTYPE.queue][0] == True:
             queue = self.mylist[self.ROWTYPE.queue][2]
+        else:
+            queue = "${QUEUE_NAME}"
 
 
         return Resources(
