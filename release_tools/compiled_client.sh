@@ -24,7 +24,7 @@ rm -rf build compile
 
 cd $MYPWD
 cd simstack_src/SimStackServer
-git archive --format zip --output $MYPWD/compiled_client/lib/python3.7/site-packages/SimStackServer.zip --prefix=SimStackServer/ master
+git-archive-all --prefix=SimStackServer/ $MYPWD/compiled_client/lib/python3.7/site-packages/SimStackServer.zip
 cd $MYPWD/compiled_client/lib/python3.7/site-packages/
 unzip SimStackServer.zip
 rm SimStackServer.zip
