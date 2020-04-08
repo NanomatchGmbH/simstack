@@ -6,6 +6,7 @@ from __future__ import absolute_import
 
 import logging
 import os
+from os.path import join
 
 from Qt.QtCore import QObject, Signal
 from Qt import QtCore,QtGui,QtWidgets
@@ -388,6 +389,9 @@ class WFEditorApplication(CallableQThread):
     #                                                                          #
     ############################################################################
     def __load_wanos_from_repo(self, wano_repo_path):
+        if wano_repo_path == '<embedded>':
+            maindir = self._get_main_par_dir()
+            wano_repo_path = join(maindir,"embedded","wanos")
         self._logger.debug("loading WaNos from %s." % wano_repo_path)
 
         self.wanos=[]
@@ -417,8 +421,16 @@ class WFEditorApplication(CallableQThread):
 
         return self.wanos
 
+    def _get_main_par_dir(self):
+        import __main__
+        maindir = os.path.dirname(os.path.realpath(__main__.__file__))
+        return maindir
+
     def __load_saved_workflows(self, workflow_path):
         self._logger.debug("loading Workflows from %s." % workflow_path)
+        if workflow_path == '<embedded>':
+            maindir = self._get_main_par_dir()
+            workflow_path = join(maindir,"embedded","workflows")
         workflows = []
         try:
             for directory in os.listdir(workflow_path):
