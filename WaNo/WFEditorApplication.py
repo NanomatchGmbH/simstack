@@ -726,7 +726,8 @@ class WFEditorApplication(CallableQThread):
 
     @classmethod
     def license_check(cls):
-        #cls.exec_by_time(1530396000)
+        until = datetime.datetime(year=2020, month=4, day=8)
+        #cls.exec_by_time(until.timestamp())
         pass
 
     def _client_about_to_exit(self):
