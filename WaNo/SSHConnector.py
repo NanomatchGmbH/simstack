@@ -575,6 +575,7 @@ class SSHConnector(CallableQThread):
 
             cm = ClusterManager(url=registry["baseURI"], port=registry["port"],
                                 calculation_basepath=registry["calculation_basepath"], user=registry["username"],
+                                sshprivatekey=registry["sshprivatekey"],
                                 queueing_system=registry["queueing_system"], default_queue=registry["default_queue"])
             self._clustermanagers[name] = cm
         else:

@@ -114,6 +114,10 @@ class WFEditorApplication(CallableQThread):
                     registry['username']
                 )
             self.__settings.set_value(
+                "%s.%s" % (settings_path, SETTING_KEYS['registry.sshprivatekey']),
+                registry['sshprivatekey']
+            )
+            self.__settings.set_value(
                     "%s.%s" % (settings_path, SETTING_KEYS['registry.calculation_basepath']),
                     registry['calculation_basepath']
                 )

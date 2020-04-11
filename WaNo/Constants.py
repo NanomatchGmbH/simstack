@@ -3,6 +3,7 @@ SETTING_KEYS = {
         'registries'            : 'registries',
         'registry.name'         : 'name',
         'registry.username'     : 'username',
+        'registry.sshprivatekey'     : 'sshprivatekey',
         'registry.port'         : 'port',
         'registry.baseURI'      : 'baseURI',
         'registry.calculation_basepath'      : 'calculation_basepath',
