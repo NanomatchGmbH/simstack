@@ -17,6 +17,7 @@ import datetime
 from SimStackServer.MessageTypes import ErrorCodes
 from SimStackServer.Util.FileUtilities import trace_to_logger
 from WaNo import WaNoFactory
+from WaNo.SimStackPaths import SimStackPaths
 
 from WaNo.view.WFViewManager import WFViewManager
 from WaNo.WaNoGitRevision import get_git_revision
@@ -393,9 +394,9 @@ class WFEditorApplication(CallableQThread):
     #                                                                          #
     ############################################################################
     def __load_wanos_from_repo(self, wano_repo_path):
+
         if wano_repo_path == '<embedded>':
-            maindir = self._get_main_par_dir()
-            wano_repo_path = join(maindir,"embedded","wanos")
+            wano_repo_path = join(SimStackPaths.get_embedded_path(),"wanos")
         self._logger.debug("loading WaNos from %s." % wano_repo_path)
 
         self.wanos=[]
@@ -425,16 +426,10 @@ class WFEditorApplication(CallableQThread):
 
         return self.wanos
 
-    def _get_main_par_dir(self):
-        import __main__
-        maindir = os.path.dirname(os.path.realpath(__main__.__file__))
-        return maindir
-
     def __load_saved_workflows(self, workflow_path):
         self._logger.debug("loading Workflows from %s." % workflow_path)
         if workflow_path == '<embedded>':
-            maindir = self._get_main_par_dir()
-            workflow_path = join(maindir,"embedded","workflows")
+            workflow_path = join(SimStackPaths.get_embedded_path(),"workflows")
         workflows = []
         try:
             for directory in os.listdir(workflow_path):

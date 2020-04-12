@@ -9,19 +9,23 @@ import threading
 import shlex
 import os
 from enum import Enum
-from os.path import dirname
+from os.path import dirname, join
 from pprint import pprint
 
 import paramiko
+
 from lxml import etree
+from paramiko import BadHostKeyException
 
 from zmq.error import Again
 
 from Qt.QtCore import QThread, Qt
 from Qt.QtCore import Slot, Signal, QObject
+from Qt.QtWidgets import QMessageBox
 
 from SimStackServer.ClusterManager import ClusterManager
 from SimStackServer.MessageTypes import ErrorCodes
+from WaNo.SimStackPaths import SimStackPaths
 
 from WaNo.lib.FileSystemTree import filewalker
 from WaNo.lib.CallableQThread import CallableQThread
@@ -562,6 +566,11 @@ class SSHConnector(CallableQThread):
         cm.connect_zmq_tunnel(command)
         return ErrorCodes.NO_ERROR
 
+    def _get_main_par_dir(self):
+        import __main__
+        maindir = os.path.dirname(os.path.realpath(__main__.__file__))
+        return maindir
+
     @eagain_catcher
     def connect_registry(self, registry, callback=(None, (), {})):
         name = registry["name"]
@@ -572,17 +581,38 @@ class SSHConnector(CallableQThread):
             registry["port"] = 22
 
         if not name in self._clustermanagers:
-
+            private_key = registry["sshprivatekey"]
+            if private_key == "<embedded>":
+                maindir = self._get_main_par_dir()
+                pkfile = join(maindir,"config","NanoMatch","embedded_idrsa")
+                if os.path.isfile(pkfile):
+                    private_key = pkfile
             cm = ClusterManager(url=registry["baseURI"], port=registry["port"],
                                 calculation_basepath=registry["calculation_basepath"], user=registry["username"],
-                                sshprivatekey=registry["sshprivatekey"],
+                                sshprivatekey=private_key,
                                 queueing_system=registry["queueing_system"], default_queue=registry["default_queue"])
             self._clustermanagers[name] = cm
         else:
             cm = self._clustermanagers[name]
         if not cm.is_connected():
             try:
-                cm.connect()
+                local_hostkey_file = SimStackPaths.get_local_hostfile()
+                try:
+                    # We read the known hosts at the last time:
+                    cm.load_extra_host_keys(local_hostkey_file)
+                    cm.connect()
+                except paramiko.ssh_exception.SSHException as e:
+                    exstr = str(e)
+                    if exstr.endswith("not found in known_hosts"):
+                        reply = QMessageBox.question(None, 'SSH HostKey unknown',
+                            'An unknown hostkey was encountered, when connecting to %s. If this is your first time connecting, this is expected. Add the Host to your local hostkeys?'%name, QMessageBox.Yes, QMessageBox.No)
+                        if reply == QMessageBox.Yes:
+                            cm.connect(connect_to_unknown_hosts=True)
+                            cm.save_hostkeyfile(local_hostkey_file)
+                        else:
+                            raise e from e
+                    else:
+                        raise e from e
                 error = ErrorCodes.NO_ERROR
                 statusmessage = "Connected."
                 returncode_serverstart = self.start_server(registry)
