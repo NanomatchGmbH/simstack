@@ -29,6 +29,10 @@ class SimStackPaths:
         return join(cls.get_main_dir(),"embedded")
 
     @classmethod
+    def get_embedded_sshkey(cls):
+        return join(cls.get_embedded_path(),"embedded_idrsa")
+
+    @classmethod
     def get_temp_folder(cls):
         import Qt
 

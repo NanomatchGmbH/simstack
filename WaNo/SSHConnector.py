@@ -583,8 +583,7 @@ class SSHConnector(CallableQThread):
         if not name in self._clustermanagers:
             private_key = registry["sshprivatekey"]
             if private_key == "<embedded>":
-                maindir = self._get_main_par_dir()
-                pkfile = join(maindir,"config","NanoMatch","embedded_idrsa")
+                pkfile = SimStackPaths.get_embedded_sshkey()
                 if os.path.isfile(pkfile):
                     private_key = pkfile
             cm = ClusterManager(url=registry["baseURI"], port=registry["port"],
