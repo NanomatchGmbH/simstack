@@ -6,4 +6,5 @@ IF EXIST "%parent%\anaconda3" GOTO RUN_SIMSTACK
 echo "Running preinstall"
 "%parent%\install-simstack.bat"
 :RUN_SIMSTACK
-"%parent%\anaconda3\python.exe" "%parent%\simstack\simstack"
+CALL "%parent%\anaconda3\condabin\conda.bat" activate base
+python "%parent%\simstack\simstack"
