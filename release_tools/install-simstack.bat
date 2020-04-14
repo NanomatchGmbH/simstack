@@ -19,5 +19,6 @@ echo "Nearly done. Preparing QT package. This one takes a bit longer again."
 "%CD%\anaconda3\scripts\conda.exe" install --offline tools\pkgs\sip-4.18.1-py36h9c25514_2.tar.bz2
 "%CD%\anaconda3\scripts\conda.exe" install --offline tools\pkgs\sqlite-3.20.1-h9eeafa9_2.tar.bz2
 "%CD%\anaconda3\scripts\conda.exe" install --offline tools\pkgs\zlib-1.2.11-h8395fce_2.tar.bz2
+"%CD%\anaconda3\scripts\conda.exe" install --offline tools\pkgs\pyparsing-2.2.0-py36h785a196_1.tar.bz2
 echo "Done"
 exit /b 0

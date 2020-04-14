@@ -532,6 +532,8 @@ class WFEditorApplication(CallableQThread):
         try:
             name,jobtype,directory,wf_xml = editor.run()
         except FileNotFoundError as e:
+            import traceback
+            traceback.print_exc(e)
             self._view_manager.show_error("Please save workflow before submit. Error was: %s"%e)
 
         #if jobtype == SubmitType.SINGLE_WANO:

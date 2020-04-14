@@ -23,6 +23,7 @@ class WaNoPathSettings(QDialog):
     def __showLocalDialogHelper(self, qlineedit):
         dirname = QFileDialog.getExistingDirectory(self, 'Choose Directory', QDir.homePath())
         if dirname:
+            dirname = QDir.toNativeSeparators(dirname)
             qlineedit.setText(dirname)
 
     def get_settings(self):
@@ -133,6 +134,7 @@ class WaNoRegistrySettings(QWidget):
     def __on_show_cert_filepicker(self):
         fname , _ = QFileDialog.getOpenFileName(self, 'Select cacert.pem', join(QDir.homePath(), ".ssh"))
         if fname:
+            fname = QDir.toNativeSeparators(fname)
             self.__sshprivatekey.setText(fname)
 
 
