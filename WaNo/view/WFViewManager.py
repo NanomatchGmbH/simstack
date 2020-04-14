@@ -227,7 +227,13 @@ class WFViewManager(QObject):
 
     def exit(self):
         #Placeholder for ViewManager teardowns
-        pass
+        #Due to bug https://bugreports.qt.io/browse/QTBUG-57228 we have to teardown all webengineviews explicitly:
+        try:
+            while(True):
+                wev = self._webengineviews.pop()
+                del wev
+        except IndexError:
+            pass
 
     def _init_dl_progressbar(self, unicore_state):
         self._dl_progress_widget = DownloadProgressWidget(self._mainwindow, unicore_state)
@@ -251,9 +257,14 @@ class WFViewManager(QObject):
             rtp = rtp[0]
         return rtp
 
+
+    def add_webengine_view(self, wev):
+        self._webengineviews.append(wev)
+
     def __init__(self, unicore_state):
         super(WFViewManager, self).__init__()
         self._editor        = WFEditor()
+        self._webengineviews = []
 
         self._mainwindow    = WFEditorMainWindow(self._editor)
         self._init_dl_progressbar(unicore_state)

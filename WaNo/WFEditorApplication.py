@@ -369,6 +369,7 @@ class WFEditorApplication(CallableQThread):
         import Qt.QtCore as QtCore
 
         web = QWebEngineView(parent=self._view_manager.get_editor())
+        self._view_manager.add_webengine_view(web)
 
         web.setWindowFlags(web.windowFlags() | QtCore.Qt.Window)
         web.load(QUrl(myurl))
