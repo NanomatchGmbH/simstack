@@ -16,6 +16,7 @@ from io import StringIO
 import abc
 
 from enum import Enum
+from os.path import join
 
 from   lxml import etree
 
@@ -26,6 +27,7 @@ from Qt.QtCore import Signal
 
 import WaNo.WaNoFactory as WaNoFactory
 from SimStackServer.WorkflowModel import WorkflowExecModule, Workflow, DirectedGraph, WorkflowElementList
+from WaNo.SimStackPaths import SimStackPaths
 from WaNo.WaNoSettingsProvider import WaNoSettingsProvider
 from WaNo.Constants import SETTING_KEYS
 
@@ -1431,6 +1433,8 @@ class WFTabsWidget(QtWidgets.QTabWidget):
         else:
             settings = WaNoSettingsProvider.get_instance()
             workflow_path = settings.get_value(SETTING_KEYS["workflows"])
+            if workflow_path == '<embedded>':
+                workflow_path = join(SimStackPaths.get_embedded_path(),"workflows")
             foldername = self.currentTabText()
             fullpath = os.path.join(workflow_path, foldername)
             print("FP",fullpath)
