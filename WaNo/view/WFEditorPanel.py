@@ -1452,6 +1452,8 @@ class WFTabsWidget(QtWidgets.QTabWidget):
 
         settings = WaNoSettingsProvider.get_instance()
         workflow_path = settings.get_value(SETTING_KEYS["workflows"])
+        if workflow_path == '<embedded>':
+            workflow_path = join(SimStackPaths.get_embedded_path(),"workflows")
         fullpath = os.path.join(workflow_path,foldername)
 
         if os.path.exists(fullpath):
