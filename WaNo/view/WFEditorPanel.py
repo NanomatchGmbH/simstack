@@ -823,14 +823,14 @@ class WFModel(object):
     def render(self, given_name):
         assert (self.foldername is not None)
         now = datetime.datetime.now()
-        nowstr = now.strftime("%Y-%m-%d-%H:%M:%S")
+        nowstr = now.strftime("%Y-%m-%d-%Hh%Mm%Ss")
         submitname = "%s-%s" %(nowstr, given_name)
         submitdir = os.path.join(self.foldername,"Submitted",submitname)
         counter = 0
         while os.path.exists(submitdir):
             time.sleep(1.1)
             now = datetime.datetime.now()
-            nowstr = now.strftime("%Y-%m-%d-%H:%M:%S")
+            nowstr = now.strftime("%Y-%m-%d-%Hh%Mn%Ss")
             submitname = "%s-%s" % (nowstr, given_name)
             submitdir = os.path.join(self.foldername, "Submitted", submitname)
             counter += 1
