@@ -761,6 +761,8 @@ class WFModel(object):
         self.foldername = foldername
         settings = WaNoSettingsProvider.get_instance()
         wdir = settings.get_value(SETTING_KEYS['workflows'])
+        if wdir == '<embedded>':
+            wdir = join(SimStackPaths.get_embedded_path(),"workflows")
 
         mydir = os.path.join(wdir,self.wf_name)
         try:
