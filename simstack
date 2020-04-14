@@ -107,6 +107,7 @@ if __name__ == '__main__':
             out.write("The client has crashed. Please send the following traceback to Nanomatch:\n")
             traceback.print_tb(exc_traceback, limit=None,file=out)
             out.write(str(e)+"\n")
-    del app
+    if not app is None:
+        del app
 
     sys.exit(exitcode)
