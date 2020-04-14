@@ -690,9 +690,9 @@ class SSHConnector(CallableQThread):
             relpath = os.path.relpath(filename, cp)
             submitpath = submitname + '/' + "workflow_data" + '/'+ relpath
             print("Uploading '%s' to '%s'" %(filename, submitpath))
-            mydir = dirname(submitpath)
+            mydir = dirname(submitpath).replace('\\','/')
             cm.mkdir_p(mydir)
-            cm.put_file(filename,submitpath)
+            cm.put_file(filename,submitpath.replace('\\','/'))
 
         wf_yml_name = real_submitname + "/" + "rendered_workflow.xml"
         with cm.remote_open(wf_yml_name,'wt') as outfile:
