@@ -1,19 +1,25 @@
 rd /s /q compiled_client installer_package simstack
 
 mkdir compiled_client
+CALL anaconda3\condabin\conda.bat activate base
 
 cd simstack_src
 
 rd /s /q build compile
-..\anaconda3\python.exe setup.py install --prefix=..\compiled_client\
+python setup.py install --prefix=..\compiled_client\
 
 rd /s /q build compile
-cd external
-rd /s /q build compile
-..\..\anaconda3\python.exe setup_pyura.py install --prefix=..\..\compiled_client
-rd /s /q build compile
+
+cd SimStackServer
+python ..\release_tools\git_archive_all.py --prefix=SimStackServer\ ..\..\compiled_client\Lib\site-packages\SimStackServer.zip
+cd  ..\..\compiled_client\Lib\site-packages
+unzip.exe SimStackServer.zip
+del SimStackServer.zip
+
 cd ..
 cd ..
+cd ..
+
 
 mkdir installer_package
 xcopy compiled_client\Lib\site-packages\* installer_package /s
