@@ -586,6 +586,8 @@ class SSHConnector(CallableQThread):
                 pkfile = SimStackPaths.get_embedded_sshkey()
                 if os.path.isfile(pkfile):
                     private_key = pkfile
+                else:
+                    raise FileNotFoundError("Could not find private key at path <%s>"%pkfile)
             cm = ClusterManager(url=registry["baseURI"], port=registry["port"],
                                 calculation_basepath=registry["calculation_basepath"], user=registry["username"],
                                 sshprivatekey=private_key,

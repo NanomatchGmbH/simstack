@@ -30,7 +30,7 @@ class SimStackPaths:
 
     @classmethod
     def get_embedded_sshkey(cls):
-        return join(cls.get_embedded_path(),"embedded_idrsa")
+        return join(cls.get_settings_folder_nanomatch(),"embedded_idrsa")
 
     @classmethod
     def get_temp_folder(cls):
