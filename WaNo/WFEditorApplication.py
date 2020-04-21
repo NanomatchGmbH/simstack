@@ -9,6 +9,8 @@ import os
 from os.path import join
 
 from Qt.QtCore import QObject, Signal
+from lxml import etree
+
 from Qt import QtCore,QtGui,QtWidgets
 import sys
 import time
@@ -534,9 +536,11 @@ class WFEditorApplication(CallableQThread):
             name,jobtype,directory,wf_xml = editor.run()
         except FileNotFoundError as e:
             import traceback
-            traceback.print_exc(e)
+            traceback.print_exc()
             self._view_manager.show_error("Please save workflow before submit. Error was: %s"%e)
+            return
 
+        #print(etree.tostring(wf_xml, pretty_print=True).decode("utf-8"))
         #if jobtype == SubmitType.SINGLE_WANO:
         #    print("Running", directory)
         #    self.run_job(directory,name)

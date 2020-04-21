@@ -316,55 +316,48 @@ class SubWFModel(WFItemModel,WFItemListInterface):
     def get_root(self):
         return self.wf_root
 
-    def render_to_simple_wf(self,submitdir,jobdir,path):
+    def render_to_simple_wf(self, submitdir,jobdir,path, parent_ids):
+        """
+
+        :param submitdir:
+        :param jobdir:
+        :param path:
+        :param parent_ids (list): List of parent ids, this WF has to transition from
+        :return:
+        """
 
         activities = []
         transitions = []
-        swfs = []
-
         my_jobdir = jobdir
         basepath = path
-
         for myid, (ele, elename) in enumerate(zip(self.elements, self.elementnames)):
-
-            ###
+            toids = []
             if ele.is_wano:
                 wano_dir = os.path.join(jobdir, self.element_to_name(ele))
                 try:
                     os.makedirs(wano_dir)
                 except OSError:
                     pass
-                #stageout_basedir = "wanos/%s" % (elename)
+
                 stageout_basedir = "%s/%s" %(basepath,elename)
 
                 jsdl, wem = ele.render(wano_dir, stageout_basedir=stageout_basedir)
                 wem.set_given_name(elename)
                 wem : WorkflowExecModule
-                #print(wem.uid)
-                """
-                with open("%s_wem.xml"%myid,'w') as outfile:
-                    parent = etree.Element("root")
-                    wem.to_xml(parent)
-                    outfile.write(etree.tostring(parent,encoding = "unicode", pretty_print=True))
-                """
-                #jsdl_xml=WFtoXML.xml_jsdl(jsdl=jsdl)
-                toid = wem.uid
+                toids = [wem.uid]
                 activities.append(["WorkflowExecModule",wem])
+                for pid in parent_ids:
+                    for toid in toids:
+                        transitions.append((pid, toid))
             else:
-                #only subworkflow remaining
-                swf = ele.render_to_simple_wf(submitdir,jobdir,path ="")
-                activities, toids = ele.render_to_simple_wf(submitdir,jobdir,path="")
-                toid = swf.attrib["Id"]
-                swfs.append(swf)
-            ###
+                my_activities, my_transitions, toids = ele.render_to_simple_wf(submitdir,jobdir,path="", parent_ids = parent_ids)
+                activities += my_activities
+                transitions += my_transitions
 
 
-            fromid = toid
-            # out.write(ele.uuid + "\n")
+            parent_ids = toids
 
-        #wf = WFtoXML.xml_subworkflow(Transition=transitions, Activity=activities,SubWorkflow=swfs)
-        wf = None
-        return wf
+        return activities, transitions, parent_ids
 
 
     def assemble_files(self, path):
@@ -449,8 +442,8 @@ class ParallelModel(WFItemModel):
         self.name = "Parallel"
 
 
-    def render_to_simple_wf(self,submitdir,jobdir,path = ""):
-        raise NotImplementedError("Function not implemented.")
+    def render_to_simple_wf(self, submitdir, jobdir, path, parent_ids):
+
         """
         split_activity = WFtoXML.xml_split()
         splitid = split_activity.attrib["Id"]
@@ -466,19 +459,20 @@ class ParallelModel(WFItemModel):
             path = self.name
         else:
             path = "%s/%s" % (path, self.name)
-        
-        """
+
+        activities = []
+        transitions = []
+        toids = []
         for swf_id,swfm in enumerate(self.subwf_models):
             inner_jobdir = "%s/%d" % (my_jobdir,swf_id)
             inner_path = "%s/%d" % (path,swf_id)
 
-            swf_xml = swfm.render_to_simple_wf(submitdir,inner_jobdir,path = inner_path)
-            swf_id = swf_xml.attrib["Id"]
-            #transitions.append(WFtoXML.xml_transition(From=splitid,To=swf_id))
-            swfs.append(swf_xml)
+            my_activities, my_transitions, my_toids = swfm.render_to_simple_wf(submitdir,inner_jobdir,path = inner_path, parent_ids = parent_ids)
+            transitions += my_transitions
+            activities += my_activities
+            toids += my_toids
 
-        """
-        return None #WFtoXML.xml_subworkflow(Transition=transitions,SubWorkflow=swfs)
+        return activities, transitions, toids
 
         #-> self.subwfmodel.render_to_simple_wf(submitdir,jobdir,path = path)
         #-> return WFtoXML.xml_subwfforeach(IteratorName=self.name,IterSet=filesets,SubWorkflow=swf,Id=muuid)
@@ -700,30 +694,22 @@ class WFModel(object):
                 jsdl, wem = ele.render(wano_dir, stageout_basedir=elename)
                 wem.set_given_name(elename)
                 wem : WorkflowExecModule
-                #print(wem.uid)
-                """
-                with open("%s_wem.xml"%myid,'w') as outfile:
-                    parent = etree.Element("root")
-                    wem.to_xml(parent)
-                    outfile.write(etree.tostring(parent,encoding = "unicode", pretty_print=True))
-                """
-                #jsdl_xml=WFtoXML.xml_jsdl(jsdl=jsdl)
-                toid = wem.uid
+                toids = [wem.uid]
                 activities.append(["WorkflowExecModule",wem])
+                for fromid in fromids:
+                    for toid in toids:
+                        transitions.append((fromid, toid))
             else:
                 #only subworkflow remaining
-                swf = ele.render_to_simple_wf(submitdir,jobdir,path ="")
-                activities, toids = ele.render_to_simple_wf(submitdir,jobdir,path="")
-                toid = swf.attrib["Id"]
-                swfs.append(swf)
+                my_activities, my_transitions,  toids = ele.render_to_simple_wf(submitdir,jobdir,path="", parent_ids = fromids)
+                activities+=my_activities
+                transitions += my_transitions
 
             #transition = WFtoXML.xml_transition(From=fromid, To=toid)
             #print((fromid,toid))
-            for fromid in fromids:
-                transitions.append((fromid, toid))
-            fromids = [toid]
-            #out.write(ele.uuid + "\n")
-        #docs = WFtoXML.xml_documentation(Name=self.wf_name)
+
+            fromids = toids
+
         wf = Workflow(elements = WorkflowElementList(activities),
                       graph = DirectedGraph( transitions),
                       name=self.wf_name,
@@ -732,9 +718,6 @@ class WFModel(object):
                       )
         xml = etree.Element("Workflow")
         wf.to_xml(parent_element=xml)
-        #with open("newflow.xml",'w') as outfile:
-        #    outfile.write(etree.tostring(xml,pretty_print=True,encoding = "unicode"))
-
 
         return xml
 
