@@ -26,7 +26,8 @@ import Qt.QtWidgets  as QtWidgets
 from Qt.QtCore import Signal
 
 import WaNo.WaNoFactory as WaNoFactory
-from SimStackServer.WorkflowModel import WorkflowExecModule, Workflow, DirectedGraph, WorkflowElementList
+from SimStackServer.WorkflowModel import WorkflowExecModule, Workflow, DirectedGraph, WorkflowElementList, SubGraph, \
+    ForEachGraph, StringList
 from WaNo.SimStackPaths import SimStackPaths
 from WaNo.WaNoSettingsProvider import WaNoSettingsProvider
 from WaNo.Constants import SETTING_KEYS
@@ -545,21 +546,15 @@ class ForEachModel(WFItemModel):
     def set_filelist(self,filelist):
         self.filelist = filelist
 
-    def render_to_simple_wf(self,submitdir,jobdir,path = ""):
-        raise NotImplementedError("Not implemented")
-        """
-
+    def render_to_simple_wf(self, submitdir ,jobdir ,path , parent_ids):
         filesets = []
-        muuid = str(uuid.uuid4())
-        muuid_body = "%s_body"%muuid
-
+        transitions = []
 
         for myfile in self.filelist:
             gpath = "c9m:${WORKFLOW_ID}/%s/" % os.path.dirname(myfile)
             bn = os.path.basename(myfile)
-            #filesets.append(WFtoXML.xml_fileset(base=gpath , inclusion_list=bn , exclude="" ) )
 
-        #print(submitdir,jobdir,"WFFOREACH")
+
         if jobdir == "":
             my_jobdir = self.name
         else:
@@ -569,12 +564,20 @@ class ForEachModel(WFItemModel):
             path = self.name
         else:
             path = "%s/%s" %(path,self.name)
-        swf = self.subwfmodel.render_to_simple_wf(submitdir,my_jobdir,path = path)
-        swf.attrib["Type"] = "LOOP_BODY"
-        swf.attrib["Id"] = muuid_body
-        swf.attrib["IteratorName"] = self.itername
-        """
-        return None #WFtoXML.xml_subwfforeach(IteratorName=self.itername,IterSet=filesets,SubWorkflow=swf,Id=muuid)
+
+        sub_activities, sub_transitions, sub_toids = self.subwfmodel.render_to_simple_wf(submitdir,my_jobdir,path = path, parent_ids = parent_ids)
+        sg = SubGraph(elements = WorkflowElementList(sub_activities),
+                 graph = DirectedGraph(sub_transitions))
+        StringList(parent_ids)
+        fe = ForEachGraph(subgraph = sg,
+                          parent_ids=StringList(parent_ids),
+                          iterator_spec = "testo"
+        )
+        toids = [fe.uid]
+        for parent_id in parent_ids:
+            transitions.append((parent_id, toids[0]))
+
+        return [("ForEachGraph",fe)], transitions, toids  #WFtoXML.xml_subwfforeach(IteratorName=self.itername,IterSet=filesets,SubWorkflow=swf,Id=muuid)
 
     def assemble_files(self,path):
         myfiles = []
