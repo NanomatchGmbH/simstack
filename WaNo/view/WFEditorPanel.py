@@ -551,9 +551,10 @@ class ForEachModel(WFItemModel):
         transitions = []
 
         for myfile in self.filelist:
-            gpath = "c9m:${WORKFLOW_ID}/%s/" % os.path.dirname(myfile)
-            bn = os.path.basename(myfile)
-
+            gpath = "${STORAGE}/workflow_data/%s/outputs" % os.path.dirname(myfile)
+            localfn = os.path.basename(myfile)
+            gpath = join(gpath,localfn)
+            filesets.append(gpath)
 
         if jobdir == "":
             my_jobdir = self.name
@@ -565,13 +566,15 @@ class ForEachModel(WFItemModel):
         else:
             path = "%s/%s" %(path,self.name)
 
+
         sub_activities, sub_transitions, sub_toids = self.subwfmodel.render_to_simple_wf(submitdir,my_jobdir,path = path, parent_ids = parent_ids)
         sg = SubGraph(elements = WorkflowElementList(sub_activities),
                  graph = DirectedGraph(sub_transitions))
         StringList(parent_ids)
         fe = ForEachGraph(subgraph = sg,
                           parent_ids=StringList(parent_ids),
-                          iterator_spec = "testo"
+                          iterator_name = self.itername,
+                          iterator_files = StringList(filesets)
         )
         toids = [fe.uid]
         for parent_id in parent_ids:
