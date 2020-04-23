@@ -27,7 +27,7 @@ from Qt.QtCore import Signal
 
 import WaNo.WaNoFactory as WaNoFactory
 from SimStackServer.WorkflowModel import WorkflowExecModule, Workflow, DirectedGraph, WorkflowElementList, SubGraph, \
-    ForEachGraph, StringList
+    ForEachGraph, StringList, WFPass
 from WaNo.SimStackPaths import SimStackPaths
 from WaNo.WaNoSettingsProvider import WaNoSettingsProvider
 from WaNo.Constants import SETTING_KEYS
@@ -566,21 +566,28 @@ class ForEachModel(WFItemModel):
         else:
             path = "%s/%s" %(path,self.name)
 
-
-        sub_activities, sub_transitions, sub_toids = self.subwfmodel.render_to_simple_wf(submitdir,my_jobdir,path = path, parent_ids = parent_ids)
+        sub_activities, sub_transitions, sub_toids = self.subwfmodel.render_to_simple_wf(submitdir,my_jobdir,path = path, parent_ids = ["temporary_connector"])
         sg = SubGraph(elements = WorkflowElementList(sub_activities),
                  graph = DirectedGraph(sub_transitions))
-        StringList(parent_ids)
+
+        mypass = WFPass()
+        finish_uid = mypass.uid
+
         fe = ForEachGraph(subgraph = sg,
-                          parent_ids=StringList(parent_ids),
+                          #parent_ids=StringList(parent_ids),
+                          finish_uid = finish_uid,
                           iterator_name = self.itername,
-                          iterator_files = StringList(filesets)
+                          iterator_files = StringList(filesets),
+                          subgraph_final_ids = StringList(sub_toids)
         )
         toids = [fe.uid]
         for parent_id in parent_ids:
             transitions.append((parent_id, toids[0]))
 
-        return [("ForEachGraph",fe)], transitions, toids  #WFtoXML.xml_subwfforeach(IteratorName=self.itername,IterSet=filesets,SubWorkflow=swf,Id=muuid)
+        # We are now generating a break in this workflow. The break will be resolved (hopefully) once the FE runs.
+
+
+        return [("ForEachGraph",fe),("WFPass", mypass)], transitions, finish_uid  #WFtoXML.xml_subwfforeach(IteratorName=self.itername,IterSet=filesets,SubWorkflow=swf,Id=muuid)
 
     def assemble_files(self,path):
         myfiles = []
