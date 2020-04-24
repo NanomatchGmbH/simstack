@@ -570,9 +570,10 @@ class WaNoModelRoot(WaNoModelDictLike):
         for child in self.full_xml.findall("./WaNoOutputFiles/WaNoOutputFile"):
             self.output_files.append(child.text)
 
-        
+        self.metas = collections.OrderedDict()
         el = self.full_xml.find("./WaNoMeta")
-        self.metas= xmltodict.parse(etree.tostring(el))
+        if el:
+            self.metas= xmltodict.parse(etree.tostring(el))
 
     def get_type_str(self):
         return None
