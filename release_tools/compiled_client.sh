@@ -51,5 +51,5 @@ then
 fi
 TODAY=$(date "+%F")
 
-tar czf $TODAY-simstack_linux.tar.gz run-simstack.bat simstack simstack.desktop  simstack.eula  tools
+tar czf $TODAY-simstack_linux.tar.gz run-simstack.sh simstack simstack.desktop  simstack.eula  tools
 
