@@ -31,7 +31,6 @@ xcopy simstack_src\WaNo\Media installer_package\WaNo\Media\ /s
 xcopy simstack_src\simstack installer_package /s
 mkdir installer_package\external
 xcopy simstack_src\external\boolexp installer_package\external\boolexp\ /s
-xcopy simstack_src\external\Qt.py installer_package\external\ /s
 xcopy simstack_src\Logo.png installer_package\ /s
 
 ren installer_package simstack
