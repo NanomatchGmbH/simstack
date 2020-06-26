@@ -23,6 +23,7 @@ except ImportError as e:
 from WaNo.model.AbstractWaNoModel import AbstractWanoModel
 import WaNo.WaNoFactory
 from lxml import etree
+import xmltodict
 import copy
 from boolexp import Expression
 
@@ -568,6 +569,11 @@ class WaNoModelRoot(WaNoModelDictLike):
         self.output_files = []
         for child in self.full_xml.findall("./WaNoOutputFiles/WaNoOutputFile"):
             self.output_files.append(child.text)
+
+        self.metas = collections.OrderedDict()
+        el = self.full_xml.find("./WaNoMeta")
+        if el:
+            self.metas= xmltodict.parse(etree.tostring(el))
 
     def get_type_str(self):
         return None
