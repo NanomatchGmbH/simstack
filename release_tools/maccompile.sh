@@ -44,7 +44,7 @@ cp -r simstack_src/WaNo/Media installer_package/WaNo/
 cp simstack_src/simstack installer_package
 mkdir installer_package/external
 cp -r simstack_src/external/boolexp installer_package/external
-cp -r simstack_src/external/Qt.py installer_package/external
+#cp -r simstack_src/external/Qt.py installer_package/external
 cp simstack_src/Logo.png installer_package/
 
 if [ ! -d simstack ]
