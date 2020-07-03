@@ -57,7 +57,10 @@ class WFRemoteFileSystem(QWidget):
             self.__current_requests.pop(filePath)
 
             if not subelements is None and len(subelements) > 0:
-                subelements.sort(key=lambda k: k['name'])
+                if filePath == "?wf?":
+                    subelements.sort(key=lambda k: k['name'], reverse=True)
+                else:
+                    subelements.sort(key=lambda k: k['name'])
                 i=subelements[0]
                 print("i(id=%s): %s" % (i['id'] if 'id' in i else '', i))
                 #print(path,i['path'],i['name'])
