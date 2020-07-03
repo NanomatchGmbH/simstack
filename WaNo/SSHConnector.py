@@ -551,10 +551,12 @@ class SSHConnector(CallableQThread):
         software_dir = registry["software_directory"]
         VDIR = cm.get_newest_version_directory(software_dir)
         software_dir += '/' + VDIR
-        if VDIR != "V2":
+        if VDIR == "V2":
+            pythonproc = software_dir + '/local_anaconda/bin/python'
+        elif VDIR == "V3":
             pythonproc = software_dir + '/local_anaconda/envs/nanomatch_server/bin/python'
         else:
-            pythonproc = software_dir + '/local_anaconda/bin/python'
+            pythonproc = software_dir + '/local_anaconda/envs/simstack_server/bin/python'
         serverproc = software_dir + '/SimStackServer/SimStackServer.py'
         if not cm.exists(pythonproc):
             raise FileNotFoundError("%s pythonproc was not found. Please check, whether the software directory in Configuration->Servers is correct and postinstall.sh was run"%pythonproc)
