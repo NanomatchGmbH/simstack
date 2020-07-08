@@ -187,13 +187,12 @@ class WFWaNoWidget(QtWidgets.QToolButton,DragDropTargetTracker):
         self.wano_model.update_xml()
         return self.wano_model.save_xml(self.wano[2])
 
-    def render(self,basefolder,stageout_basedir=""):
+    def render(self, path_list, basefolder,stageout_basedir=""):
         #myfolder = os.path.join(basefolder,self.uuid)
         print("rendering wano with stageout_basedir %s" %stageout_basedir)
         jsdl, wem = self.wano_model.render_and_write_input_files_newmodel(basefolder,stageout_basedir=stageout_basedir)
-        return jsdl, wem
-
-
+        wem: WorkflowExecModule
+        return jsdl, wem, path_list + [wem.name]
 
     def clear(self):
         pass 
@@ -283,7 +282,7 @@ class WFItemListInterface(object):
         element.view.deleteLater()
 
 class WFItemModel(object):
-    def render_to_simple_wf(self,submitdir,jobdir):
+    def render_to_simple_wf(self,path_list, submitdir,jobdir):
         activities = []
         transitions = []
         #wf = WFtoXML.xml_subworkflow(Transition=transitions,Activity=activities)
@@ -317,7 +316,7 @@ class SubWFModel(WFItemModel,WFItemListInterface):
     def get_root(self):
         return self.wf_root
 
-    def render_to_simple_wf(self, submitdir,jobdir,path, parent_ids):
+    def render_to_simple_wf(self, path_list, submitdir,jobdir,path, parent_ids):
         """
 
         :param submitdir:
@@ -342,7 +341,7 @@ class SubWFModel(WFItemModel,WFItemListInterface):
 
                 stageout_basedir = "%s/%s" %(basepath,elename)
 
-                jsdl, wem = ele.render(wano_dir, stageout_basedir=stageout_basedir)
+                jsdl, wem, wem_path_list= ele.render(path_list, wano_dir, stageout_basedir=stageout_basedir)
                 wem.set_given_name(elename)
                 wem : WorkflowExecModule
                 toids = [wem.uid]
@@ -351,7 +350,7 @@ class SubWFModel(WFItemModel,WFItemListInterface):
                     for toid in toids:
                         transitions.append((pid, toid))
             else:
-                my_activities, my_transitions, toids = ele.render_to_simple_wf(submitdir,jobdir,path="", parent_ids = parent_ids)
+                my_activities, my_transitions, toids = ele.render_to_simple_wf(path_list, submitdir,jobdir,path="", parent_ids = parent_ids)
                 activities += my_activities
                 transitions += my_transitions
 
@@ -443,7 +442,7 @@ class ParallelModel(WFItemModel):
         self.name = "Parallel"
 
 
-    def render_to_simple_wf(self, submitdir, jobdir, path, parent_ids):
+    def render_to_simple_wf(self, path_list, submitdir, jobdir, path, parent_ids):
 
         """
         split_activity = WFtoXML.xml_split()
@@ -468,7 +467,7 @@ class ParallelModel(WFItemModel):
             inner_jobdir = "%s/%d" % (my_jobdir,swf_id)
             inner_path = "%s/%d" % (path,swf_id)
 
-            my_activities, my_transitions, my_toids = swfm.render_to_simple_wf(submitdir,inner_jobdir,path = inner_path, parent_ids = parent_ids)
+            my_activities, my_transitions, my_toids = swfm.render_to_simple_wf(path_list, submitdir,inner_jobdir,path = inner_path, parent_ids = parent_ids)
             transitions += my_transitions
             activities += my_activities
             toids += my_toids
@@ -546,7 +545,7 @@ class ForEachModel(WFItemModel):
     def set_filelist(self,filelist):
         self.filelist = filelist
 
-    def render_to_simple_wf(self, submitdir ,jobdir ,path , parent_ids):
+    def render_to_simple_wf(self, path_list, submitdir ,jobdir ,path , parent_ids):
         filesets = []
         transitions = []
 
@@ -566,7 +565,7 @@ class ForEachModel(WFItemModel):
         else:
             path = "%s/%s" %(path,self.name)
 
-        sub_activities, sub_transitions, sub_toids = self.subwfmodel.render_to_simple_wf(submitdir,my_jobdir,path = path, parent_ids = ["temporary_connector"])
+        sub_activities, sub_transitions, sub_toids = self.subwfmodel.render_to_simple_wf(path_list, submitdir,my_jobdir,path = path, parent_ids = ["temporary_connector"])
         sg = SubGraph(elements = WorkflowElementList(sub_activities),
                  graph = DirectedGraph(sub_transitions))
 
@@ -687,14 +686,14 @@ class WFModel(object):
         idx = self.elements.index(element)
         return self.elementnames[idx]
 
-    def render_to_simple_wf(self,submitdir,jobdir):
+    def render_to_simple_wf(self, submitdir,jobdir):
         activities = []
         transitions = []
         swfs = []
         #start = WFtoXML.xml_start()
         #parent_xml = etree.Element()
 
-
+        path_list = []
         fromids = ["0"]
         for myid, (ele, elename) in enumerate(zip(self.elements, self.elementnames)):
             if ele.is_wano:
@@ -704,7 +703,7 @@ class WFModel(object):
                 except OSError:
                     pass
                 #stageout_basedir = "wanos/%s" % (elename)
-                jsdl, wem = ele.render(wano_dir, stageout_basedir=elename)
+                jsdl, wem = ele.render(path_list, wano_dir, stageout_basedir=elename)
                 wem.set_given_name(elename)
                 wem : WorkflowExecModule
                 toids = [wem.uid]
@@ -714,7 +713,7 @@ class WFModel(object):
                         transitions.append((fromid, toid))
             else:
                 #only subworkflow remaining
-                my_activities, my_transitions,  toids = ele.render_to_simple_wf(submitdir,jobdir,path="", parent_ids = fromids)
+                my_activities, my_transitions,  toids = ele.render_to_simple_wf(path_list, submitdir,jobdir,path="", parent_ids = fromids)
                 activities+=my_activities
                 transitions += my_transitions
 
