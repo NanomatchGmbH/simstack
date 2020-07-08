@@ -742,13 +742,14 @@ class WFModel(object):
         for myid,(ele,name) in enumerate(zip(self.elements,self.elementnames)):
             if ele.is_wano:
                 for file in ele.wano_model.get_output_files():
-                    fn = os.path.join(name,file)
+                    fn = os.path.join(name,"outputs",file)
                     myfiles.append(fn)
             else:
                 for otherfile in ele.assemble_files(path=""):
                     myfiles.append(otherfile)
 
         return myfiles
+
 
 
     def save_to_disk(self,foldername):

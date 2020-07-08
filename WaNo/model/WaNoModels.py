@@ -768,15 +768,16 @@ class WaNoModelRoot(WaNoModelDictLike):
                         filename = os.path.join("inputs",relpath)
                         #Absolute filenames will be replace with BFT:STORAGEID etc. below.
                     elif not filename.endswith("_VALUE}"):
-                        #print("here is an iterator path", filename)
-                        last_slash = filename.rfind("/")
-                        first_part = filename[0:last_slash]
-                        second_part = filename[last_slash+1:]
-                        # We cut this here to add the outputs folder. This is a bit hacky - we should differentiate between display name and
-                        # name on cluster
-                        filename = "c9m:${STORAGE}/workflow_data/%s/outputs/%s"%(first_part,second_part)
-                        #print("Cut filename to %s"%filename)
-                        #filename = "c9m:${WORKFLOW_ID}/%s" % filename
+                        if "outputs/" in filename:
+                            # Newer handling, not rewriting filename, because it's already taken care of
+                            filename = "c9m:${STORAGE}/workflow_data/%s" % (filename)
+                        else:
+                            last_slash = filename.rfind("/")
+                            first_part = filename[0:last_slash]
+                            second_part = filename[last_slash+1:]
+                            # We cut this here to add the outputs folder. This is a bit hacky - we should differentiate between display name and
+                            # name on cluster
+                            filename = "c9m:${STORAGE}/workflow_data/%s/outputs/%s"%(first_part,second_part)
 
                     rendered_parent_jsdl = (rendered_parent,filename)
 
@@ -856,15 +857,19 @@ class WaNoModelRoot(WaNoModelDictLike):
             if importloc.endswith("_VALUE}"):
                 runtime_stagein_files.append([name,importloc])
             else:
-                #This might still be broken
+                if "outputs/" in importloc:
+                    # New handling, explicit outputs in filename
+                    filename = "${STORAGE}/workflow_data/%s" % importloc
+                else:
+                    # The old handling is broken for subfolders.
+                    # Old workflows will run still.
+                    # We cut this here to add the outputs folder. This is a bit hacky - we should differentiate between display name and
+                    # name on cluster
+                    last_slash = importloc.rfind("/")
+                    first_part = importloc[0:last_slash]
+                    second_part = importloc[last_slash + 1:]
+                    filename = "${STORAGE}/workflow_data/%s/outputs/%s" % (first_part, second_part)
 
-
-                last_slash = importloc.rfind("/")
-                first_part = importloc[0:last_slash]
-                second_part = importloc[last_slash + 1:]
-                # We cut this here to add the outputs folder. This is a bit hacky - we should differentiate between display name and
-                # name on cluster
-                filename = "${STORAGE}/workflow_data/%s/outputs/%s" % (first_part, second_part)
                 #print("In runtime stagein %s"%filename)
                 runtime_stagein_files.append([tostage, filename])
 
