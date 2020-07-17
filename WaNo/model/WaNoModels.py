@@ -1,33 +1,19 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
-from __future__ import division
-from __future__ import print_function
-from __future__ import unicode_literals
-from __future__ import absolute_import
 
 from pprint import pprint
 
-import Qt.QtCore as QtCore
-import Qt.QtGui as QtGui
-
-# requires python 2.7,
 #from pyura.pyura.helpers import trace_to_logger
 from SimStackServer.WorkflowModel import WorkflowExecModule, StringList, WorkflowElementList
 
-try:
-    import collections
-except ImportError as e:
-    print("OrderedDict requires Python 2.7 or higher or Python 3.1 or higher")
-    raise e
+import collections
 
-from WaNo.model.AbstractWaNoModel import AbstractWanoModel
+from WaNo.model.AbstractWaNoModel import AbstractWanoModel, OrderedDictIterHelper
 import WaNo.WaNoFactory
 from lxml import etree
 import xmltodict
 import copy
-from boolexp import Expression
 
-from Qt import QtCore
 import yaml
 import os
 import sys
@@ -53,12 +39,16 @@ def mkdir_p(path):
 class WaNoModelDictLike(AbstractWanoModel):
     def __init__(self, *args, **kwargs):
         super(WaNoModelDictLike, self).__init__(*args, **kwargs)
-        self.wano_dict = collections.OrderedDict()
-        self.xml = kwargs["xml"]
+        self.wano_dict = OrderedDictIterHelper()
 
+    def parse_from_xml(self, xml):
+        self.xml = xml
         for child in self.xml:
-            model = WaNo.WaNoFactory.WaNoFactory.get_objects(child, self.root_model, self, self.full_path)
+            ModelClass = WaNo.WaNoFactory.WaNoFactory.get_model_class(child.tag)
+            model = ModelClass()
+            model.parse_from_xml(child)
             self.wano_dict[child.attrib['name']] = model
+        super().parse_from_xml(xml)
 
     @property
     def dictlike(self):
@@ -85,14 +75,11 @@ class WaNoModelDictLike(AbstractWanoModel):
     def set_data(self, wano_dict):
         self.wano_dict = wano_dict
 
-    def items(self):
-        return self.wano_dict.items()
-
     def wanos(self):
         return self.wano_dict.values()
 
     def get_type_str(self):
-        return None
+        return "Dict"
 
     def __repr__(self):
         return repr(self.wano_dict)
@@ -100,12 +87,6 @@ class WaNoModelDictLike(AbstractWanoModel):
     def update_xml(self):
         for wano in self.wano_dict.values():
             wano.update_xml()
-
-    def disconnectSignals(self):
-        super(WaNoModelDictLike,self).disconnectSignals()
-        for wano in self.wano_dict.values():
-            wano.disconnectSignals()
-
 
 class WaNoChoiceModel(AbstractWanoModel):
     def __init__(self, *args, **kwargs):
@@ -131,7 +112,6 @@ class WaNoChoiceModel(AbstractWanoModel):
     def get_data(self):
         return self.choices[self.chosen]
 
-    @QtCore.Slot(int)
     def set_chosen(self,choice):
         self.chosen = int(choice)
         self.set_data(self.choices[self.chosen])
@@ -152,7 +132,7 @@ class WaNoDynamicChoiceModel(WaNoChoiceModel):
         self._subpath = self.xml.attrib["subpath"]
         self.choices = ["uninitialized"]
         self.chosen = int(self.xml.attrib["chosen"])
-        self.root_model.dataChanged.connect(self._update_choices)
+        self._root.dataChanged.connect(self._update_choices)
         self._connected = True
         self._updating = False
 
@@ -163,12 +143,12 @@ class WaNoDynamicChoiceModel(WaNoChoiceModel):
             return
 
         self._updating = True
-        wano_listlike = self.root_model.get_value(self._collection_path)
+        wano_listlike = self._root.get_value(self._collection_path)
         self.choices = []
         numchoices = len(wano_listlike)
         for myid in range(0,numchoices):
             query_string = "%s.%d.%s"% (self._collection_path,myid,self._subpath)
-            self.choices.append(self.root_model.get_value(query_string).get_data())
+            self.choices.append(self._root.get_value(query_string).get_data())
         if len(self.choices) == 0:
             self.choices = ["uninitialized"]
 
@@ -182,7 +162,6 @@ class WaNoDynamicChoiceModel(WaNoChoiceModel):
         self._updating = False
 
 
-    @QtCore.Slot(int)
     def set_chosen(self,choice):
         if not self._connected:
             return
@@ -198,10 +177,10 @@ class WaNoDynamicChoiceModel(WaNoChoiceModel):
 
     def disconnectSignals(self):
         if self.visibility_condition != None:
-            self.root_model.dataChanged.disconnect(self.evaluate_visibility_condition)
+            self._root.dataChanged.disconnect(self.evaluate_visibility_condition)
             self.visibility_condition = None
 
-        self.root_model.dataChanged.disconnect(self._update_choices)
+        self._root.dataChanged.disconnect(self._update_choices)
         self._connected = False
 
 
@@ -271,9 +250,8 @@ class WaNoModelListLike(AbstractWanoModel):
             self.style = self.xml.attrib["style"]
         else:
             self.style = ""
-
         for child in self.xml:
-            model = WaNo.WaNoFactory.WaNoFactory.get_objects(child, self.root_model, self, self.full_path)
+            model = WaNo.WaNoFactory.WaNoFactory.get_objects(child, self._root, self, self.full_path)
             # view.set_model(model)
             self.wano_list.append(model)
 
@@ -316,6 +294,7 @@ class WaNoNoneModel(AbstractWanoModel):
 
     def set_data(self, data):
         ""
+        pass
 
     def __getitem__(self, item):
         return None
@@ -343,7 +322,7 @@ class WaNoSwitchModel(WaNoModelListLike):
         self._switch_path = None
 
         self._visible_thing = 0
-        self.name = self._names_list[self._visible_thing]
+        self._name = self._names_list[self._visible_thing]
 
         self._parse_switch_conditions(self.xml)
 
@@ -375,12 +354,12 @@ class WaNoSwitchModel(WaNoModelListLike):
     def _evaluate_switch_condition(self,changed_path):
         if changed_path != self._switch_path and not changed_path == "force":
             return
-        visible_thing_string = self.root_model.get_value(self._switch_path).get_data()
+        visible_thing_string = self._root.get_value(self._switch_path).get_data()
         try:
             visible_thing = self._switch_name_list.index(visible_thing_string)
             self._visible_thing = visible_thing
-            self.name = self._names_list[self._visible_thing]
-            self.view.init_from_model()
+            self._name = self._names_list[self._visible_thing]
+            self._view.init_from_model()
         except ValueError as e:
             pass
 
@@ -393,34 +372,29 @@ class WaNoSwitchModel(WaNoModelListLike):
     def _parse_switch_conditions(self,xml):
         self._switch_path  = xml.attrib["switch_path"]
         self._switch_path = Template(self._switch_path).render(path = self.full_path.split("."))
-        self.root_model.dataChanged.connect(self._evaluate_switch_condition)
+        self._root.dataChanged.connect(self._evaluate_switch_condition)
 
     def decommission(self):
         self.disconnectSignals()
         for wano in self.wano_list:
             wano.decommission()
 
-    def disconnectSignals(self):
-        if self.visibility_condition != None:
-            self.root_model.dataChanged.disconnect(self.evaluate_visibility_condition)
-            self.visibility_condition = None
-
-        if self._switch_path != None:
-            self.root_model.dataChanged.disconnect(self._evaluate_switch_condition)
-
-
-
 class MultipleOfModel(AbstractWanoModel):
     def __init__(self, *args, **kwargs):
         super(MultipleOfModel, self).__init__(*args, **kwargs)
-        self.xml = kwargs["xml"]
+
         self.first_xml_child = None
         self.list_of_dicts = []
+
+
+    def parse_from_xml(self, xml):
+        self.xml = xml
         for child in self.xml:
             if self.first_xml_child is None:
                 self.first_xml_child = child
             wano_temp_dict = self.parse_one_child(child)
             self.list_of_dicts.append(wano_temp_dict)
+        super().parse_from_xml(xml)
 
     def numitems_per_add(self):
         return len(self.first_xml_child)
@@ -438,11 +412,13 @@ class MultipleOfModel(AbstractWanoModel):
     def parse_one_child(self,child):
         #A bug still exists, which allows visibility conditions to be fired prior to the existence of the model
         #but this is transient.
-        wano_temp_dict = collections.OrderedDict()
+        wano_temp_dict = OrderedDictIterHelper()
         current_id = len(self.list_of_dicts)
-        fp = "%s.%d"%(self.full_path,current_id)
+        #fp = "%s.%d"%(self.full_path,current_id)
         for cchild in child:
-            model = WaNo.WaNoFactory.WaNoFactory.get_objects(cchild, self.root_model, self, fp)
+            ModelClass = WaNo.WaNoFactory.WaNoFactory.get_model_class(cchild.tag)
+            model = ModelClass()
+            model.parse_from_xml(cchild)
             wano_temp_dict[cchild.attrib['name']] = model
         return wano_temp_dict
 
@@ -463,7 +439,7 @@ class MultipleOfModel(AbstractWanoModel):
         return self.list_of_dicts
 
     def get_type_str(self):
-        return None
+        return "MultipleOf"
 
     def __len__(self):
         return len(self.list_of_dicts)
@@ -473,7 +449,7 @@ class MultipleOfModel(AbstractWanoModel):
 
     def delete_item(self):
         if len(self.list_of_dicts) > 1:
-            before = self.root_model.blockSignals(True)
+            before = self._root.blockSignals(True)
             for wano in self.list_of_dicts[-1].values():
                 wano.decommission()
             self.list_of_dicts.pop()
@@ -481,14 +457,14 @@ class MultipleOfModel(AbstractWanoModel):
                 self.xml.remove(child)
                 break
 
-            self.root_model.blockSignals(before)
-            self.root_model.datachanged_force()
+            self._root.blockSignals(before)
+            self._root.datachanged_force()
 
             return True
         return False
 
     def add_item(self):
-        before = self.root_model.blockSignals(True)
+        before = self._root.blockSignals(True)
         #print(etree.tostring(self.xml, pretty_print=True).decode("utf-8"))
         my_xml = copy.copy(self.first_xml_child)
         my_xml.attrib["id"] = str(len(self.list_of_dicts))
@@ -497,8 +473,8 @@ class MultipleOfModel(AbstractWanoModel):
         model_dict = self.parse_one_child(my_xml)
         WaNo.WaNoFactory.WaNoFactory.build_views()
         self.list_of_dicts.append(model_dict)
-        self.root_model.blockSignals(before)
-        self.root_model.datachanged_force()
+        self._root.blockSignals(before)
+        self._root.datachanged_force()
 
 
     def update_xml(self):
@@ -506,77 +482,82 @@ class MultipleOfModel(AbstractWanoModel):
             for wano in wano_dict.values():
                 wano.update_xml()
 
-    def disconnectSignals(self):
-        for wano_dict in self.list_of_dicts:
-            for wano in wano_dict.values():
-                wano.disconnectSignals()
-
-class WaNoModelRootSignal(QtCore.QObject):
-    dataChanged = QtCore.Signal(int, name="dataChanged")
-    def __init__(self):
-        super(WaNoModelRootSignal, self).__init__()
-
-
 
 # This is the parent class and grandfather. Children have to be unique, no lists here
 class WaNoModelRoot(WaNoModelDictLike):
-    dataChanged = QtCore.Signal(str, name="dataChanged")
-    def exists_read_load(self,object,filename):
+    def _exists_read_load(self, object, filename):
         if os.path.exists(filename):
             object.load(filename)
         else:
             object.make_default_list()
             object.save(filename)
 
+    def set_parent_wf(self, parent_wf):
+        self._parent_wf = parent_wf
 
     def __init__(self, *args, **kwargs):
-        self.root_model = self
-        self.full_xml = kwargs['xml']
-        kwargs['xml'] = self.full_xml.find("WaNoRoot")
-        kwargs["root_model"] = self.root_model
-        kwargs["full_path"] = ""
-        self.parent_wf = kwargs["parent_wf"]
-        wano_dir_root = kwargs["wano_dir_root"]
-        resources_fn = os.path.join(wano_dir_root, "resources.yml")
+        self._root = self
+        self._datachanged_callbacks = {}
         self._outputfile_callbacks = []
-        super(WaNoModelRoot, self).__init__(*args, **kwargs)
-        #WaNoModelRootSignal.emit()
-        #wmrs = WaNoModelRootSignal()
-        #self.dataChanged = wmrs.dataChanged
+        self._wano_dir_root = kwargs["wano_dir_root"]
 
         self.resources = ResourceTableModel(parent=None,wano_parent=self)
-        self.exists_read_load(self.resources, resources_fn)
 
-        imports_fn = os.path.join(wano_dir_root, "imports.yml")
         self.import_model = ImportTableModel(parent=None,wano_parent=self)
         self.import_model.make_default_list()
-        self.exists_read_load(self.import_model,imports_fn)
 
-        exports_fn = os.path.join(wano_dir_root, "exports.yml")
         self.export_model = ExportTableModel(parent=None,wano_parent=self)
         self.export_model.make_default_list()
-        self.exists_read_load(self.export_model, exports_fn)
 
-        self.exec_command = self.full_xml.find("WaNoExecCommand").text
+        imports_fn = os.path.join(self._wano_dir_root, "imports.yml")
+        self._exists_read_load(self.import_model, imports_fn)
+
+        exports_fn = os.path.join(self._wano_dir_root, "exports.yml")
+        self._exists_read_load(self.export_model, exports_fn)
+
+        resources_fn = os.path.join(self._wano_dir_root, "resources.yml")
+        self._exists_read_load(self.resources, resources_fn)
+
+        super(WaNoModelRoot, self).__init__(*args, **kwargs)
+
         self.rendered_exec_command = ""
+
         self.input_files = []
-
-
-        self.wano_dir_root = kwargs["wano_dir_root"]
-        for child in self.full_xml.findall("./WaNoInputFiles/WaNoInputFile"):
-            self.input_files.append((child.attrib["logical_filename"],child.text))
-
         self.output_files = []
+
+        self.metas = OrderedDictIterHelper()
+
+    def parse_from_xml(self, xml):
+        self.full_xml = xml
+        subxml = self.full_xml.find("WaNoRoot")
+
         for child in self.full_xml.findall("./WaNoOutputFiles/WaNoOutputFile"):
             self.output_files.append(child.text)
 
-        self.metas = collections.OrderedDict()
+        for child in self.full_xml.findall("./WaNoInputFiles/WaNoInputFile"):
+            self.input_files.append((child.attrib["logical_filename"],child.text))
+
         el = self.full_xml.find("./WaNoMeta")
         if el:
-            self.metas= xmltodict.parse(etree.tostring(el))
+            self.metas = xmltodict.parse(etree.tostring(el))
+
+        self.exec_command = self.full_xml.find("WaNoExecCommand").text
+        st = super()
+        super().parse_from_xml(xml=subxml)
+
+    def notify_datachanged(self, path):
+        if path in self._datachanged_callbacks:
+            for callback in self._datachanged_callbacks[path]:
+                callback(path)
+
+    def register_callback(self, path, callback_function):
+        if path not in self._datachanged_callbacks:
+            self._datachanged_callbacks[path] = []
+            
+        self._datachanged_callbacks[path].append(callback_function)
 
     def get_type_str(self):
-        return None
+        return "WaNoRoot"
 
     def get_resource_model(self):
         return self.resources
@@ -597,7 +578,7 @@ class WaNoModelRoot(WaNoModelDictLike):
         return output_files
 
     def datachanged_force(self):
-        self.dataChanged.emit("force")
+        self.notify_datachanged("force")
 
     @staticmethod
     def construct_from_wano(filename, rootview, parent_wf):
@@ -948,8 +929,13 @@ class WaNoVectorModel(AbstractWanoModel):
 class WaNoItemFloatModel(AbstractWanoModel):
     def __init__(self, *args, **kwargs):
         super(WaNoItemFloatModel, self).__init__(*args, **kwargs)
-        self.myfloat = float(kwargs['xml'].text)
-        self.xml = kwargs['xml']
+        self.myfloat = -100.0
+        self.xml = None
+
+    def parse_from_xml(self, xml):
+        self.myfloat = float(xml.text)
+        self.xml = xml
+        super().parse_from_xml(xml)
 
     def get_data(self):
         return self.myfloat
@@ -965,7 +951,12 @@ class WaNoItemFloatModel(AbstractWanoModel):
         return "Float"
 
     def update_xml(self):
-        self.xml.text = str(self.myfloat)
+        if self.xml is not None:
+            self.xml.text = str(self.myfloat)
+
+    def model_to_dict(self, outdict):
+        outdict["data"] = str(self.myfloat)
+        super().model_to_dict(outdict)
 
     def __repr__(self):
         return repr(self.myfloat)
@@ -974,8 +965,13 @@ class WaNoItemFloatModel(AbstractWanoModel):
 class WaNoItemIntModel(AbstractWanoModel):
     def __init__(self, *args, **kwargs):
         super(WaNoItemIntModel, self).__init__(*args, **kwargs)
-        self.myint = float(kwargs['xml'].text)
-        self.xml = kwargs['xml']
+        self.myint = -10000000
+        self.xml = None
+
+    def parse_from_xml(self, xml):
+        self.myint = float(xml.text)
+        self.xml = xml
+        super().parse_from_xml(xml)
 
     def get_data(self):
         return self.myint
@@ -991,7 +987,8 @@ class WaNoItemIntModel(AbstractWanoModel):
         return "Int"
 
     def update_xml(self):
-        self.xml.text = str(self.myint)
+        if self.xml is not None:
+            self.xml.text = str(self.myint)
 
     def __repr__(self):
         return repr(self.myint)
@@ -1000,12 +997,17 @@ class WaNoItemIntModel(AbstractWanoModel):
 class WaNoItemBoolModel(AbstractWanoModel):
     def __init__(self, *args, **kwargs):
         super(WaNoItemBoolModel, self).__init__(*args, **kwargs)
-        bool_as_text = kwargs['xml'].text
-        self.xml = kwargs['xml']
+        self.xml = None
+        self.mybool = False
+
+    def parse_from_xml(self, xml):
+        self.xml = xml
+        bool_as_text = self.xml.text
         if bool_as_text.lower() == "true":
             self.mybool = True
         else:
             self.mybool = False
+        super().parse_from_xml(xml)
 
     def get_data(self):
         return self.mybool
@@ -1030,9 +1032,16 @@ class WaNoItemBoolModel(AbstractWanoModel):
 class WaNoItemFileModel(AbstractWanoModel):
     def __init__(self, *args, **kwargs):
         super(WaNoItemFileModel, self).__init__(*args, **kwargs)
-        self.xml = kwargs['xml']
+        self.xml = None
         self.is_local_file = True
-        self.mystring = kwargs['xml'].text
+        self.mystring = "FileData"
+        self.logical_name = "FileDataLogical"
+
+
+    def parse_from_xml(self, xml):
+        self.xml = xml
+        self.is_local_file = True
+        self.mystring = self.xml.text
         self.logical_name = self.xml.attrib["logical_filename"]
         if "local" in self.xml.attrib:
             if self.xml.attrib["local"].lower() == "true":
@@ -1041,6 +1050,7 @@ class WaNoItemFileModel(AbstractWanoModel):
                 self.is_local_file = False
         else:
             self.xml.attrib["local"] = "True"
+        super().parse_from_xml(xml)
 
     def get_data(self):
         return self.mystring
@@ -1091,7 +1101,7 @@ class WaNoItemFileModel(AbstractWanoModel):
             destdir = os.path.join(submitdir,"inputs")
             mkdir_p(destdir)
             destfile = os.path.join(destdir, rendered_logical_name)
-            #print("Copying",self.root_model.wano_dir_root,rendered_logical_name,destdir)
+            #print("Copying",self._root.wano_dir_root,rendered_logical_name,destdir)
             shutil.copy(self.mystring,destfile)
         if sys.version_info >= (3,0):
             return rendered_logical_name
@@ -1103,16 +1113,23 @@ class WaNoItemFileModel(AbstractWanoModel):
 class WaNoItemScriptFileModel(WaNoItemFileModel):
     def __init__(self,*args,**kwargs):
         super(WaNoItemScriptFileModel,self).__init__(*args,**kwargs)
-        self.xml = kwargs['xml']
-        self.mystring = self.xml.text
+        self.xml = None
+        self.mystring = ""
         self.logical_name = self.mystring
 
+
+    def parse_from_xml(self, xml):
+        self.xml = xml
+        self.mystring = self.xml.text
+        self.logical_name = self.mystring
+        super().parse_from_xml(xml)
+
     def get_path(self):
-        root_dir = os.path.join(self.root_model.wano_dir_root,"inputs")
+        root_dir = os.path.join(self._root.wano_dir_root,"inputs")
         return os.path.join(root_dir, self.mystring)
 
     def save_text(self,text):
-        root_dir = os.path.join(self.root_model.wano_dir_root, "inputs")
+        root_dir = os.path.join(self._root.wano_dir_root, "inputs")
         mkdir_p(root_dir)
         with open(self.get_path(),'w',newline='\n') as outfile:
             outfile.write(text)
@@ -1147,12 +1164,17 @@ class WaNoItemScriptFileModel(WaNoItemFileModel):
 class WaNoItemStringModel(AbstractWanoModel):
     def __init__(self, *args, **kwargs):
         super(WaNoItemStringModel, self).__init__(*args, **kwargs)
-        self.xml = kwargs['xml']
-        self.mystring = kwargs['xml'].text
         self._output_filestring = ""
+        self.xml = None
+        self.mystring = "unset"
+
+    def parse_from_xml(self, xml):
+        self.xml = xml
+        self.mystring = self.xml.text
         if 'dynamic_output' in self.xml.attrib:
-            self._output_filestring=self.xml.attrib["dynamic_output"]
-            self.root_model.register_outputfile_callback(self.get_extra_output_files)
+            self._output_filestring = self.xml.attrib["dynamic_output"]
+            self._root.register_outputfile_callback(self.get_extra_output_files)
+        super().parse_from_xml(xml)
 
     def get_extra_output_files(self):
         extra_output_files = []
@@ -1182,14 +1204,17 @@ class WaNoItemStringModel(AbstractWanoModel):
 class WaNoThreeRandomLetters(WaNoItemStringModel):
     def __init__(self, *args, **kwargs):
         super(WaNoThreeRandomLetters, self).__init__(*args, **kwargs)
-        self.xml = kwargs['xml']
-        self.mystring = kwargs['xml'].text
+        self.xml = None
+        self.mystring = None
+
         if self.mystring == "" or self.mystring is None:
             self.mystring = self._generate_default_string()
-            print("Generating default string %s"%(self.mystring))
             self.set_data(self.mystring)
-        else:
-            print("already found string <%s>"%self.mystring)
+
+    def parse_from_xml(self, xml):
+        self.xml = xml
+        self.mystring = self.xml.text
+        super().parse_from_xml(xml)
 
     def _generate_default_string(self):
         from random import choice

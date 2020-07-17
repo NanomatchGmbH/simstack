@@ -159,7 +159,7 @@ class WaNoSwitchView(AbstractWanoQTView):
         assert self._current_view is not None
         visible_widget.setParent(self.qt_parent)
         self._current_view.set_visible(True)
-        self.model.parent.view.init_from_model()
+        self.model._parent.view.init_from_model()
 
 class WaNoConditionalView(AbstractWanoQTView):
     def __init__(self, *args, **kwargs):

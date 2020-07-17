@@ -38,6 +38,8 @@ def wano_constructor_helper(wanofile,container_widget,parent_wf):
     return wifm,wifv
 
 class WaNoFactory(object):
+
+
     postregisterlist = []
 
     @classmethod
@@ -51,19 +53,18 @@ class WaNoFactory(object):
         del cls.postregisterlist[:]
 
     @classmethod
-    def get_objects(cls, xml, root_model, parent_model, current_path):
-        from WaNo.model.AbstractWaNoModel import WaNoNotImplementedError
-        from WaNo.model.WaNoModels import WaNoItemFloatModel, WaNoModelListLike,\
+    def get_model_class(cls, name):
+        from WaNo.model.WaNoModels import WaNoItemFloatModel, WaNoModelListLike, \
             WaNoItemStringModel, WaNoItemBoolModel, WaNoModelDictLike, WaNoChoiceModel, \
             MultipleOfModel, WaNoItemFileModel, WaNoItemIntModel, WaNoItemScriptFileModel, \
             WaNoMatrixModel, WaNoThreeRandomLetters, WaNoSwitchModel, WaNoDynamicChoiceModel, \
             WaNoNoneModel
         from WaNo.view.WaNoViews import WaNoItemFloatView, WaNoBoxView, WaNoItemStringView, \
-            WaNoItemBoolView, WaNoItemFileView, WaNoChoiceView, MultipleOfView, WaNoItemIntView,\
+            WaNoItemBoolView, WaNoItemFileView, WaNoChoiceView, MultipleOfView, WaNoItemIntView, \
             WaNoTabView, WaNoGroupView, WaNoScriptView, WaNoDropDownView, WaNoMatrixFloatView, \
             WaNoSwitchView, WaNoInvisibleBoxView, WaNoNone
 
-        wano_list = {
+        wano_list = {  # kwargs['xml'] = self.full_xml.find("WaNoRoot")
             "WaNoFloat": (WaNoItemFloatModel, WaNoItemFloatView),
             "WaNoMatrixFloat": (WaNoMatrixModel, WaNoMatrixFloatView),
             "WaNoInt": (WaNoItemIntModel, WaNoItemIntView),
@@ -78,14 +79,50 @@ class WaNoFactory(object):
             "WaNoFile": (WaNoItemFileModel, WaNoItemFileView),
             "WaNoChoice": (WaNoChoiceModel, WaNoChoiceView),
             "WaNoDropDown": (WaNoChoiceModel, WaNoDropDownView),
-            "WaNoMultipleOf": (MultipleOfModel,MultipleOfView),
+            "WaNoMultipleOf": (MultipleOfModel, MultipleOfView),
             "WaNoScript": (WaNoItemScriptFileModel, WaNoScriptView),
-            "WaNoDynamicDropDown":(WaNoDynamicChoiceModel,WaNoDropDownView),
-            "WaNoTabs": (WaNoModelDictLike,WaNoTabView),
-            "WaNone" : (WaNoNoneModel, WaNoNone),
-            "WaNoThreeRandomLetters": (WaNoThreeRandomLetters,WaNoItemStringView)
+            "WaNoDynamicDropDown": (WaNoDynamicChoiceModel, WaNoDropDownView),
+            "WaNoTabs": (WaNoModelDictLike, WaNoTabView),
+            "WaNone": (WaNoNoneModel, WaNoNone),
+            "WaNoThreeRandomLetters": (WaNoThreeRandomLetters, WaNoItemStringView)
         }
+        return wano_list[name][0]
 
+    @classmethod
+    def get_objects(cls, xml, root_model, parent_model, current_path):
+        from WaNo.model.WaNoModels import WaNoItemFloatModel, WaNoModelListLike, \
+            WaNoItemStringModel, WaNoItemBoolModel, WaNoModelDictLike, WaNoChoiceModel, \
+            MultipleOfModel, WaNoItemFileModel, WaNoItemIntModel, WaNoItemScriptFileModel, \
+            WaNoMatrixModel, WaNoThreeRandomLetters, WaNoSwitchModel, WaNoDynamicChoiceModel, \
+            WaNoNoneModel
+        from WaNo.view.WaNoViews import WaNoItemFloatView, WaNoBoxView, WaNoItemStringView, \
+            WaNoItemBoolView, WaNoItemFileView, WaNoChoiceView, MultipleOfView, WaNoItemIntView, \
+            WaNoTabView, WaNoGroupView, WaNoScriptView, WaNoDropDownView, WaNoMatrixFloatView, \
+            WaNoSwitchView, WaNoInvisibleBoxView, WaNoNone
+
+        wano_list = {  # kwargs['xml'] = self.full_xml.find("WaNoRoot")
+            "WaNoFloat": (WaNoItemFloatModel, WaNoItemFloatView),
+            "WaNoMatrixFloat": (WaNoMatrixModel, WaNoMatrixFloatView),
+            "WaNoInt": (WaNoItemIntModel, WaNoItemIntView),
+            "WaNoString": (WaNoItemStringModel, WaNoItemStringView),
+            "WaNoListBox": (WaNoModelListLike, WaNoBoxView),
+            "WaNoBox": (WaNoModelDictLike, WaNoBoxView),
+            "WaNoDictBox": (WaNoModelDictLike, WaNoBoxView),
+            "WaNoInviBox": (WaNoModelDictLike, WaNoInvisibleBoxView),
+            "WaNoSwitch": (WaNoSwitchModel, WaNoSwitchView),
+            "WaNoGroup": (WaNoModelDictLike, WaNoGroupView),
+            "WaNoBool": (WaNoItemBoolModel, WaNoItemBoolView),
+            "WaNoFile": (WaNoItemFileModel, WaNoItemFileView),
+            "WaNoChoice": (WaNoChoiceModel, WaNoChoiceView),
+            "WaNoDropDown": (WaNoChoiceModel, WaNoDropDownView),
+            "WaNoMultipleOf": (MultipleOfModel, MultipleOfView),
+            "WaNoScript": (WaNoItemScriptFileModel, WaNoScriptView),
+            "WaNoDynamicDropDown": (WaNoDynamicChoiceModel, WaNoDropDownView),
+            "WaNoTabs": (WaNoModelDictLike, WaNoTabView),
+            "WaNone": (WaNoNoneModel, WaNoNone),
+            "WaNoThreeRandomLetters": (WaNoThreeRandomLetters, WaNoItemStringView)
+        }
+        from WaNo.model.AbstractWaNoModel import WaNoNotImplementedError
         if xml.tag not in wano_list:
             print("Unknown Wano", xml.tag)
             raise WaNoNotImplementedError()
