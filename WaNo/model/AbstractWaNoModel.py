@@ -32,6 +32,7 @@ class AbstractWanoModel:
         self._visibility_condition = None
         self._visibility_var_path = None
         self._isvisible = True
+        self._vc = None
         super(AbstractWanoModel, self).__init__()
 
     @property
@@ -41,6 +42,12 @@ class AbstractWanoModel:
     @property
     def is_wano(self):
         return self._is_wano
+
+    def set_view_class(self, ViewClass):
+        self._vc = ViewClass
+
+    def get_view_class(self):
+        return self._vc
 
     @property
     def path(self):
