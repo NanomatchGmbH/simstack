@@ -217,7 +217,7 @@ class TestWaNoModels(unittest.TestCase):
         tw.walker(path_visitor_function=pc.assemble_paths,
                   subdict_visitor_function=None,
                   data_visitor_function=None)
-        #print(pc.paths)
+
         vc = ViewCollector()
         newtw = WaNoTreeWalker(wmr)
         # Stage 1: Construct all views
@@ -230,17 +230,19 @@ class TestWaNoModels(unittest.TestCase):
 
         views_by_path = vc.get_views_by_path()
 
-        sorted_paths = [*reversed(sorted(views_by_path.keys(), key=len))]
-
+        # Stage 3 (or Stage 0): Initialize the rootview parent
         rootview = vc.get_views_by_path()[tuple("")]
         container, container_layout = self.initUI()
         rootview.set_parent(container)
 
+        # Stage 4: Put actual data into the views from the ones deep in the hierarchy to the shallow ones
+        sorted_paths = reversed(sorted(views_by_path.keys(), key=len))
         for path in sorted_paths:
             views_by_path[path].init_from_model()
 
-
         rootview.init_from_model()
+
+        # Stage 5: Update the layout
         container_layout.addWidget(rootview.get_widget())
         container.update()
         self._app.exec_()
