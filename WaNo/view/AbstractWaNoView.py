@@ -31,17 +31,21 @@ class AbstractWanoView(object):
 class AbstractWanoQTView(AbstractWanoView):
     def __init__(self, *args, **kwargs):
         super(AbstractWanoQTView, self).__init__(*args, **kwargs)
-        if "model" in kwargs:
-            model = kwargs['model']
-            parent = model.get_parent()
-            self.qt_parent = parent.view.get_widget()
-        if "qt_parent" in kwargs:
-            self.qt_parent = kwargs["qt_parent"]
         self.actual_widget = None
 
     def set_visible(self,truefalse):
         if self.actual_widget:
             self.actual_widget.setVisible(truefalse)
+
+    def set_parent(self, parent_view):
+        """
+
+        :param parent_view:
+        :return:
+        """
+        self._parent = parent_view
+        if self._parent is not None:
+            self._qt_parent = parent_view.get_widget()
 
     @abc.abstractmethod
     def get_widget(self):

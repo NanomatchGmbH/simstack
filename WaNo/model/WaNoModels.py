@@ -45,7 +45,9 @@ class WaNoModelDictLike(AbstractWanoModel):
         self.xml = xml
         for child in self.xml:
             ModelClass = WaNo.WaNoFactory.WaNoFactory.get_model_class(child.tag)
+            ViewClass = WaNo.WaNoFactory.WaNoFactory.get_qt_view_class(child.tag)
             model = ModelClass()
+            model.set_view_class(ViewClass)
             model.parse_from_xml(child)
             self.wano_dict[child.attrib['name']] = model
         super().parse_from_xml(xml)
@@ -242,6 +244,7 @@ class WaNoMatrixModel(AbstractWanoModel):
 
 class WaNoModelListLike(AbstractWanoModel):
     def __init__(self, *args, **kwargs):
+        raise NotImplementedError("WMLL is currently out of order")
         super(WaNoModelListLike, self).__init__(*args, **kwargs)
         self.wano_list = []
         self.xml = kwargs["xml"]
@@ -417,7 +420,9 @@ class MultipleOfModel(AbstractWanoModel):
         #fp = "%s.%d"%(self.full_path,current_id)
         for cchild in child:
             ModelClass = WaNo.WaNoFactory.WaNoFactory.get_model_class(cchild.tag)
+            ViewClass = WaNo.WaNoFactory.WaNoFactory.get_qt_view_class(cchild.tag)
             model = ModelClass()
+            model.set_view_class(ViewClass)
             model.parse_from_xml(cchild)
             wano_temp_dict[cchild.attrib['name']] = model
         return wano_temp_dict
