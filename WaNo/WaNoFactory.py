@@ -89,6 +89,42 @@ class WaNoFactory(object):
         return wano_list[name][0]
 
     @classmethod
+    def get_qt_view_class(cls, name):
+        from WaNo.model.WaNoModels import WaNoItemFloatModel, WaNoModelListLike, \
+            WaNoItemStringModel, WaNoItemBoolModel, WaNoModelDictLike, WaNoChoiceModel, \
+            MultipleOfModel, WaNoItemFileModel, WaNoItemIntModel, WaNoItemScriptFileModel, \
+            WaNoMatrixModel, WaNoThreeRandomLetters, WaNoSwitchModel, WaNoDynamicChoiceModel, \
+            WaNoNoneModel
+        from WaNo.view.WaNoViews import WaNoItemFloatView, WaNoBoxView, WaNoItemStringView, \
+            WaNoItemBoolView, WaNoItemFileView, WaNoChoiceView, MultipleOfView, WaNoItemIntView, \
+            WaNoTabView, WaNoGroupView, WaNoScriptView, WaNoDropDownView, WaNoMatrixFloatView, \
+            WaNoSwitchView, WaNoInvisibleBoxView, WaNoNone
+
+        wano_list = {  # kwargs['xml'] = self.full_xml.find("WaNoRoot")
+            "WaNoFloat": (WaNoItemFloatModel, WaNoItemFloatView),
+            "WaNoMatrixFloat": (WaNoMatrixModel, WaNoMatrixFloatView),
+            "WaNoInt": (WaNoItemIntModel, WaNoItemIntView),
+            "WaNoString": (WaNoItemStringModel, WaNoItemStringView),
+            "WaNoListBox": (WaNoModelListLike, WaNoBoxView),
+            "WaNoBox": (WaNoModelDictLike, WaNoBoxView),
+            "WaNoDictBox": (WaNoModelDictLike, WaNoBoxView),
+            "WaNoInviBox": (WaNoModelDictLike, WaNoInvisibleBoxView),
+            "WaNoSwitch": (WaNoSwitchModel, WaNoSwitchView),
+            "WaNoGroup": (WaNoModelDictLike, WaNoGroupView),
+            "WaNoBool": (WaNoItemBoolModel, WaNoItemBoolView),
+            "WaNoFile": (WaNoItemFileModel, WaNoItemFileView),
+            "WaNoChoice": (WaNoChoiceModel, WaNoChoiceView),
+            "WaNoDropDown": (WaNoChoiceModel, WaNoDropDownView),
+            "WaNoMultipleOf": (MultipleOfModel, MultipleOfView),
+            "WaNoScript": (WaNoItemScriptFileModel, WaNoScriptView),
+            "WaNoDynamicDropDown": (WaNoDynamicChoiceModel, WaNoDropDownView),
+            "WaNoTabs": (WaNoModelDictLike, WaNoTabView),
+            "WaNone": (WaNoNoneModel, WaNoNone),
+            "WaNoThreeRandomLetters": (WaNoThreeRandomLetters, WaNoItemStringView)
+        }
+        return wano_list[name][1]
+
+    @classmethod
     def get_objects(cls, xml, root_model, parent_model, current_path):
         from WaNo.model.WaNoModels import WaNoItemFloatModel, WaNoModelListLike, \
             WaNoItemStringModel, WaNoItemBoolModel, WaNoModelDictLike, WaNoChoiceModel, \
