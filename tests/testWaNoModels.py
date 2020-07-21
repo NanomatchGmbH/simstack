@@ -87,7 +87,6 @@ class ViewCollector:
     def _get_mypath_treewalker(self, call_info):
         tw_paths = call_info["treewalker_paths"]
         tw: TreeWalker = call_info["treewalker"]
-        relpath = tw_paths.relpath
         abspath = tw_paths.abspath
         if abspath is None:
             mypath = tuple("")
@@ -105,13 +104,6 @@ class ViewCollector:
 
         vc = ViewClass()
         self._views_by_path[mypath] = vc
-        """
-        if mypath != tuple(""):
-            parent = tw.resolve(mypath[:-1])
-            vc.set_parent(parent.view)
-        """
-        if isinstance(subdict, MultipleOfModel):
-            print("MMM")
         subdict.set_view(vc)
         vc.set_model(subdict)
         return None
@@ -121,17 +113,10 @@ class ViewCollector:
             return
 
         mypath,tw = self._get_mypath_treewalker(call_info)
-
-        #ViewClass = subdict.get_view_class()
-
         vc = subdict.view
-        #self._views_by_path[mypath] = vc
-
         if mypath != tuple(""):
             parent = tw.resolve(mypath[:-1])
             vc.set_parent(parent.view)
-        #subdict.set_view(vc)
-        #vc.set_model(subdict)
         return None
 
     def data_visitor_view_assembler(self, data, call_info):
@@ -142,20 +127,6 @@ class ViewCollector:
         ViewClass = data.get_view_class()
         vc = ViewClass()
         self._views_by_path[mypath] = vc
-        """
-        if mypath != tuple(""):
-            parent = None
-            checktuple = mypath[:-1]
-
-            parent = tw.resolve(mypath[:-1])
-            while isinstance(parent, OrderedDictIterHelper):
-                checktuple = checktuple[:-1]
-                parent = tw.resolve(checktuple)
-            print("HERE", parent,type(parent), parent.view)
-            vc.set_parent(parent.view)
-        """
-        if isinstance(data, MultipleOfModel):
-            print("MMM")
         data.set_view(vc)
         vc.set_model(data)
         return data
@@ -165,22 +136,15 @@ class ViewCollector:
             return data
         mypath, tw = self._get_mypath_treewalker(call_info)
 
-        #ViewClass = data.get_view_class()
         vc = data.view
-        #self._views_by_path[mypath] = vc
 
         if mypath != tuple(""):
-            parent = None
             checktuple = mypath[:-1]
-
             parent = tw.resolve(mypath[:-1])
             while isinstance(parent, OrderedDictIterHelper):
                 checktuple = checktuple[:-1]
                 parent = tw.resolve(checktuple)
-            print("HERE", parent, type(parent), parent.view)
             vc.set_parent(parent.view)
-        #data.set_view(vc)
-        #vc.set_model(data)
         return data
 
 
@@ -212,32 +176,11 @@ class TestWaNoModels(unittest.TestCase):
         container_widget = QtWidgets.QWidget(parent=scroller)
         container_widget.setSizePolicy(QtWidgets.QSizePolicy.Expanding,QtWidgets.QSizePolicy.Expanding)
         container.setSizePolicy(QtWidgets.QSizePolicy.Expanding,QtWidgets.QSizePolicy.Expanding)
-
         container_layout = QtWidgets.QVBoxLayout()
-
-
-        #wifm.construct_children()
-        #WaNoFactory.build_views()
-        # The build views has to be done like this:
-        # Always set the view class on construction. MultipleOf only duplicates so the views are known.
-        # Then use the treewalker library to walk through the models and collect all viewclasses and construct them
-        # set view, set model
-        #
-        # For multiple of: The viewclass is known, you can keep constructing in constructor - well not really
-        # if it's none, don't do anything.
-        #wifv.init_from_model()
-
-        #container_layout.addWidget(wifv.get_widget())
-        #submit_push = QtWidgets.QPushButton("Submit", parent=container_widget)
-        #submit_push.clicked.connect(self.render_slot)
-        #container_layout.addWidget(submit_push)
         container_widget.setLayout(container_layout)
         scroller.setWidget(container_widget)
-        ##scroller.setSizePolicy()
         vbox = QtWidgets.QVBoxLayout()
         vbox.addWidget(scroller)
-
-        #vbox.addStretch(1)
         container.setLayout(vbox)
 
         container.setGeometry(300, 300, 460, 700)
@@ -258,7 +201,6 @@ class TestWaNoModels(unittest.TestCase):
         #view = WQVR()
 
         wmr.parse_from_xml(self.depxml)
-        print(type(wmr))
         self.assertAlmostEqual(float(str(wmr["TABS"]["Simulation Parameters"]["Simulation Box"]["Lx"])), 40.0)
         outdict = {}
         wmr.model_to_dict(outdict)
@@ -295,9 +237,7 @@ class TestWaNoModels(unittest.TestCase):
         rootview.set_parent(container)
 
         for path in sorted_paths:
-            print("INITIGINGN",path)
             views_by_path[path].init_from_model()
-        print(sorted_paths)
 
 
         rootview.init_from_model()
