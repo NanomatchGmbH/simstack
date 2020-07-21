@@ -15,9 +15,15 @@ if __name__ == '__main__':
 
     if not dir_path in sys.path:
         sys.path.append(dir_path)
+
+    dir_path = path.join(dir_path,"treewalker")
+    if not dir_path in sys.path:
+        sys.path.append(dir_path)
+
     dir_path = path.join(base_path,"SimStackServer")
     if not dir_path in sys.path:
         sys.path.append(dir_path)
+    print(dir_path)
 
 import ctypes
 import signal

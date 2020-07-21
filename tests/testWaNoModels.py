@@ -1,19 +1,15 @@
-import os
 import sys
 import unittest
-from functools import partial
 
-from Qt import QtGui, QtCore, QtWidgets
+from Qt import QtWidgets
 
 from os import path
-from pprint import pprint
 
-from PyQt5.QtWidgets import QWidget, QApplication
+from PyQt5.QtWidgets import QApplication
 from lxml import etree
 from TreeWalker.TreeWalker import TreeWalker
-from WaNo.model.AbstractWaNoModel import OrderedDictIterHelper
-from WaNo.model.WaNoModels import WaNoItemFloatModel, WaNoModelRoot, WaNoModelDictLike, WaNoModelListLike, \
-    MultipleOfModel
+from WaNo.model.WaNoModels import WaNoItemFloatModel, WaNoModelRoot
+from WaNo.model.WaNoTreeWalker import WaNoTreeWalker, ViewCollector
 from WaNo.view.WaNoViews import WanoQtViewRoot
 
 
@@ -77,87 +73,6 @@ class PathCollector:
         self._paths.append(mypath)
         return twpath
 
-class ViewCollector:
-    def __init__(self):
-        self._views_by_path = {}
-
-    def get_views_by_path(self):
-        return self._views_by_path
-
-    def _get_mypath_treewalker(self, call_info):
-        tw_paths = call_info["treewalker_paths"]
-        tw: TreeWalker = call_info["treewalker"]
-        abspath = tw_paths.abspath
-        if abspath is None:
-            mypath = tuple("")
-        else:
-            mypath = tuple(abspath)
-        return mypath, tw
-
-    def assemble_views(self, subdict, call_info):
-        if isinstance(subdict, OrderedDictIterHelper):
-            return
-
-        mypath,tw = self._get_mypath_treewalker(call_info)
-
-        ViewClass = subdict.get_view_class()
-
-        vc = ViewClass()
-        self._views_by_path[mypath] = vc
-        subdict.set_view(vc)
-        vc.set_model(subdict)
-        return None
-
-    def assemble_views_parenter(self, subdict, call_info):
-        if isinstance(subdict, OrderedDictIterHelper):
-            return
-
-        mypath,tw = self._get_mypath_treewalker(call_info)
-        vc = subdict.view
-        if mypath != tuple(""):
-            parent = tw.resolve(mypath[:-1])
-            vc.set_parent(parent.view)
-        return None
-
-    def data_visitor_view_assembler(self, data, call_info):
-        if isinstance(data, OrderedDictIterHelper):
-            return data
-        mypath, tw = self._get_mypath_treewalker(call_info)
-
-        ViewClass = data.get_view_class()
-        vc = ViewClass()
-        self._views_by_path[mypath] = vc
-        data.set_view(vc)
-        vc.set_model(data)
-        return data
-
-    def data_visitor_view_parenter(self, data, call_info):
-        if isinstance(data, OrderedDictIterHelper):
-            return data
-        mypath, tw = self._get_mypath_treewalker(call_info)
-
-        vc = data.view
-
-        if mypath != tuple(""):
-            checktuple = mypath[:-1]
-            parent = tw.resolve(mypath[:-1])
-            while isinstance(parent, OrderedDictIterHelper):
-                checktuple = checktuple[:-1]
-                parent = tw.resolve(checktuple)
-            vc.set_parent(parent.view)
-        return data
-
-
-class WaNoTreeWalker(TreeWalker):
-    @staticmethod
-    def _isdict(myobject) -> bool:
-        return isinstance(myobject, WaNoModelDictLike) or \
-               isinstance(myobject, OrderedDictIterHelper) or \
-               isinstance(myobject, MultipleOfModel)
-
-    @staticmethod
-    def _islist(myobject) -> bool:
-        return isinstance(myobject, WaNoModelListLike) or isinstance(myobject, MultipleOfModel)
 
 class TestWaNoModels(unittest.TestCase):
     def setUp(self):
@@ -197,8 +112,6 @@ class TestWaNoModels(unittest.TestCase):
     def test_construct_deposit_wano(self):
         wmr = WaNoModelRoot(wano_dir_root = self.deposit_dir)
         wmr.set_view_class(WanoQtViewRoot)
-        WQVR = wmr.get_view_class()
-        #view = WQVR()
 
         wmr.parse_from_xml(self.depxml)
         self.assertAlmostEqual(float(str(wmr["TABS"]["Simulation Parameters"]["Simulation Box"]["Lx"])), 40.0)

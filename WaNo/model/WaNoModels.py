@@ -476,6 +476,7 @@ class MultipleOfModel(AbstractWanoModel):
         self.xml.append(my_xml)
         #print(etree.tostring(self.xml, pretty_print=True).decode("utf-8"))
         model_dict = self.parse_one_child(my_xml)
+        raise NotImplementedError("HERE TIMO")
         WaNo.WaNoFactory.WaNoFactory.build_views()
         self.list_of_dicts.append(model_dict)
         self._root.blockSignals(before)
