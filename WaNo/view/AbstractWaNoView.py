@@ -43,9 +43,13 @@ class AbstractWanoQTView(AbstractWanoView):
         :param parent_view:
         :return:
         """
-        self._parent = parent_view
-        if self._parent is not None:
+        #self._parent = parent_view
+        #if self._parent is not None:
+        if hasattr(parent_view, "get_widget"):
             self._qt_parent = parent_view.get_widget()
+        else:
+            self._qt_parent = parent_view
+
 
     @abc.abstractmethod
     def get_widget(self):

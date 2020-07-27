@@ -8,45 +8,108 @@ from lxml import etree
 from WaNo.model.WaNoTreeWalker import ViewCollector, WaNoTreeWalker
 
 
-def wano_constructor_helper(wanofile, parent_wf):
-    wano_dir_root = os.path.dirname(os.path.realpath(wanofile))
-    from WaNo.model.WaNoModels import WaNoModelRoot
-    from WaNo.view.WaNoViews import WanoQtViewRoot
-    wmr = WaNoModelRoot(wano_dir_root=wano_dir_root)
-    wmr.set_view_class(WanoQtViewRoot)
-
-    with open(wanofile, 'rt') as infile:
-        xml = etree.parse(infile)
-    wmr.parse_from_xml(xml)
+def wano_without_view_constructor_helper(wmr, start_path = None):
+    if start_path is None:
+        start_path = []
 
     vc = ViewCollector()
+    vc.set_start_path(start_path)
     newtw = WaNoTreeWalker(wmr)
+
+    # Stage 3.5: Set Root Model
+    vc.set_wano_model_root(wmr.get_root())
+    newtw.walker(capture=False, path_visitor_function=None, subdict_visitor_function=vc.root_setter_subdict,
+                 data_visitor_function=vc.root_setter_data)
+
     # Stage 1: Construct all views
-    newtw.walker(capture=False, path_visitor_function=None, subdict_visitor_function=vc.assemble_views,
-                 data_visitor_function=vc.data_visitor_view_assembler)
+    #newtw.walker(capture=False, path_visitor_function=None, subdict_visitor_function=vc.assemble_views,
+    #             data_visitor_function=vc.data_visitor_view_assembler)
+
+    #views_by_path = vc.get_views_by_path()
+
+    # Stage 2: Set all model paths
+    newtw.walker(capture=False, path_visitor_function=None, subdict_visitor_function=vc.path_setter_subdict,
+                 data_visitor_function=vc.path_setter_data)
 
     # Stage 2: Parent all views
     newtw.walker(capture=False, path_visitor_function=None, subdict_visitor_function=vc.assemble_views_parenter,
                  data_visitor_function=vc.data_visitor_view_parenter)
 
-    views_by_path = vc.get_views_by_path()
-
     # Stage 3 (or Stage 0): Initialize the rootview parent
-    rootview = vc.get_views_by_path()[tuple("")]
+    rootview = vc.get_views_by_path()[()]
     anonymous_parent = QtWidgets.QWidget()
     rootview.set_parent(anonymous_parent)
 
     # Stage 4: Put actual data into the views from the ones deep in the hierarchy to the shallow ones
-    sorted_paths = reversed(sorted(views_by_path.keys(), key=len))
+    sorted_paths = [*reversed(sorted(views_by_path.keys(), key=len))]
     for path in sorted_paths:
         views_by_path[path].init_from_model()
-
 
     rootview.init_from_model()
 
     # Stage 5: Update the layout
     anonymous_parent.update()
     return wmr,rootview
+
+def wano_constructor_helper(wmr, start_path = None):
+    if start_path is None:
+        start_path = []
+
+    vc = ViewCollector()
+    vc.set_start_path(start_path)
+    newtw = WaNoTreeWalker(wmr)
+
+    # Stage 3.5: Set Root Model
+    vc.set_wano_model_root(wmr.get_root())
+    newtw.walker(capture=False, path_visitor_function=None, subdict_visitor_function=vc.root_setter_subdict,
+                 data_visitor_function=vc.root_setter_data)
+
+    # Stage 1: Construct all views
+    newtw.walker(capture=False, path_visitor_function=None, subdict_visitor_function=vc.assemble_views,
+                 data_visitor_function=vc.data_visitor_view_assembler)
+
+    views_by_path = vc.get_views_by_path()
+
+    # Stage 2: Set all model paths
+    newtw.walker(capture=False, path_visitor_function=None, subdict_visitor_function=vc.path_setter_subdict,
+                 data_visitor_function=vc.path_setter_data)
+
+    # Stage 2: Parent all views
+    newtw.walker(capture=False, path_visitor_function=None, subdict_visitor_function=vc.assemble_views_parenter,
+                 data_visitor_function=vc.data_visitor_view_parenter)
+
+    # Stage 3 (or Stage 0): Initialize the rootview parent
+    rootview = vc.get_views_by_path()[()]
+    anonymous_parent = QtWidgets.QWidget()
+    rootview.set_parent(anonymous_parent)
+
+    # Stage 4: Put actual data into the views from the ones deep in the hierarchy to the shallow ones
+    sorted_paths = [*reversed(sorted(views_by_path.keys(), key=len))]
+    for path in sorted_paths:
+        views_by_path[path].init_from_model()
+
+    rootview.init_from_model()
+
+    # Stage 5: Update the layout
+    anonymous_parent.update()
+    return wmr,rootview
+
+def wano_constructor(wanofile):
+    # Timo: Begin path, Begin parse, etc. in the function above. Then call the function above
+    # and make this the main entry point
+    wano_dir_root = os.path.dirname(os.path.realpath(wanofile))
+    with open(wanofile, 'rt') as infile:
+        xml = etree.parse(infile)
+
+    from WaNo.model.WaNoModels import WaNoModelRoot
+    from WaNo.view.WaNoViews import WanoQtViewRoot
+    wmr = WaNoModelRoot(wano_dir_root=wano_dir_root)
+    wmr.set_view_class(WanoQtViewRoot)
+    wmr.parse_from_xml(xml)
+    wmr, rootview = wano_constructor_helper(wmr)
+    return wmr, rootview
+
+
 
 class WaNoFactory(object):
     @classmethod

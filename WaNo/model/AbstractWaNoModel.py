@@ -2,6 +2,8 @@
 # -*- coding: utf-8 -*-
 from collections import OrderedDict
 
+from jinja2 import Template
+
 from boolexp import Expression
 import abc
 
@@ -21,7 +23,6 @@ class AbstractWanoModel:
     def __init__(self, *args, **kwargs):
 
         self._parent_set = False
-        self._root_set = False
         self._path = ""
 
         self._view = None
@@ -53,6 +54,12 @@ class AbstractWanoModel:
     def path(self):
         return self._path
 
+    def set_path(self, path):
+        self._path = path
+        if self._visibility_condition is not None:
+            self._visibility_var_path = Template(self._visibility_var_path).render(path = self._path.split("."))
+            self._root.register_callback(self._visibility_var_path, self.evaluate_visibility_condition)
+
     def parse_from_xml(self, xml):
         self._name = xml.attrib["name"]
         if "visibility_condition" in xml.attrib:
@@ -63,9 +70,14 @@ class AbstractWanoModel:
         self._parent = parent
         self._parent_set = True
 
+    def get_root(self):
+        if self._root is None:
+            raise ValueError("Requested root, which was None.")
+        return self._root
+
     def set_root(self, root):
         self._root = root
-        self._root_set = True
+
 
     def visible(self):
         return self._isvisible
@@ -174,6 +186,11 @@ class AbstractWanoModel:
     def decommission(self):
         if self._view != None:
             self._view.decommission()
+
+        if self._root is not None:
+            if self._visibility_condition is not None:
+                print("unregistering")
+                self._root.unregister_callback(self._visibility_var_path, self.evaluate_visibility_condition)
 
     def construct_children(self):
         pass

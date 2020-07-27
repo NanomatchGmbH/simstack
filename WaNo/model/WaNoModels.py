@@ -44,12 +44,14 @@ class WaNoModelDictLike(AbstractWanoModel):
     def parse_from_xml(self, xml):
         self.xml = xml
         for child in self.xml:
+            name = child.attrib['name']
             ModelClass = WaNo.WaNoFactory.WaNoFactory.get_model_class(child.tag)
             ViewClass = WaNo.WaNoFactory.WaNoFactory.get_qt_view_class(child.tag)
             model = ModelClass()
             model.set_view_class(ViewClass)
+            model.set_name(name)
             model.parse_from_xml(child)
-            self.wano_dict[child.attrib['name']] = model
+            self.wano_dict[name] = model
         super().parse_from_xml(xml)
 
     @property
@@ -83,8 +85,8 @@ class WaNoModelDictLike(AbstractWanoModel):
     def get_type_str(self):
         return "Dict"
 
-    def __repr__(self):
-        return repr(self.wano_dict)
+    #def __repr__(self):
+    #    return repr(self.wano_dict)
 
     def update_xml(self):
         for wano in self.wano_dict.values():
@@ -93,10 +95,12 @@ class WaNoModelDictLike(AbstractWanoModel):
 class WaNoChoiceModel(AbstractWanoModel):
     def __init__(self, *args, **kwargs):
         super(WaNoChoiceModel,self).__init__(*args,**kwargs)
-
-        self.xml = kwargs["xml"]
         self.choices = []
         self.chosen=0
+
+
+    def parse_from_xml(self, xml):
+        self.xml = xml
         for child in self.xml.iter("Entry"):
             myid = int(child.attrib["id"])
             self.choices.append(child.text)
@@ -130,13 +134,28 @@ class WaNoChoiceModel(AbstractWanoModel):
 class WaNoDynamicChoiceModel(WaNoChoiceModel):
     def __init__(self, *args, **kwargs):
         super(WaNoDynamicChoiceModel,self).__init__(*args,**kwargs)
+        self._collection_path = ""
+        self._subpath = ""
+        self.choices = ["uninitialized"]
+        self.chosen = -1
+        self._connected = True
+        self._updating = False
+        self._registered_paths = []
+
+    def parse_from_xml(self, xml):
+        self.xml = xml
         self._collection_path = self.xml.attrib["collection_path"]
         self._subpath = self.xml.attrib["subpath"]
         self.choices = ["uninitialized"]
         self.chosen = int(self.xml.attrib["chosen"])
-        self._root.dataChanged.connect(self._update_choices)
         self._connected = True
         self._updating = False
+
+    def set_root(self, root):
+        super().set_root(root)
+        self._connected = True
+        print("COLPATH", self._collection_path)
+        root.register_callback(self._collection_path, self._update_choices)
 
     def _update_choices(self, changed_path):
         if not self._connected:
@@ -148,9 +167,22 @@ class WaNoDynamicChoiceModel(WaNoChoiceModel):
         wano_listlike = self._root.get_value(self._collection_path)
         self.choices = []
         numchoices = len(wano_listlike)
+        register_paths = []
         for myid in range(0,numchoices):
             query_string = "%s.%d.%s"% (self._collection_path,myid,self._subpath)
+            register_paths.append(query_string)
             self.choices.append(self._root.get_value(query_string).get_data())
+
+        for path in self._registered_paths:
+            if path not in register_paths:
+                self._root.unregister_callback(path, self._update_choices)
+                self._registered_paths.remove(path)
+        for path in register_paths:
+            if path in self._registered_paths:
+                continue
+            self._root.register_callback(path, self._update_choices)
+            self._registered_paths.append(path)
+
         if len(self.choices) == 0:
             self.choices = ["uninitialized"]
 
@@ -189,7 +221,17 @@ class WaNoDynamicChoiceModel(WaNoChoiceModel):
 class WaNoMatrixModel(AbstractWanoModel):
     def __init__(self, *args, **kwargs):
         super(WaNoMatrixModel, self).__init__(*args, **kwargs)
-        self.xml = kwargs["xml"]
+
+        self.rows = 0
+        self.cols = 0
+        self.col_header = None
+        self.row_header = None
+        self.storage = None
+
+    def parse_from_xml(self, xml):
+        super().parse_from_xml(xml)
+        self.xml = xml
+
         self.rows = int(self.xml.attrib["rows"])
         self.cols = int(self.xml.attrib["cols"])
         self.col_header = None
@@ -203,7 +245,7 @@ class WaNoMatrixModel(AbstractWanoModel):
             self.storage = self._fromstring(self.xml.text)
 
         except Exception as e:
-            self.storage = [ [] for i in range(self.rows) ]
+            self.storage = [[] for i in range(self.rows)]
             for i in range(self.rows):
                 self.storage[i] = []
                 for j in range(self.cols):
@@ -244,18 +286,27 @@ class WaNoMatrixModel(AbstractWanoModel):
 
 class WaNoModelListLike(AbstractWanoModel):
     def __init__(self, *args, **kwargs):
-        raise NotImplementedError("WMLL is currently out of order")
         super(WaNoModelListLike, self).__init__(*args, **kwargs)
         self.wano_list = []
-        self.xml = kwargs["xml"]
+        self.style = ""
+
+    def parse_from_xml(self, xml):
+        self.xml = xml
 
         if "style" in self.xml.attrib:
             self.style = self.xml.attrib["style"]
         else:
             self.style = ""
-        for child in self.xml:
-            model = WaNo.WaNoFactory.WaNoFactory.get_objects(child, self._root, self, self.full_path)
-            # view.set_model(model)
+        for current_id, child in enumerate(self.xml):
+            ModelClass = WaNo.WaNoFactory.WaNoFactory.get_model_class(child.tag)
+            ViewClass = WaNo.WaNoFactory.WaNoFactory.get_qt_view_class(child.tag)
+            model = ModelClass()
+            model.set_view_class(ViewClass)
+            model.parse_from_xml(child)
+            start_path = [*self.path.split(".")] + [str(current_id)]
+            #if build_view:
+            #    model.set_root(self.get_root())
+            #    WaNo.WaNoFactory.wano_constructor_helper(model, start_path=start_path)
             self.wano_list.append(model)
 
     @property
@@ -290,7 +341,9 @@ class WaNoModelListLike(AbstractWanoModel):
 class WaNoNoneModel(AbstractWanoModel):
     def __init__(self, *args, **kwargs):
         super(WaNoNoneModel, self).__init__(*args, **kwargs)
-        self.xml = kwargs['xml']
+
+    def parse_from_xml(self, xml):
+        self.xml = xml
 
     def get_data(self):
         return ""
@@ -317,42 +370,48 @@ class WaNoSwitchModel(WaNoModelListLike):
         super(WaNoSwitchModel, self).__init__(*args, **kwargs)
         self._switch_name_list = []
         self._names_list = []
+        self._switch_path = None
+        self._visible_thing = -1
+        #self._name = "unset"
+
+    def parse_from_xml(self, xml):
+        super().parse_from_xml(xml)
+        self.xml = xml
         for child in self.xml:
             switch_name = child.attrib["switch_name"]
             name = child.attrib["name"]
             self._names_list.append(name)
             self._switch_name_list.append(switch_name)
-        self._switch_path = None
-
-        self._visible_thing = 0
-        self._name = self._names_list[self._visible_thing]
-
         self._parse_switch_conditions(self.xml)
+        self._visible_thing = -1
+        self._name = self._names_list[self._visible_thing]
 
     @property
     def listlike(self):
-        #Overwriting from inherited class, because we don't want to be treated like a list
-        return self.wano_list[self._visible_thing].listlike
+        return True
 
     @property
     def dictlike(self):
-        return self.wano_list[self._visible_thing].dictlike
+        return False
 
-    def __getitem__(self, item):
-        return self.wano_list[self._visible_thing].__getitem__(item)
+    #def __getitem__(self, item):
+    #    return self.wano_list[self._visible_thing].__getitem__(item)
 
     def __iter__(self):
-        return self.wano_list[self._visible_thing].__iter__()
+        return self.wano_list.__iter__()
 
     def items(self):
-        return self.wano_list[self._visible_thing].items()
+        return enumerate(self.wano_list)
 
     def __reversed__(self):
-        return self.wano_list[self._visible_thing].__reversed__()
+        return self.wano_list.__reversed__()
 
     def get_selected_view(self):
         #return self.wano_dict[self._visible_thing].view
-        return self.wano_list[self._visible_thing].view
+        if self._visible_thing >= 0:
+            return self.wano_list[self._visible_thing].view
+        else:
+            return None
 
     def _evaluate_switch_condition(self,changed_path):
         if changed_path != self._switch_path and not changed_path == "force":
@@ -367,15 +426,26 @@ class WaNoSwitchModel(WaNoModelListLike):
             pass
 
     def get_type_str(self):
-        return self.wano_list[self._visible_thing].get_type_str()
+        if self._visible_thing >= 0:
+            print(self._visible_thing, self.wano_list, self._name, self.path)
+            return self.wano_list[self._visible_thing].get_type_str()
+        return "unset"
 
     def get_data(self):
-        return self.wano_list[self._visible_thing].get_data()
+        if self._visible_thing >= 0:
+            return self.wano_list[self._visible_thing].get_data()
+        return "unset"
 
-    def _parse_switch_conditions(self,xml):
+    def set_path(self, path):
+        super().set_path(path)
+        self._switch_path = Template(self._switch_path).render(path = self._path.split("."))
+        self._root.register_callback(self._switch_path, self._evaluate_switch_condition)
+
+    def set_root(self, root):
+        super().set_root(root)
+
+    def _parse_switch_conditions(self, xml):
         self._switch_path  = xml.attrib["switch_path"]
-        self._switch_path = Template(self._switch_path).render(path = self.full_path.split("."))
-        self._root.dataChanged.connect(self._evaluate_switch_condition)
 
     def decommission(self):
         self.disconnectSignals()
@@ -412,7 +482,7 @@ class MultipleOfModel(AbstractWanoModel):
     def last_item_check(self):
         return len(self.list_of_dicts) == 1
 
-    def parse_one_child(self,child):
+    def parse_one_child(self, child, build_view = False):
         #A bug still exists, which allows visibility conditions to be fired prior to the existence of the model
         #but this is transient.
         wano_temp_dict = OrderedDictIterHelper()
@@ -424,7 +494,16 @@ class MultipleOfModel(AbstractWanoModel):
             model = ModelClass()
             model.set_view_class(ViewClass)
             model.parse_from_xml(cchild)
-            wano_temp_dict[cchild.attrib['name']] = model
+            name = cchild.attrib['name']
+            start_path = [*self.path.split(".")] + [str(current_id),model.name ]
+
+            model.set_name(name)
+            if build_view:
+                self.get_root()
+                model.set_root(self.get_root())
+
+                WaNo.WaNoFactory.wano_constructor_helper(model, start_path = start_path)
+            wano_temp_dict[name] = model
         return wano_temp_dict
 
     def __getitem__(self, item):
@@ -454,7 +533,7 @@ class MultipleOfModel(AbstractWanoModel):
 
     def delete_item(self):
         if len(self.list_of_dicts) > 1:
-            before = self._root.blockSignals(True)
+            #before = self._root.blockSignals(True)
             for wano in self.list_of_dicts[-1].values():
                 wano.decommission()
             self.list_of_dicts.pop()
@@ -462,25 +541,22 @@ class MultipleOfModel(AbstractWanoModel):
                 self.xml.remove(child)
                 break
 
-            self._root.blockSignals(before)
+            #self._root.blockSignals(before)
             self._root.datachanged_force()
 
             return True
         return False
 
     def add_item(self):
-        before = self._root.blockSignals(True)
-        #print(etree.tostring(self.xml, pretty_print=True).decode("utf-8"))
+        #before = self._root.blockSignals(True)
         my_xml = copy.copy(self.first_xml_child)
         my_xml.attrib["id"] = str(len(self.list_of_dicts))
         self.xml.append(my_xml)
-        #print(etree.tostring(self.xml, pretty_print=True).decode("utf-8"))
-        model_dict = self.parse_one_child(my_xml)
-        raise NotImplementedError("HERE TIMO")
-        WaNo.WaNoFactory.WaNoFactory.build_views()
+        model_dict = self.parse_one_child(my_xml, build_view=True)
         self.list_of_dicts.append(model_dict)
-        self._root.blockSignals(before)
-        self._root.datachanged_force()
+        #self._root.blockSignals(before)
+        self.get_root().datachanged_force()
+        #self._root.datachanged_force()
 
 
     def update_xml(self):
@@ -502,9 +578,12 @@ class WaNoModelRoot(WaNoModelDictLike):
         self._parent_wf = parent_wf
 
     def __init__(self, *args, **kwargs):
-        self._root = self
+        super(WaNoModelRoot, self).__init__(*args, **kwargs)
         self._datachanged_callbacks = {}
         self._outputfile_callbacks = []
+        self._notifying = False
+        self._unregister_list = []
+        self._register_list = []
         self._wano_dir_root = kwargs["wano_dir_root"]
 
         self.resources = ResourceTableModel(parent=None,wano_parent=self)
@@ -523,8 +602,7 @@ class WaNoModelRoot(WaNoModelDictLike):
 
         resources_fn = os.path.join(self._wano_dir_root, "resources.yml")
         self._exists_read_load(self.resources, resources_fn)
-
-        super(WaNoModelRoot, self).__init__(*args, **kwargs)
+        self._root = self
 
         self.rendered_exec_command = ""
 
@@ -548,19 +626,48 @@ class WaNoModelRoot(WaNoModelDictLike):
             self.metas = xmltodict.parse(etree.tostring(el))
 
         self.exec_command = self.full_xml.find("WaNoExecCommand").text
-        st = super()
+
         super().parse_from_xml(xml=subxml)
 
     def notify_datachanged(self, path):
+        if self._notifying:
+            return
+        self._notifying = True
+        if path == "force":
+            for callbacks in self._datachanged_callbacks.values():
+                for callback in callbacks:
+                    callback(path)
+
         if path in self._datachanged_callbacks:
             for callback in self._datachanged_callbacks[path]:
                 callback(path)
+        self._notifying = False
+
+        while len(self._unregister_list) > 0:
+            key,func = self._unregister_list.pop()
+            self.unregister_callback(key,func)
+
+        while len(self._register_list) > 0:
+            key,func = self._register_list.pop()
+            self.register_callback(key,func)
 
     def register_callback(self, path, callback_function):
-        if path not in self._datachanged_callbacks:
-            self._datachanged_callbacks[path] = []
-            
-        self._datachanged_callbacks[path].append(callback_function)
+        print(path, "callback function", callback_function)
+        if self._notifying:
+            self._register_list.append((path, callback_function))
+        else:
+            if path not in self._datachanged_callbacks:
+                self._datachanged_callbacks[path] = []
+
+            self._datachanged_callbacks[path].append(callback_function)
+
+    def unregister_callback(self, path, callback_function):
+        assert path in self._datachanged_callbacks, "When unregistering a function, it has to exist in datachanged_callbacks."
+        assert callback_function in self._datachanged_callbacks[path], "Function not found in callbacks. Has to exist."
+        if self._notifying:
+            self._unregister_list.append((path, callback_function))
+        else:
+            self._datachanged_callbacks[path].remove(callback_function)
 
     def get_type_str(self):
         return "WaNoRoot"
@@ -644,7 +751,6 @@ class WaNoModelRoot(WaNoModelDictLike):
                     mypath = "%s.%s" % (mypath, key)
                 self.wano_walker_paths(parent=wano,path=mypath,output=output)
         else:
-
             output.append((path,parent.get_type_str()))
         return output
 

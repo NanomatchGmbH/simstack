@@ -137,12 +137,13 @@ class WaNoGroupView(AbstractWanoQTView):
 
     def init_from_model(self):
         for model in self.model.wanos():
+            print(model, self.model.path, self, self.model)
             self.vbox.addWidget(model.view.get_widget())
 
 class WaNoSwitchView(AbstractWanoQTView):
     def __init__(self, *args, **kwargs):
         super(WaNoSwitchView, self).__init__(*args, **kwargs)
-        self._current_widget = None
+        self._current_widget = QtWidgets.QWidget(None)
         self._current_view = None
 
     def get_widget(self):
@@ -158,15 +159,26 @@ class WaNoSwitchView(AbstractWanoQTView):
             self._current_widget = mv.get_widget()
         return self._current_widget
 
+    def set_parent(self, parent_view):
+        super().set_parent(parent_view)
+        for _,model in self.model.wanos():
+            print(parent_view)
+            print(model.name, "MP", model.path)
+            print(parent_view.model.path, "MPP")
+            model.view.set_parent(self._qt_parent)
+
     def init_from_model(self):
         for _,model in self.model.wanos():
-            model.view.get_widget().setParent(None)
             model.view.set_visible(False)
-        visible_widget = self.get_widget()
-        assert self._current_view is not None
-        visible_widget.setParent(self._qt_parent)
-        self._current_view.set_visible(True)
-        self.model._parent.view.init_from_model()
+        #visible_widget = self.get_widget()
+        sview = self.model.get_selected_view()
+        if sview is not None:
+            sview.set_visible(True)
+            self.actual_widget = sview.get_widget()
+            self.model.get_parent().view.init_from_model()
+        #assert self._current_view is not None
+        #self._current_view.set_visible(True)
+        #self.model._parent.view.init_from_model()
 
 class WaNoConditionalView(AbstractWanoQTView):
     def __init__(self, *args, **kwargs):
@@ -221,11 +233,15 @@ class WaNoBoxView(AbstractWanoQTView):
 class WaNoNone(AbstractWanoQTView):
     def __init__(self, *args, **kwargs):
         super(WaNoNone, self).__init__(*args, **kwargs)
-        self.actual_widget = QtWidgets.QFrame(parent=self._qt_parent)
+        self.actual_widget = QtWidgets.QFrame(parent=None)
         self.vbox = QtWidgets.QVBoxLayout()
         self.actual_widget.setLayout(self.vbox)
         self.actual_widget.layout().setContentsMargins(0, 0, 0, 0)
         #self.actual_widget.layout().setContentsMargins(0, 0, 0, 0)
+
+    def set_parent(self, parent_view):
+        super().set_parent(parent_view)
+        self.actual_widget.setParent(self._qt_parent)
 
     def get_widget(self):
         return self.actual_widget
@@ -236,11 +252,15 @@ class WaNoNone(AbstractWanoQTView):
 class WaNoInvisibleBoxView(AbstractWanoQTView):
     def __init__(self, *args, **kwargs):
         super(WaNoInvisibleBoxView, self).__init__(*args, **kwargs)
-        self.actual_widget = QtWidgets.QFrame(parent=self._qt_parent)
+        self.actual_widget = QtWidgets.QFrame(parent=None)
 
         self.vbox = QtWidgets.QVBoxLayout()
         self.actual_widget.setLayout(self.vbox)
         self.actual_widget.layout().setContentsMargins(0, 0, 0, 0)
+
+    def set_parent(self, parent_view):
+        super().set_parent(parent_view)
+        self.actual_widget.setParent(self._qt_parent)
 
     def get_widget(self):
         return self.actual_widget
@@ -411,7 +431,7 @@ class WaNoItemStringView(AbstractWanoQTView):
     def __init__(self, *args, **kwargs):
         super(WaNoItemStringView, self).__init__(*args, **kwargs)
         """ Widget code here """
-        self.actual_widget = QtWidgets.QWidget(self._qt_parent)
+        self.actual_widget = QtWidgets.QWidget(None)
         vbox = QtWidgets.QHBoxLayout()
         self.lineedit = QtWidgets.QLineEdit()
         self.label = QtWidgets.QLabel("ABC")
@@ -422,6 +442,10 @@ class WaNoItemStringView(AbstractWanoQTView):
         self.actual_widget.setLayout(vbox)
         self.lineedit.editingFinished.connect(self.line_edited)
         """ Widget code end """
+
+    def set_parent(self, parent_view):
+        super().set_parent(parent_view)
+        self.actual_widget.setParent(self._qt_parent)
 
     def get_widget(self):
         return self.actual_widget
@@ -604,7 +628,7 @@ class WaNoMatrixFloatView(AbstractWanoQTView):
         self.has_col_header = False
         self.has_row_header = False
         """ Widget code here """
-        self.actual_widget = QtWidgets.QWidget(self._qt_parent)
+        self.actual_widget = QtWidgets.QWidget(None)
 
         self.tablewidget = QtWidgets.QTableWidget(1,3,self.actual_widget)
         delegate=OnlyFloatDelegate()
@@ -634,6 +658,10 @@ class WaNoMatrixFloatView(AbstractWanoQTView):
         hbox.addWidget(self.tablewidget)
         self.tablewidget.cellChanged.connect(self.cellChanged)
         """" Widget code end """
+
+    def set_parent(self, parent_view):
+        super().set_parent(parent_view)
+        self.actual_widget.setParent(self._qt_parent)
 
     def cellChanged(self,i,j):
         self.model.storage[i][j] = float(self.tablewidget.item(i,j).text())
@@ -683,7 +711,7 @@ class WaNoDropDownView(AbstractWanoQTView):
     def __init__(self, *args, **kwargs):
         super(WaNoDropDownView,self).__init__(*args,**kwargs)
         """ Widget code here """
-        self.actual_widget = QtWidgets.QWidget(self._qt_parent)
+        self.actual_widget = QtWidgets.QWidget(None)
 
         self.combobox = QtWidgets.QComboBox(self.actual_widget)
         self.combobox.currentIndexChanged[int].connect(self.onButtonClicked)
@@ -697,6 +725,10 @@ class WaNoDropDownView(AbstractWanoQTView):
         self.init = False
         """" Widget code end """
 
+    def set_parent(self, parent_view):
+        super().set_parent(parent_view)
+        self.actual_widget.setParent(self._qt_parent)
+
     def init_from_model(self):
         chosen_before = self.model.chosen
         self.combobox.clear()
@@ -706,7 +738,6 @@ class WaNoDropDownView(AbstractWanoQTView):
         self.combobox.setCurrentIndex(self.model.chosen)
         self.init = True
         self.model.set_chosen(chosen_before)
-
 
     def onButtonClicked(self, id):
         if self.init:
