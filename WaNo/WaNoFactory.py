@@ -2,7 +2,6 @@
 # -*- coding: utf-8 -*-
 
 import os
-from Qt import QtGui, QtWidgets
 from lxml import etree
 
 from WaNo.model.WaNoTreeWalker import ViewCollector, WaNoTreeWalker
@@ -21,37 +20,21 @@ def wano_without_view_constructor_helper(wmr, start_path = None):
     newtw.walker(capture=False, path_visitor_function=None, subdict_visitor_function=vc.root_setter_subdict,
                  data_visitor_function=vc.root_setter_data)
 
-    # Stage 1: Construct all views
-    #newtw.walker(capture=False, path_visitor_function=None, subdict_visitor_function=vc.assemble_views,
-    #             data_visitor_function=vc.data_visitor_view_assembler)
-
-    #views_by_path = vc.get_views_by_path()
-
     # Stage 2: Set all model paths
     newtw.walker(capture=False, path_visitor_function=None, subdict_visitor_function=vc.path_setter_subdict,
                  data_visitor_function=vc.path_setter_data)
 
-    # Stage 2: Parent all views
-    newtw.walker(capture=False, path_visitor_function=None, subdict_visitor_function=vc.assemble_views_parenter,
-                 data_visitor_function=vc.data_visitor_view_parenter)
 
-    # Stage 3 (or Stage 0): Initialize the rootview parent
-    rootview = vc.get_views_by_path()[()]
-    anonymous_parent = QtWidgets.QWidget()
-    rootview.set_parent(anonymous_parent)
 
-    # Stage 4: Put actual data into the views from the ones deep in the hierarchy to the shallow ones
-    sorted_paths = [*reversed(sorted(views_by_path.keys(), key=len))]
-    for path in sorted_paths:
-        views_by_path[path].init_from_model()
+    # Stage 2: Parent all models
+    newtw.walker(capture=False, path_visitor_function=None, subdict_visitor_function=vc.assemble_model_parenter,
+                 data_visitor_function=vc.data_visitor_model_parenter)
 
-    rootview.init_from_model()
-
-    # Stage 5: Update the layout
-    anonymous_parent.update()
-    return wmr,rootview
+    return wmr
 
 def wano_constructor_helper(wmr, start_path = None):
+    from Qt import QtGui, QtWidgets
+
     if start_path is None:
         start_path = []
 
@@ -73,6 +56,10 @@ def wano_constructor_helper(wmr, start_path = None):
     # Stage 2: Set all model paths
     newtw.walker(capture=False, path_visitor_function=None, subdict_visitor_function=vc.path_setter_subdict,
                  data_visitor_function=vc.path_setter_data)
+
+    # Stage 2: Parent all models
+    newtw.walker(capture=False, path_visitor_function=None, subdict_visitor_function=vc.assemble_model_parenter,
+                 data_visitor_function=vc.data_visitor_model_parenter)
 
     # Stage 2: Parent all views
     newtw.walker(capture=False, path_visitor_function=None, subdict_visitor_function=vc.assemble_views_parenter,
