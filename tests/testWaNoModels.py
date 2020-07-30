@@ -9,7 +9,7 @@ from os import path
 from PyQt5.QtWidgets import QApplication
 from lxml import etree
 from TreeWalker.TreeWalker import TreeWalker
-from WaNo.WaNoFactory import wano_constructor_helper
+from WaNo.WaNoFactory import wano_constructor_helper, wano_without_view_constructor_helper
 from WaNo.model.WaNoModels import WaNoItemFloatModel, WaNoModelRoot
 from WaNo.model.WaNoTreeWalker import WaNoTreeWalker, ViewCollector
 from WaNo.view.WaNoViews import WanoQtViewRoot
@@ -113,6 +113,36 @@ class TestWaNoModels(unittest.TestCase):
         outdict = {}
         myfloatmodel.model_to_dict(outdict)
 
+    def _construct_wano_nogui(self,wanofile):
+        with open(wanofile, 'rt') as infile:
+            xml = etree.parse(infile)
+        wano_dir_root = os.path.dirname(os.path.realpath(wanofile))
+
+        wmr = WaNoModelRoot(wano_dir_root = wano_dir_root)
+        wmr.parse_from_xml(xml)
+        wmr = wano_without_view_constructor_helper(wmr)
+        outdict = {}
+        wmr.model_to_dict(outdict)
+
+        tw = TreeWalker(outdict)
+        secondoutdict = tw.walker(capture = True, path_visitor_function=None, subdict_visitor_function=None, data_visitor_function=None)
+
+        self.assertDictEqual(outdict, secondoutdict)
+        thirdoutdict = tw.walker(capture=True, path_visitor_function=None, subdict_visitor_function=subdict_skiplevel,
+                                  data_visitor_function=None)
+
+        pc = PathCollector()
+        tw = TreeWalker(thirdoutdict)
+        tw.walker(path_visitor_function=pc.assemble_paths,
+                  subdict_visitor_function=None,
+                  data_visitor_function=None)
+        print("here")
+
+    def test_dep_nogui(self):
+        self._construct_wano_nogui(self.depxml)
+
+
+
     def test_deposit_wano(self):
         self._construct_wano_only(self.lfxml)
 
@@ -141,9 +171,6 @@ class TestWaNoModels(unittest.TestCase):
                   subdict_visitor_function=None,
                   data_visitor_function=None)
 
-        vc = ViewCollector()
-        start_path = ["ABC","DEF"]
-        vc.set_start_path(start_path)
         container, container_layout = self.initUI()
         wmr.set_parent(container)
         wmr.get_root()
