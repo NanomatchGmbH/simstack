@@ -400,7 +400,7 @@ class WaNoScriptView(AbstractWanoQTView):
     def __init__(self, *args, **kwargs):
         super(WaNoScriptView,self).__init__(*args,**kwargs)
         """ Widget code here """
-        self.actual_widget = QtWidgets.QWidget(self._qt_parent)
+        self.actual_widget = QtWidgets.QWidget(None)
         vbox = QtWidgets.QVBoxLayout()
         self.actual_widget.setLayout(vbox)
         self.menubar = QtWidgets.QWidget()
@@ -414,6 +414,10 @@ class WaNoScriptView(AbstractWanoQTView):
         self.textedit = QtWidgets.QTextEdit()
         vbox.addWidget(self.textedit)
         """ Widget code end """
+
+    def set_parent(self, parent_view):
+        super().set_parent(parent_view)
+        self.actual_widget.setParent(self._qt_parent)
 
     def get_widget(self):
         return self.actual_widget
@@ -751,8 +755,8 @@ class WaNoChoiceView(AbstractWanoQTView):
     def __init__(self, *args, **kwargs):
         super(WaNoChoiceView,self).__init__(*args,**kwargs)
         """ Widget code here """
-        self.actual_widget = QtWidgets.QGroupBox(self._qt_parent)
-        self.bg = QtWidgets.QButtonGroup(self._qt_parent)
+        self.actual_widget = QtWidgets.QGroupBox(None)
+        self.bg = QtWidgets.QButtonGroup(None)
         self.vbox = QtWidgets.QVBoxLayout(self.actual_widget)
         self.actual_widget.setLayout(self.vbox)
 
@@ -772,6 +776,11 @@ class WaNoChoiceView(AbstractWanoQTView):
         self.bg.buttonClicked[int].connect(self.onButtonClicked)
         ##self.actual_widget.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
         """" Widget code end """
+
+    def set_parent(self, parent_view):
+        super().set_parent(parent_view)
+        self.actual_widget.setParent(self._qt_parent)
+        self.bg.setParent(self._qt_parent)
 
     def init_from_model(self):
         self.actual_widget.setTitle(self.model.name)

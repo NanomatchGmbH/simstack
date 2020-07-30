@@ -154,7 +154,6 @@ class WaNoDynamicChoiceModel(WaNoChoiceModel):
     def set_root(self, root):
         super().set_root(root)
         self._connected = True
-        print("COLPATH", self._collection_path)
         root.register_callback(self._collection_path, self._update_choices)
 
     def _update_choices(self, changed_path):
@@ -1016,6 +1015,7 @@ class WaNoModelRoot(WaNoModelDictLike):
 
     def render_and_write_input_files_newmodel(self,basefolder,stageout_basedir = ""):
         rendered_wano, jsdl, wem, local_stagein_files = self.render_wano(basefolder, stageout_basedir)
+        pprint(local_stagein_files)
         self.prepare_files_submission(rendered_wano, basefolder)
         return jsdl, wem
 
@@ -1025,6 +1025,9 @@ class WaNoModelRoot(WaNoModelDictLike):
         for item in split_uri[1:]:
             current = current[item]
         return current
+
+    def get_dir_root(self):
+        return self._wano_dir_root
 
 class WaNoVectorModel(AbstractWanoModel):
     def __init__(self, *args, **kwargs):
@@ -1237,11 +1240,11 @@ class WaNoItemScriptFileModel(WaNoItemFileModel):
         super().parse_from_xml(xml)
 
     def get_path(self):
-        root_dir = os.path.join(self._root.wano_dir_root,"inputs")
+        root_dir = os.path.join(self._root.get_dir_root(),"inputs")
         return os.path.join(root_dir, self.mystring)
 
     def save_text(self,text):
-        root_dir = os.path.join(self._root.wano_dir_root, "inputs")
+        root_dir = os.path.join(self._root.get_dir_root(), "inputs")
         mkdir_p(root_dir)
         with open(self.get_path(),'w',newline='\n') as outfile:
             outfile.write(text)
@@ -1328,6 +1331,10 @@ class WaNoThreeRandomLetters(WaNoItemStringModel):
         self.mystring = self.xml.text
         super().parse_from_xml(xml)
 
+        if self.mystring == "" or self.mystring is None:
+            self.mystring = self._generate_default_string()
+            self.set_data(self.mystring)
+
     def _generate_default_string(self):
         from random import choice
         import string
@@ -1341,6 +1348,7 @@ class WaNoThreeRandomLetters(WaNoItemStringModel):
             self.mystring = self.mystring[0:3]
             if self.view != None:
                 self.view.init_from_model()
+
         super(WaNoThreeRandomLetters,self).set_data(self.mystring)
 
     def __repr__(self):
