@@ -703,7 +703,7 @@ class WFModel(object):
                 except OSError:
                     pass
                 #stageout_basedir = "wanos/%s" % (elename)
-                jsdl, wem = ele.render(path_list, wano_dir, stageout_basedir=elename)
+                jsdl, wem, other = ele.render(path_list, wano_dir, stageout_basedir=elename)
                 wem.set_given_name(elename)
                 wem : WorkflowExecModule
                 toids = [wem.uid]
