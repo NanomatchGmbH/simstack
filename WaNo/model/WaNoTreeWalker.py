@@ -112,7 +112,6 @@ class ViewCollector:
                 parent = tw.resolve(mypath[:-cutnum])
             #print(mypath)
             vc.set_parent(parent.view)
-            subdict.set_parent(parent)
         return None
 
     def data_visitor_view_assembler(self, data, call_info):
@@ -144,7 +143,6 @@ class ViewCollector:
                 checktuple = checktuple[:-1]
                 parent = tw.resolve(checktuple)
             vc.set_parent(parent.view)
-            data.set_parent(parent)
         return data
 
 
