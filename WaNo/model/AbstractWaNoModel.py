@@ -189,7 +189,7 @@ class AbstractWanoModel:
 
         if self._root is not None:
             if self._visibility_condition is not None:
-                print("unregistering")
+                #print("unregistering")
                 self._root.unregister_callback(self._visibility_var_path, self.evaluate_visibility_condition)
 
     def construct_children(self):
