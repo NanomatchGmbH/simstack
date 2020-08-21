@@ -200,6 +200,7 @@ class WFWaNoWidget(QtWidgets.QToolButton,DragDropTargetTracker):
     def construct_wano(self):
         if not self.constructed:
             self.wano_model,self.wano_view = WaNoFactory.wano_constructor(self.wano[2])
+            self.wano_model.set_parent_wf(self.wf_model)
             self.constructed = True
 
     def mouseDoubleClickEvent(self,e):

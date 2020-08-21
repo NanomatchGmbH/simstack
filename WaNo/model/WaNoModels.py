@@ -8,6 +8,7 @@ from SimStackServer.WorkflowModel import WorkflowExecModule, StringList, Workflo
 
 import collections
 
+from TreeWalker.TreeWalker import TreeWalker
 from WaNo.model.AbstractWaNoModel import AbstractWanoModel, OrderedDictIterHelper
 import WaNo.WaNoFactory
 from lxml import etree
@@ -22,6 +23,7 @@ import ast
 
 from jinja2 import Template, FileSystemLoader, Environment, UndefinedError
 
+from WaNo.model.WaNoTreeWalker import PathCollector, subdict_skiplevel
 from WaNo.view.PropertyListView import ResourceTableModel,ImportTableModel,ExportTableModel
 
 def mkdir_p(path):
@@ -576,6 +578,9 @@ class WaNoModelRoot(WaNoModelDictLike):
     def set_parent_wf(self, parent_wf):
         self._parent_wf = parent_wf
 
+    def get_parent_wf(self):
+        return self._parent_wf
+
     def __init__(self, *args, **kwargs):
         super(WaNoModelRoot, self).__init__(*args, **kwargs)
         self._datachanged_callbacks = {}
@@ -691,15 +696,6 @@ class WaNoModelRoot(WaNoModelDictLike):
 
     def datachanged_force(self):
         self.notify_datachanged("force")
-
-    @staticmethod
-    def construct_from_wano(filename, rootview, parent_wf):
-        parser = etree.XMLParser(remove_blank_text=True,remove_comments=True)
-        tree = etree.ElementTree(file=filename,parser=parser)
-        root = tree.getroot()
-        wano_dir_root = os.path.dirname(os.path.realpath(filename))
-        modelroot = WaNoModelRoot(xml=root, view=rootview, parent_model=None, wano_dir_root=wano_dir_root,parent_wf = parent_wf)
-        return modelroot
 
     def save_xml(self,filename):
         print("Writing to ",filename)
@@ -880,9 +876,12 @@ class WaNoModelRoot(WaNoModelDictLike):
     def prepare_files_submission(self,rendered_wano, basefolder):
         basefolder = os.path.join(basefolder,"inputs")
         mkdir_p(basefolder)
-        render_wano_filename = os.path.join(basefolder,"rendered_wano.yml")
-        with open(render_wano_filename,'w',newline='\n') as outfile:
-            outfile.write(yaml.safe_dump(rendered_wano,default_flow_style=False))
+        raw_xml = os.path.join(basefolder, self._name + ".xml")
+        with open(raw_xml, 'wt') as outfile:
+            outfile.write(etree.tounicode(self.xml, pretty_print=True))
+        #render_wano_filename = os.path.join(basefolder,"rendered_wano.yml")
+        #with open(render_wano_filename,'w',newline='\n') as outfile:
+        #    outfile.write(yaml.safe_dump(rendered_wano,default_flow_style=False))
 
         #submit_script_filename = os.path.join(basefolder,"submit_command.sh")
         #with open(submit_script_filename, 'w',newline='\n') as outfile:
@@ -895,27 +894,28 @@ class WaNoModelRoot(WaNoModelDictLike):
             comp_filename = os.path.abspath(comp_filename)
             comp_dir = os.path.dirname(comp_filename)
             comp_basename = os.path.basename(comp_filename)
-            template_loader = FileSystemLoader(searchpath=comp_dir)
-            template_env = Environment(loader = template_loader,newline_sequence='\n')
+            #template_loader = FileSystemLoader(searchpath=comp_dir)
+            #template_env = Environment(loader = template_loader,newline_sequence='\n')
             joined_filename = os.path.join(comp_dir,comp_basename)
             #print(joined_filename)
             if not os.path.exists(os.path.join(joined_filename)):
                 print("File <%s> not found on disk, please check for spaces before or after the filename."%comp_filename)
                 raise OSError("File <%s> not found on disk, please check for spaces before or after the filename."%comp_filename)
             #print(remote_file)
-            template = template_env.get_template(local_file)
+            #template = template_env.get_template(local_file)
             outfile = os.path.join(basefolder,remote_file)
             #print(outfile, "AFTER")
             dirn=os.path.dirname(outfile)
             #print(dirn,"DIRNAME")
             mkdir_p(dirn)
-            with open(outfile,'w',newline='\n') as outfile:
-                try:
-                    outfile.write(template.render(wano = rendered_wano))
-                except UndefinedError as e:
-                    with open(joined_filename,'rt') as infile:
-                        mytext = infile.read()
-                    outfile.write(mytext)
+            shutil.copy(comp_filename, dirn)
+            #with open(outfile,'w',newline='\n') as outfile:
+            #    try:
+            #        outfile.write(template.render(wano = rendered_wano))
+            #    except UndefinedError as e:
+            #        with open(joined_filename,'rt') as infile:
+            #            mytext = infile.read()
+            #        outfile.write(mytext)
 
     def flat_variable_list_to_jsdl(self,fvl,basedir,stageout_basedir):
         files = []
@@ -942,7 +942,8 @@ class WaNoModelRoot(WaNoModelDictLike):
             else:
                 #These should be NON posix arguments in the end
                 varname.replace(".","_")
-        runtime_stagein_files.append(["rendered_wano.yml","${STORAGE}/workflow_data/%s/inputs/%s" % (stageout_basedir, "rendered_wano.yml")])
+        #xmlfile = self._name + ".xml"
+        #runtime_stagein_files.append([self._name + ".xml","${STORAGE}/workflow_data/%s/inputs/%s" % (stageout_basedir, "rendered_wano.yml)])
 
         for otherfiles in self.get_import_model().get_contents():
             name,importloc,tostage = otherfiles[0],otherfiles[1],otherfiles[2]
@@ -1002,8 +1003,9 @@ class WaNoModelRoot(WaNoModelDictLike):
         # We do two render passes, in case the rendering reset some values:
         fvl = []
         rendered_wano = self.wano_walker_render_pass(rendered_wano,submitdir=submitdir,flat_variable_list=fvl)
-        self.rendered_exec_command = Template(self.exec_command,newline_sequence='\n').render(wano = rendered_wano)
-        self.rendered_exec_command = self.rendered_exec_command.strip(' \t\n\r')
+        #self.rendered_exec_command = Template(self.exec_command,newline_sequence='\n').render(wano = rendered_wano)
+        #self.rendered_exec_command = self.rendered_exec_command.strip(' \t\n\r')
+        self.rendered_exec_command = self.exec_command
         jsdl, wem, local_stagein_files = self.flat_variable_list_to_jsdl(fvl, submitdir,stageout_basedir)
         return rendered_wano,jsdl, wem, local_stagein_files
 
@@ -1015,7 +1017,7 @@ class WaNoModelRoot(WaNoModelDictLike):
 
     def render_and_write_input_files_newmodel(self,basefolder,stageout_basedir = ""):
         rendered_wano, jsdl, wem, local_stagein_files = self.render_wano(basefolder, stageout_basedir)
-        pprint(local_stagein_files)
+        #pprint(local_stagein_files)
         self.prepare_files_submission(rendered_wano, basefolder)
         return jsdl, wem
 
@@ -1025,6 +1027,22 @@ class WaNoModelRoot(WaNoModelDictLike):
         for item in split_uri[1:]:
             current = current[item]
         return current
+
+    def get_all_variable_paths(self):
+        outdict = {}
+        self.model_to_dict(outdict)
+        tw = TreeWalker(outdict)
+        skipdict = tw.walker(capture=True, path_visitor_function=None, subdict_visitor_function=subdict_skiplevel,
+                             data_visitor_function=None)
+        tw = TreeWalker(skipdict)
+        pc = PathCollector()
+        tw.walker(capture=False, path_visitor_function=pc.assemble_paths,
+                  subdict_visitor_function=None,
+                  data_visitor_function=None)
+
+
+        return pc.paths
+
 
     def get_dir_root(self):
         return self._wano_dir_root
