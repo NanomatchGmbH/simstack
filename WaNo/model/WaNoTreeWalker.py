@@ -1,5 +1,19 @@
 from TreeWalker.TreeWalker import TreeWalker
 
+class PathCollector:
+    def __init__(self):
+        self._paths = []
+
+    @property
+    def paths(self):
+        return self._paths
+
+    def assemble_paths(self,twpath):
+        if twpath is None:
+            return twpath
+        mypath = ".".join([str(p) for p in twpath])
+        self._paths.append(mypath)
+        return twpath
 
 class WaNoTreeWalker(TreeWalker):
     @staticmethod
@@ -179,3 +193,27 @@ class ViewCollector:
             #print(mypath)
             subdict.set_parent(parent)
         return None
+
+
+def subdict_skiplevel(subdict,
+                      call_info):
+    newsubdict = None
+    try:
+        newsubdict = subdict["content"]
+    except (TypeError,KeyError) as e:
+        pass
+    try:
+        newsubdict = subdict["TABS"]
+    except (TypeError, KeyError) as e:
+        pass
+
+    if newsubdict is not None:
+        pvf = call_info["path_visitor_function"]
+        svf = call_info["subdict_visitor_function"]
+        dvf = call_info["data_visitor_function"]
+        tw = TreeWalker(newsubdict)
+        return tw.walker(capture = True, path_visitor_function=pvf,
+                  subdict_visitor_function=svf,
+                  data_visitor_function=dvf
+        )
+    return None

@@ -3,6 +3,7 @@ import sys
 import unittest
 
 from Qt import QtWidgets
+from Qt import QtCore
 
 from os import path
 
@@ -11,33 +12,9 @@ from lxml import etree
 from TreeWalker.TreeWalker import TreeWalker
 from WaNo.WaNoFactory import wano_constructor_helper, wano_without_view_constructor_helper
 from WaNo.model.WaNoModels import WaNoItemFloatModel, WaNoModelRoot
-from WaNo.model.WaNoTreeWalker import WaNoTreeWalker, ViewCollector
+from WaNo.model.WaNoTreeWalker import ViewCollector, PathCollector, subdict_skiplevel
 from WaNo.view.WaNoViews import WanoQtViewRoot
 
-
-
-def subdict_skiplevel(subdict,
-                      call_info):
-    newsubdict = None
-    try:
-        newsubdict = subdict["content"]
-    except (TypeError,KeyError) as e:
-        pass
-    try:
-        newsubdict = subdict["TABS"]
-    except (TypeError, KeyError) as e:
-        pass
-
-    if newsubdict is not None:
-        pvf = call_info["path_visitor_function"]
-        svf = call_info["subdict_visitor_function"]
-        dvf = call_info["data_visitor_function"]
-        tw = TreeWalker(newsubdict)
-        return tw.walker(capture = True, path_visitor_function=pvf,
-                  subdict_visitor_function=svf,
-                  data_visitor_function=dvf
-        )
-    return None
 
 def subdict_view(subdict,
                       call_info):
@@ -62,18 +39,7 @@ def subdict_view(subdict,
         )
     return None
 
-class PathCollector:
-    def __init__(self):
-        self._paths = []
 
-    @property
-    def paths(self):
-        return self._paths
-
-    def assemble_paths(self,twpath):
-        mypath = ".".join([str(p) for p in twpath])
-        self._paths.append(mypath)
-        return twpath
 
 
 class TestWaNoModels(unittest.TestCase):
@@ -85,6 +51,9 @@ class TestWaNoModels(unittest.TestCase):
 
         self.lf_dir = "%s/inputs/wanos/lightforge2" % path.dirname(path.realpath(__file__))
         self.lfxml = path.join(self.lf_dir, "lightforge2.xml")
+
+    def tearDown(self) -> None:
+        self._app.exit()
 
 
     def initUI(self):
@@ -129,20 +98,22 @@ class TestWaNoModels(unittest.TestCase):
 
         self.assertDictEqual(outdict, secondoutdict)
         thirdoutdict = tw.walker(capture=True, path_visitor_function=None, subdict_visitor_function=subdict_skiplevel,
-                                  data_visitor_function=None)
+                                 data_visitor_function=None)
 
         pc = PathCollector()
         tw = TreeWalker(thirdoutdict)
         tw.walker(path_visitor_function=pc.assemble_paths,
                   subdict_visitor_function=None,
                   data_visitor_function=None)
+        wanopaths = wmr.get_all_variable_paths()
+        self.assertListEqual(pc.paths, wanopaths)
         print("here")
 
     def test_dep_nogui(self):
         self._construct_wano_nogui(self.depxml)
 
 
-
+    #@unittest.skip
     def test_deposit_wano(self):
         self._construct_wano_only(self.lfxml)
 
@@ -163,7 +134,7 @@ class TestWaNoModels(unittest.TestCase):
 
         self.assertDictEqual(outdict, secondoutdict)
         thirdoutdict = tw.walker(capture=True, path_visitor_function=None, subdict_visitor_function=subdict_skiplevel,
-                                  data_visitor_function=None)
+                                 data_visitor_function=None)
 
         pc = PathCollector()
         tw = TreeWalker(thirdoutdict)
@@ -182,8 +153,20 @@ class TestWaNoModels(unittest.TestCase):
         self._app.exec_()
 
 
+    def test_qt_completer(self):
 
-
+        label = QtWidgets.QLabel("TESTSTSTE")
+        mylineedit = QtWidgets.QLineEdit()
+        suggestions =["Affe","Birne","Bimms"]
+        completer = QtWidgets.QCompleter(suggestions)
+        completer.setCompletionMode(QtWidgets.QCompleter.UnfilteredPopupCompletion)
+        completer.setCaseSensitivity(QtCore.Qt.CaseInsensitive)
+        mylineedit.setCompleter(completer)
+        container, container_layout = self.initUI()
+        container_layout.addWidget(label)
+        container_layout.addWidget(mylineedit)
+        container.update()
+        self._app.exec_()
 
     def _construct_wano(self, wanofile):
         with open(wanofile, 'rt') as infile:
@@ -203,7 +186,7 @@ class TestWaNoModels(unittest.TestCase):
 
         self.assertDictEqual(outdict, secondoutdict)
         thirdoutdict = tw.walker(capture=True, path_visitor_function=None, subdict_visitor_function=subdict_skiplevel,
-                                  data_visitor_function=None)
+                                 data_visitor_function=None)
 
         pc = PathCollector()
         tw = TreeWalker(thirdoutdict)
