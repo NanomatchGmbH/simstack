@@ -8,10 +8,7 @@ import time
 import os
 
 import logging
-import shutil
 import uuid
-
-from io import StringIO
 
 import abc
 
@@ -25,7 +22,7 @@ import Qt.QtGui  as QtGui
 import Qt.QtWidgets  as QtWidgets
 from Qt.QtCore import Signal
 
-import WaNo.WaNoFactory as WaNoFactory
+import SimStackServer.WaNo.WaNoFactory as WaNoFactory
 from SimStackServer.WorkflowModel import WorkflowExecModule, Workflow, DirectedGraph, WorkflowElementList, SubGraph, \
     ForEachGraph, StringList, WFPass
 from WaNo.SimStackPaths import SimStackPaths
@@ -33,8 +30,6 @@ from WaNo.WaNoSettingsProvider import WaNoSettingsProvider
 from WaNo.Constants import SETTING_KEYS
 
 from WaNo.view.MultiselectDropDownList import MultiselectDropDownList
-
-from collections import OrderedDict
 
 from WaNo.view.WFEditorWidgets import WFEWaNoListWidget, WFEListWidget
 from WaNo.lib.FileSystemTree import copytree

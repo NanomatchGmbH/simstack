@@ -10,9 +10,9 @@ from os import path
 from PyQt5.QtWidgets import QApplication
 from lxml import etree
 from TreeWalker.TreeWalker import TreeWalker
-from WaNo.WaNoFactory import wano_constructor_helper, wano_without_view_constructor_helper
-from WaNo.model.WaNoModels import WaNoItemFloatModel, WaNoModelRoot
-from WaNo.model.WaNoTreeWalker import ViewCollector, PathCollector, subdict_skiplevel
+from SimStackServer.WaNo.WaNoFactory import wano_constructor_helper, wano_without_view_constructor_helper
+from SimStackServer.WaNo.WaNoModels import WaNoItemFloatModel, WaNoModelRoot
+from SimStackServer.WaNo.WaNoTreeWalker import ViewCollector, PathCollector, subdict_skiplevel
 from WaNo.view.WaNoViews import WanoQtViewRoot
 
 
