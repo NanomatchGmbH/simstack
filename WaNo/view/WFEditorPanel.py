@@ -110,6 +110,7 @@ class WFWaNoWidget(QtWidgets.QToolButton,DragDropTargetTracker):
         self.setToolButtonStyle(QtCore.Qt.ToolButtonTextUnderIcon)
         self.setText(text)
         self.setIcon(QtGui.QIcon(wano[3]))
+        self._wano_type = wano[0]
         #self.setAutoFillBackground(True)
         #self.setColor(QtCore.Qt.lightGray)
         self.wano = copy.copy(wano)
@@ -187,6 +188,7 @@ class WFWaNoWidget(QtWidgets.QToolButton,DragDropTargetTracker):
         print("rendering wano with stageout_basedir %s" %stageout_basedir)
         jsdl, wem = self.wano_model.render_and_write_input_files_newmodel(basefolder,stageout_basedir=stageout_basedir)
         wem: WorkflowExecModule
+        wem.set_wano_xml(self._wano_type + ".xml")
         return jsdl, wem, path_list + [wem.name]
 
     def clear(self):
