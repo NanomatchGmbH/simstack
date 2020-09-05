@@ -152,12 +152,48 @@ class TestWaNoModels(unittest.TestCase):
         wmr.datachanged_force()
         self._app.exec_()
 
+    def test_qt_completer_wano(self):
+        with open(self.depxml, 'rt') as infile:
+            xml = etree.parse(infile)
+        wano_dir_root = os.path.dirname(os.path.realpath(self.depxml))
+
+        wmr = WaNoModelRoot(wano_dir_root = wano_dir_root)
+        wmr.set_view_class(WanoQtViewRoot)
+
+        wmr.parse_from_xml(xml)
+        outdict = {}
+        wmr.model_to_dict(outdict)
+
+        tw = TreeWalker(outdict)
+        secondoutdict = tw.walker(capture = True, path_visitor_function=None, subdict_visitor_function=None, data_visitor_function=None)
+
+        self.assertDictEqual(outdict, secondoutdict)
+        thirdoutdict = tw.walker(capture=True, path_visitor_function=None, subdict_visitor_function=subdict_skiplevel,
+                                 data_visitor_function=None)
+
+        pc = PathCollector()
+        tw = TreeWalker(thirdoutdict)
+        tw.walker(path_visitor_function=pc.assemble_paths,
+                  subdict_visitor_function=None,
+                  data_visitor_function=None)
+        suggestions = pc.paths
+        label = QtWidgets.QLabel("Depositpaths")
+        mylineedit = QtWidgets.QLineEdit()
+        completer = QtWidgets.QCompleter(suggestions)
+        completer.setCompletionMode(QtWidgets.QCompleter.UnfilteredPopupCompletion)
+        completer.setCaseSensitivity(QtCore.Qt.CaseInsensitive)
+        mylineedit.setCompleter(completer)
+        container, container_layout = self.initUI()
+        container_layout.addWidget(label)
+        container_layout.addWidget(mylineedit)
+        container.update()
+        self._app.exec_()
 
     def test_qt_completer(self):
 
-        label = QtWidgets.QLabel("TESTSTSTE")
+        label = QtWidgets.QLabel("Obstauswahl")
         mylineedit = QtWidgets.QLineEdit()
-        suggestions =["Affe","Birne","Bimms"]
+        suggestions =["Affe","Birne","Kirsche", "Kisch", "Kirche"]
         completer = QtWidgets.QCompleter(suggestions)
         completer.setCompletionMode(QtWidgets.QCompleter.UnfilteredPopupCompletion)
         completer.setCaseSensitivity(QtCore.Qt.CaseInsensitive)
