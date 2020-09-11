@@ -10,6 +10,9 @@ from WaNo.view.AbstractWaNoView import AbstractWanoQTView, AbstractWanoView
 from Qt import QtGui, QtCore, QtWidgets
 import os
 
+
+
+
 class GroupBoxWithButton(QtWidgets.QGroupBox):
     def __init__(self,*args,**kwargs):
         super(GroupBoxWithButton,self).__init__(*args,**kwargs)
@@ -329,7 +332,11 @@ class WaNoItemFloatView(AbstractWanoQTView):
         hbox.addWidget(self.label)
         hbox.addStretch()
         hbox.addWidget(self.spinner)
+        self._global_import_button = QtWidgets.QPushButton(QtGui.QIcon.fromTheme("insert-object"),"")
+        self._global_import_button.clicked.connect(self.open_remote_importer)
         # hbox.addWidget(self.line_edit)
+        #hbox.addStretch()
+        hbox.addWidget(self._global_import_button)
 
         self.spinner.valueChanged.connect(self.value_changed)
 
@@ -341,6 +348,9 @@ class WaNoItemFloatView(AbstractWanoQTView):
         #self.spinner.setSizePolicy(QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Minimum)
         """ Widget code end """
 
+    def set_disable(self, true_or_false):
+        self.spinner.setDisabled(true_or_false)
+
     def set_parent(self, parent_view):
         super().set_parent(parent_view)
         self.actual_widget.setParent(self._qt_parent)
@@ -351,9 +361,8 @@ class WaNoItemFloatView(AbstractWanoQTView):
     def init_from_model(self):
         self.spinner.setValue(self.model.get_data())
         self.label.setText(self.model.name)
-        #self.model.root_model.view.actual_widget.viewport().update_geometry()
-        #self.model.root_model.view.actual_widget.viewport().update()
-        #self.model.root_model.view.actual_widget.update()
+        if self.model.do_import:
+            self.set_disable(True)
 
     def value_changed(self,value):
         self.model.set_data(value)

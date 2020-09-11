@@ -6,7 +6,9 @@ from __future__ import unicode_literals
 from __future__ import absolute_import
 
 import abc
-import copy
+
+
+from WaNo.view.RemoteImporterDialog import RemoteImporterDialog
 
 class AbstractWanoView(object):
     def __init__(self, *args, **kwargs):
@@ -50,6 +52,23 @@ class AbstractWanoQTView(AbstractWanoView):
         else:
             self._qt_parent = parent_view
 
+    @abc.abstractmethod
+    def set_disable(self, true_or_false):
+        raise NotImplementedError("Please implement in child class")
+
+    def open_remote_importer(self):
+        varpaths = self.model.get_root().get_all_variable_paths()
+        mydialog = RemoteImporterDialog(varname ="Import variable \"%s\" from:" % self.model.name, importlist = varpaths)
+        mydialog.setModal(True)
+        mydialog.exec()
+        result = mydialog.result()
+        if mydialog.result() == True:
+            choice = mydialog.getchoice()
+            self.model.set_import(choice)
+            self.set_disable(True)
+        else:
+            self.set_disable(False)
+            self.model.set_import(None)
 
     @abc.abstractmethod
     def get_widget(self):
