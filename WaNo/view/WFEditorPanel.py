@@ -205,13 +205,20 @@ class WFWaNoWidget(QtWidgets.QToolButton,DragDropTargetTracker):
         if self.wano_model is None:
             self.construct_wano()
         self.parent().openWaNoEditor(self)  # pass the widget to remember it
-    
+
+    """
     def gatherExports(self,wano,varExp,filExp,waNoNames):
         if wano == self.wano:
             return True
         if self.wano is not None:
             self.wano_instance.gatherExports(varExp,filExp,waNoNames)
         return False
+    """
+
+    def get_variables(self):
+        if self.wano_model is not None:
+            return self.wano_model.get_all_variable_paths()
+        return []
 
 class SubmitType(Enum):
     SINGLE_WANO = 0
@@ -291,6 +298,9 @@ class WFItemModel(object):
     def assemble_files(self,path):
         myfiles = []
         return myfiles
+
+    def assemble_variables(self, path):
+        return []
 
     def close(self):
         pass
@@ -379,6 +389,18 @@ class SubWFModel(WFItemModel,WFItemListInterface):
                 for otherfile in ele.model.assemble_files(path):
                     myfiles.append(os.path.join(path,"",otherfile))
         return myfiles
+
+    def assemble_variables(self, path):
+        myvars = []
+        for myid, (ele, name) in enumerate(zip(self.elements, self.elementnames)):
+            if ele.is_wano:
+                for var in ele.get_variables():
+                    newpath = merge_path(path,ele.name,var)
+                    myvars.append(newpath)
+            else:
+                for myvar in ele.model.assemble_variables(path):
+                    myvars.append(myvar)
+        return myvars
 
     def read_from_disk(self, full_foldername, xml_subelement):
         #self.foldername = foldername
@@ -485,6 +507,14 @@ class ParallelModel(WFItemModel):
         #-> self.subwfmodel.render_to_simple_wf(submitdir,jobdir,path = path)
         #-> return WFtoXML.xml_subwfforeach(IteratorName=self.name,IterSet=filesets,SubWorkflow=swf,Id=muuid)
 
+    def assemble_variables(self, path):
+        myvars = []
+        for swfid, swfm in enumerate(self.subwf_models):
+            for var in swfm.assemble_variables(path):
+                newpath = merge_path(path, "%s.%d"%(self.name,swfid),var)
+                myvars.append(newpath)
+        return myvars
+
     def add(self):
         subwfmodel, subwfview = ControlFactory.construct("SubWorkflow",editor=self.editor,qt_parent=self.view, logical_parent=self.view.logical_parent,wf_root = self.wf_root)
         self.subwf_models.append(subwfmodel)
@@ -552,6 +582,13 @@ class ForEachModel(WFItemModel):
 
     def set_filelist(self,filelist):
         self.filelist = filelist
+
+    def assemble_variables(self, path):
+        if path == "":
+            mypath = "${%s}"%self.itername
+        else:
+            mypath = "%s.${%s}" % (path, self.itername)
+        return self.subwfmodel.assemble_variables(mypath)
 
     def render_to_simple_wf(self, path_list, output_path_list, submitdir ,jobdir ,path , parent_ids):
         filesets = []
@@ -643,6 +680,11 @@ class ForEachModel(WFItemModel):
             self.subwfmodel.read_from_disk(full_foldername=full_foldername,xml_subelement=child)
 
 
+def merge_path(path, name, var):
+    newpath = "%s.%s.%s" % (path, name, var)
+    if newpath.startswith("."):
+        newpath = newpath[1:]
+    return newpath
 
 
 class WFModel(object):
@@ -696,6 +738,18 @@ class WFModel(object):
     def element_to_name(self,element):
         idx = self.elements.index(element)
         return self.elementnames[idx]
+
+    def assemble_variables(self, path):
+        myvars = []
+        for myid, (ele, name) in enumerate(zip(self.elements, self.elementnames)):
+            if ele.is_wano:
+                for var in ele.get_variables():
+                    newpath = merge_path(path,ele.name,var)
+                    myvars.append(newpath)
+            else:
+                for myvar in ele.assemble_variables(path):
+                    myvars.append(myvar)
+        return myvars
 
     def render_to_simple_wf(self, submitdir,jobdir):
         activities = []

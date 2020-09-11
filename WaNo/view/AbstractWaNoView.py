@@ -57,7 +57,7 @@ class AbstractWanoQTView(AbstractWanoView):
         raise NotImplementedError("Please implement in child class")
 
     def open_remote_importer(self):
-        varpaths = self.model.get_root().get_all_variable_paths()
+        varpaths = self.model.get_root().get_parent_wf().assemble_variables("")
         mydialog = RemoteImporterDialog(varname ="Import variable \"%s\" from:" % self.model.name, importlist = varpaths)
         mydialog.setModal(True)
         mydialog.exec()
