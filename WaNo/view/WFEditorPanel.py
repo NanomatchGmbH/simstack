@@ -90,7 +90,7 @@ class WFWaNoWidget(QtWidgets.QToolButton,DragDropTargetTracker):
         self.logger.setLevel(logging.ERROR)
         self.is_wano = True
         self.logger.setLevel(lvl)
-        self.wf_model = parent.model
+        self.wf_model = parent.model.get_root()
         stylesheet ="""
         QToolButton
         {
@@ -205,15 +205,6 @@ class WFWaNoWidget(QtWidgets.QToolButton,DragDropTargetTracker):
         if self.wano_model is None:
             self.construct_wano()
         self.parent().openWaNoEditor(self)  # pass the widget to remember it
-
-    """
-    def gatherExports(self,wano,varExp,filExp,waNoNames):
-        if wano == self.wano:
-            return True
-        if self.wano is not None:
-            self.wano_instance.gatherExports(varExp,filExp,waNoNames)
-        return False
-    """
 
     def get_variables(self):
         if self.wano_model is not None:
@@ -588,7 +579,9 @@ class ForEachModel(WFItemModel):
             mypath = "${%s}"%self.itername
         else:
             mypath = "%s.${%s}" % (path, self.itername)
-        return self.subwfmodel.assemble_variables(mypath)
+        myvars = self.subwfmodel.assemble_variables(mypath)
+        myvars.append(mypath)
+        return myvars
 
     def render_to_simple_wf(self, path_list, output_path_list, submitdir ,jobdir ,path , parent_ids):
         filesets = []
