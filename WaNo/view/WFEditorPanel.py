@@ -592,11 +592,15 @@ class ForEachModel(WFItemModel):
         filesets = []
         transitions = []
 
-        for myfile in self.filelist:
-            gpath = "${STORAGE}/workflow_data/%s"%myfile
-            #localfn = os.path.basename(myfile)
-            #gpath = join(gpath,localfn)
-            filesets.append(gpath)
+        if self._is_file_iterator:
+            for myfile in self.filelist:
+                gpath = "${STORAGE}/workflow_data/%s"%myfile
+                #localfn = os.path.basename(myfile)
+                #gpath = join(gpath,localfn)
+                filesets.append(gpath)
+        else:
+            for myfile in self.filelist:
+                filesets.append(myfile)
 
         if jobdir == "":
             my_jobdir = self.name
@@ -652,7 +656,8 @@ class ForEachModel(WFItemModel):
         return myfiles
 
     def save_to_disk(self, foldername):
-        attributes = {"name": self.view.text(), "type": "ForEach"}
+        true_false = { True: "True", False: "False"}
+        attributes = {"name": self.view.text(), "type": "ForEach", "is_file_iterator": true_false[self._is_file_iterator]}
         root = etree.Element("WFControl", attrib=attributes)
         my_foldername = foldername
         # TODO revert changes in filesystem in case instantiate_in_folder fails
@@ -669,6 +674,15 @@ class ForEachModel(WFItemModel):
     def read_from_disk(self, full_foldername, xml_subelement):
         #TODO: missing save filelist
         #TODO: missing render
+        try:
+            is_file_iter = xml_subelement.attrib["is_file_iterator"]
+            if is_file_iter == "True":
+                self._is_file_iterator = True
+            else:
+                self._is_file_iterator = False
+        except KeyError as e:
+            self._is_file_iterator = True
+
         for child in xml_subelement:
             if child.tag == "FileList":
                 for xml_ss in child:
@@ -684,6 +698,7 @@ class ForEachModel(WFItemModel):
             #self.subwfmodel,self.subwfview = ControlFactory.construct("SubWorkflow", qt_parent=self.view, logical_parent=self.view,editor=self.editor,wf_root = self.wf_root)
             name = child.attrib["name"]
             type = child.attrib["type"]
+
             self.subwfview.setText(name)
             self.subwfmodel.read_from_disk(full_foldername=full_foldername,xml_subelement=child)
 
