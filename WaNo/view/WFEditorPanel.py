@@ -30,6 +30,7 @@ from WaNo.WaNoSettingsProvider import WaNoSettingsProvider
 from WaNo.Constants import SETTING_KEYS
 
 from WaNo.view.MultiselectDropDownList import MultiselectDropDownList
+from WaNo.view.RemoteImporterDialog import RemoteImporterDialog
 
 from WaNo.view.WFEditorWidgets import WFEWaNoListWidget, WFEListWidget
 from WaNo.lib.FileSystemTree import copytree
@@ -374,11 +375,11 @@ class SubWFModel(WFItemModel,WFItemListInterface):
         for myid, (ele, name) in enumerate(zip(self.elements, self.elementnames)):
             if ele.is_wano:
                 for file in ele.wano_model.get_output_files():
-                    fn = os.path.join(path,"",name, file)
+                    fn = os.path.join(path, name, "outputs", file)
                     myfiles.append(fn)
             else:
                 for otherfile in ele.model.assemble_files(path):
-                    myfiles.append(os.path.join(path,"",otherfile))
+                    myfiles.append(os.path.join(path,otherfile))
         return myfiles
 
     def assemble_variables(self, path):
@@ -570,6 +571,10 @@ class ForEachModel(WFItemModel):
         self.subwfmodel, self.subwfview = ControlFactory.construct("SubWorkflow",editor=self.editor,qt_parent=self.view, logical_parent=self.view.logical_parent,wf_root = self.wf_root)
         self.filelist = []
         self.name = "ForEach"
+        self._is_file_iterator = True
+
+    def set_is_file_iterator(self, true_or_false):
+        self._is_file_iterator = true_or_false
 
     def set_filelist(self,filelist):
         self.filelist = filelist
@@ -588,9 +593,9 @@ class ForEachModel(WFItemModel):
         transitions = []
 
         for myfile in self.filelist:
-            gpath = "${STORAGE}/workflow_data/%s/outputs" % os.path.dirname(myfile)
-            localfn = os.path.basename(myfile)
-            gpath = join(gpath,localfn)
+            gpath = "${STORAGE}/workflow_data/%s"%myfile
+            #localfn = os.path.basename(myfile)
+            #gpath = join(gpath,localfn)
             filesets.append(gpath)
 
         if jobdir == "":
@@ -604,7 +609,7 @@ class ForEachModel(WFItemModel):
             path = "%s/%s" %(path,self.name)
 
         path_list += [self.name]
-        output_path_list += [self.name, "$" + self.itername]
+        output_path_list += [self.name, "${" + self.itername + "}"]
 
         sub_activities, sub_transitions, sub_toids = self.subwfmodel.render_to_simple_wf(path_list, output_path_list, submitdir,my_jobdir,path = path, parent_ids = ["temporary_connector"])
         sg = SubGraph(elements = WorkflowElementList(sub_activities),
@@ -613,13 +618,23 @@ class ForEachModel(WFItemModel):
         mypass = WFPass()
         finish_uid = mypass.uid
 
-        fe = ForEachGraph(subgraph = sg,
-                          #parent_ids=StringList(parent_ids),
-                          finish_uid = finish_uid,
-                          iterator_name = self.itername,
-                          iterator_files = StringList(filesets),
-                          subgraph_final_ids = StringList(sub_toids)
-        )
+        if self._is_file_iterator:
+            fe = ForEachGraph(subgraph = sg,
+                              #parent_ids=StringList(parent_ids),
+                              finish_uid = finish_uid,
+                              iterator_name = self.itername,
+                              iterator_files = StringList(filesets),
+                              subgraph_final_ids = StringList(sub_toids)
+            )
+        else:
+            fe = ForEachGraph(subgraph = sg,
+                              #parent_ids=StringList(parent_ids),
+                              finish_uid = finish_uid,
+                              iterator_name = self.itername,
+                              iterator_variables = StringList(filesets),
+                              subgraph_final_ids = StringList(sub_toids)
+            )
+
         toids = [fe.uid]
         for parent_id in parent_ids:
             transitions.append((parent_id, toids[0]))
@@ -1724,10 +1739,28 @@ class ForEachView(WFControlWithTopMiddleAndBottom):
         self.open_variables = MultiselectDropDownList(self, text="Import")
         self.open_variables.connect_workaround(self.load_wf_files)
         self.open_variables.itemSelectionChanged.connect(self.on_wf_file_change)
+        self._global_import_button = QtWidgets.QPushButton(QtGui.QIcon.fromTheme("insert-object"),"")
+        self._global_import_button.clicked.connect(self.open_remote_importer)
+        self.topLineLayout.addWidget(self._global_import_button)
         #self.open_variables.itemSelectionChanged.connect(self.onItemSelectionChange)
         #self.open_variables.connect_workaround(self._load_variables)
         self.topLineLayout.addWidget(self.open_variables)
         return self.topwidget
+
+    def open_remote_importer(self):
+        varpaths = self.model.wf_root.assemble_variables("")
+        mydialog = RemoteImporterDialog(varname="Import variable \"%s\" from:" % self.model.name,
+                                        importlist=varpaths)
+        mydialog.setModal(True)
+        mydialog.exec()
+        result = mydialog.result()
+        if mydialog.result() == True:
+            choice = mydialog.getchoice()
+            self.model.set_filelist([choice])
+            self.list_of_variables.setText(choice)
+            self.model.set_is_file_iterator(False)
+        else:
+            pass
 
     def init_from_model(self):
         super(ForEachView,self).init_from_model()
@@ -1741,6 +1774,7 @@ class ForEachView(WFControlWithTopMiddleAndBottom):
         wf = self.model.wf_root
         importable_files = wf.assemble_files("")
         self.open_variables.set_items(importable_files)
+        self.model.set_is_file_iterator(True)
 
     def on_wf_file_change(self):
         self.list_of_variables.setText(" ".join(self.open_variables.get_selection()))
