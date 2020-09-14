@@ -288,12 +288,19 @@ class WaNoItemIntView(AbstractWanoQTView):
         hbox.addWidget(self.label)
         hbox.addStretch()
         hbox.addWidget(self.spinner)
+
+        self._global_import_button = QtWidgets.QPushButton(QtGui.QIcon.fromTheme("insert-object"),"")
+        self._global_import_button.clicked.connect(self.open_remote_importer)
+        hbox.addWidget(self._global_import_button)
         #self.actual_widget.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
         #self.actual_widget.setSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed)
         # hbox.addWidget(self.line_edit)
 
         self.spinner.valueChanged.connect(self.value_changed)
         """ Widget code end """
+
+    def set_disable(self, true_or_false):
+        self.spinner.setDisabled(true_or_false)
 
     def set_parent(self, parent_view):
         super().set_parent(parent_view)
@@ -451,10 +458,20 @@ class WaNoItemStringView(AbstractWanoQTView):
         vbox.addWidget(self.label)
         vbox.addStretch()
         vbox.addWidget(self.lineedit)
+
+        self._global_import_button = QtWidgets.QPushButton(QtGui.QIcon.fromTheme("insert-object"),"")
+        self._global_import_button.clicked.connect(self.open_remote_importer)
+        # hbox.addWidget(self.line_edit)
+        #hbox.addStretch()
+        vbox.addWidget(self._global_import_button)
+
         # vbox.addWidget(self.line_edit)
         self.actual_widget.setLayout(vbox)
         self.lineedit.editingFinished.connect(self.line_edited)
         """ Widget code end """
+
+    def set_disable(self, true_or_false):
+        self.lineedit.setDisabled(true_or_false)
 
     def set_parent(self, parent_view):
         super().set_parent(parent_view)
