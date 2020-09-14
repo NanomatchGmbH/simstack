@@ -37,10 +37,13 @@ class WaNoSettingsProvider(AbstractSettings):
         self.set_value(SETTING_KEYS['workflows'], pathsettings["workflows"])
 
     def _set_defaults(self):
+        mypath = os.path.join(os.path.dirname(os.path.realpath(__file__)))
+        pp = os.pardir
+        pardirpardir = os.path.join(mypath,pp,pp)
         defaults = [
                 (SETTING_KEYS['registries'], [], "List of registries."),
-                (SETTING_KEYS['wanoRepo'], _path("WaNoRepository"), "Directory containing the WaNos."),
-                (SETTING_KEYS['workflows'], os.path.join(QtCore.QDir.homePath(),"wano-workspace"), "Working directory for Workflows.")
+                (SETTING_KEYS['wanoRepo'], os.path.join(pardirpardir,"wanos"), "Directory containing the WaNos."),
+                (SETTING_KEYS['workflows'], os.path.join(pardirpardir,"workflows"), "Working directory for Workflows.")
             ]
 
         for valuename,default,explanation in defaults:
