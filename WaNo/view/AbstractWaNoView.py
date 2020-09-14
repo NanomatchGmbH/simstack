@@ -60,7 +60,7 @@ class AbstractWanoQTView(AbstractWanoView):
         varpaths = self.model.get_root().get_parent_wf().assemble_variables("")
         mydialog = RemoteImporterDialog(varname ="Import variable \"%s\" from:" % self.model.name, importlist = varpaths)
         mydialog.setModal(True)
-        mydialog.exec()
+        mydialog.exec_()
         result = mydialog.result()
         if mydialog.result() == True:
             choice = mydialog.getchoice()
