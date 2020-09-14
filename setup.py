@@ -2,6 +2,7 @@
 from __future__ import print_function
 from distutils.core import setup
 from distutils.extension import Extension
+from Cython.Build import cythonize
 from Cython.Distutils import build_ext
 
 
@@ -46,6 +47,11 @@ try:
 except OSError as e:
     print ("Directory %s already exists, Exception was: %s." %(COMPILE_DIR,e) )
 
+compiler_directives = {
+    "language_level": 3,
+    "annotation_typing": False
+}
+extensions = []
 for md,rd,files in os.walk(packagename):
     for mf in files:
         if not mf.endswith(".py"):
@@ -58,26 +64,23 @@ for md,rd,files in os.walk(packagename):
         basename = os.path.basename(fullpath[:-3])
         modulename = fullpath[:-3].replace(os.sep,".")
         #modulename = fullpath[:-3].replace("/",".")
-        print("MN",modulename)
         pyxname = basename + ".pyx"
         outdir = os.path.join(COMPILE_DIR,md)
         mkdir_p(outdir)
-        print("making",outdir)
         outfile = os.path.join(outdir,pyxname)
         shutil.copy(fullpath,outfile)
-        print(".".join([packagename,basename]),outfile)
-        setup(
-          name = packagename,
-          ext_modules=[ 
-            Extension(modulename, [outfile],
-                      extra_compile_args=["-O2"])
-            ],
-          cmdclass = {'build_ext': mod_build_ext}
-        )
+        ex = Extension(modulename, [outfile], extra_compile_args=["-O2"])
+        extensions.append(ex)
 
 onlycopy = []
 for mf in ignore_files:
     onlycopy.append(mf[:-3].replace("/","."))
+
+setup(
+  name = "SimStack",
+  ext_modules=cythonize(extensions, compiler_directives=compiler_directives),
+  cmdclass = {'build_ext': mod_build_ext},
+)
 
 setup(
   name = packagename,
