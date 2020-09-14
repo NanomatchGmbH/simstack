@@ -19,7 +19,7 @@ mkdir compiled_client
 cd simstack_src
 
 rm -rf build compile
-$MYPWD/anaconda3/bin/python ./setup.py install --prefix=../compiled_client/
+$MYPWD/anaconda3/bin/python ./setup.py build_ext -j 6 install --prefix=../compiled_client/
 rm -rf build compile
 
 cd $MYPWD
@@ -29,6 +29,8 @@ cd $MYPWD/compiled_client/lib/python3.7/site-packages/
 unzip SimStackServer.zip
 rm SimStackServer.zip
 
+cd $MYPWD/simstack_src/external/treewalker
+git archive --prefix=treewalker/ -o $MYPWD/treewalker_tmp.zip HEAD
 
 cd $MYPWD
 
@@ -41,6 +43,9 @@ cp -r simstack_src/WaNo/workflow_img installer_package/WaNo/
 cp -r simstack_src/WaNo/Media installer_package/WaNo/
 cp simstack_src/simstack installer_package
 mkdir installer_package/external
+cd installer_package/external
+unzip $MYPWD/treewalker_tmp.zip
+cd $MYPWD
 cp -r simstack_src/external/boolexp installer_package/external
 cp simstack_src/Logo.png installer_package/
 
