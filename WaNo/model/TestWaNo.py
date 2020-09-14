@@ -5,12 +5,12 @@ from __future__ import print_function
 from __future__ import unicode_literals
 from __future__ import absolute_import
 
-import sys,os
+import os
 
-from Qt import QtGui, QtCore, QtWidgets
-from WaNo.model.WaNoModels import WaNoModelRoot
+from Qt import QtWidgets
+from SimStackServer.WaNo.WaNoModels import WaNoModelRoot
 from WaNo.view.WaNoViews import WanoQtViewRoot
-from WaNo.WaNoFactory import WaNoFactory
+from SimStackServer.WaNo.WaNoFactory import WaNoFactory
 from WaNo.WFEditorApplication import WFEditorApplication as wea
 
 class TestWaNo(QtWidgets.QWidget):

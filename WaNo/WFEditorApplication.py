@@ -8,8 +8,7 @@ import logging
 import os
 from os.path import join
 
-from Qt.QtCore import QObject, Signal
-from lxml import etree
+from Qt.QtCore import Signal
 
 from Qt import QtCore,QtGui,QtWidgets
 import sys
@@ -18,7 +17,6 @@ import datetime
 
 from SimStackServer.MessageTypes import ErrorCodes
 from SimStackServer.Util.FileUtilities import trace_to_logger
-from WaNo import WaNoFactory
 from WaNo.SimStackPaths import SimStackPaths
 
 from WaNo.view.WFViewManager import WFViewManager
@@ -29,9 +27,8 @@ from WaNo.SSHConnector import SSHConnector
 from WaNo.SSHConnector import OPERATIONS as uops
 from WaNo.SSHConnector import ERROR as uerror
 from WaNo.view.WFEditorPanel import SubmitType
-from WaNo.view.WaNoViews import WanoQtViewRoot
 
-from WaNo.lib.CallableQThread import QThreadCallback, CallableQThread
+from WaNo.lib.CallableQThread import CallableQThread
 
 try:
     FileNotFoundError
@@ -176,7 +173,7 @@ class WFEditorApplication(CallableQThread):
     def _on_registry_disconnect(self):
         self._disconnect_unicore()
 
-    @QThreadCallback.callback
+    #@QThreadCallback.callback
     def _on_fs_job_list_updated(self, base_uri, jobs):
         self._view_manager.update_job_list(jobs)
 
@@ -189,7 +186,7 @@ class WFEditorApplication(CallableQThread):
             )
 
 
-    @QThreadCallback.callback
+    #@QThreadCallback.callback
     def _on_resources_updated(self, base_uri, resources):
         print(resources.get_queues())
 
@@ -201,7 +198,7 @@ class WFEditorApplication(CallableQThread):
                 (self._on_resources_updated, (), {})
         )
 
-    @QThreadCallback.callback
+    #@QThreadCallback.callback
     def _on_workflow_list_updated(self, base_uri, workflows):
         self._view_manager.update_workflow_list(workflows)
 
@@ -209,7 +206,7 @@ class WFEditorApplication(CallableQThread):
         registry = self._get_current_registry()
         self._unicore_connector.update_workflow_list(registry,  (self._on_workflow_list_updated, (), {}) )
 
-    @QThreadCallback.callback
+    #@QThreadCallback.callback
     def _on_fs_list_updated(self, base_uri, path, files):
         self._view_manager.update_filesystem_model(path, files)
 
@@ -272,7 +269,7 @@ class WFEditorApplication(CallableQThread):
                 registry, local_files, dest_dir), {})
         )
 
-    @QThreadCallback.callback
+    #@QThreadCallback.callback
     def _on_file_deleted(self, base_uri, status, err, to_del=""):
         to_update = os.path.dirname(to_del)
         if err != ErrorCodes.NO_ERROR:
@@ -295,7 +292,7 @@ class WFEditorApplication(CallableQThread):
         self._unicore_connector.delete_file(registry, filename, (self._on_file_deleted, (), { 'to_del': filename } ))
 
 
-    @QThreadCallback.callback
+    #@QThreadCallback.callback
     def _on_job_deleted(self, base_uri, status, err, job=""):
         if err == ErrorCodes.NO_ERROR:
             self._on_fs_job_list_update_request()
@@ -307,7 +304,7 @@ class WFEditorApplication(CallableQThread):
                 )
 
 
-    @QThreadCallback.callback
+    #@QThreadCallback.callback
     def _on_job_aborted(self, base_uri, status, err, job=""):
         if err == ErrorCodes.NO_ERROR:
             self._on_fs_job_list_update_request()
@@ -318,7 +315,7 @@ class WFEditorApplication(CallableQThread):
                     (job, str(status.name))
                 )
 
-    @QThreadCallback.callback
+    #@QThreadCallback.callback
     def _on_workflow_deleted(self, base_uri, status, err, workflow=""):
         if err == ErrorCodes.NO_ERROR:
             self._on_fs_worflow_list_update_request()
@@ -329,7 +326,7 @@ class WFEditorApplication(CallableQThread):
                 (workflow, str(status.name))
             )
 
-    @QThreadCallback.callback
+    #@QThreadCallback.callback
     def _on_workflow_aborted(self, base_uri, status, err, workflow=""):
         print("here")
 
@@ -453,7 +450,7 @@ class WFEditorApplication(CallableQThread):
     ############################################################################
     #                       unicore  callbacks                                 #
     ############################################################################
-    @QThreadCallback.callback
+    #@QThreadCallback.callback
     def _cb_connect(self, base_uri, error, status, registry=None):
         #print("cb_connect@WFEditorApplication: err=%s, status=%s" % (str(error), str(status)))
 
@@ -481,7 +478,7 @@ class WFEditorApplication(CallableQThread):
     ############################################################################
     #                       unicore  callbacks                                 #
     ############################################################################
-    @QThreadCallback.callback
+    #@QThreadCallback.callback
     def _cb_disconnect(self, error, status, registry=None):
         self._set_unicore_disconnected()
 

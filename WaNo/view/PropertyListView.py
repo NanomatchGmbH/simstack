@@ -356,7 +356,7 @@ class GlobalFileChooserDelegate(QtWidgets.QStyledItemDelegate):
         #I know this would be better the other way, i.e. make a signal, forward the signal, etc.
         #but it's the only place we would need this signal.
         s = self.sender()
-        wf = self.parent().model().wano_parent.root_model.parent_wf
+        wf = self.parent().model().wano_parent.get_root().get_parent_wf()
         importable_files = wf.get_root().assemble_files("")
         s.set_items(importable_files)
 

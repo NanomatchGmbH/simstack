@@ -8,10 +8,7 @@ import time
 import os
 
 import logging
-import shutil
 import uuid
-
-from io import StringIO
 
 import abc
 
@@ -25,7 +22,7 @@ import Qt.QtGui  as QtGui
 import Qt.QtWidgets  as QtWidgets
 from Qt.QtCore import Signal
 
-import WaNo.WaNoFactory as WaNoFactory
+import SimStackServer.WaNo.WaNoFactory as WaNoFactory
 from SimStackServer.WorkflowModel import WorkflowExecModule, Workflow, DirectedGraph, WorkflowElementList, SubGraph, \
     ForEachGraph, StringList, WFPass
 from WaNo.SimStackPaths import SimStackPaths
@@ -33,8 +30,7 @@ from WaNo.WaNoSettingsProvider import WaNoSettingsProvider
 from WaNo.Constants import SETTING_KEYS
 
 from WaNo.view.MultiselectDropDownList import MultiselectDropDownList
-
-from collections import OrderedDict
+from WaNo.view.RemoteImporterDialog import RemoteImporterDialog
 
 from WaNo.view.WFEditorWidgets import WFEWaNoListWidget, WFEListWidget
 from WaNo.lib.FileSystemTree import copytree
@@ -95,7 +91,7 @@ class WFWaNoWidget(QtWidgets.QToolButton,DragDropTargetTracker):
         self.logger.setLevel(logging.ERROR)
         self.is_wano = True
         self.logger.setLevel(lvl)
-        self.wf_model = parent.model
+        self.wf_model = parent.model.get_root()
         stylesheet ="""
         QToolButton
         {
@@ -115,6 +111,7 @@ class WFWaNoWidget(QtWidgets.QToolButton,DragDropTargetTracker):
         self.setToolButtonStyle(QtCore.Qt.ToolButtonTextUnderIcon)
         self.setText(text)
         self.setIcon(QtGui.QIcon(wano[3]))
+        self._wano_type = wano[0]
         #self.setAutoFillBackground(True)
         #self.setColor(QtCore.Qt.lightGray)
         self.wano = copy.copy(wano)
@@ -187,33 +184,33 @@ class WFWaNoWidget(QtWidgets.QToolButton,DragDropTargetTracker):
         self.wano_model.update_xml()
         return self.wano_model.save_xml(self.wano[2])
 
-    def render(self,basefolder,stageout_basedir=""):
+    def render(self, path_list, output_path_list, basefolder,stageout_basedir=""):
         #myfolder = os.path.join(basefolder,self.uuid)
         print("rendering wano with stageout_basedir %s" %stageout_basedir)
         jsdl, wem = self.wano_model.render_and_write_input_files_newmodel(basefolder,stageout_basedir=stageout_basedir)
-        return jsdl, wem
-
-
+        wem: WorkflowExecModule
+        wem.set_wano_xml(self._wano_type + ".xml")
+        return jsdl, wem, path_list + [wem.name]
 
     def clear(self):
         pass 
 
     def construct_wano(self):
         if not self.constructed:
-            self.wano_model,self.wano_view = WaNoFactory.wano_constructor_helper(self.wano[2],None,self.wf_model)
+            self.wano_model,self.wano_view = WaNoFactory.wano_constructor(self.wano[2])
+            self.wano_model.set_parent_wf(self.wf_model)
+            self.wano_model.datachanged_force()
             self.constructed = True
 
     def mouseDoubleClickEvent(self,e):
         if self.wano_model is None:
             self.construct_wano()
         self.parent().openWaNoEditor(self)  # pass the widget to remember it
-    
-    def gatherExports(self,wano,varExp,filExp,waNoNames):
-        if wano == self.wano:
-            return True
-        if self.wano is not None:
-            self.wano_instance.gatherExports(varExp,filExp,waNoNames)
-        return False
+
+    def get_variables(self):
+        if self.wano_model is not None:
+            return self.wano_model.get_all_variable_paths()
+        return []
 
 class SubmitType(Enum):
     SINGLE_WANO = 0
@@ -283,7 +280,7 @@ class WFItemListInterface(object):
         element.view.deleteLater()
 
 class WFItemModel(object):
-    def render_to_simple_wf(self,submitdir,jobdir):
+    def render_to_simple_wf(self,path_list, output_path_list, submitdir,jobdir):
         activities = []
         transitions = []
         #wf = WFtoXML.xml_subworkflow(Transition=transitions,Activity=activities)
@@ -293,6 +290,9 @@ class WFItemModel(object):
     def assemble_files(self,path):
         myfiles = []
         return myfiles
+
+    def assemble_variables(self, path):
+        return []
 
     def close(self):
         pass
@@ -317,7 +317,7 @@ class SubWFModel(WFItemModel,WFItemListInterface):
     def get_root(self):
         return self.wf_root
 
-    def render_to_simple_wf(self, submitdir,jobdir,path, parent_ids):
+    def render_to_simple_wf(self, path_list, output_path_list, submitdir,jobdir,path, parent_ids):
         """
 
         :param submitdir:
@@ -342,16 +342,22 @@ class SubWFModel(WFItemModel,WFItemListInterface):
 
                 stageout_basedir = "%s/%s" %(basepath,elename)
 
-                jsdl, wem = ele.render(wano_dir, stageout_basedir=stageout_basedir)
+                jsdl, wem, wem_path_list= ele.render(path_list, output_path_list, wano_dir, stageout_basedir=stageout_basedir)
                 wem.set_given_name(elename)
                 wem : WorkflowExecModule
+
+                wem.set_given_name(elename)
+                mypath = "/".join(path_list + [elename])
+                myoutputpath = "/".join(output_path_list + [elename])
+                wem.set_path(mypath)
+                wem.set_outputpath(myoutputpath)
                 toids = [wem.uid]
                 activities.append(["WorkflowExecModule",wem])
                 for pid in parent_ids:
                     for toid in toids:
                         transitions.append((pid, toid))
             else:
-                my_activities, my_transitions, toids = ele.render_to_simple_wf(submitdir,jobdir,path="", parent_ids = parent_ids)
+                my_activities, my_transitions, toids = ele.render_to_simple_wf(path_list, output_path_list, submitdir,jobdir,path="", parent_ids = parent_ids)
                 activities += my_activities
                 transitions += my_transitions
 
@@ -369,12 +375,24 @@ class SubWFModel(WFItemModel,WFItemListInterface):
         for myid, (ele, name) in enumerate(zip(self.elements, self.elementnames)):
             if ele.is_wano:
                 for file in ele.wano_model.get_output_files():
-                    fn = os.path.join(path,"",name, file)
+                    fn = os.path.join(path, name, "outputs", file)
                     myfiles.append(fn)
             else:
                 for otherfile in ele.model.assemble_files(path):
-                    myfiles.append(os.path.join(path,"",otherfile))
+                    myfiles.append(os.path.join(path,otherfile))
         return myfiles
+
+    def assemble_variables(self, path):
+        myvars = []
+        for myid, (ele, name) in enumerate(zip(self.elements, self.elementnames)):
+            if ele.is_wano:
+                for var in ele.get_variables():
+                    newpath = merge_path(path,ele.name,var)
+                    myvars.append(newpath)
+            else:
+                for myvar in ele.model.assemble_variables(path):
+                    myvars.append(myvar)
+        return myvars
 
     def read_from_disk(self, full_foldername, xml_subelement):
         #self.foldername = foldername
@@ -443,7 +461,7 @@ class ParallelModel(WFItemModel):
         self.name = "Parallel"
 
 
-    def render_to_simple_wf(self, submitdir, jobdir, path, parent_ids):
+    def render_to_simple_wf(self, path_list, output_path_list, submitdir, jobdir, path, parent_ids):
 
         """
         split_activity = WFtoXML.xml_split()
@@ -468,7 +486,10 @@ class ParallelModel(WFItemModel):
             inner_jobdir = "%s/%d" % (my_jobdir,swf_id)
             inner_path = "%s/%d" % (path,swf_id)
 
-            my_activities, my_transitions, my_toids = swfm.render_to_simple_wf(submitdir,inner_jobdir,path = inner_path, parent_ids = parent_ids)
+            new_output_path_list = output_path_list + [self.name, str(swf_id)]
+            new_path_list = path_list + [self.name, str(swf_id)]
+
+            my_activities, my_transitions, my_toids = swfm.render_to_simple_wf(new_path_list, new_output_path_list, submitdir,inner_jobdir,path = inner_path, parent_ids = parent_ids)
             transitions += my_transitions
             activities += my_activities
             toids += my_toids
@@ -477,6 +498,14 @@ class ParallelModel(WFItemModel):
 
         #-> self.subwfmodel.render_to_simple_wf(submitdir,jobdir,path = path)
         #-> return WFtoXML.xml_subwfforeach(IteratorName=self.name,IterSet=filesets,SubWorkflow=swf,Id=muuid)
+
+    def assemble_variables(self, path):
+        myvars = []
+        for swfid, swfm in enumerate(self.subwf_models):
+            for var in swfm.assemble_variables(path):
+                newpath = merge_path(path, "%s.%d"%(self.name,swfid),var)
+                myvars.append(newpath)
+        return myvars
 
     def add(self):
         subwfmodel, subwfview = ControlFactory.construct("SubWorkflow",editor=self.editor,qt_parent=self.view, logical_parent=self.view.logical_parent,wf_root = self.wf_root)
@@ -542,19 +571,39 @@ class ForEachModel(WFItemModel):
         self.subwfmodel, self.subwfview = ControlFactory.construct("SubWorkflow",editor=self.editor,qt_parent=self.view, logical_parent=self.view.logical_parent,wf_root = self.wf_root)
         self.filelist = []
         self.name = "ForEach"
+        self._is_file_iterator = True
+
+    def set_is_file_iterator(self, true_or_false):
+        self._is_file_iterator = true_or_false
 
     def set_filelist(self,filelist):
         self.filelist = filelist
 
-    def render_to_simple_wf(self, submitdir ,jobdir ,path , parent_ids):
+    def assemble_variables(self, path):
+        if path == "":
+            mypath = "${%s}"%self.itername
+            myvalue = "${%s_VALUE}"%self.itername
+        else:
+            mypath = "%s.${%s}" % (path, self.itername)
+            myvalue= "%s.${%s_VALUE}" % (path, self.itername)
+        myvars = self.subwfmodel.assemble_variables(mypath)
+        myvars.append(mypath)
+        myvars.append(myvalue)
+        return myvars
+
+    def render_to_simple_wf(self, path_list, output_path_list, submitdir ,jobdir ,path , parent_ids):
         filesets = []
         transitions = []
 
-        for myfile in self.filelist:
-            gpath = "${STORAGE}/workflow_data/%s/outputs" % os.path.dirname(myfile)
-            localfn = os.path.basename(myfile)
-            gpath = join(gpath,localfn)
-            filesets.append(gpath)
+        if self._is_file_iterator:
+            for myfile in self.filelist:
+                gpath = "${STORAGE}/workflow_data/%s"%myfile
+                #localfn = os.path.basename(myfile)
+                #gpath = join(gpath,localfn)
+                filesets.append(gpath)
+        else:
+            for myfile in self.filelist:
+                filesets.append(myfile)
 
         if jobdir == "":
             my_jobdir = self.name
@@ -566,20 +615,33 @@ class ForEachModel(WFItemModel):
         else:
             path = "%s/%s" %(path,self.name)
 
-        sub_activities, sub_transitions, sub_toids = self.subwfmodel.render_to_simple_wf(submitdir,my_jobdir,path = path, parent_ids = ["temporary_connector"])
+        path_list += [self.name]
+        output_path_list += [self.name, "${" + self.itername + "}"]
+
+        sub_activities, sub_transitions, sub_toids = self.subwfmodel.render_to_simple_wf(path_list, output_path_list, submitdir,my_jobdir,path = path, parent_ids = ["temporary_connector"])
         sg = SubGraph(elements = WorkflowElementList(sub_activities),
                  graph = DirectedGraph(sub_transitions))
 
         mypass = WFPass()
         finish_uid = mypass.uid
 
-        fe = ForEachGraph(subgraph = sg,
-                          #parent_ids=StringList(parent_ids),
-                          finish_uid = finish_uid,
-                          iterator_name = self.itername,
-                          iterator_files = StringList(filesets),
-                          subgraph_final_ids = StringList(sub_toids)
-        )
+        if self._is_file_iterator:
+            fe = ForEachGraph(subgraph = sg,
+                              #parent_ids=StringList(parent_ids),
+                              finish_uid = finish_uid,
+                              iterator_name = self.itername,
+                              iterator_files = StringList(filesets),
+                              subgraph_final_ids = StringList(sub_toids)
+            )
+        else:
+            fe = ForEachGraph(subgraph = sg,
+                              #parent_ids=StringList(parent_ids),
+                              finish_uid = finish_uid,
+                              iterator_name = self.itername,
+                              iterator_variables = StringList(filesets),
+                              subgraph_final_ids = StringList(sub_toids)
+            )
+
         toids = [fe.uid]
         for parent_id in parent_ids:
             transitions.append((parent_id, toids[0]))
@@ -597,7 +659,8 @@ class ForEachModel(WFItemModel):
         return myfiles
 
     def save_to_disk(self, foldername):
-        attributes = {"name": self.view.text(), "type": "ForEach"}
+        true_false = { True: "True", False: "False"}
+        attributes = {"name": self.view.text(), "type": "ForEach", "is_file_iterator": true_false[self._is_file_iterator]}
         root = etree.Element("WFControl", attrib=attributes)
         my_foldername = foldername
         # TODO revert changes in filesystem in case instantiate_in_folder fails
@@ -614,6 +677,15 @@ class ForEachModel(WFItemModel):
     def read_from_disk(self, full_foldername, xml_subelement):
         #TODO: missing save filelist
         #TODO: missing render
+        try:
+            is_file_iter = xml_subelement.attrib["is_file_iterator"]
+            if is_file_iter == "True":
+                self._is_file_iterator = True
+            else:
+                self._is_file_iterator = False
+        except KeyError as e:
+            self._is_file_iterator = True
+
         for child in xml_subelement:
             if child.tag == "FileList":
                 for xml_ss in child:
@@ -629,10 +701,16 @@ class ForEachModel(WFItemModel):
             #self.subwfmodel,self.subwfview = ControlFactory.construct("SubWorkflow", qt_parent=self.view, logical_parent=self.view,editor=self.editor,wf_root = self.wf_root)
             name = child.attrib["name"]
             type = child.attrib["type"]
+
             self.subwfview.setText(name)
             self.subwfmodel.read_from_disk(full_foldername=full_foldername,xml_subelement=child)
 
 
+def merge_path(path, name, var):
+    newpath = "%s.%s.%s" % (path, name, var)
+    if newpath.startswith("."):
+        newpath = newpath[1:]
+    return newpath
 
 
 class WFModel(object):
@@ -687,14 +765,27 @@ class WFModel(object):
         idx = self.elements.index(element)
         return self.elementnames[idx]
 
-    def render_to_simple_wf(self,submitdir,jobdir):
+    def assemble_variables(self, path):
+        myvars = []
+        for myid, (ele, name) in enumerate(zip(self.elements, self.elementnames)):
+            if ele.is_wano:
+                for var in ele.get_variables():
+                    newpath = merge_path(path,ele.name,var)
+                    myvars.append(newpath)
+            else:
+                for myvar in ele.assemble_variables(path):
+                    myvars.append(myvar)
+        return myvars
+
+    def render_to_simple_wf(self, submitdir,jobdir):
         activities = []
         transitions = []
         swfs = []
         #start = WFtoXML.xml_start()
         #parent_xml = etree.Element()
 
-
+        path_list = []
+        output_path_list = []
         fromids = ["0"]
         for myid, (ele, elename) in enumerate(zip(self.elements, self.elementnames)):
             if ele.is_wano:
@@ -704,8 +795,12 @@ class WFModel(object):
                 except OSError:
                     pass
                 #stageout_basedir = "wanos/%s" % (elename)
-                jsdl, wem = ele.render(wano_dir, stageout_basedir=elename)
+                jsdl, wem, other = ele.render(path_list, output_path_list, wano_dir, stageout_basedir=elename)
                 wem.set_given_name(elename)
+                mypath = "/".join(path_list + [elename])
+                myoutputpath = "/".join(output_path_list + [elename])
+                wem.set_path(mypath)
+                wem.set_outputpath(myoutputpath)
                 wem : WorkflowExecModule
                 toids = [wem.uid]
                 activities.append(["WorkflowExecModule",wem])
@@ -714,7 +809,7 @@ class WFModel(object):
                         transitions.append((fromid, toid))
             else:
                 #only subworkflow remaining
-                my_activities, my_transitions,  toids = ele.render_to_simple_wf(submitdir,jobdir,path="", parent_ids = fromids)
+                my_activities, my_transitions,  toids = ele.render_to_simple_wf(path_list, output_path_list, submitdir,jobdir,path="", parent_ids = fromids)
                 activities+=my_activities
                 transitions += my_transitions
 
@@ -737,6 +832,20 @@ class WFModel(object):
 
     #this function assembles all files relative to the workflow root
     #The files will be export to c9m:${WORKFLOW_ID}/the file name below
+    # Here we also need to assemble all variables
+
+    # Tomorrow: update the variable assembler here
+    # Then, unbundle the qt stuff also from here if possible
+    # Otherwise, just put the assemblers into parent classes
+    # Otherwise  do a getitem function and use treeview
+    # Assemble paths
+    # Then, upload the workflow xml you get here and stop - Once up, render the workflow into simple xml on the server
+    #  Is this enough?
+    #  Add an in-path to all WorkflowElements (on the SSS side)
+    #   The inpath can be written here and given like that - it should already contain workflow specific variables such as foreach
+    #   Then we can use the variable filler
+
+
     def assemble_files(self,path):
         myfiles = []
         for myid,(ele,name) in enumerate(zip(self.elements,self.elementnames)):
@@ -1648,10 +1757,28 @@ class ForEachView(WFControlWithTopMiddleAndBottom):
         self.open_variables = MultiselectDropDownList(self, text="Import")
         self.open_variables.connect_workaround(self.load_wf_files)
         self.open_variables.itemSelectionChanged.connect(self.on_wf_file_change)
+        self._global_import_button = QtWidgets.QPushButton(QtGui.QIcon.fromTheme("insert-object"),"")
+        self._global_import_button.clicked.connect(self.open_remote_importer)
+        self.topLineLayout.addWidget(self._global_import_button)
         #self.open_variables.itemSelectionChanged.connect(self.onItemSelectionChange)
         #self.open_variables.connect_workaround(self._load_variables)
         self.topLineLayout.addWidget(self.open_variables)
         return self.topwidget
+
+    def open_remote_importer(self):
+        varpaths = self.model.wf_root.assemble_variables("")
+        mydialog = RemoteImporterDialog(varname="Import variable \"%s\" from:" % self.model.name,
+                                        importlist=varpaths)
+        mydialog.setModal(True)
+        mydialog.exec()
+        result = mydialog.result()
+        if mydialog.result() == True:
+            choice = mydialog.getchoice()
+            self.model.set_filelist([choice])
+            self.list_of_variables.setText(choice)
+            self.model.set_is_file_iterator(False)
+        else:
+            pass
 
     def init_from_model(self):
         super(ForEachView,self).init_from_model()
@@ -1665,6 +1792,7 @@ class ForEachView(WFControlWithTopMiddleAndBottom):
         wf = self.model.wf_root
         importable_files = wf.assemble_files("")
         self.open_variables.set_items(importable_files)
+        self.model.set_is_file_iterator(True)
 
     def on_wf_file_change(self):
         self.list_of_variables.setText(" ".join(self.open_variables.get_selection()))

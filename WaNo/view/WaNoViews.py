@@ -10,6 +10,9 @@ from WaNo.view.AbstractWaNoView import AbstractWanoQTView, AbstractWanoView
 from Qt import QtGui, QtCore, QtWidgets
 import os
 
+
+
+
 class GroupBoxWithButton(QtWidgets.QGroupBox):
     def __init__(self,*args,**kwargs):
         super(GroupBoxWithButton,self).__init__(*args,**kwargs)
@@ -44,7 +47,7 @@ class GroupBoxWithButton(QtWidgets.QGroupBox):
 class MultipleOfView(AbstractWanoQTView):
     def __init__(self, *args, **kwargs):
         super(MultipleOfView, self).__init__(*args, **kwargs)
-        self.actual_widget = GroupBoxWithButton(self.qt_parent)
+        self.actual_widget = GroupBoxWithButton(None)
         self.actual_widget.setStyleSheet("""
             QGroupBox {
                 border: 1px solid gray;
@@ -68,6 +71,9 @@ class MultipleOfView(AbstractWanoQTView):
         #List of bar widgets nobody else takes care about (for later deletion)
         self._list_of_bar_widgets = []
 
+    def set_parent(self, parent_view):
+        super().set_parent(parent_view)
+        self.actual_widget.setParent(self._qt_parent)
 
     def add_button_clicked(self):
         self.model.add_item()
@@ -121,21 +127,26 @@ class EmptyView(AbstractWanoView):
 class WaNoGroupView(AbstractWanoQTView):
     def __init__(self, *args, **kwargs):
         super(WaNoGroupView, self).__init__(*args, **kwargs)
-        self.actual_widget = QtWidgets.QWidget(self.qt_parent)
+        self.actual_widget = QtWidgets.QWidget(None)
         self.vbox = QtWidgets.QVBoxLayout()
         self.actual_widget.setLayout(self.vbox)
+
+    def set_parent(self, parent_view):
+        super().set_parent(parent_view)
+        self.actual_widget.setParent(self._qt_parent)
 
     def get_widget(self):
         return self.actual_widget
 
     def init_from_model(self):
         for model in self.model.wanos():
+            print(model, self.model.path, self, self.model)
             self.vbox.addWidget(model.view.get_widget())
 
 class WaNoSwitchView(AbstractWanoQTView):
     def __init__(self, *args, **kwargs):
         super(WaNoSwitchView, self).__init__(*args, **kwargs)
-        self._current_widget = None
+        self._current_widget = QtWidgets.QWidget(None)
         self._current_view = None
 
     def get_widget(self):
@@ -151,22 +162,33 @@ class WaNoSwitchView(AbstractWanoQTView):
             self._current_widget = mv.get_widget()
         return self._current_widget
 
+    def set_parent(self, parent_view):
+        super().set_parent(parent_view)
+        for _,model in self.model.wanos():
+            print(parent_view)
+            print(model.name, "MP", model.path)
+            print(parent_view.model.path, "MPP")
+            model.view.set_parent(self._qt_parent)
+
     def init_from_model(self):
         for _,model in self.model.wanos():
-            model.view.get_widget().setParent(None)
             model.view.set_visible(False)
-        visible_widget = self.get_widget()
-        assert self._current_view is not None
-        visible_widget.setParent(self.qt_parent)
-        self._current_view.set_visible(True)
-        self.model.parent.view.init_from_model()
+        #visible_widget = self.get_widget()
+        sview = self.model.get_selected_view()
+        if sview is not None:
+            sview.set_visible(True)
+            self.actual_widget = sview.get_widget()
+            self.model.get_parent().view.init_from_model()
+        #assert self._current_view is not None
+        #self._current_view.set_visible(True)
+        #self.model._parent.view.init_from_model()
 
 class WaNoConditionalView(AbstractWanoQTView):
     def __init__(self, *args, **kwargs):
         super(WaNoConditionalView, self).__init__(*args, **kwargs)
-        #self.actual_widget = QtWidgets.QWidget(self.qt_parent)
-        self.actual_widget = QtWidgets.QWidget(parent=self.qt_parent)
-        #self.actual_widget = GroupBoxWithButton(self.qt_parent)
+        #self.actual_widget = QtWidgets.QWidget(self._qt_parent)
+        self.actual_widget = QtWidgets.QWidget(parent=self._qt_parent)
+        #self.actual_widget = GroupBoxWithButton(self._qt_parent)
         self.vbox = QtWidgets.QVBoxLayout()
         self.actual_widget.setLayout(self.vbox)
 
@@ -181,7 +203,7 @@ class WaNoConditionalView(AbstractWanoQTView):
 class WaNoBoxView(AbstractWanoQTView):
     def __init__(self, *args, **kwargs):
         super(WaNoBoxView, self).__init__(*args, **kwargs)
-        self.actual_widget = QtWidgets.QGroupBox(parent=self.qt_parent)
+        self.actual_widget = QtWidgets.QGroupBox(parent=None)
         self.actual_widget.setStyleSheet("""
         QGroupBox {
             border: 1px solid gray;
@@ -199,6 +221,10 @@ class WaNoBoxView(AbstractWanoQTView):
         self.vbox = QtWidgets.QVBoxLayout()
         self.actual_widget.setLayout(self.vbox)
 
+    def set_parent(self, parent_view):
+        super().set_parent(parent_view)
+        self.actual_widget.setParent(self._qt_parent)
+
     def get_widget(self):
         return self.actual_widget
 
@@ -210,11 +236,15 @@ class WaNoBoxView(AbstractWanoQTView):
 class WaNoNone(AbstractWanoQTView):
     def __init__(self, *args, **kwargs):
         super(WaNoNone, self).__init__(*args, **kwargs)
-        self.actual_widget = QtWidgets.QFrame(parent=self.qt_parent)
+        self.actual_widget = QtWidgets.QFrame(parent=None)
         self.vbox = QtWidgets.QVBoxLayout()
         self.actual_widget.setLayout(self.vbox)
         self.actual_widget.layout().setContentsMargins(0, 0, 0, 0)
         #self.actual_widget.layout().setContentsMargins(0, 0, 0, 0)
+
+    def set_parent(self, parent_view):
+        super().set_parent(parent_view)
+        self.actual_widget.setParent(self._qt_parent)
 
     def get_widget(self):
         return self.actual_widget
@@ -225,11 +255,15 @@ class WaNoNone(AbstractWanoQTView):
 class WaNoInvisibleBoxView(AbstractWanoQTView):
     def __init__(self, *args, **kwargs):
         super(WaNoInvisibleBoxView, self).__init__(*args, **kwargs)
-        self.actual_widget = QtWidgets.QFrame(parent=self.qt_parent)
+        self.actual_widget = QtWidgets.QFrame(parent=None)
 
         self.vbox = QtWidgets.QVBoxLayout()
         self.actual_widget.setLayout(self.vbox)
         self.actual_widget.layout().setContentsMargins(0, 0, 0, 0)
+
+    def set_parent(self, parent_view):
+        super().set_parent(parent_view)
+        self.actual_widget.setParent(self._qt_parent)
 
     def get_widget(self):
         return self.actual_widget
@@ -242,7 +276,7 @@ class WaNoItemIntView(AbstractWanoQTView):
     def __init__(self, *args, **kwargs):
         super(WaNoItemIntView, self).__init__(*args, **kwargs)
         """ Widget code here """
-        self.actual_widget = QtWidgets.QWidget(self.qt_parent)
+        self.actual_widget = QtWidgets.QWidget(None)
         hbox = QtWidgets.QHBoxLayout()
         self.actual_widget.setLayout(hbox)
         self.spinner = QtWidgets.QSpinBox()
@@ -254,12 +288,23 @@ class WaNoItemIntView(AbstractWanoQTView):
         hbox.addWidget(self.label)
         hbox.addStretch()
         hbox.addWidget(self.spinner)
+
+        self._global_import_button = QtWidgets.QPushButton(QtGui.QIcon.fromTheme("insert-object"),"")
+        self._global_import_button.clicked.connect(self.open_remote_importer)
+        hbox.addWidget(self._global_import_button)
         #self.actual_widget.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
         #self.actual_widget.setSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed)
         # hbox.addWidget(self.line_edit)
 
         self.spinner.valueChanged.connect(self.value_changed)
         """ Widget code end """
+
+    def set_disable(self, true_or_false):
+        self.spinner.setDisabled(true_or_false)
+
+    def set_parent(self, parent_view):
+        super().set_parent(parent_view)
+        self.actual_widget.setParent(self._qt_parent)
 
     def get_widget(self):
         return self.actual_widget
@@ -276,7 +321,7 @@ class WaNoItemFloatView(AbstractWanoQTView):
     def __init__(self, *args, **kwargs):
         super(WaNoItemFloatView, self).__init__(*args, **kwargs)
         """ Widget code here """
-        self.actual_widget = QtWidgets.QWidget(self.qt_parent)
+        self.actual_widget = QtWidgets.QWidget(None)
         hbox = QtWidgets.QHBoxLayout()
         self.actual_widget.setLayout(hbox)
         self.spinner = QtWidgets.QDoubleSpinBox()
@@ -294,7 +339,11 @@ class WaNoItemFloatView(AbstractWanoQTView):
         hbox.addWidget(self.label)
         hbox.addStretch()
         hbox.addWidget(self.spinner)
+        self._global_import_button = QtWidgets.QPushButton(QtGui.QIcon.fromTheme("insert-object"),"")
+        self._global_import_button.clicked.connect(self.open_remote_importer)
         # hbox.addWidget(self.line_edit)
+        #hbox.addStretch()
+        hbox.addWidget(self._global_import_button)
 
         self.spinner.valueChanged.connect(self.value_changed)
 
@@ -306,15 +355,21 @@ class WaNoItemFloatView(AbstractWanoQTView):
         #self.spinner.setSizePolicy(QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Minimum)
         """ Widget code end """
 
+    def set_disable(self, true_or_false):
+        self.spinner.setDisabled(true_or_false)
+
+    def set_parent(self, parent_view):
+        super().set_parent(parent_view)
+        self.actual_widget.setParent(self._qt_parent)
+
     def get_widget(self):
         return self.actual_widget
 
     def init_from_model(self):
         self.spinner.setValue(self.model.get_data())
         self.label.setText(self.model.name)
-        #self.model.root_model.view.actual_widget.viewport().update_geometry()
-        #self.model.root_model.view.actual_widget.viewport().update()
-        #self.model.root_model.view.actual_widget.update()
+        if self.model.do_import:
+            self.set_disable(True)
 
     def value_changed(self,value):
         self.model.set_data(value)
@@ -323,7 +378,7 @@ class WaNoItemBoolView(AbstractWanoQTView):
     def __init__(self, *args, **kwargs):
         super(WaNoItemBoolView, self).__init__(*args, **kwargs)
         """ Widget code here """
-        self.actual_widget = QtWidgets.QWidget(self.qt_parent)
+        self.actual_widget = QtWidgets.QWidget(None)
         hbox = QtWidgets.QHBoxLayout()
         self.actual_widget.setLayout(hbox)
         self.checkbox = QtWidgets.QCheckBox()
@@ -337,6 +392,10 @@ class WaNoItemBoolView(AbstractWanoQTView):
 
         self.checkbox.stateChanged.connect(self.state_changed)
         """ Widget code end """
+
+    def set_parent(self, parent_view):
+        super().set_parent(parent_view)
+        self.actual_widget.setParent(self._qt_parent)
 
     def get_widget(self):
         return self.actual_widget
@@ -357,7 +416,7 @@ class WaNoScriptView(AbstractWanoQTView):
     def __init__(self, *args, **kwargs):
         super(WaNoScriptView,self).__init__(*args,**kwargs)
         """ Widget code here """
-        self.actual_widget = QtWidgets.QWidget(self.qt_parent)
+        self.actual_widget = QtWidgets.QWidget(None)
         vbox = QtWidgets.QVBoxLayout()
         self.actual_widget.setLayout(vbox)
         self.menubar = QtWidgets.QWidget()
@@ -371,6 +430,10 @@ class WaNoScriptView(AbstractWanoQTView):
         self.textedit = QtWidgets.QTextEdit()
         vbox.addWidget(self.textedit)
         """ Widget code end """
+
+    def set_parent(self, parent_view):
+        super().set_parent(parent_view)
+        self.actual_widget.setParent(self._qt_parent)
 
     def get_widget(self):
         return self.actual_widget
@@ -388,17 +451,31 @@ class WaNoItemStringView(AbstractWanoQTView):
     def __init__(self, *args, **kwargs):
         super(WaNoItemStringView, self).__init__(*args, **kwargs)
         """ Widget code here """
-        self.actual_widget = QtWidgets.QWidget(self.qt_parent)
+        self.actual_widget = QtWidgets.QWidget(None)
         vbox = QtWidgets.QHBoxLayout()
         self.lineedit = QtWidgets.QLineEdit()
         self.label = QtWidgets.QLabel("ABC")
         vbox.addWidget(self.label)
         vbox.addStretch()
         vbox.addWidget(self.lineedit)
+
+        self._global_import_button = QtWidgets.QPushButton(QtGui.QIcon.fromTheme("insert-object"),"")
+        self._global_import_button.clicked.connect(self.open_remote_importer)
+        # hbox.addWidget(self.line_edit)
+        #hbox.addStretch()
+        vbox.addWidget(self._global_import_button)
+
         # vbox.addWidget(self.line_edit)
         self.actual_widget.setLayout(vbox)
         self.lineedit.editingFinished.connect(self.line_edited)
         """ Widget code end """
+
+    def set_disable(self, true_or_false):
+        self.lineedit.setDisabled(true_or_false)
+
+    def set_parent(self, parent_view):
+        super().set_parent(parent_view)
+        self.actual_widget.setParent(self._qt_parent)
 
     def get_widget(self):
         return self.actual_widget
@@ -414,10 +491,16 @@ class WaNoItemStringView(AbstractWanoQTView):
 class WanoQtViewRoot(AbstractWanoQTView):
     def __init__(self, *args, **kwargs):
         super(WanoQtViewRoot, self).__init__(*args, **kwargs)
+
+    def set_parent(self, parent_view):
+        if isinstance(parent_view, QtCore.QObject):
+            self._qt_parent = parent_view
+        else:
+            super().set_parent(parent_view)
         self.init_to_scroller()
 
     def init_to_scroller(self):
-        scroll = QtWidgets.QScrollArea(parent=self.qt_parent)
+        scroll = QtWidgets.QScrollArea(parent=self._qt_parent)
         scroll.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarAsNeeded)
         scroll.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarAsNeeded)
         scroll.setWidgetResizable(True)
@@ -430,7 +513,7 @@ class WanoQtViewRoot(AbstractWanoQTView):
         me.setLayout(self.vbox)
 
     def init_without_scroller(self):
-        me = QtWidgets.QWidget(parent=self.qt_parent)
+        me = QtWidgets.QWidget(parent=self._qt_parent)
         self.vbox = QtWidgets.QVBoxLayout()
         me.setLayout(self.vbox)
         self.actual_widget = me
@@ -476,7 +559,7 @@ class WaNoItemFileView(AbstractWanoQTView):
     def __init__(self, *args, **kwargs):
         super(WaNoItemFileView, self).__init__(*args, **kwargs)
         """ Widget code here """
-        self.actual_widget = QtWidgets.QWidget(self.qt_parent)
+        self.actual_widget = QtWidgets.QWidget(None)
         hbox = QtWidgets.QHBoxLayout()
         self.lineedit = QtWidgets.QLineEdit(parent=self.actual_widget)
         self.label = QtWidgets.QLabel("ABC",parent=self.actual_widget)
@@ -508,6 +591,11 @@ class WaNoItemFileView(AbstractWanoQTView):
         #self.actual_widget.setSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed)
         """ Widget code end """
 
+    def set_parent(self, parent_view):
+        super().set_parent(parent_view)
+
+        self.actual_widget.setParent(self._qt_parent)
+
     def showLocalDialog(self):
         fname, _ = QtWidgets.QFileDialog.getOpenFileName(self.actual_widget, 'Open file', QtCore.QDir.homePath())
         if fname:
@@ -523,7 +611,7 @@ class WaNoItemFileView(AbstractWanoQTView):
     """
 
     def load_wf_files(self):
-        wf = self.model.root_model.parent_wf.get_root()
+        wf = self.model.get_root().get_parent_wf().get_root()
         importable_files = wf.assemble_files("")
         self.openwfbutton.set_items(importable_files)
 
@@ -570,7 +658,7 @@ class WaNoMatrixFloatView(AbstractWanoQTView):
         self.has_col_header = False
         self.has_row_header = False
         """ Widget code here """
-        self.actual_widget = QtWidgets.QWidget(self.qt_parent)
+        self.actual_widget = QtWidgets.QWidget(None)
 
         self.tablewidget = QtWidgets.QTableWidget(1,3,self.actual_widget)
         delegate=OnlyFloatDelegate()
@@ -600,6 +688,10 @@ class WaNoMatrixFloatView(AbstractWanoQTView):
         hbox.addWidget(self.tablewidget)
         self.tablewidget.cellChanged.connect(self.cellChanged)
         """" Widget code end """
+
+    def set_parent(self, parent_view):
+        super().set_parent(parent_view)
+        self.actual_widget.setParent(self._qt_parent)
 
     def cellChanged(self,i,j):
         self.model.storage[i][j] = float(self.tablewidget.item(i,j).text())
@@ -649,7 +741,7 @@ class WaNoDropDownView(AbstractWanoQTView):
     def __init__(self, *args, **kwargs):
         super(WaNoDropDownView,self).__init__(*args,**kwargs)
         """ Widget code here """
-        self.actual_widget = QtWidgets.QWidget(self.qt_parent)
+        self.actual_widget = QtWidgets.QWidget(None)
 
         self.combobox = QtWidgets.QComboBox(self.actual_widget)
         self.combobox.currentIndexChanged[int].connect(self.onButtonClicked)
@@ -663,6 +755,10 @@ class WaNoDropDownView(AbstractWanoQTView):
         self.init = False
         """" Widget code end """
 
+    def set_parent(self, parent_view):
+        super().set_parent(parent_view)
+        self.actual_widget.setParent(self._qt_parent)
+
     def init_from_model(self):
         chosen_before = self.model.chosen
         self.combobox.clear()
@@ -672,7 +768,6 @@ class WaNoDropDownView(AbstractWanoQTView):
         self.combobox.setCurrentIndex(self.model.chosen)
         self.init = True
         self.model.set_chosen(chosen_before)
-
 
     def onButtonClicked(self, id):
         if self.init:
@@ -686,8 +781,8 @@ class WaNoChoiceView(AbstractWanoQTView):
     def __init__(self, *args, **kwargs):
         super(WaNoChoiceView,self).__init__(*args,**kwargs)
         """ Widget code here """
-        self.actual_widget = QtWidgets.QGroupBox(self.qt_parent)
-        self.bg = QtWidgets.QButtonGroup(self.qt_parent)
+        self.actual_widget = QtWidgets.QGroupBox(None)
+        self.bg = QtWidgets.QButtonGroup(None)
         self.vbox = QtWidgets.QVBoxLayout(self.actual_widget)
         self.actual_widget.setLayout(self.vbox)
 
@@ -707,6 +802,11 @@ class WaNoChoiceView(AbstractWanoQTView):
         self.bg.buttonClicked[int].connect(self.onButtonClicked)
         ##self.actual_widget.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
         """" Widget code end """
+
+    def set_parent(self, parent_view):
+        super().set_parent(parent_view)
+        self.actual_widget.setParent(self._qt_parent)
+        self.bg.setParent(self._qt_parent)
 
     def init_from_model(self):
         self.actual_widget.setTitle(self.model.name)
@@ -729,11 +829,15 @@ class WaNoTabView(AbstractWanoQTView):
     def __init__(self, *args, **kwargs):
         super(WaNoTabView, self).__init__(*args, **kwargs)
         """ Widget code here """
-        self.actual_widget = QtWidgets.QTabWidget(self.qt_parent)
+        self.actual_widget = QtWidgets.QTabWidget(None)
         """" Widget code end """
 
-    def init_from_model(self):
+    def set_parent(self, parent_view):
+        super().set_parent(parent_view)
+        self.actual_widget.setParent(self._qt_parent)
 
+
+    def init_from_model(self):
         for key, model in self.model.items():
             scroll = QtWidgets.QScrollArea(parent=self.actual_widget)
             scroll.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarAsNeeded)
