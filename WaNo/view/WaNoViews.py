@@ -312,6 +312,8 @@ class WaNoItemIntView(AbstractWanoQTView):
     def init_from_model(self):
         self.spinner.setValue(self.model.get_data())
         self.label.setText(self.model.name)
+        if self.model.do_import:
+            self.set_disable(True)
 
     def value_changed(self,value):
         self.model.set_data(value)
@@ -483,6 +485,8 @@ class WaNoItemStringView(AbstractWanoQTView):
     def init_from_model(self):
         self.lineedit.setText(self.model.get_data())
         self.label.setText(self.model.name)
+        if self.model.do_import:
+            self.set_disable(True)
 
     def line_edited(self):
         self.model.set_data(self.lineedit.text())
