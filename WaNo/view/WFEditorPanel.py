@@ -582,10 +582,13 @@ class ForEachModel(WFItemModel):
     def assemble_variables(self, path):
         if path == "":
             mypath = "${%s}"%self.itername
+            myvalue = "${%s_VALUE}"%self.itername
         else:
             mypath = "%s.${%s}" % (path, self.itername)
+            myvalue= "%s.${%s_VALUE}" % (path, self.itername)
         myvars = self.subwfmodel.assemble_variables(mypath)
         myvars.append(mypath)
+        myvars.append(myvalue)
         return myvars
 
     def render_to_simple_wf(self, path_list, output_path_list, submitdir ,jobdir ,path , parent_ids):
