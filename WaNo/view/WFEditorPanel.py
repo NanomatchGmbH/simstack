@@ -8,6 +8,7 @@ import time
 import os
 
 import logging
+import traceback
 import uuid
 
 import abc
@@ -1163,8 +1164,14 @@ class SubWorkflowView(QtWidgets.QFrame):
             wfe = e.source()
             dropped = wfe.selectedItems()[0]
             wano = dropped.WaNo
-            wd = WFWaNoWidget(wano[0],wano,self)
-            ##self.model.add_element(new_position,wd)
+            try:
+                wd = WFWaNoWidget(wano[0],wano,self)
+            except Exception as e:
+                tb = traceback.format_exc()
+                messageboxtext = "<H3>Encountered error when inserting WaNo.</H3>\n\n Error was: %s\n " %e
+                                 #"Trace: %s" %(e, tb)
+                QtWidgets.QMessageBox.about(None, "Exception in WaNo construction", messageboxtext)
+                return
             self.model.add_element(wd,new_position)
             #Show required for widgets added after
             wd.show()
@@ -1427,7 +1434,14 @@ class WorkflowView(QtWidgets.QFrame):
             wfe = e.source()
             dropped = wfe.selectedItems()[0]
             wano = dropped.WaNo
-            wd = WFWaNoWidget(wano[0],wano,self)
+            try:
+                wd = WFWaNoWidget(wano[0],wano,self)
+            except Exception as e:
+                tb = traceback.format_exc()
+                messageboxtext = "<H3>Encountered error when inserting WaNo.</H3>\n\n Error was: %s\n " %e
+                                 #"Trace: %s" %(e, tb)
+                QtWidgets.QMessageBox.about(None, "Exception in WaNo construction", messageboxtext)
+                return
             ##self.model.add_element(new_position,wd)
             self.model.add_element(wd,new_position)
             #Show required for widgets added after
