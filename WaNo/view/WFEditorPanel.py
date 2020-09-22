@@ -650,13 +650,13 @@ class ForEachModel(WFItemModel):
         # We are now generating a break in this workflow. The break will be resolved (hopefully) once the FE runs.
 
 
-        return [("ForEachGraph",fe),("WFPass", mypass)], transitions, finish_uid  #WFtoXML.xml_subwfforeach(IteratorName=self.itername,IterSet=filesets,SubWorkflow=swf,Id=muuid)
+        return [("ForEachGraph",fe),("WFPass", mypass)], transitions, [finish_uid]  #WFtoXML.xml_subwfforeach(IteratorName=self.itername,IterSet=filesets,SubWorkflow=swf,Id=muuid)
 
     def assemble_files(self,path):
         myfiles = []
         myfiles.append("${%s_VALUE}" %(self.itername))
         for otherfile in self.subwfmodel.assemble_files(path):
-            myfiles.append(os.path.join(path, self.view.text(), otherfile))
+            myfiles.append(os.path.join(path, self.view.text(),"*",otherfile))
         return myfiles
 
     def save_to_disk(self, foldername):
@@ -796,7 +796,8 @@ class WFModel(object):
                 except OSError:
                     pass
                 #stageout_basedir = "wanos/%s" % (elename)
-                jsdl, wem, other = ele.render(path_list, output_path_list, wano_dir, stageout_basedir=elename)
+                my_path_list = path_list.copy()
+                jsdl, wem, other = ele.render(my_path_list, output_path_list, wano_dir, stageout_basedir=elename)
                 wem.set_given_name(elename)
                 mypath = "/".join(path_list + [elename])
                 myoutputpath = "/".join(output_path_list + [elename])
@@ -810,7 +811,8 @@ class WFModel(object):
                         transitions.append((fromid, toid))
             else:
                 #only subworkflow remaining
-                my_activities, my_transitions,  toids = ele.render_to_simple_wf(path_list, output_path_list, submitdir,jobdir,path="", parent_ids = fromids)
+                my_path_list = path_list.copy()
+                my_activities, my_transitions,  toids = ele.render_to_simple_wf(my_path_list, output_path_list, submitdir,jobdir,path="", parent_ids = fromids)
                 activities+=my_activities
                 transitions += my_transitions
 
