@@ -119,6 +119,9 @@ class WaNoRegistrySettings(QWidget):
     def get_sshprivatekey(self):
         return self.__sshprivatekey.text()
 
+    def get_extra_config(self):
+        return self.__extra_config.text()
+
     def __on_title_edited(self):
         self.title_edited.emit(str(self.__registryName.text()))
 
@@ -147,11 +150,13 @@ class WaNoRegistrySettings(QWidget):
         self.__label_username       = QLabel(self)
         self.__label_calculation_basepath = QLabel(self)
         self.__label_software_directory = QLabel(self)
+        self.__label_extra_config = QLabel(self)
         self.__label_queueing_system = QLabel(self)
         self.__label_default_queue_name = QLabel(self)
 
         #self.__label_password       = QLabel(self)
         self.__label_sshprivatekey     = QLabel(self)
+
         #self.__label_workflows      = QLabel(self)
 
         self.__label_registryName.setText("<b>Registry Name</b>")
@@ -160,6 +165,7 @@ class WaNoRegistrySettings(QWidget):
         self.__label_username.setText("<b>Username</b>")
         self.__label_calculation_basepath.setText("<b>Basepath</b>")
         self.__label_software_directory.setText("<b>Software directory on cluster</b>")
+        self.__label_extra_config.setText("<b>Extra Config File</b>")
         self.__label_queueing_system.setText("<b>Queueing System</b>")
         self.__label_default_queue_name.setText("<b>Default Queue Name</b>")
 
@@ -176,6 +182,7 @@ class WaNoRegistrySettings(QWidget):
         self.__sshprivatekey.setText("UseSystemDefault")
         self.__calculation_basepath     = QLineEdit(self)
         self.__software_directory = QLineEdit(self)
+        self.__extra_config = QLineEdit(self)
         self.__queueing_system = QComboBox(self)
         self.__default_queue_name = QLineEdit(self)
         self.__default_queue_name.setText("default")
@@ -208,10 +215,11 @@ class WaNoRegistrySettings(QWidget):
         grid.addWidget(self.__label_username    , 3, 0)
         grid.addWidget(self.__label_sshprivatekey, 4, 0)
         grid.addWidget(self.__label_calculation_basepath    , 5, 0)
+        grid.addWidget(self.__label_extra_config, 6 , 0)
 
-        grid.addWidget(self.__label_queueing_system   , 6, 0)
-        grid.addWidget(self.__label_software_directory, 7, 0)
-        grid.addWidget(self.__label_default_queue_name, 8, 0)
+        grid.addWidget(self.__label_queueing_system   , 7, 0)
+        grid.addWidget(self.__label_software_directory, 8, 0)
+        grid.addWidget(self.__label_default_queue_name, 9, 0)
 
         default_colspan = 2
 
@@ -222,18 +230,21 @@ class WaNoRegistrySettings(QWidget):
         grid.addWidget(self.__sshprivatekey, 4, 1, 1,1)
         grid.addWidget(self.__cert_openfilebutton,             4, 2 )
         grid.addWidget(self.__calculation_basepath,             5, 1, 1, default_colspan )
-        grid.addWidget(self.__queueing_system,      6, 1, 1, default_colspan )
-        grid.addWidget(self.__software_directory, 7, 1, 1, default_colspan)
-        grid.addWidget(self.__default_queue_name, 8, 1, 1, default_colspan)
+        grid.addWidget(self.__extra_config, 6, 1, 1, default_colspan)
+        grid.addWidget(self.__queueing_system,      7, 1, 1, default_colspan )
+        grid.addWidget(self.__software_directory, 8, 1, 1, default_colspan)
+        grid.addWidget(self.__default_queue_name, 9, 1, 1, default_colspan)
         self.__software_directory.setText("/home/nanomatch/nanomatch")
         self.__calculation_basepath.setText("simstack_workspace")
+        self.__extra_config.setText("None Required (default)")
         self.setLayout(grid)
 
     def set_default(self, is_default):
         self.__cb_default.setChecked(is_default)
 
 
-    def set_fields(self, name, uri, port, user, sshprivatekey, calculation_basepath, queueing_system, software_directory, default_queue_name, is_default):
+    def set_fields(self, name, uri, port, user, sshprivatekey, calculation_basepath, extra_config, queueing_system,
+                   software_directory, default_queue_name, is_default):
         self.__registryName.setText(name)
         self.__baseUri.setText(uri)
         self.__port.setText(str(port))
@@ -241,6 +252,7 @@ class WaNoRegistrySettings(QWidget):
         self.__sshprivatekey.setText(sshprivatekey)
         self.__queueing_system.setCurrentText(queueing_system)
         self.__software_directory.setText(software_directory)
+        self.__extra_config.setText(extra_config)
         self.__calculation_basepath.setText(calculation_basepath)
         self.__default_queue_name.setText(default_queue_name)
 
@@ -309,6 +321,7 @@ class WaNoUnicoreSettings(QDialog):
                         tabWidget.get_user().strip(),
                         tabWidget.get_sshprivatekey().strip(),
                         tabWidget.get_calculation_basepath().strip(),
+                        tabWidget.get_extra_config().strip(),
                         tabWidget.get_queueing_system().strip(),
                         tabWidget.get_software_directory().strip(),
                         tabWidget.get_default_queue().strip(),
@@ -318,7 +331,17 @@ class WaNoUnicoreSettings(QDialog):
 
         return registries
 
-    def __build_registry_settings(self, name, uri, port, user, sshprivatekey, calculation_basepath, queueing_system, software_directory, default_queue, default):
+    def __build_registry_settings(self, name,
+                                  uri,
+                                  port,
+                                  user,
+                                  sshprivatekey,
+                                  calculation_basepath,
+                                  extraconfig,
+                                  queueing_system,
+                                  software_directory,
+                                  default_queue,
+                                  default):
         returndict = {
                 'name': name,
                 'baseURI': uri,
@@ -326,6 +349,7 @@ class WaNoUnicoreSettings(QDialog):
                 'username': user,
                 'sshprivatekey': sshprivatekey,
                 'calculation_basepath': calculation_basepath,
+                'extraconfig': extraconfig,
                 'queueing_system' : queueing_system,
                 'software_directory': software_directory,
                 'default_queue': default_queue,
@@ -403,6 +427,7 @@ class WaNoUnicoreSettings(QDialog):
         defaults['default_queue'] = "default"
         defaults['port'] = 22
         defaults['sshprivatekey'] = "UseSystemDefault"
+        defaults['extraconfig'] = "None Required (default)"
 
         for key in defaults.keys():
             if key not in registry:
@@ -417,18 +442,11 @@ class WaNoUnicoreSettings(QDialog):
             for i, registry in enumerate(config):
                 self.__set_unset_registry_defaults(registry)
                 tabWidget = self.__add_tab(registry['name'], i)
-                tabWidget.set_fields(
-                        registry['name'],
-                        registry['baseURI'],
-                        registry['port'],
-                        registry['username'],
-                        registry['sshprivatekey'],
-                        registry['calculation_basepath'],
-                        registry['queueing_system'],
-                        registry['software_directory'],
-                        registry['default_queue'],
-                        registry['is_default']
-                )
+                tabWidget.set_fields(registry['name'], registry['baseURI'], registry['port'], registry['username'],
+                                     registry['sshprivatekey'], registry['calculation_basepath'],
+                                     registry['extraconfig'],
+                                     registry['queueing_system'], registry['software_directory'],
+                                     registry['default_queue'], registry['is_default'])
 
 
             if (len(config) > 0):

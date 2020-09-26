@@ -590,9 +590,13 @@ class SSHConnector(CallableQThread):
                     private_key = pkfile
                 else:
                     raise FileNotFoundError("Could not find private key at path <%s>"%pkfile)
+            extra_config = "None Required"
+            if "extraconfig" in registry:
+                extra_config = registry["extraconfig"]
             cm = ClusterManager(url=registry["baseURI"], port=registry["port"],
                                 calculation_basepath=registry["calculation_basepath"], user=registry["username"],
                                 sshprivatekey=private_key,
+                                extra_config=extra_config,
                                 queueing_system=registry["queueing_system"], default_queue=registry["default_queue"])
             self._clustermanagers[name] = cm
         else:

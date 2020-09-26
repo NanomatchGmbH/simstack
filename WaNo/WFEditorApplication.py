@@ -122,6 +122,10 @@ class WFEditorApplication(CallableQThread):
                     registry['calculation_basepath']
                 )
             self.__settings.set_value(
+                    "%s.%s" % (settings_path, SETTING_KEYS['registry.extraconfig']),
+                    registry['extraconfig']
+                )
+            self.__settings.set_value(
                 "%s.%s" % (settings_path, SETTING_KEYS['registry.software_directory']),
                 registry['software_directory']
             )
