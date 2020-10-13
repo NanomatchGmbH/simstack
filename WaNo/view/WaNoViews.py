@@ -82,7 +82,6 @@ class MultipleOfView(AbstractWanoQTView):
 
     def remove_button_clicked(self):
         if self.model.last_item_check():
-            #Only one item left here, do nothing.
             return
 
         removed = self.model.delete_item()
@@ -140,48 +139,46 @@ class WaNoGroupView(AbstractWanoQTView):
 
     def init_from_model(self):
         for model in self.model.wanos():
-            print(model, self.model.path, self, self.model)
+            #print(model, self.model.path, self, self.model)
             self.vbox.addWidget(model.view.get_widget())
 
 class WaNoSwitchView(AbstractWanoQTView):
     def __init__(self, *args, **kwargs):
         super(WaNoSwitchView, self).__init__(*args, **kwargs)
-        self._current_widget = QtWidgets.QWidget(None)
-        self._current_view = None
-
-    def get_widget(self):
-        mv = self.model.get_selected_view()
-        if mv == self._current_view and self._current_widget != None and self._current_view != None:
-            pass
-        elif mv != None:
-            if self._current_view != None:
-                self._current_view.set_visible(False)
-
-            self._current_view = mv
-            self._current_view.set_visible(True)
-            self._current_widget = mv.get_widget()
-        return self._current_widget
+        self.actual_widget = QtWidgets.QWidget(parent=None)
+        self.vbox = QtWidgets.QVBoxLayout()
+        self.actual_widget.setLayout(self.vbox)
+        self._widgets_parsed = False
 
     def set_parent(self, parent_view):
         super().set_parent(parent_view)
-        for _,model in self.model.wanos():
-            print(parent_view)
-            print(model.name, "MP", model.path)
-            print(parent_view.model.path, "MPP")
-            model.view.set_parent(self._qt_parent)
+        self.actual_widget.setParent(self._qt_parent)
+
+    def get_widget(self):
+        return self.actual_widget
 
     def init_from_model(self):
-        for _,model in self.model.wanos():
-            model.view.set_visible(False)
-        #visible_widget = self.get_widget()
-        sview = self.model.get_selected_view()
-        if sview is not None:
-            sview.set_visible(True)
-            self.actual_widget = sview.get_widget()
-            self.model.get_parent().view.init_from_model()
-        #assert self._current_view is not None
-        #self._current_view.set_visible(True)
-        #self.model._parent.view.init_from_model()
+        if not self._widgets_parsed:
+            try:
+                for _,model in self.model.wanos():
+                    addview = model.view.get_widget()
+                    if addview is None:
+                        raise IndexError("WaNo not yet initialized.")
+                    self.vbox.addWidget(addview)
+                self._widgets_parsed = True
+            except IndexError as e:
+                self._widgets_parsed = False
+                self.vbox.clear()
+                return
+
+        selid = self.model.get_selected_id()
+        for mid,(_,model) in enumerate(self.model.wanos()):
+            if mid == selid:
+                truefalse = True
+            else:
+                truefalse = False
+            model.view.set_visible(truefalse)
+
 
 class WaNoConditionalView(AbstractWanoQTView):
     def __init__(self, *args, **kwargs):
