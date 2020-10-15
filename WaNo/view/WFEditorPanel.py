@@ -190,7 +190,7 @@ class WFWaNoWidget(QtWidgets.QToolButton,DragDropTargetTracker):
         print("rendering wano with stageout_basedir %s" %stageout_basedir)
         jsdl, wem = self.wano_model.render_and_write_input_files_newmodel(basefolder,stageout_basedir=stageout_basedir)
         wem: WorkflowExecModule
-        wem.set_wano_xml(self._wano_type + ".xml")
+        wem.set_wano_xml(self.wano_model.name + ".xml")
         return jsdl, wem, path_list + [wem.name]
 
     def clear(self):
