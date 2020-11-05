@@ -552,18 +552,20 @@ class SSHConnector(CallableQThread):
         VDIR = cm.get_newest_version_directory(software_dir)
         software_dir += '/' + VDIR
         if VDIR == "V2":
-            pythonproc = software_dir + '/local_anaconda/bin/python'
+            raise NotImplementedError("V2 connection capability removed from SimStack client. Please upgrade to V4.")
         elif VDIR == "V3":
-            pythonproc = software_dir + '/local_anaconda/envs/nanomatch_server/bin/python'
+            raise NotImplementedError("V3 connection capability removed from SimStack client. Please upgrade to V4.")
         else:
-            pythonproc = software_dir + '/local_anaconda/envs/simstack_server/bin/python'
+            myenv = "simstack_server"
+            pythonproc = software_dir + '/local_anaconda/envs/%s/bin/python' %myenv
+            execproc = "source %s/local_anaconda/etc/profile.d/conda.sh; conda activate simstack_server; %s"%(software_dir, pythonproc)
         serverproc = software_dir + '/SimStackServer/SimStackServer.py'
         if not cm.exists(pythonproc):
             raise FileNotFoundError("%s pythonproc was not found. Please check, whether the software directory in Configuration->Servers is correct and postinstall.sh was run"%pythonproc)
         if not cm.exists(serverproc):
             raise FileNotFoundError("%s serverproc was not found. Please check, whether the software directory in Configuration->Servers is correct and the file exists" % serverproc)
 
-        command = "%s %s"%(pythonproc, serverproc)
+        command = "%s %s"%(execproc, serverproc)
         #print(command)
         cm.connect_zmq_tunnel(command)
         return ErrorCodes.NO_ERROR
