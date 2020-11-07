@@ -557,8 +557,14 @@ class SSHConnector(CallableQThread):
             raise NotImplementedError("V3 connection capability removed from SimStack client. Please upgrade to V4.")
         else:
             myenv = "simstack_server"
-            pythonproc = software_dir + '/local_anaconda/envs/%s/bin/python' %myenv
-            execproc = "source %s/local_anaconda/etc/profile.d/conda.sh; conda activate simstack_server; %s"%(software_dir, pythonproc)
+            if registry["queueing_system"] == "AiiDA":
+                myenv = "aiida"
+                pythonproc = software_dir + '/local_anaconda/envs/%s/bin/python' %myenv
+                execproc = "source %s/local_anaconda/etc/profile.d/conda.sh; conda activate %s; %s" % (
+                software_dir, myenv, pythonproc)
+            else:
+                pythonproc = software_dir + '/local_anaconda/envs/%s/bin/python' % myenv
+                execproc = "source %s/local_anaconda/etc/profile.d/conda.sh; conda activate %s; %s"%(software_dir, myenv, pythonproc)
         serverproc = software_dir + '/SimStackServer/SimStackServer.py'
         if not cm.exists(pythonproc):
             raise FileNotFoundError("%s pythonproc was not found. Please check, whether the software directory in Configuration->Servers is correct and postinstall.sh was run"%pythonproc)

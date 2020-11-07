@@ -191,6 +191,7 @@ class WaNoRegistrySettings(QWidget):
         qs.addItem("pbs")
         qs.addItem("slurm")
         qs.addItem("lsf")
+        qs.addItem("AiiDA")
         qs.addItem("Internal")
 
         #self.__workflows    = QLineEdit(self)
