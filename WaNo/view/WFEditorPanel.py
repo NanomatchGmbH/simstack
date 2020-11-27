@@ -53,10 +53,14 @@ import copy
 
 class DragDropTargetTracker(object):
     def manual_init(self):
-        self.newparent = self.parent()
+        self._initial_parent = self.parent()
+
+    @abc.abstractmethod
+    def parent(self):
+        pass
 
     def _target_tracker(self,event):
-        self.newparent = event
+        self._newparent = event
 
     def mouseMoveEvent_feature(self, e):
         if e.buttons() != QtCore.Qt.LeftButton:
@@ -69,23 +73,26 @@ class DragDropTargetTracker(object):
         self.drag.setHotSpot(e.pos() - self.rect().topLeft())
         #self.move(e.globalPos())
         self.drag.targetChanged.connect(self._target_tracker)
-        self.newparent = self.parent()
+        self._newparent = self.parent()
         dropAction = self.drag.exec_(QtCore.Qt.MoveAction)
 
         #In case the target of the drop changed we are outside the workflow editor
         #In that case we would like to remove ourselves
-        if self.newparent is None:
-        #if (self.newparent != self.parent()):
-        #    print(type(self.newparent),type(self.parent()))
-        #    print ("I am outside of drop")
+        if self._newparent is None:
             self.parent().removeElement(self.model)
+            self.model.view.deleteLater()
+        elif self._newparent == self._initial_parent:
+            # Nothing to be done
+            pass
         else:
+            # In this case we assume both types have "correct" dropevents
+            # print("Passing")
             pass
 
 class WFWaNoWidget(QtWidgets.QToolButton,DragDropTargetTracker):
     def __init__(self, text, wano, parent):
         super(WFWaNoWidget, self).__init__(parent)
-        DragDropTargetTracker.manual_init(self)
+        self.manual_init()
         self.logger = logging.getLogger('WFELOG')
         self.moved = False
         lvl = self.logger.getEffectiveLevel() # switch off too many infos
@@ -443,6 +450,16 @@ class SubWFModel(WFItemModel,WFItemListInterface):
             else:
                 root.append(ele.model.save_to_disk(my_foldername))
         return root
+
+    def remove_element(self,element):
+        myid = self.elements.index(element)
+        self.elements.remove(element)
+        del self.elementnames[myid]
+
+    def removeElement(self, element):
+        #print("subwf Removing",element)
+        self.remove_element(element)
+        return
 
 class ParallelModel(WFItemModel):
     def __init__(self,*args,**kwargs):
@@ -959,7 +976,6 @@ class WFModel(object):
             pass
 
         wf_xml = self.render_to_simple_wf(submitdir,jobdir)
-
         return SubmitType.WORKFLOW,submitdir,wf_xml
 
     def move_element_to_position(self, element, new_position):
@@ -1002,14 +1018,10 @@ class WFModel(object):
         self.editor.openWaNoEditor(wanoWidget)
 
     def removeElement(self, element):
-        # remove element both from the buttons and child list
-        element.close()
-        self.editor.remove(element)
+        #print("Removing",element)
+        self.remove_element(element)
+        return
 
-        myid = self.elements.index(element)
-        self.elements.remove(element)
-        del self.elementnames[myid]
-        element.view.deleteLater()
 
 
 class SubWorkflowView(QtWidgets.QFrame):
@@ -1156,8 +1168,12 @@ class SubWorkflowView(QtWidgets.QFrame):
             if e.source().parent() is self:
                 self.model.move_element_to_position(e.source().model, new_position)
             else:
+
+                sourceparent = e.source().parent()
+                e.source().setParent(self)
                 self.model.add_element(ele.model, new_position)
-                e.source().parent().removeElement(ele.model)
+                sourceparent.removeElement(ele.model)
+
                 ele.show()
                 ele.raise_()
                 ele.activateWindow()
@@ -1283,6 +1299,7 @@ class SubWorkflowView(QtWidgets.QFrame):
 
     def openWaNoEditor(self,wanoWidget):
         self.model.openWaNoEditor(wanoWidget)
+
 
     def removeElement(self, element):
         self.model.removeElement(element)
@@ -1426,8 +1443,10 @@ class WorkflowView(QtWidgets.QFrame):
                 self.model.move_element_to_position(e.source().model, new_position)
 
             else:
+                sourceparent = e.source().parent()
+                e.source().setParent(self)
                 self.model.add_element(ele.model, new_position)
-                e.source().parent().removeElement(ele.model)
+                sourceparent.removeElement(ele.model)
                 ele.show()
                 ele.raise_()
                 ele.activateWindow()
@@ -1670,11 +1689,11 @@ class WFControlWithTopMiddleAndBottom(QtWidgets.QFrame,DragDropTargetTracker):
         parent = kwargs['qt_parent']
         self.logical_parent = kwargs["logical_parent"]
         super(WFControlWithTopMiddleAndBottom,self).__init__(parent)
-        DragDropTargetTracker.manual_init(self)
+        self.manual_init()
         #self.editor = kwargs["editor"]
         self.set_style()
         #TIMO: Try this off later, it's not required imho
-        self.setAcceptDrops(True)
+        self.setAcceptDrops(False)
         self.model = None
         self.vbox = QtWidgets.QVBoxLayout(self)
         self.show()
