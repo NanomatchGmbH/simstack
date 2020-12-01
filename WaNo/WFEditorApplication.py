@@ -17,6 +17,7 @@ import datetime
 
 from SimStackServer.MessageTypes import ErrorCodes
 from SimStackServer.Util.FileUtilities import trace_to_logger
+from SimStackServer.WaNo.WaNoModels import FileNotFoundErrorSimStack
 from WaNo.SimStackPaths import SimStackPaths
 
 from WaNo.view.WFViewManager import WFViewManager
@@ -535,11 +536,15 @@ class WFEditorApplication(CallableQThread):
 
         try:
             name,jobtype,directory,wf_xml = editor.run()
+        except FileNotFoundErrorSimStack as e:
+            self._view_manager.show_error("File not found during Workflow rendering. Error was: %s" % e)
+            return
         except FileNotFoundError as e:
             import traceback
             traceback.print_exc()
             self._view_manager.show_error("Please save workflow before submit. Error was: %s"%e)
             return
+
 
         #print(etree.tostring(wf_xml, pretty_print=True).decode("utf-8"))
         #if jobtype == SubmitType.SINGLE_WANO:
