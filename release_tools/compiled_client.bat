@@ -16,10 +16,21 @@ cd  ..\..\compiled_client\Lib\site-packages
 unzip.exe SimStackServer.zip
 del SimStackServer.zip
 
-cd ..
-cd ..
-cd ..
 
+cd ..
+cd ..
+cd ..
+cd simstack_src
+
+cd external\TreeWalker
+python ..\..\release_tools\git_archive_all.py --prefix=external\treewalker\  ..\..\..\compiled_client\Lib\site-packages\TreeWalker.zip
+cd  ..\..\..\compiled_client\Lib\site-packages
+unzip.exe TreeWalker.zip
+REM del TreeWalker.zip
+
+cd ..
+cd ..
+cd ..
 
 mkdir installer_package
 xcopy compiled_client\Lib\site-packages\* installer_package /s
@@ -31,6 +42,7 @@ xcopy simstack_src\WaNo\Media installer_package\WaNo\Media\ /s
 xcopy simstack_src\simstack installer_package /s
 mkdir installer_package\external
 xcopy simstack_src\external\boolexp installer_package\external\boolexp\ /s
+xcopy simstack_src\external\Qt.py installer_package\external\ /s
 xcopy simstack_src\Logo.png installer_package\ /s
 
 ren installer_package simstack
