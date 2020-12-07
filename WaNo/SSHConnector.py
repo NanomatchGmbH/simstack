@@ -555,16 +555,18 @@ class SSHConnector(CallableQThread):
             raise NotImplementedError("V2 connection capability removed from SimStack client. Please upgrade to V4.")
         elif VDIR == "V3":
             raise NotImplementedError("V3 connection capability removed from SimStack client. Please upgrade to V4.")
+        elif VDIR != "V4":
+            print("Found a newer server installation than this client supports (Found: %s). Please upgrade your client. Trying to connect with V4."%VDIR)
+        VDIR == "V4"
+        myenv = "simstack_server"
+        if registry["queueing_system"] == "AiiDA":
+            myenv = "aiida"
+            pythonproc = software_dir + '/local_anaconda/envs/%s/bin/python' %myenv
+            execproc = "source %s/local_anaconda/etc/profile.d/conda.sh; conda activate %s; %s" % (
+            software_dir, myenv, pythonproc)
         else:
-            myenv = "simstack_server"
-            if registry["queueing_system"] == "AiiDA":
-                myenv = "aiida"
-                pythonproc = software_dir + '/local_anaconda/envs/%s/bin/python' %myenv
-                execproc = "source %s/local_anaconda/etc/profile.d/conda.sh; conda activate %s; %s" % (
-                software_dir, myenv, pythonproc)
-            else:
-                pythonproc = software_dir + '/local_anaconda/envs/%s/bin/python' % myenv
-                execproc = "source %s/local_anaconda/etc/profile.d/conda.sh; conda activate %s; %s"%(software_dir, myenv, pythonproc)
+            pythonproc = software_dir + '/local_anaconda/envs/%s/bin/python' % myenv
+            execproc = "source %s/local_anaconda/etc/profile.d/conda.sh; conda activate %s; %s"%(software_dir, myenv, pythonproc)
         serverproc = software_dir + '/SimStackServer/SimStackServer.py'
         if not cm.exists(pythonproc):
             raise FileNotFoundError("%s pythonproc was not found. Please check, whether the software directory in Configuration->Servers is correct and postinstall.sh was run"%pythonproc)
