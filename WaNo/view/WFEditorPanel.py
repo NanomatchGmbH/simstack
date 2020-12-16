@@ -25,7 +25,7 @@ from Qt.QtCore import Signal
 
 import SimStackServer.WaNo.WaNoFactory as WaNoFactory
 from SimStackServer.WorkflowModel import WorkflowExecModule, Workflow, DirectedGraph, WorkflowElementList, SubGraph, \
-    ForEachGraph, StringList, WFPass
+    ForEachGraph, StringList, WFPass, IfGraph
 from WaNo.SimStackPaths import SimStackPaths
 from WaNo.WaNoSettingsProvider import WaNoSettingsProvider
 from WaNo.Constants import SETTING_KEYS
@@ -460,6 +460,147 @@ class SubWFModel(WFItemModel,WFItemListInterface):
         #print("subwf Removing",element)
         self.remove_element(element)
         return
+
+
+class IfModel(WFItemModel):
+    def __init__(self,*args,**kwargs):
+        #super(ForEachModel,self).__init__(*args,**kwargs)
+        super(IfModel, self).__init__()
+        self.wf_root = kwargs["wf_root"]
+
+        self.is_wano = False
+        self.editor = kwargs['editor']
+        self.view = kwargs["view"]
+        self._subwf_true_branch_model, self._subwf_true_branch_view = ControlFactory.construct("SubWorkflow",editor=self.editor,qt_parent=self.view, logical_parent=self.view.logical_parent,wf_root = self.wf_root)
+        self._subwf_false_branch_model, self._subwf_false_branch_view = ControlFactory.construct("SubWorkflow",editor=self.editor,qt_parent=self.view, logical_parent=self.view.logical_parent,wf_root = self.wf_root)
+        self.subwf_models = [self._subwf_true_branch_model, self._subwf_false_branch_model]
+        self.subwf_views = [self._subwf_true_branch_view, self._subwf_false_branch_view]
+        self.name = "Branch"
+        self._condition = ""
+
+    def set_condition(self, condition):
+        self._condition = condition
+
+    def get_condition(self):
+        return self._condition
+
+    def render_to_simple_wf(self, path_list, output_path_list, submitdir ,jobdir ,path , parent_ids):
+        filesets = []
+        transitions = []
+
+        if jobdir == "":
+            my_jobdir = self.name
+        else:
+            my_jobdir = "%s/%s" % (jobdir, self.name)
+
+        if path == "":
+            path = self.name
+        else:
+            path = "%s/%s" %(path,self.name)
+
+        path_list += [self.name]
+        output_path_list_true = output_path_list + [self.name,"True"]
+        output_path_list_false = output_path_list + [self.name, "False"]
+
+        sub_activities_true, sub_transitions_true, sub_toids_true = self._subwf_true_branch_model.render_to_simple_wf(output_path_list_true, output_path_list, submitdir,my_jobdir+ "/True",path = path + "/True/", parent_ids = ["temporary_connector"])
+        sub_activities_false, sub_transitions_false, sub_toids_false = self._subwf_false_branch_model.render_to_simple_wf(
+            output_path_list_false, output_path_list, submitdir, my_jobdir + "/False", path = path + "/False/", parent_ids=["temporary_connector"])
+        sg_true = SubGraph(elements = WorkflowElementList(sub_activities_true),
+                 graph = DirectedGraph(sub_transitions_true))
+        sg_false = SubGraph(elements=WorkflowElementList(sub_activities_false),
+                           graph=DirectedGraph(sub_transitions_false))
+
+        mypass = WFPass()
+        finish_uid = mypass.uid
+
+
+        fe = IfGraph(finish_uid = finish_uid,
+                     truegraph = sg_true,
+                     falsegraph = sg_false,
+                     true_final_ids = sub_toids_true,
+                     false_final_ids = sub_toids_false,
+                     condition = self._condition
+        )
+
+        toids = [fe.uid]
+        for parent_id in parent_ids:
+            transitions.append((parent_id, toids[0]))
+
+        # We are now generating a break in this workflow. The break will be resolved (hopefully) once the FE runs.
+
+        return [("IfGraph",fe),("WFPass", mypass)], transitions, [finish_uid]
+
+    def assemble_variables(self, path):
+        myvars = []
+        for swfid, swfm in enumerate(self.subwf_models):
+            for var in swfm.assemble_variables(path):
+                newpath = merge_path(path, "%s.%d"%(self.name,swfid),var)
+                myvars.append(newpath)
+        return myvars
+
+    def add(self):
+        subwfmodel, subwfview = ControlFactory.construct("SubWorkflow",editor=self.editor,qt_parent=self.view, logical_parent=self.view.logical_parent,wf_root = self.wf_root)
+        self.subwf_models.append(subwfmodel)
+        self.subwf_views.append(subwfview)
+
+    def deletelast(self):
+        if len(self.subwf_views) <= 1:
+            return
+        self.subwf_views[-1].deleteLater()
+        self.subwf_views.pop()
+        self.subwf_models.pop()
+
+    def assemble_files(self,path):
+        myfiles = []
+        for swfid,swfm in enumerate(self.subwf_models):
+            for otherfile in swfm.assemble_files(path):
+                myfiles.append(os.path.join(path, self.name, "%d"%swfid, otherfile))
+        return myfiles
+
+    def save_to_disk(self, foldername):
+        attributes = {"name": self.name,
+                      "type": "If",
+                      "condition": self._condition}
+        root = etree.Element("WFControl", attrib=attributes)
+        true_xml = self._subwf_true_branch_model.save_to_disk(foldername)
+        false_xml = self._subwf_false_branch_model.save_to_disk(foldername)
+        true_xml.attrib["branch"] = "true"
+        false_xml.attrib["branch"] = "false"
+        root.append(true_xml)
+        root.append(false_xml)
+
+        return root
+
+    def read_from_disk(self, full_foldername, xml_subelement):
+        self.subwf_models = []
+        for view in self.subwf_views:
+            view.deleteLater()
+        self.subwf_views = []
+        attribs = xml_subelement.attrib
+        assert attribs["type"] == "If"
+        self._condition = attribs["condition"]
+        print("Setting condition to", self._condition)
+
+
+        for child in xml_subelement:
+            if child.tag != "WFControl":
+                continue
+            if child.attrib["type"] != "SubWorkflow":
+                continue
+            subwfmodel,subwfview = ControlFactory.construct("SubWorkflow", qt_parent=self.view, logical_parent=self.view,editor=self.editor,wf_root = self.wf_root)
+            name = child.attrib["name"]
+
+            subwfview.setText(name)
+            subwfmodel.read_from_disk(full_foldername=full_foldername,xml_subelement=child)
+            if child.attrib["branch"] == "true":
+                self._subwf_true_branch_model = subwfmodel
+                self._subwf_true_branch_view = subwfview
+            elif child.attrib["branch"] == "false":
+                self._subwf_false_branch_model = subwfmodel
+                self._subwf_false_branch_view = subwfview
+        self.subwf_models = [self._subwf_true_branch_model, self._subwf_false_branch_model]
+        self.subwf_views = [self._subwf_true_branch_view, self._subwf_false_branch_view]
+        self.view.init_from_model()
 
 class ParallelModel(WFItemModel):
     def __init__(self,*args,**kwargs):
@@ -1931,9 +2072,103 @@ class ParallelView(WFControlWithTopMiddleAndBottom):
         self.updateGeometry()
 
 
+class IfView(WFControlWithTopMiddleAndBottom):
+    def __init__(self,*args,**kwargs):
+        super(IfView,self).__init__(*args,**kwargs)
+        self.dontplace = False
+        self.splitter = QtWidgets.QSplitter(QtCore.Qt.Horizontal)
+        self.is_wano = False
+
+    def add_new(self):
+        self.model.add()
+        self.relayout()
+
+    def relayout(self):
+        self.model.wf_root.view.relayout()
+
+    def delete(self):
+        self.model.deletelast()
+        self.relayout()
+
+    def _on_line_edit(self):
+        self.model.set_condition(self.list_of_variables.text())
+
+    def get_top_widget(self):
+        self.topwidget = QtWidgets.QWidget()
+        self.topLineLayout = QtWidgets.QHBoxLayout()
+        self.topwidget.setLayout(self.topLineLayout)
+        #b.clicked.connect(self.toggleVisible)
+        self._condition = QtWidgets.QLabel("Condition")
+        self.topLineLayout.addWidget(self._condition)
+        self.list_of_variables = QtWidgets.QLineEdit('')
+        self.list_of_variables.editingFinished.connect(self._on_line_edit)
+        self.topLineLayout.addWidget(self.list_of_variables)
+        self._global_import_button = QtWidgets.QPushButton(QtGui.QIcon.fromTheme("insert-object"),"")
+        self._global_import_button.clicked.connect(self.open_remote_importer)
+        self.topLineLayout.addWidget(self._global_import_button)
+        #self.open_variables.itemSelectionChanged.connect(self.onItemSelectionChange)
+        #self.open_variables.connect_workaround(self._load_variables)
+        return self.topwidget
+
+    def open_remote_importer(self):
+        varpaths = self.model.wf_root.assemble_variables("")
+        mydialog = RemoteImporterDialog(varname="Import variable \"%s\" from:" % self.model.name,
+                                        importlist=varpaths)
+        mydialog.setModal(True)
+        mydialog.exec()
+        result = mydialog.result()
+        if mydialog.result() == True:
+            choice = mydialog.getchoice()
+            self.model.set_condition(choice)
+            self.list_of_variables.setText(choice)
+        else:
+            pass
+
+    def init_from_model(self):
+        super(IfView,self).init_from_model()
+        for view in self.model.subwf_views:
+            self.splitter.addWidget(view)
+        self.list_of_variables.setText(self.model._condition)
+
+    def get_middle_widget(self):
+        return self.splitter
+
+    def sizeHint(self):
+
+        if self.model is not None:
+            maxheight = 0
+            width = 0
+            for v in self.model.subwf_views:
+                sh = v.sizeHint()
+                maxheight = max(maxheight,sh.height())
+                width += sh.width()
+
+            size = QtCore.QSize(width,maxheight)
+            size += QtCore.QSize(50,75)
+            if size.width() < 300:
+                size.setWidth(300)
+            return size
+        else:
+            return QtCore.QSize(200,100)
+
+    def place_elements(self):
+        if not self.dontplace:
+            self.dontplace = True
+            if self.model is not None:
+                self.init_from_model()
+
+                #self.model.subwfview.place_elements()
+                for view in self.model.subwf_views:
+                    view.place_elements()
+
+            #self.parent().place_elements()
+            self.dontplace=False
+        self.updateGeometry()
+
 class ControlFactory(object):
     n_t_c = {
         "ForEach" : (ForEachModel,ForEachView),
+        "If": (IfModel, IfView),
         "Parallel": (ParallelModel, ParallelView),
         "SubWorkflow": (SubWFModel,SubWorkflowView)
     }
