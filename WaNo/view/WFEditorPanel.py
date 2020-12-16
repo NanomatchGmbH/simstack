@@ -552,9 +552,9 @@ class IfModel(WFItemModel):
 
     def assemble_files(self,path):
         myfiles = []
-        for swfid,swfm in enumerate(self.subwf_models):
+        for swfid,(swfm,truefalse) in enumerate(zip([self._subwf_true_branch_model, self._subwf_true_branch_model],["True", "False"])):
             for otherfile in swfm.assemble_files(path):
-                myfiles.append(os.path.join(path, self.name, "%d"%swfid, otherfile))
+                myfiles.append(os.path.join(path, self.name, truefalse, otherfile))
         return myfiles
 
     def save_to_disk(self, foldername):
