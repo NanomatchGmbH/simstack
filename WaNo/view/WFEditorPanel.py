@@ -529,11 +529,11 @@ class WhileModel(WFItemModel):
 
     def assemble_variables(self, path):
         if path == "":
-            mypath = "${%s}"%self.itername
-            myvalue = "${%s_VALUE}"%self.itername
+            mypath = "While.${%s}"%self.itername
+            myvalue = "While.${%s_VALUE}"%self.itername
         else:
-            mypath = "%s.${%s}" % (path, self.itername)
-            myvalue= "%s.${%s_VALUE}" % (path, self.itername)
+            mypath = "%s.While.${%s}" % (path, self.itername)
+            myvalue= "%s.While.${%s_VALUE}" % (path, self.itername)
         myvars = self._subwf_model.assemble_variables(mypath)
         myvars.append(mypath)
         myvars.append(myvalue)
