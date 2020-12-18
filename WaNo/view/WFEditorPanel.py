@@ -287,7 +287,10 @@ class WFItemListInterface(object):
         del self.elementnames[myid]
         element.view.deleteLater()
 
-class WFItemModel(object):
+class WFItemModel:
+    def __init__(self, *args, **kwargs):
+        pass
+
     def render_to_simple_wf(self,path_list, output_path_list, submitdir,jobdir):
         activities = []
         transitions = []
@@ -461,11 +464,121 @@ class SubWFModel(WFItemModel,WFItemListInterface):
         self.remove_element(element)
         return
 
+class WhileModel(WFItemModel):
+    def __init__(self,*args,**kwargs):
+        #super(ForEachModel,self).__init__(*args,**kwargs)
+        super(WhileModel, self).__init__(*args, **kwargs)
+        self.wf_root = kwargs["wf_root"]
+        self.is_wano = False
+        self.editor = kwargs['editor']
+        self.view = kwargs["view"]
+        self._subwf_model, self._subwf_view = ControlFactory.construct("SubWorkflow",editor=self.editor,qt_parent=self.view, logical_parent=self.view.logical_parent,wf_root = self.wf_root)
+        self.subwf_models = [self._subwf_model]
+        self.subwf_views = [self._subwf_view]
+        self.name = "While"
+        self.itername = "While_iterator"
+        self._condition = "Condition"
+
+    def set_condition(self, condition):
+        self._condition = condition
+
+    def get_condition(self):
+        return self._condition
+
+    def set_itername(self, itername):
+        self.itername = itername
+
+    def get_itername(self):
+        return self.itername
+
+    def render_to_simple_wf(self, path_list, output_path_list, submitdir ,jobdir ,path , parent_ids):
+        transitions = []
+
+        if jobdir == "":
+            my_jobdir = self.name
+        else:
+            my_jobdir = "%s/%s" % (jobdir, self.name)
+
+        if path == "":
+            path = self.name
+        else:
+            path = "%s/%s" %(path,self.name)
+
+        path_list += [self.name]
+        output_path_list += [self.name, "${" + self.itername + "}"]
+
+        sub_activities, sub_transitions, sub_toids = self._subwf_model.render_to_simple_wf(path_list, output_path_list, submitdir,my_jobdir,path = path, parent_ids = ["temporary_connector"])
+        sg = SubGraph(elements = WorkflowElementList(sub_activities),
+                 graph = DirectedGraph(sub_transitions))
+
+        mypass = WFPass()
+        finish_uid = mypass.uid
+        fe = WhileGraph(subgraph = sg,
+                          finish_uid = finish_uid,
+                          iterator_name = self.itername,
+                          condition = self._condition,
+                          subgraph_final_ids = StringList(sub_toids)
+        )
+
+        toids = [fe.uid]
+        for parent_id in parent_ids:
+            transitions.append((parent_id, toids[0]))
+
+        return [("WhileGraph",fe),("WFPass", mypass)], transitions, [finish_uid]  #WFtoXML.xml_subwfforeach(IteratorName=self.itername,IterSet=filesets,SubWorkflow=swf,Id=muuid)
+
+
+    def assemble_variables(self, path):
+        if path == "":
+            mypath = "${%s}"%self.itername
+            myvalue = "${%s_VALUE}"%self.itername
+        else:
+            mypath = "%s.${%s}" % (path, self.itername)
+            myvalue= "%s.${%s_VALUE}" % (path, self.itername)
+        myvars = self._subwf_model.assemble_variables(mypath)
+        myvars.append(mypath)
+        myvars.append(myvalue)
+        return myvars
+
+    def assemble_files(self,path):
+        myfiles = []
+        for otherfile in self._subwf_model.assemble_files(path):
+            myfiles.append(os.path.join(path, self.view.text(),"*",otherfile))
+        return myfiles
+
+    def save_to_disk(self, foldername):
+        #view needs varname
+        attributes = {"name": self.name,
+                      "type": "While",
+                      "condition": self._condition}
+        root = etree.Element("WFControl", attrib=attributes)
+        my_foldername = foldername
+        root.append(self._subwf_model.save_to_disk(my_foldername))
+        iter_xml = etree.SubElement(root,"IterName")
+        iter_xml.text = self.itername
+        return root
+
+    def read_from_disk(self, full_foldername, xml_subelement):
+        attribs = xml_subelement.attrib
+        assert attribs["type"] == "While"
+        self._condition = attribs["condition"]
+        for child in xml_subelement:
+            if child.tag == "IterName":
+                self.itername = child.text
+                continue
+            if child.tag != "WFControl":
+                continue
+            if child.attrib["type"] != "SubWorkflow":
+                continue
+            name = child.attrib["name"]
+            type = child.attrib["type"]
+
+            self._subwf_view.setText(name)
+            self._subwf_model.read_from_disk(full_foldername=full_foldername,xml_subelement=child)
+
 
 class IfModel(WFItemModel):
     def __init__(self,*args,**kwargs):
-        #super(ForEachModel,self).__init__(*args,**kwargs)
-        super(IfModel, self).__init__()
+        super(IfModel, self).__init__(*args, **kwargs)
         self.wf_root = kwargs["wf_root"]
 
         self.is_wano = False
@@ -532,23 +645,11 @@ class IfModel(WFItemModel):
 
     def assemble_variables(self, path):
         myvars = []
-        for swfid, swfm in enumerate(self.subwf_models):
+        for swfid,(swfm,truefalse) in enumerate(zip([self._subwf_true_branch_model, self._subwf_true_branch_model],["True", "False"])):
             for var in swfm.assemble_variables(path):
-                newpath = merge_path(path, "%s.%d"%(self.name,swfid),var)
+                newpath = merge_path(path, "%s.%d"%(self.name,truefalse),var)
                 myvars.append(newpath)
         return myvars
-
-    def add(self):
-        subwfmodel, subwfview = ControlFactory.construct("SubWorkflow",editor=self.editor,qt_parent=self.view, logical_parent=self.view.logical_parent,wf_root = self.wf_root)
-        self.subwf_models.append(subwfmodel)
-        self.subwf_views.append(subwfview)
-
-    def deletelast(self):
-        if len(self.subwf_views) <= 1:
-            return
-        self.subwf_views[-1].deleteLater()
-        self.subwf_views.pop()
-        self.subwf_models.pop()
 
     def assemble_files(self,path):
         myfiles = []
@@ -604,8 +705,7 @@ class IfModel(WFItemModel):
 
 class ParallelModel(WFItemModel):
     def __init__(self,*args,**kwargs):
-        #super(ForEachModel,self).__init__(*args,**kwargs)
-        super(ParallelModel, self).__init__()
+        super(ParallelModel, self).__init__(*args, **kwargs)
         self.wf_root = kwargs["wf_root"]
 
         self.is_wano = False
@@ -654,9 +754,6 @@ class ParallelModel(WFItemModel):
             toids += my_toids
 
         return activities, transitions, toids
-
-        #-> self.subwfmodel.render_to_simple_wf(submitdir,jobdir,path = path)
-        #-> return WFtoXML.xml_subwfforeach(IteratorName=self.name,IterSet=filesets,SubWorkflow=swf,Id=muuid)
 
     def assemble_variables(self, path):
         myvars = []
@@ -719,8 +816,7 @@ class ParallelModel(WFItemModel):
 
 class ForEachModel(WFItemModel):
     def __init__(self,*args,**kwargs):
-        #super(ForEachModel,self).__init__(*args,**kwargs)
-        super(ForEachModel, self).__init__()
+        super(ForEachModel, self).__init__(*args, **kwargs)
         self.wf_root = kwargs["wf_root"]
 
         self.is_wano = False
@@ -2165,10 +2261,109 @@ class IfView(WFControlWithTopMiddleAndBottom):
             self.dontplace=False
         self.updateGeometry()
 
+class WhileView(WFControlWithTopMiddleAndBottom):
+    def __init__(self,*args,**kwargs):
+        super(WhileView,self).__init__(*args,**kwargs)
+        self.dontplace = False
+        self.splitter = QtWidgets.QSplitter(QtCore.Qt.Horizontal)
+        self.is_wano = False
+
+    def add_new(self):
+        self.model.add()
+        self.relayout()
+
+    def relayout(self):
+        self.model.wf_root.view.relayout()
+
+    def delete(self):
+        self.model.deletelast()
+        self.relayout()
+
+    def _on_varname_line_edit(self):
+        self.model.set_condition(self.list_of_variables.text())
+
+    def _on_line_edit(self):
+        self.model.set_itername(self.itername_widget.text())
+
+    def get_top_widget(self):
+        self.topwidget = QtWidgets.QWidget()
+        self.topLineLayout = QtWidgets.QHBoxLayout()
+        self.topwidget.setLayout(self.topLineLayout)
+        #b.clicked.connect(self.toggleVisible)
+        self.itername_widget = QtWidgets.QLineEdit('Iterator Name')
+        self.itername_widget.editingFinished.connect(self._on_line_edit)
+        self.topLineLayout.addWidget(self.itername_widget)
+        self.list_of_variables = QtWidgets.QLineEdit('Condition')
+        self.list_of_variables.editingFinished.connect(self._on_varname_line_edit)
+        self.topLineLayout.addWidget(self.list_of_variables)
+        self._global_import_button = QtWidgets.QPushButton(QtGui.QIcon.fromTheme("insert-object"),"")
+        self._global_import_button.clicked.connect(self.open_remote_importer)
+        self.topLineLayout.addWidget(self._global_import_button)
+        #self.open_variables.itemSelectionChanged.connect(self.onItemSelectionChange)
+        #self.open_variables.connect_workaround(self._load_variables)
+        return self.topwidget
+
+    def open_remote_importer(self):
+        varpaths = self.model.wf_root.assemble_variables("")
+        mydialog = RemoteImporterDialog(varname="Import variable \"%s\" from:" % self.model.name,
+                                        importlist=varpaths)
+        mydialog.setModal(True)
+        mydialog.exec()
+        result = mydialog.result()
+        if mydialog.result() == True:
+            choice = mydialog.getchoice()
+            self.model.set_condition(choice)
+            self.list_of_variables.setText(choice)
+        else:
+            pass
+
+    def init_from_model(self):
+        super(WhileView,self).init_from_model()
+        for view in self.model.subwf_views:
+            self.splitter.addWidget(view)
+        self.list_of_variables.setText(self.model.get_condition())
+        self.itername_widget.setText(self.model.get_itername())
+
+    def get_middle_widget(self):
+        return self.splitter
+
+    def sizeHint(self):
+
+        if self.model is not None:
+            maxheight = 0
+            width = 0
+            for v in self.model.subwf_views:
+                sh = v.sizeHint()
+                maxheight = max(maxheight,sh.height())
+                width += sh.width()
+
+            size = QtCore.QSize(width,maxheight)
+            size += QtCore.QSize(50,75)
+            if size.width() < 300:
+                size.setWidth(300)
+            return size
+        else:
+            return QtCore.QSize(200,100)
+
+    def place_elements(self):
+        if not self.dontplace:
+            self.dontplace = True
+            if self.model is not None:
+                self.init_from_model()
+
+                #self.model.subwfview.place_elements()
+                for view in self.model.subwf_views:
+                    view.place_elements()
+
+            #self.parent().place_elements()
+            self.dontplace=False
+        self.updateGeometry()
+
 class ControlFactory(object):
     n_t_c = {
         "ForEach" : (ForEachModel,ForEachView),
         "If": (IfModel, IfView),
+        "While": (WhileModel, WhileView),
         "Parallel": (ParallelModel, ParallelView),
         "SubWorkflow": (SubWFModel,SubWorkflowView)
     }

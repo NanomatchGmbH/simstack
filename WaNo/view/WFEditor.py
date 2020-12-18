@@ -18,8 +18,8 @@ class WFEditor(QWidget):
             #("SubWorkflow", "ctrl_img/ForEach.png"),
             ("ForEach", "ctrl_img/ForEach.png"),
             ("If", "ctrl_img/If.png"),
-            ("Parallel", "ctrl_img/Parallel.png")
-            #("While", "ctrl_img/While.png")
+            ("Parallel", "ctrl_img/Parallel.png"),
+            ("While", "ctrl_img/While.png")
         ]
 
     registry_changed        = Signal(int, name="RegistryChanged")
