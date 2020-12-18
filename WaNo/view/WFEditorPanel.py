@@ -25,7 +25,7 @@ from Qt.QtCore import Signal
 
 import SimStackServer.WaNo.WaNoFactory as WaNoFactory
 from SimStackServer.WorkflowModel import WorkflowExecModule, Workflow, DirectedGraph, WorkflowElementList, SubGraph, \
-    ForEachGraph, StringList, WFPass, IfGraph
+    ForEachGraph, StringList, WFPass, IfGraph, WhileGraph
 from WaNo.SimStackPaths import SimStackPaths
 from WaNo.WaNoSettingsProvider import WaNoSettingsProvider
 from WaNo.Constants import SETTING_KEYS
@@ -647,7 +647,7 @@ class IfModel(WFItemModel):
         myvars = []
         for swfid,(swfm,truefalse) in enumerate(zip([self._subwf_true_branch_model, self._subwf_true_branch_model],["True", "False"])):
             for var in swfm.assemble_variables(path):
-                newpath = merge_path(path, "%s.%d"%(self.name,truefalse),var)
+                newpath = merge_path(path, "%s.%s"%(self.name,truefalse),var)
                 myvars.append(newpath)
         return myvars
 
