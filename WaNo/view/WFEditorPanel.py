@@ -535,8 +535,8 @@ class WhileModel(WFItemModel):
             mypath = "%s.While.${%s}" % (path, self.itername)
             myvalue= "%s.While.${%s_VALUE}" % (path, self.itername)
         myvars = self._subwf_model.assemble_variables(mypath)
-        myvars.append(mypath)
-        myvars.append(myvalue)
+        my_iterator = "${%s}"%self.itername
+        myvars.append(my_iterator)
         return myvars
 
     def assemble_files(self,path):
