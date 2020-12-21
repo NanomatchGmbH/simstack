@@ -8,6 +8,8 @@ import socket
 import threading
 import shlex
 import os
+from io import StringIO
+import traceback
 from enum import Enum
 from os.path import dirname, join
 from pprint import pprint
@@ -646,7 +648,10 @@ class SSHConnector(CallableQThread):
                 error = ErrorCodes.CONN_ERROR
                 del self._clustermanagers[name]
             except FileNotFoundError as e:
-                statusmessage = "Did not find file, Exception was:\n%s" % (e)
+                traceback_out = StringIO()
+                traceback.print_exc(file=traceback_out)
+                statusmessage = "Did not find file, Exception was:\n%s  \nException occured in relation to File <%s>\n\n ----- Traceback -----\n %s" % (e, e.filename, traceback_out.getvalue())
+
                 error = ErrorCodes.CONN_ERROR
                 del self._clustermanagers[name]
             except OSError as e:
