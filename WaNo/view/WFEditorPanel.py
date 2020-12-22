@@ -14,6 +14,7 @@ import uuid
 import abc
 
 from enum import Enum
+from functools import partial
 from os.path import join
 
 from   lxml import etree
@@ -25,7 +26,7 @@ from Qt.QtCore import Signal
 
 import SimStackServer.WaNo.WaNoFactory as WaNoFactory
 from SimStackServer.WorkflowModel import WorkflowExecModule, Workflow, DirectedGraph, WorkflowElementList, SubGraph, \
-    ForEachGraph, StringList, WFPass, IfGraph, WhileGraph
+    ForEachGraph, StringList, WFPass, IfGraph, WhileGraph, VariableElement
 from WaNo.SimStackPaths import SimStackPaths
 from WaNo.WaNoSettingsProvider import WaNoSettingsProvider
 from WaNo.Constants import SETTING_KEYS
@@ -401,7 +402,7 @@ class SubWFModel(WFItemModel,WFItemListInterface):
                     newpath = merge_path(path,ele.name,var)
                     myvars.append(newpath)
             else:
-                for myvar in ele.model.assemble_variables(path):
+                for myvar in ele.assemble_variables(path):
                     myvars.append(myvar)
         return myvars
 
@@ -427,7 +428,7 @@ class SubWFModel(WFItemModel,WFItemListInterface):
                 name = child.attrib["name"]
                 type = child.attrib["type"]
                 model,view = ControlFactory.construct(type,qt_parent=self.view,logical_parent=self.view,editor=self.editor,wf_root=self.wf_root)
-                self.elements.append(view)
+                self.elements.append(model)
                 self.elementnames.append(name)
                 view.setText(name)
                 model.read_from_disk(full_foldername=full_foldername,xml_subelement=child)
@@ -451,7 +452,7 @@ class SubWFModel(WFItemModel,WFItemListInterface):
                 if not success:
                     break
             else:
-                root.append(ele.model.save_to_disk(my_foldername))
+                root.append(ele.save_to_disk(my_foldername))
         return root
 
     def remove_element(self,element):
@@ -836,11 +837,11 @@ class ForEachModel(WFItemModel):
 
     def assemble_variables(self, path):
         if path == "":
-            mypath = "${%s}"%self.itername
-            myvalue = "${%s_VALUE}"%self.itername
+            mypath = "ForEach.${%s}"%self.itername
+            myvalue = "ForEach.${%s_VALUE}"%self.itername
         else:
-            mypath = "%s.${%s}" % (path, self.itername)
-            myvalue= "%s.${%s_VALUE}" % (path, self.itername)
+            mypath = "%s.ForEach.${%s}" % (path, self.itername)
+            myvalue= "%s.ForEach.${%s_VALUE}" % (path, self.itername)
         myvars = self.subwfmodel.assemble_variables(mypath)
         myvars.append(mypath)
         myvars.append(myvalue)
@@ -1435,7 +1436,7 @@ class SubWorkflowView(QtWidgets.QFrame):
             wfe = e.source()
             dropped = wfe.selectedItems()[0]
             name = dropped.text()
-            model,view = ControlFactory.construct(name,qt_parent=self,logical_parent=self,editor=self.model.editor,wf_root = self.model)
+            model,view = ControlFactory.construct(name,qt_parent=self,logical_parent=self,editor=self.model.editor,wf_root = self.model.wf_root)
             self.model.add_element(model,new_position)
 
 
@@ -2261,6 +2262,159 @@ class IfView(WFControlWithTopMiddleAndBottom):
             self.dontplace=False
         self.updateGeometry()
 
+class VariableView(WFControlWithTopMiddleAndBottom):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.is_wano = False
+        self.dontplace = False
+        self._middle_widget = QtWidgets.QWidget()
+
+    def _on_line_edit(self):
+        self.model.set_varname(self._varname_widget.text())
+
+    def _on_varequation_line_edit(self):
+        self.model.set_varequation(self._varequation_widget.text())
+
+    def get_top_widget(self):
+        self.topwidget = QtWidgets.QWidget()
+        self.topLineLayout = QtWidgets.QHBoxLayout()
+        self.topwidget.setLayout(self.topLineLayout)
+
+        self._varname_widget = QtWidgets.QLineEdit('Variable Name')
+        self._varname_widget.editingFinished.connect(self._on_line_edit)
+        self._varequation_widget = QtWidgets.QLineEdit('Equation')
+        self._varequation_widget.editingFinished.connect(self._on_varequation_line_edit)
+
+        # We define two functors to only have a single open_remote_importer callback function.
+        open_remote_importer_func_varname = partial(self.open_remote_importer,
+                                                    target_function_view = self._varname_widget.setText,
+                                                    target_function_model = self.model.set_varname
+                                                    )
+        self._varname_import_button = QtWidgets.QPushButton(QtGui.QIcon.fromTheme("insert-object"), "")
+        self._varname_import_button.clicked.connect(open_remote_importer_func_varname)
+        self.topLineLayout.addWidget(self._varname_widget)
+        self.topLineLayout.addWidget(self._varname_import_button)
+
+        open_remote_importer_func_varequation = partial(self.open_remote_importer,
+                                                target_function_view = self._varequation_widget.setText,
+                                                target_function_model = self.model.set_varequation
+                                            )
+        self.topLineLayout.addWidget(self._varequation_widget)
+        self._global_import_button = QtWidgets.QPushButton(QtGui.QIcon.fromTheme("insert-object"),"")
+        self._global_import_button.clicked.connect(open_remote_importer_func_varequation)
+        self.topLineLayout.addWidget(self._global_import_button)
+
+        return self.topwidget
+
+    def init_from_model(self):
+        super().init_from_model()
+        self._varname_widget.setText(self.model.get_varname())
+        self._varequation_widget.setText(self.model.get_varequation())
+
+    def open_remote_importer(self, target_function_view, target_function_model):
+        varpaths = self.model.wf_root.assemble_variables("")
+        mydialog = RemoteImporterDialog(varname="Import variable \"%s\" from:" % self.model.name,
+                                        importlist=varpaths)
+        mydialog.setModal(True)
+        mydialog.exec()
+        result = mydialog.result()
+
+        if result:
+            choice = mydialog.getchoice()
+            target_function_model(choice)
+            target_function_view(choice)
+        else:
+            pass
+
+    def get_middle_widget(self):
+        return self._middle_widget
+
+    def sizeHint(self):
+
+        if self.model is not None:
+            maxheight = 0
+            width = 0
+
+
+            size = QtCore.QSize(width,maxheight)
+            size += QtCore.QSize(50,75)
+            if size.width() < 300:
+                size.setWidth(300)
+            return size
+        else:
+            return QtCore.QSize(200,100)
+
+    def place_elements(self):
+        if not self.dontplace:
+            self.dontplace = True
+            if self.model is not None:
+                self.init_from_model()
+            self.dontplace=False
+        self.updateGeometry()
+
+
+class VariableModel(WFItemModel):
+    def __init__(self,*args,**kwargs):
+        super().__init__(*args, **kwargs)
+        self.wf_root = kwargs["wf_root"]
+        self.is_wano = False
+        self.editor = kwargs['editor']
+        self.view = kwargs["view"]
+        self.name = "Variable"
+        self._varname = "Variable"
+        self._varequation = "Equation"
+
+    def set_varequation(self, varequation):
+        self._varequation = varequation
+
+    @property
+    def model(self):
+        return self
+
+    def get_varequation(self):
+        return self._varequation
+
+    def set_varname(self, varname):
+        self._varname = varname
+
+    def get_varname(self):
+        return self._varname
+
+    def render_to_simple_wf(self, path_list, output_path_list, submitdir ,jobdir ,path , parent_ids):
+        transitions = []
+        varwfex = VariableElement(
+            variable_name = self.get_varname(),
+            equation = self.get_varequation()
+        )
+        transitions = []
+        for pid in parent_ids:
+            transitions.append((pid,varwfex.uid))
+
+        elements = [("VariableElement", varwfex)]
+        return elements, transitions, [varwfex.uid]
+
+    def assemble_variables(self, path):
+        myvars = [self._varname]
+        return myvars
+
+    def assemble_files(self,path):
+        return []
+
+    def save_to_disk(self, foldername):
+        #view needs varname
+        attributes = {"name": self.name,
+                      "type": "Variable",
+                      "equation": self._varequation,
+                      "varname": self._varname}
+        root = etree.Element("WFControl", attrib=attributes)
+        return root
+
+    def read_from_disk(self, full_foldername, xml_subelement):
+        attribs = xml_subelement.attrib
+        assert attribs["type"] == "Variable"
+        self._varequation = attribs["equation"]
+        self._varname = attribs["varname"]
+
 class WhileView(WFControlWithTopMiddleAndBottom):
     def __init__(self,*args,**kwargs):
         super(WhileView,self).__init__(*args,**kwargs)
@@ -2364,6 +2518,7 @@ class ControlFactory(object):
         "ForEach" : (ForEachModel,ForEachView),
         "If": (IfModel, IfView),
         "While": (WhileModel, WhileView),
+        "Variable": (VariableModel, VariableView),
         "Parallel": (ParallelModel, ParallelView),
         "SubWorkflow": (SubWFModel,SubWorkflowView)
     }
