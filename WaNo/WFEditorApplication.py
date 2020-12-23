@@ -19,6 +19,7 @@ from SimStackServer.MessageTypes import ErrorCodes
 from SimStackServer.Util.FileUtilities import trace_to_logger
 from SimStackServer.WaNo.WaNoModels import FileNotFoundErrorSimStack
 from WaNo.SimStackPaths import SimStackPaths
+from SimStackServer.WaNo.WaNoExceptions import WorkflowSubmitError
 
 from WaNo.view.WFViewManager import WFViewManager
 from WaNo.WaNoGitRevision import get_git_revision
@@ -543,6 +544,14 @@ class WFEditorApplication(CallableQThread):
             import traceback
             traceback.print_exc()
             self._view_manager.show_error("Please save workflow before submit. Error was: %s"%e)
+            return
+        except WorkflowSubmitError as e:
+            errormessage = "Error during workflow submit. Error was:\n\n -----\n\n%s"%e
+            self._view_manager.show_error(errormessage)
+            return
+        except Exception as e:
+            errormessage = "Error during workflow submit. Error was:\n\n -----\n\n%s"%e
+            self._view_manager.show_error(errormessage)
             return
 
 
