@@ -1821,6 +1821,13 @@ class WFTabsWidget(QtWidgets.QTabWidget):
             print("FP",fullpath)
             return self.saveFile(fullpath)
 
+    illegal_chars = r"<>|\#~*´`"
+    def _contains_illegal_chars(self, wfname):
+
+        if any((c in self.illegal_chars) for c in wfname):
+            return True
+        return False
+
     def saveAs(self):
         foldername,ok = QtWidgets.QInputDialog.getText(self, self.tr("Specify Workflow Name"),
                                      self.tr("Name"), QtWidgets.QLineEdit.Normal,
@@ -1828,6 +1835,12 @@ class WFTabsWidget(QtWidgets.QTabWidget):
 
         if not ok:
             return False
+
+        if self._contains_illegal_chars(foldername):
+            messageboxtext = "Workflowname was %s. It cannot contain the following characters: %s"%(foldername,self.illegal_chars)
+            QtWidgets.QMessageBox.critical(None, "Workflowname invalid", messageboxtext)
+            return False
+
 
         settings = WaNoSettingsProvider.get_instance()
         workflow_path = settings.get_value(SETTING_KEYS["workflows"])
