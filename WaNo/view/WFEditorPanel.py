@@ -390,7 +390,7 @@ class SubWFModel(WFItemModel,WFItemListInterface):
                     fn = os.path.join(path, name, "outputs", file)
                     myfiles.append(fn)
             else:
-                for otherfile in ele.model.assemble_files(path):
+                for otherfile in ele.assemble_files(path):
                     myfiles.append(os.path.join(path,otherfile))
         return myfiles
 
