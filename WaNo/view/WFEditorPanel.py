@@ -838,12 +838,12 @@ class ForEachModel(WFItemModel):
     def assemble_variables(self, path):
         if path == "":
             mypath = "ForEach.${%s}"%self.itername
-            myvalue = "ForEach.${%s_VALUE}"%self.itername
         else:
             mypath = "%s.ForEach.${%s}" % (path, self.itername)
-            myvalue= "%s.ForEach.${%s_VALUE}" % (path, self.itername)
         myvars = self.subwfmodel.assemble_variables(mypath)
-        myvars.append(mypath)
+        my_iterator = "${%s}"%self.itername
+        myvars.append(my_iterator)
+        myvalue = "${%s_VALUE}"%self.itername
         myvars.append(myvalue)
         return myvars
 
