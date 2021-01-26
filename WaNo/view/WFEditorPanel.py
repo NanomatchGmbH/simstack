@@ -506,9 +506,9 @@ class WhileModel(WFItemModel):
             path = "%s/%s" %(path,self.name)
 
         path_list += [self.name]
-        output_path_list += [self.name, "${" + self.itername + "}"]
+        my_output_path_list = output_path_list + [self.name, "${" + self.itername + "}"]
 
-        sub_activities, sub_transitions, sub_toids = self._subwf_model.render_to_simple_wf(path_list, output_path_list, submitdir,my_jobdir,path = path, parent_ids = ["temporary_connector"])
+        sub_activities, sub_transitions, sub_toids = self._subwf_model.render_to_simple_wf(path_list, my_output_path_list, submitdir,my_jobdir,path = path, parent_ids = ["temporary_connector"])
         sg = SubGraph(elements = WorkflowElementList(sub_activities),
                  graph = DirectedGraph(sub_transitions))
 
@@ -872,9 +872,9 @@ class ForEachModel(WFItemModel):
             path = "%s/%s" %(path,self.name)
 
         path_list += [self.name]
-        output_path_list += [self.name, "${" + self.itername + "}"]
+        my_output_path_list = output_path_list + [self.name, "${" + self.itername + "}"]
 
-        sub_activities, sub_transitions, sub_toids = self.subwfmodel.render_to_simple_wf(path_list, output_path_list, submitdir,my_jobdir,path = path, parent_ids = ["temporary_connector"])
+        sub_activities, sub_transitions, sub_toids = self.subwfmodel.render_to_simple_wf(path_list, my_output_path_list, submitdir,my_jobdir,path = path, parent_ids = ["temporary_connector"])
         sg = SubGraph(elements = WorkflowElementList(sub_activities),
                  graph = DirectedGraph(sub_transitions))
 
