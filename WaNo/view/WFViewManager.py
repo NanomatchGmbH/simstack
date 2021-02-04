@@ -129,7 +129,7 @@ class WFViewManager(QObject):
                 path.join(self.last_used_path,mybase)
                 )
         if save_to[0]:
-            self.last_used_path = QFileInfo(filepath).path();
+            self.last_used_path = QFileInfo(filepath).path()
             #print("Save file to: %s." % save_to[0])
             self.download_file_to.emit(filepath, save_to[0])
             #self._view_timer.add_callback(self._update_timeout.emit,

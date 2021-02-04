@@ -369,7 +369,7 @@ class SubWFModel(WFItemModel,WFItemListInterface):
                     for toid in toids:
                         transitions.append((pid, toid))
             else:
-                my_activities, my_transitions, toids = ele.render_to_simple_wf(path_list, output_path_list, submitdir,jobdir,path="", parent_ids = parent_ids)
+                my_activities, my_transitions, toids = ele.render_to_simple_wf(path_list, output_path_list, submitdir,jobdir,path=path, parent_ids = parent_ids)
                 activities += my_activities
                 transitions += my_transitions
 
@@ -377,7 +377,6 @@ class SubWFModel(WFItemModel,WFItemListInterface):
             parent_ids = toids
 
         return activities, transitions, parent_ids
-
 
     def assemble_files(self, path):
         # this function assembles all files relative to the workflow root
@@ -505,10 +504,11 @@ class WhileModel(WFItemModel):
         else:
             path = "%s/%s" %(path,self.name)
 
-        path_list += [self.name]
-        my_output_path_list = output_path_list + [self.name, "${" + self.itername + "}"]
 
-        sub_activities, sub_transitions, sub_toids = self._subwf_model.render_to_simple_wf(path_list, my_output_path_list, submitdir,my_jobdir,path = path, parent_ids = ["temporary_connector"])
+        my_path_list = path_list + [self.name]
+        my_output_path_list = output_path_list + [self.name, "${" + self.itername.replace(" ","") + "}"]
+
+        sub_activities, sub_transitions, sub_toids = self._subwf_model.render_to_simple_wf(my_path_list, my_output_path_list, submitdir,my_jobdir,path = path, parent_ids = ["temporary_connector"])
         sg = SubGraph(elements = WorkflowElementList(sub_activities),
                  graph = DirectedGraph(sub_transitions))
 
@@ -530,11 +530,11 @@ class WhileModel(WFItemModel):
 
     def assemble_variables(self, path):
         if path == "":
-            mypath = "While.${%s}"%self.itername
-            myvalue = "While.${%s_VALUE}"%self.itername
+            mypath = "While.${%s_ITER}"%self.itername
+            myvalue = "While.${%s}"%self.itername
         else:
-            mypath = "%s.While.${%s}" % (path, self.itername)
-            myvalue= "%s.While.${%s_VALUE}" % (path, self.itername)
+            mypath = "%s.While.${%s_ITER}" % (path, self.itername)
+            myvalue= "%s.While.${%s}" % (path, self.itername)
         myvars = self._subwf_model.assemble_variables(mypath)
         my_iterator = "${%s}"%self.itername
         myvars.append(my_iterator)
@@ -612,13 +612,14 @@ class IfModel(WFItemModel):
         else:
             path = "%s/%s" %(path,self.name)
 
-        path_list += [self.name]
+        my_true_path_list = path_list + [self.name, "True"]
+        my_false_path_list =  path_list + [self.name, "False"]
         output_path_list_true = output_path_list + [self.name,"True"]
         output_path_list_false = output_path_list + [self.name, "False"]
 
-        sub_activities_true, sub_transitions_true, sub_toids_true = self._subwf_true_branch_model.render_to_simple_wf(output_path_list_true, output_path_list, submitdir,my_jobdir+ "/True",path = path + "/True/", parent_ids = ["temporary_connector"])
+        sub_activities_true, sub_transitions_true, sub_toids_true = self._subwf_true_branch_model.render_to_simple_wf(my_true_path_list, output_path_list_true, submitdir,my_jobdir+ "/True",path = path + "/True/", parent_ids = ["temporary_connector"])
         sub_activities_false, sub_transitions_false, sub_toids_false = self._subwf_false_branch_model.render_to_simple_wf(
-            output_path_list_false, output_path_list, submitdir, my_jobdir + "/False", path = path + "/False/", parent_ids=["temporary_connector"])
+            my_false_path_list, output_path_list_false, submitdir, my_jobdir + "/False", path = path + "/False/", parent_ids=["temporary_connector"])
         sg_true = SubGraph(elements = WorkflowElementList(sub_activities_true),
                  graph = DirectedGraph(sub_transitions_true))
         sg_false = SubGraph(elements=WorkflowElementList(sub_activities_false),
@@ -631,8 +632,8 @@ class IfModel(WFItemModel):
         fe = IfGraph(finish_uid = finish_uid,
                      truegraph = sg_true,
                      falsegraph = sg_false,
-                     true_final_ids = sub_toids_true,
-                     false_final_ids = sub_toids_false,
+                     true_final_ids = StringList(sub_toids_true),
+                     false_final_ids = StringList(sub_toids_false),
                      condition = self._condition
         )
 
@@ -647,9 +648,9 @@ class IfModel(WFItemModel):
     def assemble_variables(self, path):
         myvars = []
         for swfid,(swfm,truefalse) in enumerate(zip([self._subwf_true_branch_model, self._subwf_true_branch_model],["True", "False"])):
-            for var in swfm.assemble_variables(path):
-                newpath = merge_path(path, "%s.%s"%(self.name,truefalse),var)
-                myvars.append(newpath)
+            truefalsepath = merge_path(path, self.name,truefalse)
+            for var in swfm.assemble_variables(truefalsepath):
+                myvars.append(var)
         return myvars
 
     def assemble_files(self,path):
@@ -815,6 +816,7 @@ class ParallelModel(WFItemModel):
 
 
 
+
 class ForEachModel(WFItemModel):
     def __init__(self,*args,**kwargs):
         super(ForEachModel, self).__init__(*args, **kwargs)
@@ -825,25 +827,27 @@ class ForEachModel(WFItemModel):
         self.view = kwargs["view"]
         self.itername = "ForEach_iterator"
         self.subwfmodel, self.subwfview = ControlFactory.construct("SubWorkflow",editor=self.editor,qt_parent=self.view, logical_parent=self.view.logical_parent,wf_root = self.wf_root)
-        self.filelist = []
+        self.fileliststring = ""
         self.name = "ForEach"
         self._is_file_iterator = True
+        self._is_multivar_iterator = False
+
 
     def set_is_file_iterator(self, true_or_false):
         self._is_file_iterator = true_or_false
 
     def set_filelist(self,filelist):
-        self.filelist = filelist
+        self.fileliststring = filelist
 
     def assemble_variables(self, path):
         if path == "":
-            mypath = "ForEach.${%s}"%self.itername
+            mypath = "ForEach.${%s_ITER}"%self.itername
         else:
-            mypath = "%s.ForEach.${%s}" % (path, self.itername)
+            mypath = "%s.ForEach.${%s_ITER}" % (path, self.itername)
         myvars = self.subwfmodel.assemble_variables(mypath)
-        my_iterator = "${%s}"%self.itername
+        my_iterator = "${%s_ITER}"%self.itername
         myvars.append(my_iterator)
-        myvalue = "${%s_VALUE}"%self.itername
+        myvalue = "${%s}"%self.itername
         myvars.append(myvalue)
         return myvars
 
@@ -852,13 +856,13 @@ class ForEachModel(WFItemModel):
         transitions = []
 
         if self._is_file_iterator:
-            for myfile in self.filelist:
+            for myfile in self.fileliststring.split():
                 gpath = "${STORAGE}/workflow_data/%s"%myfile
                 #localfn = os.path.basename(myfile)
                 #gpath = join(gpath,localfn)
                 filesets.append(gpath)
         else:
-            for myfile in self.filelist:
+            for myfile in self.fileliststring.split():
                 filesets.append(myfile)
 
         if jobdir == "":
@@ -871,10 +875,10 @@ class ForEachModel(WFItemModel):
         else:
             path = "%s/%s" %(path,self.name)
 
-        path_list += [self.name]
-        my_output_path_list = output_path_list + [self.name, "${" + self.itername + "}"]
+        my_path_list = path_list + [self.name]
+        my_output_path_list = output_path_list + [self.name, "${" + self.itername.replace(" ","") + "_ITER}"]
 
-        sub_activities, sub_transitions, sub_toids = self.subwfmodel.render_to_simple_wf(path_list, my_output_path_list, submitdir,my_jobdir,path = path, parent_ids = ["temporary_connector"])
+        sub_activities, sub_transitions, sub_toids = self.subwfmodel.render_to_simple_wf(my_path_list, my_output_path_list, submitdir,my_jobdir,path = path, parent_ids = ["temporary_connector"])
         sg = SubGraph(elements = WorkflowElementList(sub_activities),
                  graph = DirectedGraph(sub_transitions))
 
@@ -889,6 +893,14 @@ class ForEachModel(WFItemModel):
                               iterator_files = StringList(filesets),
                               subgraph_final_ids = StringList(sub_toids)
             )
+        elif self._is_multivar_iterator:
+            fe = ForEachGraph(subgraph=sg,
+                              # parent_ids=StringList(parent_ids),
+                              finish_uid=finish_uid,
+                              iterator_name=self.itername,
+                              iterator_definestring=self.fileliststring,
+                              subgraph_final_ids=StringList(sub_toids)
+                              )
         else:
             fe = ForEachGraph(subgraph = sg,
                               #parent_ids=StringList(parent_ids),
@@ -909,20 +921,23 @@ class ForEachModel(WFItemModel):
 
     def assemble_files(self,path):
         myfiles = []
-        myfiles.append("${%s_VALUE}" %(self.itername))
+        myfiles.append("${%s}" %(self.itername))
         for otherfile in self.subwfmodel.assemble_files(path):
             myfiles.append(os.path.join(path, self.view.text(),"*",otherfile))
         return myfiles
 
     def save_to_disk(self, foldername):
         true_false = { True: "True", False: "False"}
-        attributes = {"name": self.view.text(), "type": "ForEach", "is_file_iterator": true_false[self._is_file_iterator]}
+        mytype = "ForEach"
+        if self._is_multivar_iterator:
+            mytype = "AdvancedFor"
+        attributes = {"name": self.view.text(), "type": mytype, "is_file_iterator": true_false[self._is_file_iterator]}
         root = etree.Element("WFControl", attrib=attributes)
         my_foldername = foldername
         # TODO revert changes in filesystem in case instantiate_in_folder fails
         root.append(self.subwfmodel.save_to_disk(my_foldername))
         filelist = etree.SubElement(root,"FileList")
-        for fn in self.filelist:
+        for fn in self.fileliststring.split():
             fxml = etree.SubElement(filelist, "File")
             fxml.text = fn
             filelist.append(fxml)
@@ -941,11 +956,11 @@ class ForEachModel(WFItemModel):
                 self._is_file_iterator = False
         except KeyError as e:
             self._is_file_iterator = True
-
+        self.fileliststring = ""
         for child in xml_subelement:
             if child.tag == "FileList":
                 for xml_ss in child:
-                    self.filelist.append(xml_ss.text)
+                    self.fileliststring += "%s "%xml_ss.text
                 continue
             if child.tag == "IterName":
                 self.itername = child.text
@@ -961,6 +976,32 @@ class ForEachModel(WFItemModel):
             self.subwfview.setText(name)
             self.subwfmodel.read_from_disk(full_foldername=full_foldername,xml_subelement=child)
 
+        self.fileliststring = self.fileliststring[:-1]
+
+
+class AdvancedForEachModel(ForEachModel):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.name = "AdvancedForEach"
+        self.itername = "a,b"
+        self.fileliststring = "zip([1,2],[3,4])"
+        self.set_is_file_iterator(False)
+        self._is_multivar_iterator = True
+
+
+    def assemble_variables(self, path):
+        if path == "":
+            mypath = "ForEach.${%s_ITER}"%self.itername.replace(" ","")
+        else:
+            mypath = "%s.ForEach.${%s_ITER}" % (path, self.itername.replace(" ",""))
+
+        myvars = self.subwfmodel.assemble_variables(mypath)
+        iterators = self.itername.replace(" ","").split(",")
+        myvars.append("${%s_ITER}"%(self.itername.replace(" ","")))
+        for it in iterators:
+            myvars.append("${%s}"%it)
+            #myvars.append("${%s_ITER}" % it)
+        return myvars
 
 def merge_path(path, name, var):
     newpath = "%s.%s.%s" % (path, name, var)
@@ -2023,6 +2064,81 @@ class WFControlWithTopMiddleAndBottom(QtWidgets.QFrame,DragDropTargetTracker):
     def setText(self, text):
         self.model.name = text
 
+class AdvancedForEachView(WFControlWithTopMiddleAndBottom):
+    def __init__(self,*args,**kwargs):
+        super(AdvancedForEachView,self).__init__(*args,**kwargs)
+        self.dontplace = False
+        self.is_wano = False
+
+    def get_top_widget(self):
+        self.topwidget = QtWidgets.QWidget()
+        self.topLineLayout = QtWidgets.QHBoxLayout()
+        self.topwidget.setLayout(self.topLineLayout)
+        self._for_label = QtWidgets.QLabel("for")
+        self.topLineLayout.addWidget(self._for_label)
+        self._in_label = QtWidgets.QLabel("in")
+        self.itername_widget = QtWidgets.QLineEdit('a,b')
+        self.itername_widget.editingFinished.connect(self._on_line_edit)
+        self.topLineLayout.addWidget(self.itername_widget)
+        self.topLineLayout.addWidget(self._in_label)
+        self.list_of_variables = QtWidgets.QLineEdit('zip([1,2,3],[4,5,6]')
+        self.list_of_variables.editingFinished.connect(self.line_edited)
+        self.topLineLayout.addWidget(self.list_of_variables)
+        #self._global_import_button = QtWidgets.QPushButton(QtGui.QIcon.fromTheme("insert-object"), "")
+        #self._global_import_button.clicked.connect(self.open_remote_importer)
+        #self.topLineLayout.addWidget(self._global_import_button)
+        return self.topwidget
+
+    def open_remote_importer(self):
+        varpaths = self.model.wf_root.assemble_variables("")
+        mydialog = RemoteImporterDialog(varname="Import variable \"%s\" from:" % self.model.name,
+                                        importlist=varpaths)
+        mydialog.setModal(True)
+        mydialog.exec()
+        result = mydialog.result()
+        if mydialog.result() == True:
+            choice = mydialog.getchoice()
+            self.model.set_filelist(choice)
+            self.list_of_variables.setText(choice)
+            self.model.set_is_file_iterator(False)
+        else:
+            pass
+
+    def init_from_model(self):
+        super(AdvancedForEachView,self).init_from_model()
+        self.list_of_variables.setText(self.model.fileliststring)
+        self.itername_widget.setText(self.model.itername)
+
+    def _on_line_edit(self):
+        self.model.itername = self.itername_widget.text()
+
+    def line_edited(self):
+
+        files = self.list_of_variables.text()
+        self.model.set_filelist(files)
+
+    def get_middle_widget(self):
+        return self.model.subwfview
+
+    def sizeHint(self):
+        if self.model is not None:
+            size = self.model.subwfview.sizeHint() + QtCore.QSize(25,80)
+            if size.width() < 500:
+                size.setWidth(500)
+            return size
+        else:
+            return QtCore.QSize(500,100)
+
+    def place_elements(self):
+        if not self.dontplace:
+            self.dontplace = True
+            if self.model is not None:
+                self.init_from_model()
+                self.model.subwfview.place_elements()
+            self.adjustSize()
+        self.dontplace=False
+        self.updateGeometry()
+
 
 class ForEachView(WFControlWithTopMiddleAndBottom):
     def __init__(self,*args,**kwargs):
@@ -2060,7 +2176,7 @@ class ForEachView(WFControlWithTopMiddleAndBottom):
         result = mydialog.result()
         if mydialog.result() == True:
             choice = mydialog.getchoice()
-            self.model.set_filelist([choice])
+            self.model.set_filelist(choice)
             self.list_of_variables.setText(choice)
             self.model.set_is_file_iterator(False)
         else:
@@ -2068,7 +2184,7 @@ class ForEachView(WFControlWithTopMiddleAndBottom):
 
     def init_from_model(self):
         super(ForEachView,self).init_from_model()
-        self.list_of_variables.setText(" ".join(self.model.filelist))
+        self.list_of_variables.setText(self.model.fileliststring)
         self.itername_widget.setText(self.model.itername)
 
     def _on_line_edit(self):
@@ -2085,7 +2201,7 @@ class ForEachView(WFControlWithTopMiddleAndBottom):
         self.line_edited()
 
     def line_edited(self):
-        files = self.list_of_variables.text().split(" ")
+        files = self.list_of_variables.text()
         self.model.set_filelist(files)
 
     def get_middle_widget(self):
@@ -2094,8 +2210,8 @@ class ForEachView(WFControlWithTopMiddleAndBottom):
     def sizeHint(self):
         if self.model is not None:
             size = self.model.subwfview.sizeHint() + QtCore.QSize(25,80)
-            if size.width() < 300:
-                size.setWidth(300)
+            if size.width() < 500:
+                size.setWidth(500)
             return size
         else:
             return QtCore.QSize(200,100)
@@ -2529,6 +2645,7 @@ class WhileView(WFControlWithTopMiddleAndBottom):
 class ControlFactory(object):
     n_t_c = {
         "ForEach" : (ForEachModel,ForEachView),
+        "AdvancedFor": (AdvancedForEachModel, AdvancedForEachView),
         "If": (IfModel, IfView),
         "While": (WhileModel, WhileView),
         "Variable": (VariableModel, VariableView),

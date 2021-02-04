@@ -17,6 +17,7 @@ class WFEditor(QWidget):
     _controls = [
             #("SubWorkflow", "ctrl_img/ForEach.png"),
             ("ForEach", "ctrl_img/ForEach.png"),
+            ("AdvancedFor", "ctrl_img/ForEach.png"),
             ("If", "ctrl_img/If.png"),
             ("Variable", "ctrl_img/If.png"),
             ("Parallel", "ctrl_img/Parallel.png"),
