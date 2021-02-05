@@ -10,7 +10,7 @@ from os.path import join
 
 from Qt.QtCore import Signal
 
-from Qt import QtCore,QtGui,QtWidgets
+from Qt import QtCore, QtGui, QtWidgets, Qt
 import sys
 import time
 import datetime
@@ -368,7 +368,13 @@ class WFEditorApplication(CallableQThread):
         #print("Im workflow",workflow)
         myurl = self._unicore_connector.get_workflow_url(registry, workflow)
         print(myurl)
-        from PyQt5.QtWebEngineWidgets import QWebEngineView
+        binding = Qt.__binding__
+        if binding == "PyQt5":
+            from PyQt5.QtWebEngineWidgets import QWebEngineView
+        elif binding == "PySide2":
+            from PySide2.QtWebEngineWidgets import QWebEngineView
+        else:
+            raise NotImplementedError("Only backends for PyQt5 and PySide2 are implemented currently.")
 
         from Qt.QtCore import QUrl
         import Qt.QtCore as QtCore
