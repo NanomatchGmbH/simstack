@@ -117,7 +117,7 @@ class MultipleOfView(AbstractWanoQTView):
                 line.setFrameShadow(QtWidgets.QFrame.Sunken)
                 self.vbox.addWidget(line)
                 self._list_of_bar_widgets.append(line)
-
+        super().init_from_model()
 
 class EmptyView(AbstractWanoView):
     def __init__(self,*args,**kwargs):
@@ -141,6 +141,7 @@ class WaNoGroupView(AbstractWanoQTView):
         for model in self.model.wanos():
             #print(model, self.model.path, self, self.model)
             self.vbox.addWidget(model.view.get_widget())
+        super().init_from_model()
 
 class WaNoSwitchView(AbstractWanoQTView):
     def __init__(self, *args, **kwargs):
@@ -178,7 +179,7 @@ class WaNoSwitchView(AbstractWanoQTView):
             else:
                 truefalse = False
             model.view.set_visible(truefalse)
-
+        super().init_from_model()
 
 class WaNoConditionalView(AbstractWanoQTView):
     def __init__(self, *args, **kwargs):
@@ -196,6 +197,7 @@ class WaNoConditionalView(AbstractWanoQTView):
         self.actual_widget.setTitle(self.model.name)
         for model in self.model.wanos():
             self.vbox.addWidget(model.view.get_widget())
+        super().init_from_model()
 
 class WaNoBoxView(AbstractWanoQTView):
     def __init__(self, *args, **kwargs):
@@ -229,6 +231,7 @@ class WaNoBoxView(AbstractWanoQTView):
         self.actual_widget.setTitle(self.model.name)
         for model in self.model.wanos():
             self.vbox.addWidget(model.view.get_widget())
+        super().init_from_model()
 
 class WaNoNone(AbstractWanoQTView):
     def __init__(self, *args, **kwargs):
@@ -247,7 +250,7 @@ class WaNoNone(AbstractWanoQTView):
         return self.actual_widget
 
     def init_from_model(self):
-        pass
+        super().init_from_model()
 
 class WaNoInvisibleBoxView(AbstractWanoQTView):
     def __init__(self, *args, **kwargs):
@@ -268,6 +271,7 @@ class WaNoInvisibleBoxView(AbstractWanoQTView):
     def init_from_model(self):
         for model in self.model.wanos():
             self.vbox.addWidget(model.view.get_widget())
+        super().init_from_model()
 
 class WaNoItemIntView(AbstractWanoQTView):
     def __init__(self, *args, **kwargs):
@@ -311,6 +315,7 @@ class WaNoItemIntView(AbstractWanoQTView):
         self.label.setText(self.model.name)
         if self.model.do_import:
             self.set_disable(True)
+        super().init_from_model()
 
     def value_changed(self,value):
         self.model.set_data(value)
@@ -369,6 +374,7 @@ class WaNoItemFloatView(AbstractWanoQTView):
         self.label.setText(self.model.name)
         if self.model.do_import:
             self.set_disable(True)
+        super().init_from_model()
 
     def value_changed(self,value):
         self.model.set_data(value)
@@ -403,6 +409,7 @@ class WaNoItemBoolView(AbstractWanoQTView):
 
         self.checkbox.setChecked(self.model.get_data())
         self.label.setText(self.model.name)
+        super().init_from_model()
 
     def state_changed(self):
         if self.checkbox.isChecked():
@@ -440,6 +447,7 @@ class WaNoScriptView(AbstractWanoQTView):
     def init_from_model(self):
         text = self.model.get_as_text()
         self.textedit.setText(text)
+        super().init_from_model()
 
     def on_save(self):
         self.model.save_text(self.textedit.toPlainText())
@@ -484,6 +492,7 @@ class WaNoItemStringView(AbstractWanoQTView):
         self.label.setText(self.model.name)
         if self.model.do_import:
             self.set_disable(True)
+        super().init_from_model()
 
     def line_edited(self):
         self.model.set_data(self.lineedit.text())
@@ -645,6 +654,7 @@ class WaNoItemFileView(AbstractWanoQTView):
     def init_from_model(self):
         self.lineedit.setText(self.model.get_data())
         self.label.setText(self.model.name)
+        super().init_from_model()
 
     def line_edited(self):
         self.model.set_data(self.lineedit.text())
@@ -733,7 +743,7 @@ class WaNoMatrixFloatView(AbstractWanoQTView):
                 self.tablewidget.item(i,j).setText(str(storage[i][j]))
 
         self.tablewidget.blockSignals(False)
-        return
+        super().init_from_model()
 
     def get_widget(self):
         return self.actual_widget
@@ -769,6 +779,7 @@ class WaNoDropDownView(AbstractWanoQTView):
         self.combobox.setCurrentIndex(self.model.chosen)
         self.init = True
         self.model.set_chosen(chosen_before)
+        super().init_from_model()
 
     def onButtonClicked(self, id):
         if self.init:
@@ -818,6 +829,7 @@ class WaNoChoiceView(AbstractWanoQTView):
             self.vbox.addWidget(checkbox)
         #print(self.model.chosen)
         self.buttons[self.model.chosen].setChecked(True)
+        super().init_from_model()
 
     def onButtonClicked(self, id):
         self.model.set_chosen(id)
