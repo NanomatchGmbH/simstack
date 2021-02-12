@@ -82,3 +82,9 @@ class AbstractWanoQTView(AbstractWanoView):
         if widget != None:
             widget.deleteLater()
 
+    def init_from_model(self):
+        if hasattr(self, "label"):
+            if hasattr(self.model, "tooltip_text"):
+                self.label.setToolTip(self.model.tooltip_text)
+        super().init_from_model()
+
