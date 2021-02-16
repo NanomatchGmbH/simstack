@@ -2123,8 +2123,8 @@ class AdvancedForEachView(WFControlWithTopMiddleAndBottom):
     def sizeHint(self):
         if self.model is not None:
             size = self.model.subwfview.sizeHint() + QtCore.QSize(25,80)
-            if size.width() < 500:
-                size.setWidth(500)
+            if size.width() < 300:
+                size.setWidth(300)
             return size
         else:
             return QtCore.QSize(500,100)
@@ -2210,8 +2210,8 @@ class ForEachView(WFControlWithTopMiddleAndBottom):
     def sizeHint(self):
         if self.model is not None:
             size = self.model.subwfview.sizeHint() + QtCore.QSize(25,80)
-            if size.width() < 500:
-                size.setWidth(500)
+            if size.width() < 300:
+                size.setWidth(300)
             return size
         else:
             return QtCore.QSize(200,100)
