@@ -924,6 +924,7 @@ class ForEachModel(WFItemModel):
         myfiles.append("${%s}" %(self.itername))
         for otherfile in self.subwfmodel.assemble_files(path):
             myfiles.append(os.path.join(path, self.view.text(),"*",otherfile))
+            myfiles.append(os.path.join(path, self.view.text(), "${%s_ITER}"%self.itername, otherfile))
         return myfiles
 
     def save_to_disk(self, foldername):
