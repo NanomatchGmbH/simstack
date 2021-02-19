@@ -562,6 +562,7 @@ class WanoQtViewRoot(AbstractWanoQTView):
                 self.init_without_scroller()
 
             self.vbox.addWidget(model.view.get_widget())
+        self.vbox.addStretch()
         #self.actual_widget.viewport().update()
         self.actual_widget.update()
 
