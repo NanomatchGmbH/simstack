@@ -734,6 +734,9 @@ class WaNoMatrixFloatView(AbstractWanoQTView):
             extra_size = 2 + 20
         self.tablewidget.setFixedHeight(24*self.tablewidget.rowCount() + extra_size)
 
+    def _default_value_if_empty_string(self):
+        return 0.0
+
     def init_from_model(self):
         self.label.setText(self.model.name)
         self.tablewidget.blockSignals(True)
@@ -742,13 +745,29 @@ class WaNoMatrixFloatView(AbstractWanoQTView):
         storage = self.model.storage
         for i in range(len(storage)):
             for j in range(len(storage[0])):
-                self.tablewidget.item(i,j).setText(str(storage[i][j]))
+                data = storage[i][j]
+                if data == "":
+                    data = self._default_value_if_empty_string()
+                self.tablewidget.item(i,j).setText(str(data))
 
         self.tablewidget.blockSignals(False)
         super().init_from_model()
 
     def get_widget(self):
         return self.actual_widget
+
+class WaNoMatrixStringView(WaNoMatrixFloatView):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args,**kwargs)
+        delegate = QtWidgets.QItemDelegate()
+        self.tablewidget.setItemDelegate(delegate)
+
+    def cellChanged(self,i,j):
+        data = self.tablewidget.item(i,j).text()
+        self.model.set_data(i,j,data)
+
+    def _default_value_if_empty_string(self):
+        return ""
 
 class WaNoDropDownView(AbstractWanoQTView):
     def __init__(self, *args, **kwargs):
