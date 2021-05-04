@@ -254,6 +254,14 @@ class WFRemoteFileSystem(QWidget):
             jobnode = self.__fs_model.getNodeByIndex(index)
             self.browse.emit(jobnode.getAbsolutePath(),"")
 
+    def __on_cm_show_report(self):
+        index = self.__fileTree.selectedIndexes()[0]
+        if not index is None and self.__fs_model.get_type(index) == FSModel.DATA_TYPE_WORKFLOW or self.__fs_model.get_type(index) == FSModel.DATA_TYPE_DIRECTORY:
+            #Workflow and directory treatment is equivalent
+            #print("got id: %s" % self.__fs_model.get_id(index))
+            workflow = self.__fs_model.get_id(index)
+            self.browse.emit(workflow + "/workflow_report.html", "")
+
     def __on_cm_delete_workflow(self):
         index = self.__fileTree.selectedIndexes()[0]
         if not index is None \
@@ -286,9 +294,12 @@ class WFRemoteFileSystem(QWidget):
         action_3=menu.addAction("Delete Directory")
         action_3.triggered.connect(self.__on_cm_delete_file)
 
-    def __create_workflow_context_menu(self, menu, index):
+    def __create_workflow_context_menu(self, menu, index, success):
         action_1 = menu.addAction("Browse Workflow")
         action_1.triggered.connect(self.__on_cm_browse)
+        if success:
+            action_1 = menu.addAction("Show Report")
+            action_1.triggered.connect(self.__on_cm_show_report)
         action_1=menu.addAction("Delete Workflow")
         action_1.triggered.connect(self.__on_cm_delete_workflow)
         action_1=menu.addAction("Abort Workflow")
@@ -325,11 +336,11 @@ class WFRemoteFileSystem(QWidget):
         elif index_type == FSModel.DATA_TYPE_DIRECTORY:
             self.__create_directory_context_menu(menu, index)
         elif index_type == FSModel.DATA_TYPE_JOB:
-            #self.__create_job_context_menu(menu, index)
-            #menu.addSeparator()
             self.__create_directory_context_menu(menu, index)
         elif index_type == FSModel.DATA_TYPE_WORKFLOW:
-            self.__create_workflow_context_menu(menu,index)
+            jobnode = self.__fs_model.getNodeByIndex(index)
+            successful = jobnode.getIconType() == FSModel.DATA_TYPE_WORKFLOW.WF_SUCCESSFUL
+            self.__create_workflow_context_menu(menu,index, successful)
         else:
             #TODO, also include number of selected indices.
             pass
