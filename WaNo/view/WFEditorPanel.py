@@ -16,6 +16,7 @@ import abc
 from enum import Enum
 from functools import partial
 from os.path import join
+import posixpath
 
 from   lxml import etree
 
@@ -49,8 +50,11 @@ widgetColors = {'MainEditor' : '#F5FFF5' , 'Control': '#EBFFD6' , 'Base': '#F5FF
 #               'WaNo' : '#AABBCC', 'ButtonColor':'#88C2FF' }
 
 
-
 import copy
+
+
+def linuxjoin(*args, **kwargs):
+    return posixpath.join(*args,**kwargs)
 
 class DragDropTargetTracker(object):
     def manual_init(self):
@@ -386,11 +390,11 @@ class SubWFModel(WFItemModel,WFItemListInterface):
         for myid, (ele, name) in enumerate(zip(self.elements, self.elementnames)):
             if ele.is_wano:
                 for file in ele.wano_model.get_output_files():
-                    fn = os.path.join(path, name, "outputs", file)
+                    fn = linuxjoin(path, name, "outputs", file)
                     myfiles.append(fn)
             else:
                 for otherfile in ele.assemble_files(path):
-                    myfiles.append(os.path.join(path,otherfile))
+                    myfiles.append(linuxjoin(path,otherfile))
         return myfiles
 
     def assemble_variables(self, path):
@@ -543,7 +547,7 @@ class WhileModel(WFItemModel):
     def assemble_files(self,path):
         myfiles = []
         for otherfile in self._subwf_model.assemble_files(path):
-            myfiles.append(os.path.join(path, self.view.text(),"*",otherfile))
+            myfiles.append(linuxjoin(path, self.view.text(),"*",otherfile))
         return myfiles
 
     def save_to_disk(self, foldername):
@@ -657,7 +661,7 @@ class IfModel(WFItemModel):
         myfiles = []
         for swfid,(swfm,truefalse) in enumerate(zip([self._subwf_true_branch_model, self._subwf_true_branch_model],["True", "False"])):
             for otherfile in swfm.assemble_files(path):
-                myfiles.append(os.path.join(path, self.name, truefalse, otherfile))
+                myfiles.append(linuxjoin(path, self.name, truefalse, otherfile))
         return myfiles
 
     def save_to_disk(self, foldername):
@@ -781,7 +785,7 @@ class ParallelModel(WFItemModel):
         myfiles = []
         for swfid,swfm in enumerate(self.subwf_models):
             for otherfile in swfm.assemble_files(path):
-                myfiles.append(os.path.join(path, self.name, "%d"%swfid, otherfile))
+                myfiles.append(linuxjoin(path, self.name, "%d"%swfid, otherfile))
         return myfiles
 
     def save_to_disk(self, foldername):
@@ -923,8 +927,8 @@ class ForEachModel(WFItemModel):
         myfiles = []
         myfiles.append("${%s}" %(self.itername))
         for otherfile in self.subwfmodel.assemble_files(path):
-            myfiles.append(os.path.join(path, self.view.text(),"*",otherfile))
-            myfiles.append(os.path.join(path, self.view.text(), "${%s_ITER}"%self.itername, otherfile))
+            myfiles.append(linuxjoin(path, self.view.text(),"*",otherfile))
+            myfiles.append(linuxjoin(path, self.view.text(), "${%s_ITER}"%self.itername, otherfile))
         return myfiles
 
     def save_to_disk(self, foldername):
@@ -1151,7 +1155,7 @@ class WFModel(object):
         for myid,(ele,name) in enumerate(zip(self.elements,self.elementnames)):
             if ele.is_wano:
                 for file in ele.wano_model.get_output_files():
-                    fn = os.path.join(name,"outputs",file)
+                    fn = linuxjoin(name,"outputs",file)
                     myfiles.append(fn)
             else:
                 for otherfile in ele.assemble_files(path=""):
