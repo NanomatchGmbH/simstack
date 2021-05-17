@@ -386,11 +386,11 @@ class SubWFModel(WFItemModel,WFItemListInterface):
         for myid, (ele, name) in enumerate(zip(self.elements, self.elementnames)):
             if ele.is_wano:
                 for file in ele.wano_model.get_output_files():
-                    fn = "%s/%s/%s/%s"%(path, name, "outputs", file)
+                    fn = os.path.join(path, name, "outputs", file)
                     myfiles.append(fn)
             else:
                 for otherfile in ele.assemble_files(path):
-                    myfiles.append("%s/%s"%(path,otherfile))
+                    myfiles.append(os.path.join(path,otherfile))
         return myfiles
 
     def assemble_variables(self, path):
@@ -543,7 +543,7 @@ class WhileModel(WFItemModel):
     def assemble_files(self,path):
         myfiles = []
         for otherfile in self._subwf_model.assemble_files(path):
-            myfiles.append("%s/%s/%s/%s"%(path, self.view.text(),"*",otherfile))
+            myfiles.append(os.path.join(path, self.view.text(),"*",otherfile))
         return myfiles
 
     def save_to_disk(self, foldername):
@@ -657,7 +657,7 @@ class IfModel(WFItemModel):
         myfiles = []
         for swfid,(swfm,truefalse) in enumerate(zip([self._subwf_true_branch_model, self._subwf_true_branch_model],["True", "False"])):
             for otherfile in swfm.assemble_files(path):
-                myfiles.append("%s/%s/%s/%s"%(path, self.name, truefalse, otherfile))
+                myfiles.append(os.path.join(path, self.name, truefalse, otherfile))
         return myfiles
 
     def save_to_disk(self, foldername):
@@ -781,7 +781,7 @@ class ParallelModel(WFItemModel):
         myfiles = []
         for swfid,swfm in enumerate(self.subwf_models):
             for otherfile in swfm.assemble_files(path):
-                myfiles.append("%s/%s/%s/%s"%(path, self.name, "%d"%swfid, otherfile))
+                myfiles.append(os.path.join(path, self.name, "%d"%swfid, otherfile))
         return myfiles
 
     def save_to_disk(self, foldername):
@@ -923,8 +923,8 @@ class ForEachModel(WFItemModel):
         myfiles = []
         myfiles.append("${%s}" %(self.itername))
         for otherfile in self.subwfmodel.assemble_files(path):
-            myfiles.append("%s/%s/%s/%s"%(path, self.view.text(),"*",otherfile))
-            myfiles.append("%s/%s/%s/%s"%(path, self.view.text(), "${%s_ITER}"%self.itername, otherfile))
+            myfiles.append(os.path.join(path, self.view.text(),"*",otherfile))
+            myfiles.append(os.path.join(path, self.view.text(), "${%s_ITER}"%self.itername, otherfile))
         return myfiles
 
     def save_to_disk(self, foldername):
@@ -1151,7 +1151,7 @@ class WFModel(object):
         for myid,(ele,name) in enumerate(zip(self.elements,self.elementnames)):
             if ele.is_wano:
                 for file in ele.wano_model.get_output_files():
-                    fn = "%s/%s/%s"%(name,"outputs",file)
+                    fn = os.path.join(name,"outputs",file)
                     myfiles.append(fn)
             else:
                 for otherfile in ele.assemble_files(path=""):
