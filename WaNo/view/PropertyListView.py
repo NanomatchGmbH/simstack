@@ -7,6 +7,7 @@ from __future__ import absolute_import
 
 
 from enum import IntEnum
+from functools import partial
 
 from Qt import QtGui, QtCore, QtWidgets
 
@@ -327,6 +328,31 @@ class GlobalFileChooserDelegate(QtWidgets.QStyledItemDelegate):
             painter.fillRect(option.rect, option.palette.highlight())
         return
 
+    def open_remote_importer_files(self, label, custom_widget):
+        wf = self.parent().model().wano_parent.get_root().get_parent_wf()
+
+        varpaths = wf.assemble_files("")
+        from WaNo.view.RemoteImporterDialog import RemoteImporterDialog
+        mydialog = RemoteImporterDialog(varname ="Import file",
+                                        importlist = varpaths,
+                                        window_title="Workflow File Importer")
+        mydialog.setModal(True)
+        mydialog.exec_()
+        result = mydialog.result()
+        if mydialog.result() == True:
+            choice = mydialog.getchoice()
+            #self.change_wf_file(choice)
+            label.setText(choice)
+            #self.set_file_import(choice)
+            #self.set_disable(True)
+        else:
+            #self.change_wf_file("")
+            label.setText("")
+            #self.set_disable(False)
+            #slf.set_file_import(None)
+        self.commitData.emit(custom_widget)
+
+
     def createEditor(self, parent, option, index):
         from WaNo.view.MultiselectDropDownList import MultiselectDropDownList
 
@@ -337,13 +363,16 @@ class GlobalFileChooserDelegate(QtWidgets.QStyledItemDelegate):
         label = QtWidgets.QLabel(str(index.data()), custom_widget)
         hbl.addWidget(label)
         hbl.addStretch()
-        openwfbutton = MultiselectDropDownList(self, autoset_text=False)
+        openwfbutton = QtWidgets.QPushButton(QtGui.QIcon.fromTheme("insert-object"),"")
+        #MultiselectDropDownList(self, autoset_text=False)
         openwfbutton.setFixedSize(28,28)
-        openwfbutton.setIcon(QtWidgets.QFileIconProvider().icon(QtWidgets.QFileIconProvider.Network))
-        openwfbutton.itemSelectionChanged.connect(self.on_wf_file_change)
-        openwfbutton.connect_workaround(self.load_wf_files)
-        openwfbutton.external_label = label
-        openwfbutton.editor = custom_widget
+        #openwfbutton.setIcon(QtWidgets.QFileIconProvider().icon(QtWidgets.QFileIconProvider.Network))
+        #openwfbutton.itemSelectionChanged.connect(self.on_wf_file_change)
+        #openwfbutton.connect_workaround(self.load_wf_files)
+        #openwfbutton.external_label = label
+        #openwfbutton.editor = custom_widget
+        myopenreport = partial(self.open_remote_importer_files,label=label, custom_widget=custom_widget )
+        openwfbutton.clicked.connect(myopenreport)
         hbl.addWidget(openwfbutton)
 
         #hbl.setSpacing(0)
@@ -360,15 +389,17 @@ class GlobalFileChooserDelegate(QtWidgets.QStyledItemDelegate):
         importable_files = wf.get_root().assemble_files("")
         s.set_items(importable_files)
 
-    def on_wf_file_change(self):
-        openwfbutton = self.sender()
-        print(openwfbutton)
-        flist = " ".join(openwfbutton.get_selection())
-        openwfbutton.external_label.setText(flist)
+    def change_wf_file(self, filename):
+        print(f"Chose filename  {filename}")
+        #label.setText(filename)
+        #openwfbutton = self.sender()
+        #print(openwfbutton)
+        #flist = " ".join(openwfbutton.get_selection())
+        #openwfbutton.external_label.setText(flist)
         #self.commitData.emit(None)
         #print("emitting")
         #self.commitData.emit(openwfbutton.external_label)
-        self.commitData.emit(openwfbutton.editor)
+        #self.commitData.emit(openwfbutton.editor)
 
     def setEditorData(self, editor, index):
         editor.blockSignals(True)

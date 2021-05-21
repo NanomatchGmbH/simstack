@@ -6,8 +6,14 @@ class RemoteImporterDialog(QtWidgets.QDialog):
         varname = kwargs["varname"]
         del kwargs["varname"]
         del kwargs["importlist"]
+
+        if "window_title" in kwargs:
+            title = kwargs["window_title"]
+            del kwargs["window_title"]
+        else:
+            title = "Import Workflow Variable"
         super().__init__(*args, **kwargs)
-        self.setWindowTitle("Import Workflow Variable")
+        self.setWindowTitle(title)
         self._mylayout = QtWidgets.QGridLayout(self)
         self._heading = QtWidgets.QLabel("ABC")
         self._varname = QtWidgets.QLabel("ABC")

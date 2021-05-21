@@ -583,10 +583,13 @@ class WaNoItemFileView(AbstractWanoQTView):
         self.openwfbutton.clicked.connect(self.showWFDialog)
         """
         #begin change
-        self.openwfbutton = MultiselectDropDownList(self, autoset_text=False)
-        self.openwfbutton.setIcon(QtWidgets.QFileIconProvider().icon(QtWidgets.QFileIconProvider.Network))
-        self.openwfbutton.connect_workaround(self.load_wf_files)
-        self.openwfbutton.itemSelectionChanged.connect(self.on_wf_file_change)
+        #self.openwfbutton = MultiselectDropDownList(self, autoset_text=False)
+        #self.openwfbutton.setIcon(QtWidgets.QFileIconProvider().icon(QtWidgets.QFileIconProvider.Network))
+        #self.openwfbutton.connect_workaround(self.load_wf_files)
+        #self.openwfbutton.itemSelectionChanged.connect(self.on_wf_file_change)
+
+        self.openwfbutton = QtWidgets.QPushButton(QtGui.QIcon.fromTheme("insert-object"),"")
+        self.openwfbutton.clicked.connect(self.open_remote_importer_files)
 
         #End of change
         hbox.addWidget(self.label)
@@ -603,6 +606,23 @@ class WaNoItemFileView(AbstractWanoQTView):
         #self.actual_widget.setSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed)
         """ Widget code end """
 
+    def open_remote_importer_files(self):
+        varpaths = self.model.get_root().get_parent_wf().assemble_files("")
+        from WaNo.view.RemoteImporterDialog import RemoteImporterDialog
+        mydialog = RemoteImporterDialog(varname ="Import file \"%s\" from:" % self.model.name,
+                                        importlist = varpaths,
+                                        window_title="Workflow File Importer")
+        mydialog.setModal(True)
+        mydialog.exec_()
+        result = mydialog.result()
+        if mydialog.result() == True:
+            choice = mydialog.getchoice()
+            self.set_file_import(choice)
+            self.set_disable(True)
+        else:
+            self.set_disable(False)
+            self.set_file_import(None)
+
     def set_parent(self, parent_view):
         super().set_parent(parent_view)
 
@@ -611,6 +631,7 @@ class WaNoItemFileView(AbstractWanoQTView):
     def showLocalDialog(self):
         fname, _ = QtWidgets.QFileDialog.getOpenFileName(self.actual_widget, 'Open file', QtCore.QDir.homePath())
         if fname:
+            self.set_disable(False)
             fname = QtCore.QDir.toNativeSeparators(fname)
             self.lineedit.setText(fname)
             self.model.set_local(True)
@@ -627,8 +648,16 @@ class WaNoItemFileView(AbstractWanoQTView):
         importable_files = wf.assemble_files("")
         self.openwfbutton.set_items(importable_files)
 
-    def on_wf_file_change(self):
-        self.lineedit.setText(" ".join(self.openwfbutton.get_selection()))
+    def set_disable(self, true_or_false):
+        self.lineedit.setDisabled(true_or_false)
+
+    def set_file_import(self, filename):
+        if filename == None:
+            self.model.set_local(True)
+            self.lineedit.setText("")
+            self.line_edited()
+            return
+        self.lineedit.setText(filename)
         self.model.set_local(False)
         self.line_edited()
 
