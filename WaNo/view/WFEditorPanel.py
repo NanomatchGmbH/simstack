@@ -2161,9 +2161,11 @@ class ForEachView(WFControlWithTopMiddleAndBottom):
         self.topLineLayout.addWidget(self.itername_widget)
         self.list_of_variables = QtWidgets.QLineEdit('')
         self.topLineLayout.addWidget(self.list_of_variables)
-        self.open_variables = MultiselectDropDownList(self, text="Import")
-        self.open_variables.connect_workaround(self.load_wf_files)
-        self.open_variables.itemSelectionChanged.connect(self.on_wf_file_change)
+        self.open_variables = QtWidgets.QPushButton(QtGui.QIcon.fromTheme("drive-removable-media"),"")
+        self.open_variables.clicked.connect(self.open_remote_importer_files)
+        #self.open_variables = MultiselectDropDownList(self, text="Import")
+        #self.open_variables.connect_workaround(self.load_wf_files)
+        #self.open_variables.itemSelectionChanged.connect(self.on_wf_file_change)
         self._global_import_button = QtWidgets.QPushButton(QtGui.QIcon.fromTheme("insert-object"),"")
         self._global_import_button.clicked.connect(self.open_remote_importer)
         self.topLineLayout.addWidget(self._global_import_button)
@@ -2184,6 +2186,21 @@ class ForEachView(WFControlWithTopMiddleAndBottom):
             self.model.set_filelist(choice)
             self.list_of_variables.setText(choice)
             self.model.set_is_file_iterator(False)
+        else:
+            pass
+
+
+    def open_remote_importer_files(self):
+        varpaths = self.model.wf_root.assemble_files("")
+        from WaNo.view.RemoteImporterDialog import RemoteImporterDialog
+        mydialog = RemoteImporterDialog(varname ="Import file", importlist = varpaths, window_title="Workflow File Importer")
+        mydialog.setModal(True)
+        mydialog.exec_()
+        result = mydialog.result()
+        if mydialog.result() == True:
+            choice = mydialog.getchoice()
+            self.list_of_variables.setText(choice)
+            self.model.set_is_file_iterator(True)
         else:
             pass
 
