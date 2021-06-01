@@ -594,25 +594,33 @@ class SSHConnector(CallableQThread):
         if not "port" in registry:
             registry["port"] = 22
 
-        if not name in self._clustermanagers:
-            private_key = registry["sshprivatekey"]
-            if private_key == "<embedded>":
-                pkfile = SimStackPaths.get_embedded_sshkey()
-                if os.path.isfile(pkfile):
-                    private_key = pkfile
-                else:
-                    raise FileNotFoundError("Could not find private key at path <%s>"%pkfile)
-            extra_config = "None Required"
-            if "extraconfig" in registry:
-                extra_config = registry["extraconfig"]
-            cm = ClusterManager(url=registry["baseURI"], port=registry["port"],
-                                calculation_basepath=registry["calculation_basepath"], user=registry["username"],
-                                sshprivatekey=private_key,
-                                extra_config=extra_config,
-                                queueing_system=registry["queueing_system"], default_queue=registry["default_queue"])
-            self._clustermanagers[name] = cm
-        else:
-            cm = self._clustermanagers[name]
+
+        try:
+            # We disconnect in case of reconnect
+            if name in self._clustermanagers:
+                cm = self._clustermanagers[name]
+                if cm.is_connected():
+                    cm.disconnect()
+        except ConnectionError as e:
+            pass
+
+        private_key = registry["sshprivatekey"]
+        if private_key == "<embedded>":
+            pkfile = SimStackPaths.get_embedded_sshkey()
+            if os.path.isfile(pkfile):
+                private_key = pkfile
+            else:
+                raise FileNotFoundError("Could not find private key at path <%s>"%pkfile)
+        extra_config = "None Required"
+        if "extraconfig" in registry:
+            extra_config = registry["extraconfig"]
+        cm = ClusterManager(url=registry["baseURI"], port=registry["port"],
+                            calculation_basepath=registry["calculation_basepath"], user=registry["username"],
+                            sshprivatekey=private_key,
+                            extra_config=extra_config,
+                            queueing_system=registry["queueing_system"], default_queue=registry["default_queue"])
+        self._clustermanagers[name] = cm
+
         if not cm.is_connected():
             try:
                 local_hostkey_file = SimStackPaths.get_local_hostfile()
