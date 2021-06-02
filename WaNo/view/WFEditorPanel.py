@@ -17,6 +17,7 @@ from enum import Enum
 from functools import partial
 from os.path import join
 import posixpath
+from pathlib import Path
 
 from   lxml import etree
 
@@ -28,15 +29,15 @@ from Qt.QtCore import Signal
 import SimStackServer.WaNo.WaNoFactory as WaNoFactory
 from SimStackServer.WorkflowModel import WorkflowExecModule, Workflow, DirectedGraph, WorkflowElementList, SubGraph, \
     ForEachGraph, StringList, WFPass, IfGraph, WhileGraph, VariableElement
+from SimStackServer.WaNo.MiscWaNoTypes import WaNoListEntry
 from WaNo.SimStackPaths import SimStackPaths
 from WaNo.WaNoSettingsProvider import WaNoSettingsProvider
 from WaNo.Constants import SETTING_KEYS
 
-from WaNo.view.MultiselectDropDownList import MultiselectDropDownList
 from WaNo.view.RemoteImporterDialog import RemoteImporterDialog
 
 from WaNo.view.WFEditorWidgets import WFEWaNoListWidget, WFEListWidget
-from WaNo.lib.FileSystemTree import copytree
+from WaNo.lib.FileSystemTree import copytree, copytree_pathlib
 
 #def mapClassToTag(name):
 #    xx = name.replace('Widget','')
@@ -95,7 +96,7 @@ class DragDropTargetTracker(object):
             pass
 
 class WFWaNoWidget(QtWidgets.QToolButton,DragDropTargetTracker):
-    def __init__(self, text, wano, parent):
+    def __init__(self, text, wano :WaNoListEntry, parent):
         super(WFWaNoWidget, self).__init__(parent)
         self.manual_init()
         self.logger = logging.getLogger('WFELOG')
@@ -123,8 +124,8 @@ class WFWaNoWidget(QtWidgets.QToolButton,DragDropTargetTracker):
         self.setStyleSheet(stylesheet) # + widgetColors['WaNo'])
         self.setToolButtonStyle(QtCore.Qt.ToolButtonTextUnderIcon)
         self.setText(text)
-        self.setIcon(QtGui.QIcon(wano[3]))
-        self._wano_type = wano[0]
+        self.setIcon(QtGui.QIcon(wano.icon))
+        self._wano_type = wano.name
         #self.setAutoFillBackground(True)
         #self.setColor(QtCore.Qt.lightGray)
         self.wano = copy.copy(wano)
@@ -139,15 +140,17 @@ class WFWaNoWidget(QtWidgets.QToolButton,DragDropTargetTracker):
 
     @classmethod
     def instantiate_from_folder(cls,folder,wanotype, parent):
-        iconpath = os.path.join(folder,wanotype) + ".png"
+        folder = Path(folder)
+        iconpath = folder / (wanotype + ".png")
         if not os.path.isfile(iconpath):
             icon = QtWidgets.QFileIconProvider().icon(QtWidgets.QFileIconProvider.Computer)
             wano_icon = icon.pixmap(icon.actualSize(QtCore.QSize(128, 128)))
         else:
             wano_icon = QtGui.QIcon(iconpath)
-        uuid = os.path.basename(folder)
-        wano = [wanotype,folder,os.path.join(folder,wanotype) + ".xml", wano_icon]
-        returnobject = cls(text=wano[0], wano=wano, parent=parent)
+        uuid = folder.name
+        wano = WaNoListEntry(name=wanotype, folder=folder, icon = wano_icon)
+        #[wanotype,folder,os.path.join(folder,wanotype) + ".xml", wano_icon]
+        returnobject = cls(text=wano.name, wano=wano, parent=parent)
         #overwrite old uuid
         returnobject.uuid=uuid
         return returnobject
@@ -170,13 +173,12 @@ class WFWaNoWidget(QtWidgets.QToolButton,DragDropTargetTracker):
         
     def get_xml(self):
         me = etree.Element("WaNo")
-        me.attrib["type"] = str(self.wano[0])
+        me.attrib["type"] = str(self.wano.name)
         me.attrib["uuid"] = str(self.uuid)
         return me
 
     def instantiate_in_folder(self,folder):
-
-        outfolder = os.path.join(folder,"wanos",self.uuid)
+        outfolder = folder/"wanos"/self.uuid
 
         try:
             os.makedirs(outfolder)
@@ -184,18 +186,21 @@ class WFWaNoWidget(QtWidgets.QToolButton,DragDropTargetTracker):
             pass
 
         #print(self.wano[1],outfolder)
-        if outfolder != self.wano[1]:
+        if outfolder != self.wano.folder:
             try:
-                #print("Copying %s to %s"%(outfolder,self.wano[1]))
-                copytree(self.wano[1],outfolder)
+                print("Copying %s to %s"%(outfolder,self.wano.folder))
+
+                copytree_pathlib(self.wano.folder, outfolder)
             except Exception as e:
                 self.logger.error("Failed to copy tree: %s." % str(e))
+                import traceback
+                traceback.print_exc()
                 return False
 
-        self.wano[1] = outfolder
-        self.wano[2] = os.path.join(outfolder,self.wano[0]) + ".xml"
+        self.wano.folder = outfolder
+
         self.wano_model.update_xml()
-        return self.wano_model.save_xml(self.wano[2])
+        return self.wano_model.save_xml(self.wano)
 
     def render(self, path_list, output_path_list, basefolder,stageout_basedir=""):
         #myfolder = os.path.join(basefolder,self.uuid)
@@ -210,7 +215,7 @@ class WFWaNoWidget(QtWidgets.QToolButton,DragDropTargetTracker):
 
     def construct_wano(self):
         if not self.constructed:
-            self.wano_model,self.wano_view = WaNoFactory.wano_constructor(self.wano[2])
+            self.wano_model,self.wano_view = WaNoFactory.wano_constructor(self.wano)
             self.wano_model.set_parent_wf(self.wf_model)
             self.wano_model.datachanged_force()
             self.constructed = True
@@ -1469,9 +1474,9 @@ class SubWorkflowView(QtWidgets.QFrame):
             try:
                 wd = WFWaNoWidget(wano[0],wano,self)
             except Exception as e:
-                tb = traceback.format_exc()
-                messageboxtext = "<H3>Encountered error when inserting WaNo.</H3>\n\n Error was: %s\n " %e
-                                 #"Trace: %s" %(e, tb)
+                tb = traceback.format_exc().replace("\n","\n<br/>")
+                messageboxtext = f"<H3>Encountered error when inserting WaNo.</H3>\n\n Error was: {e}\n <hr/>" \
+                                 f"<it>Trace: {tb}</it>"
                 QtWidgets.QMessageBox.about(None, "Exception in WaNo construction", messageboxtext)
                 return
             self.model.add_element(wd,new_position)
@@ -1738,13 +1743,13 @@ class WorkflowView(QtWidgets.QFrame):
         elif isinstance(e.source(),WFEWaNoListWidget):
             wfe = e.source()
             dropped = wfe.selectedItems()[0]
-            wano = dropped.WaNo
+            wano : WaNoListEntry = dropped.WaNo
             try:
-                wd = WFWaNoWidget(wano[0],wano,self)
+                wd = WFWaNoWidget(wano.name,wano,self)
             except Exception as e:
-                tb = traceback.format_exc()
-                messageboxtext = "<H3>Encountered error when inserting WaNo.</H3>\n\n Error was: %s\n " %e
-                                 #"Trace: %s" %(e, tb)
+                tb = traceback.format_exc().replace("\n","\n<br/>")
+                messageboxtext = f"<H3>Encountered error when inserting WaNo.</H3>\n\n Error was: {e}\n <hr/>" \
+                                 f"<it>Trace: {tb}</it>"
                 QtWidgets.QMessageBox.about(None, "Exception in WaNo construction", messageboxtext)
                 return
             ##self.model.add_element(new_position,wd)
@@ -1863,8 +1868,8 @@ class WFTabsWidget(QtWidgets.QTabWidget):
             if workflow_path == '<embedded>':
                 workflow_path = join(SimStackPaths.get_embedded_path(),"workflows")
             foldername = self.currentTabText()
-            fullpath = os.path.join(workflow_path, foldername)
-            print("FP",fullpath)
+            workflow_path = Path(workflow_path)
+            fullpath = workflow_path / foldername
             return self.saveFile(fullpath)
 
     illegal_chars = r"<>|\#~*´`"
@@ -1892,9 +1897,10 @@ class WFTabsWidget(QtWidgets.QTabWidget):
         workflow_path = settings.get_value(SETTING_KEYS["workflows"])
         if workflow_path == '<embedded>':
             workflow_path = join(SimStackPaths.get_embedded_path(),"workflows")
-        fullpath = os.path.join(workflow_path,foldername)
+        workflow_path = Path(workflow_path)
+        fullpath = workflow_path / foldername
 
-        if os.path.exists(fullpath):
+        if fullpath.exists():
             message = QtWidgets.QMessageBox.question(self,"Path already exists", "Path %s already exists? Old contents will be removed." %fullpath,QtWidgets.QMessageBox.Yes|QtWidgets.QMessageBox.Cancel)
             if message == QtWidgets.QMessageBox.Cancel:
                 return False

@@ -1,6 +1,7 @@
 import os
 import sys
 import unittest
+from pathlib import Path
 
 from Qt import QtWidgets
 from Qt import QtCore
@@ -85,7 +86,7 @@ class TestWaNoModels(unittest.TestCase):
     def _construct_wano_nogui(self,wanofile):
         with open(wanofile, 'rt') as infile:
             xml = etree.parse(infile)
-        wano_dir_root = os.path.dirname(os.path.realpath(wanofile))
+        wano_dir_root = Path(os.path.dirname(os.path.realpath(wanofile)))
 
         wmr = WaNoModelRoot(wano_dir_root = wano_dir_root)
         wmr.parse_from_xml(xml)
@@ -120,7 +121,7 @@ class TestWaNoModels(unittest.TestCase):
     def _construct_wano_only(self, wanofile):
         with open(wanofile, 'rt') as infile:
             xml = etree.parse(infile)
-        wano_dir_root = os.path.dirname(os.path.realpath(wanofile))
+        wano_dir_root = Path(os.path.dirname(os.path.realpath(wanofile)))
 
         wmr = WaNoModelRoot(wano_dir_root = wano_dir_root)
         wmr.set_view_class(WanoQtViewRoot)
@@ -155,7 +156,7 @@ class TestWaNoModels(unittest.TestCase):
     def test_qt_completer_wano(self):
         with open(self.depxml, 'rt') as infile:
             xml = etree.parse(infile)
-        wano_dir_root = os.path.dirname(os.path.realpath(self.depxml))
+        wano_dir_root = Path(os.path.dirname(os.path.realpath(self.depxml)))
 
         wmr = WaNoModelRoot(wano_dir_root = wano_dir_root)
         wmr.set_view_class(WanoQtViewRoot)
@@ -207,7 +208,7 @@ class TestWaNoModels(unittest.TestCase):
     def _construct_wano(self, wanofile):
         with open(wanofile, 'rt') as infile:
             xml = etree.parse(infile)
-        wano_dir_root = os.path.dirname(os.path.realpath(wanofile))
+        wano_dir_root = Path(os.path.dirname(os.path.realpath(wanofile)))
 
         wmr = WaNoModelRoot(wano_dir_root = wano_dir_root)
         wmr.set_view_class(WanoQtViewRoot)

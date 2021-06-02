@@ -3,15 +3,13 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
-import os
-import sys
 import logging
-from lxml import etree
 
 import Qt.QtCore as QtCore
 import Qt.QtGui  as QtGui
 import Qt.QtWidgets  as QtWidgets
 
+from SimStackServer.WaNo.MiscWaNoTypes import WaNoListEntry
 
 
 class WFEListWidget(QtWidgets.QListWidget):
@@ -41,8 +39,9 @@ class WFEWaNoListWidget(QtWidgets.QListWidget):
     def update_list(self, wanos):
         self.clear()
         for wano in wanos:
-            item = QtWidgets.QListWidgetItem(wano[0])
-            wano_icon = wano[3]
+            wano: WaNoListEntry
+            item = QtWidgets.QListWidgetItem(wano.name)
+            wano_icon = wano.icon
             item.setIcon(QtGui.QIcon(wano_icon))
             self.addItem(item)
             item.WaNo = wano

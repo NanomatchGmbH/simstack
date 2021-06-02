@@ -21,6 +21,7 @@ class TestWaNo(QtWidgets.QWidget):
         wea.license_check()
 
     def initUI(self):
+        raise NotImplementedError("Not implemented anymore")
         scroller = QtWidgets.QScrollArea(parent=self)
         scroller.setSizePolicy(QtWidgets.QSizePolicy.Expanding,QtWidgets.QSizePolicy.Expanding)
         scroller.setWidgetResizable(True)

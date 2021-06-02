@@ -27,11 +27,11 @@ else:
 
 class ResourceTableBase(QtCore.QAbstractTableModel):
     def save(self,filename):
-        with open(filename,'w') as outfile:
+        with filename.open('wt') as outfile:
             outfile.write(yaml.safe_dump(self.mylist, default_flow_style=False))
 
     def load(self,filename):
-        with open(filename, 'r') as infile:
+        with filename.open('rt') as infile:
             self.mylist = yaml.safe_load(infile)
 
     def __init__(self, parent, *args,**kwargs):

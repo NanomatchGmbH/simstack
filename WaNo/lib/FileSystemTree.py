@@ -9,6 +9,8 @@
 # http://www.hardcoded.net/licenses/bsd_license
 
 import logging
+import zipfile
+from pathlib import Path
 
 from Qt.QtCore import QAbstractItemModel, QModelIndex, QFileInfo
 from Qt.QtWidgets import QFileIconProvider
@@ -25,6 +27,13 @@ def copytree(src, dst, symlinks=False, ignore=None):
         else:
             shutil.copy2(s, d)
 
+def copytree_pathlib(srcpath: Path, destpath: Path, symlinks = False, ignore = None):
+    if isinstance(srcpath, zipfile.Path):
+        zipfilepath = str(srcpath)[:-1]
+        zz = zipfile.ZipFile(zipfilepath)
+        zz.extractall(destpath)
+    elif srcpath.is_dir():
+        copytree(str(srcpath), str(destpath), symlinks=symlinks, ignore=ignore)
 
 def filewalker(basedir):
     for root,dirs,files in os.walk(basedir):

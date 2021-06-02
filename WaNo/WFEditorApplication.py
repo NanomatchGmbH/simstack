@@ -6,7 +6,9 @@ from __future__ import absolute_import
 
 import logging
 import os
+import zipfile
 from os.path import join
+from pathlib import Path
 
 from Qt.QtCore import Signal
 
@@ -21,6 +23,8 @@ from SimStackServer.WaNo.WaNoModels import FileNotFoundErrorSimStack
 from WaNo.SimStackPaths import SimStackPaths
 from SimStackServer.WaNo.WaNoExceptions import WorkflowSubmitError
 
+from SimStackServer.WaNo.MiscWaNoTypes import WaNoListEntry
+
 from WaNo.view.WFViewManager import WFViewManager
 from WaNo.WaNoGitRevision import get_git_revision
 from WaNo.Constants import SETTING_KEYS
@@ -28,7 +32,6 @@ from WaNo.UnicoreState import UnicoreStateFactory
 from WaNo.SSHConnector import SSHConnector
 from WaNo.SSHConnector import OPERATIONS as uops
 from WaNo.SSHConnector import ERROR as uerror
-from WaNo.view.WFEditorPanel import SubmitType
 
 from WaNo.lib.CallableQThread import CallableQThread
 
@@ -414,25 +417,58 @@ class WFEditorApplication(CallableQThread):
         self.wanos=[]
 
         try:
-            for folder in os.listdir(wano_repo_path):
-                fullpath = os.path.join(wano_repo_path, folder)
-                if os.path.isdir(fullpath):
-                    name = folder
-                    iconname= "%s.png" % folder
-                    xmlname = "%s.xml" % folder
+            p = Path(wano_repo_path)
+            for folder in p.iterdir():
+                try:
+                    myfolder = None
+                    if folder.is_dir():
+                        myfolder = folder
+                        name = myfolder.name
+                    elif str(folder).endswith(".zip"):
+                        myfolder = zipfile.Path(folder)
+                        name = folder.name[:-4]
 
-                    xmlpath = os.path.join(fullpath,xmlname)
-                    iconpath=os.path.join(fullpath,iconname)
-                    if not os.path.isfile(xmlpath):
+                    if myfolder is None:
+                        # Probably just a random file
+                        continue
+
+                    iconname= "%s.png" % name
+                    xmlname = "%s.xml" % name
+
+                    xmlpath = myfolder / xmlname
+                    print(folder, xmlpath)
+                    iconpath= myfolder / iconname
+                    print(iconpath)
+                    if not xmlpath.is_file():
                         # Might be a random folder
                         continue
-                    if not os.path.isfile(iconpath):
+                    else:
+                        with xmlpath.open('rt'):
+                            pass
+                    wano_icon = None
+                    if iconpath.is_file():
+                        try:
+                            qp = QtGui.QPixmap()
+                            print(iconpath)
+                            with iconpath.open('rb') as infile:
+                                qpdata = infile.read()
+                            qp.loadFromData(qpdata)
+                            wano_icon = QtGui.QIcon()
+                            wano_icon.addPixmap(qp)
+                        except KeyError as e:
+                            # Again workaround for a zipfile bug, where is_file is True, but File isn't there.
+                            pass
+                    if wano_icon is None:
                         icon = QtWidgets.QFileIconProvider().icon(QtWidgets.QFileIconProvider.Computer)
                         wano_icon = icon.pixmap(icon.actualSize(QtCore.QSize(128, 128)))
-                    else:
-                        wano_icon = QtGui.QIcon(iconpath)
 
-                    self.wanos.append([name,fullpath,xmlpath,wano_icon])
+                    wle = WaNoListEntry(name=name, folder=myfolder, icon=wano_icon)
+                    self.wanos.append(wle)
+                except KeyError as e:
+                    print(e)
+                    # In this case we are in zip mode and couldn't open something
+                    pass
+
         except OSError as e:
             print("WaNo Directory not found")
 
@@ -553,10 +589,14 @@ class WFEditorApplication(CallableQThread):
             return
         except WorkflowSubmitError as e:
             errormessage = "Error during workflow submit. Error was:\n\n -----\n\n%s"%e
+            import traceback
+            traceback.print_exc()
             self._view_manager.show_error(errormessage)
             return
         except Exception as e:
             errormessage = "Error during workflow submit. Error was:\n\n -----\n\n%s"%e
+            import traceback
+            traceback.print_exc()
             self._view_manager.show_error(errormessage)
             return
 
@@ -566,16 +606,9 @@ class WFEditorApplication(CallableQThread):
         #    print("Running", directory)
         #    self.run_job(directory,name)
         #    self._view_manager.show_status_message("Started job: %s" % name)
-        if jobtype == SubmitType.WORKFLOW or jobtype == SubmitType.SINGLE_WANO:
-            #print("Running Workflows not yet implemented")
-            self.run_workflow(wf_xml,directory,name)
-            self._view_manager.show_status_message("Started workflow: %s" % name)
-            ### TODO, HERE TIMO!
+        self.run_workflow(wf_xml,directory,name)
+        self._view_manager.show_status_message("Started workflow: %s" % name)
 
-            #self.editor.execute_workflow(directory)
-        else:
-            # Error case...
-            pass
 
     def run_workflow(self, xml, directory, name):
         registry= self._get_current_registry()
@@ -585,18 +618,6 @@ class WFEditorApplication(CallableQThread):
         to_upload = os.path.join(directory,"workflow_data")
         self._unicore_connector.run_workflow_job(registry,submitname,to_upload,xml)
 
-
-
-    def run_job(self, wano_dir, name):
-        base_uri = self._get_current_base_uri()
-        self.exec_unicore_operation.emit(
-                uops.RUN_SINGLE_JOB,
-                SSHConnector.create_single_job_args(
-                        base_uri,
-                        wano_dir,
-                        name
-                    )
-            )
 
     def _reconnect_unicore(self, registry_index):
         self._logger.info("Reconnecting to Unicore Registry.")
