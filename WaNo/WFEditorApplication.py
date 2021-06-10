@@ -23,7 +23,7 @@ from SimStackServer.WaNo.WaNoModels import FileNotFoundErrorSimStack
 from WaNo.SimStackPaths import SimStackPaths
 from SimStackServer.WaNo.WaNoExceptions import WorkflowSubmitError
 
-from SimStackServer.WaNo.MiscWaNoTypes import WaNoListEntry
+from SimStackServer.WaNo.MiscWaNoTypes import WaNoListEntry, get_wano_xml_path
 
 from WaNo.view.WFViewManager import WFViewManager
 from WaNo.WaNoGitRevision import get_git_revision
@@ -434,8 +434,8 @@ class WFEditorApplication(CallableQThread):
 
                     iconname= "%s.png" % name
                     xmlname = "%s.xml" % name
+                    xmlpath = get_wano_xml_path(myfolder)
 
-                    xmlpath = myfolder / xmlname
                     print(folder, xmlpath)
                     iconpath= myfolder / iconname
                     print(iconpath)
