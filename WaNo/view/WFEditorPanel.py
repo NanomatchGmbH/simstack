@@ -137,6 +137,8 @@ class WFWaNoWidget(QtWidgets.QToolButton,DragDropTargetTracker):
         self.uuid = str(uuid.uuid4())
         self.construct_wano()
         self.name = self.text()
+        # today int he evening: add info on aiida node ids, while executing workflow.
+        # read output and check if it actually works
 
     @classmethod
     def instantiate_from_folder(cls,folder,wanotype, parent):
@@ -146,7 +148,7 @@ class WFWaNoWidget(QtWidgets.QToolButton,DragDropTargetTracker):
             icon = QtWidgets.QFileIconProvider().icon(QtWidgets.QFileIconProvider.Computer)
             wano_icon = icon.pixmap(icon.actualSize(QtCore.QSize(128, 128)))
         else:
-            wano_icon = QtGui.QIcon(iconpath)
+            wano_icon = QtGui.QIcon(str(iconpath))
         uuid = folder.name
         wano = WaNoListEntry(name=wanotype, folder=folder, icon = wano_icon)
         #[wanotype,folder,os.path.join(folder,wanotype) + ".xml", wano_icon]
@@ -865,7 +867,9 @@ class ForEachModel(WFItemModel):
         transitions = []
 
         if self._is_file_iterator:
+            print("IM SPLITTING", self.fileliststring)
             for myfile in self.fileliststring.split():
+
                 gpath = "${STORAGE}/workflow_data/%s"%myfile
                 #localfn = os.path.basename(myfile)
                 #gpath = join(gpath,localfn)
@@ -1969,7 +1973,7 @@ class WFTabsWidget(QtWidgets.QTabWidget):
         #self.wf_model.save_to_disk(folder)
         self.setTabText(self.currentIndex(),os.path.basename(folder))
         #print (type(self.editor.parent()))
-        self.workflow_saved.emit(success, folder)
+        self.workflow_saved.emit(success, str(folder))
 
     #def sizeHint(self):
     #    return QtCore.QSize(500,500)
@@ -2205,6 +2209,7 @@ class ForEachView(WFControlWithTopMiddleAndBottom):
         result = mydialog.result()
         if mydialog.result() == True:
             choice = mydialog.getchoice()
+            self.model.set_filelist(choice)
             self.list_of_variables.setText(choice)
             self.model.set_is_file_iterator(True)
         else:
