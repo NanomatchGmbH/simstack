@@ -1476,7 +1476,7 @@ class SubWorkflowView(QtWidgets.QFrame):
             dropped = wfe.selectedItems()[0]
             wano = dropped.WaNo
             try:
-                wd = WFWaNoWidget(wano[0],wano,self)
+                wd = WFWaNoWidget(wano.name,wano,self)
             except Exception as e:
                 tb = traceback.format_exc().replace("\n","\n<br/>")
                 messageboxtext = f"<H3>Encountered error when inserting WaNo.</H3>\n\n Error was: {e}\n <hr/>" \
