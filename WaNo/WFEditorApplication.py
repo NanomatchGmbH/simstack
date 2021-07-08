@@ -436,9 +436,7 @@ class WFEditorApplication(CallableQThread):
                     xmlname = "%s.xml" % name
                     xmlpath = get_wano_xml_path(myfolder)
 
-                    print(folder, xmlpath)
                     iconpath= myfolder / iconname
-                    print(iconpath)
                     if not xmlpath.is_file():
                         # Might be a random folder
                         continue
@@ -449,7 +447,6 @@ class WFEditorApplication(CallableQThread):
                     if iconpath.is_file():
                         try:
                             qp = QtGui.QPixmap()
-                            print(iconpath)
                             with iconpath.open('rb') as infile:
                                 qpdata = infile.read()
                             qp.loadFromData(qpdata)
@@ -465,7 +462,8 @@ class WFEditorApplication(CallableQThread):
                     wle = WaNoListEntry(name=name, folder=myfolder, icon=wano_icon)
                     self.wanos.append(wle)
                 except KeyError as e:
-                    print(e)
+                    if not isinstance(myfolder, zipfile.Path):
+                        print(e)
                     # In this case we are in zip mode and couldn't open something
                     pass
 
