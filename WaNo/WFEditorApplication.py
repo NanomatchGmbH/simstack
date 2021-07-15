@@ -13,6 +13,7 @@ from pathlib import Path
 from Qt.QtCore import Signal
 
 from Qt import QtCore, QtGui, QtWidgets, Qt
+
 import sys
 import time
 import datetime
@@ -725,7 +726,13 @@ class WFEditorApplication(CallableQThread):
     ############################################################################
     def exit(self):
         self._view_manager.exit()
-        self._unicore_connector.exit()
+        self._unicore_connector.quit()
+        time.sleep(0.02)
+        if self._unicore_connector.isRunning() and not self._unicore_connector.isFinished():
+            time.sleep(0.2)
+            if self._unicore_connector.isRunning() and not self._unicore_connector.isFinished():
+                print("SSH Connector was still awake after 220ms. Terminating. This will lead to more errors.")
+                self._unicore_connector.terminate()
 
     ############################################################################
     #                            init                                          #
@@ -777,7 +784,8 @@ class WFEditorApplication(CallableQThread):
         pass
 
     def _client_about_to_exit(self):
-       self._unicore_connector.exit()
+        print("Exiting.")
+        self.exit()
 
     def __init__(self, settings):
         super(WFEditorApplication, self).__init__()

@@ -929,6 +929,10 @@ class SSHConnector(CallableQThread):
 
         cb_function(*args, **kwargs)
 
+    def quit(self):
+        self.exit()
+        super().quit()
+
     def __init__(self, cbReceiver, unicore_state):
         super(SSHConnector, self).__init__()
         self.logger         = logging.getLogger("SSHConnection")
