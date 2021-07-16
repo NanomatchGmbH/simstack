@@ -7,6 +7,8 @@ then
     exit 0
 fi
 
+source $MYPWD/anaconda3/etc/profile.d/conda.sh
+conda activate simstack_pyqt5
 if [ ! -f $MYPWD/anaconda3/pkgs/cython-*.tar.bz2 ]
 then
     $MYPWD/anaconda3/bin/conda install cython
@@ -19,13 +21,13 @@ mkdir compiled_client
 cd simstack_src
 
 rm -rf build compile
-$MYPWD/anaconda3/bin/python ./setup.py build_ext -j 6 install --prefix=../compiled_client/
+python ./setup.py build_ext -j 6 install --prefix=../compiled_client/
 rm -rf build compile
 
 cd $MYPWD
 cd simstack_src/SimStackServer
-git-archive-all --prefix=SimStackServer/ $MYPWD/compiled_client/lib/python3.7/site-packages/SimStackServer.zip
-cd $MYPWD/compiled_client/lib/python3.7/site-packages/
+git-archive-all --prefix=SimStackServer/ $MYPWD/compiled_client/lib/python3.9/site-packages/SimStackServer.zip
+cd $MYPWD/compiled_client/lib/python3.9/site-packages/
 unzip SimStackServer.zip
 rm SimStackServer.zip
 
@@ -35,7 +37,7 @@ git archive --prefix=treewalker/ -o $MYPWD/treewalker_tmp.zip HEAD
 cd $MYPWD
 
 mkdir installer_package
-cp -r compiled_client/lib/python3.7/site-packages/* installer_package/
+cp -r compiled_client/lib/python3.9/site-packages/* installer_package/
 rm -rf compiled_client
 cp -r simstack_src/WaNo/ctrl_img installer_package/WaNo/
 cp -r simstack_src/WaNo/wano_img installer_package/WaNo/
