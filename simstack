@@ -32,10 +32,14 @@ import logging
 import uuid
 
 import yaml
-import PyQt5.QtWebEngineWidgets
+import Qt
+if Qt.__binding__ == "PyQt5":
+    import PyQt5.QtWebEngineWidgets
+else:
+    assert Qt.__binding__ == "PySide2"
+    import PySide2.QtWebEngineWidgets
 from Qt.QtWidgets import QApplication, QStyleFactory
 from Qt.QtCore import QTimer, QLocale
-import Qt
 import traceback
 
 print("Using %s backend."%Qt.__binding__)
