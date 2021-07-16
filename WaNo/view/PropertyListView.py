@@ -16,8 +16,7 @@ import operator
 import os
 
 import Qt
-if Qt.__binding__ == 'PySide':
-    #PySide1 only accepts flags as int:
+if Qt.__binding__ == "PyQt5":
     def pyside_int_workaround(val):
         return int(val)
 else:
@@ -147,7 +146,7 @@ class ExportTableModel(ResourceTableBase):
         self.mylist = [
         ]
         self.header = ["Filename"]
-        self.alignments = [QtCore.Qt.AlignCenter]
+        self.alignments = [pyside_int_workaround(QtCore.Qt.AlignCenter)]
 
 
 class ImportTableModel(ResourceTableBase):
@@ -247,8 +246,8 @@ class ImportTableModel(ResourceTableBase):
         self.mylist = [
         ]
         self.header = ["Name", "ImportFrom", "Target Filename"]
-        self.alignments = [QtCore.Qt.AlignCenter, pyside_int_workaround(QtCore.Qt.AlignLeft | QtCore.Qt.AlignVCenter),
-                           pyside_int_workaround(QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter),QtCore.Qt.AlignCenter]
+        self.alignments = [pyside_int_workaround(QtCore.Qt.AlignCenter), pyside_int_workaround(QtCore.Qt.AlignLeft | QtCore.Qt.AlignVCenter),
+                           pyside_int_workaround(QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter),pyside_int_workaround(QtCore.Qt.AlignCenter)]
 
 
 class ResourceTableModel(ResourceTableBase):
@@ -264,7 +263,7 @@ class ResourceTableModel(ResourceTableBase):
         self.mylist = [
         ]
         self.header = ["Enable", "Property", "Value"]
-        self.alignments = [QtCore.Qt.AlignCenter,pyside_int_workaround(QtCore.Qt.AlignLeft| QtCore.Qt.AlignVCenter),pyside_int_workaround(QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter)]
+        self.alignments = [pyside_int_workaround(QtCore.Qt.AlignCenter),pyside_int_workaround(QtCore.Qt.AlignLeft| QtCore.Qt.AlignVCenter),pyside_int_workaround(QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter)]
 
     def render_to_simstack_server_model(self):
         from SimStackServer.WorkflowModel import Resources
@@ -315,7 +314,7 @@ class ResourceTableModel(ResourceTableBase):
             [False, "Queue", "default"]
         ]
         self.header = ["Enable", "Property", "Value"]
-        self.alignments = [QtCore.Qt.AlignCenter, pyside_int_workaround(QtCore.Qt.AlignLeft| QtCore.Qt.AlignVCenter),pyside_int_workaround(QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter)]
+        self.alignments = [pyside_int_workaround(QtCore.Qt.AlignCenter), pyside_int_workaround(QtCore.Qt.AlignLeft| QtCore.Qt.AlignVCenter),pyside_int_workaround(QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter)]
 
 
 
