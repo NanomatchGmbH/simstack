@@ -1,7 +1,7 @@
 rd /s /q compiled_client installer_package simstack
 
 mkdir compiled_client
-CALL anaconda3\condabin\conda.bat activate simstack_pyqt5
+CALL anaconda3\condabin\activate.bat simstack_pyqt5
 
 cd simstack_src
 
