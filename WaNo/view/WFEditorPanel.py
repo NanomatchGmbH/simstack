@@ -867,7 +867,6 @@ class ForEachModel(WFItemModel):
         transitions = []
 
         if self._is_file_iterator:
-            print("IM SPLITTING", self.fileliststring)
             for myfile in self.fileliststring.split():
 
                 gpath = "${STORAGE}/workflow_data/%s"%myfile
