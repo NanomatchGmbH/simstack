@@ -1,7 +1,7 @@
 rd /s /q compiled_client installer_package simstack
 
 mkdir compiled_client
-CALL anaconda3\condabin\conda.bat activate base
+CALL anaconda3\condabin\activate.bat simstack_pyqt5
 
 cd simstack_src
 
@@ -49,6 +49,6 @@ ren installer_package simstack
 
 SET datestring=%date:~6,4%-%date:~3,2%-%date:~0,2%
 rd /s /q %datestring%-simstack_windows.zip
-zip.exe -r %datestring%-simstack_windows.zip run-simstack.bat simstack simstack.desktop simstack.eula tools_win install-simstack.bat
+zip.exe -r %datestring%-simstack_windows.zip run-simstack.bat simstack simstack.desktop simstack.eula tools_win
 
 echo "DONE building."
