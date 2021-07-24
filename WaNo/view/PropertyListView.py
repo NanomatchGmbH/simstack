@@ -16,7 +16,9 @@ import operator
 import os
 
 import Qt
-if Qt.__binding__ == "PyQt5":
+#if Qt.__binding__ == "PyQt5":
+if False:
+    # The handling of intflags differs between implementations. Currently we get a warning for pyqt5, but it will be fixed in a future pyqt5 release, therefore we take it.
     def pyside_int_workaround(val):
         return int(val)
 else:
