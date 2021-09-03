@@ -5,7 +5,7 @@ from __future__ import print_function
 from __future__ import unicode_literals
 from __future__ import absolute_import
 
-
+import abc
 from enum import IntEnum
 from functools import partial
 
@@ -30,6 +30,10 @@ class ResourceTableBase(QtCore.QAbstractTableModel):
     def save(self,filename):
         with filename.open('wt') as outfile:
             outfile.write(yaml.safe_dump(self.mylist, default_flow_style=False))
+
+    @abc.abstractmethod
+    def make_default_list(self):
+        raise NotImplementedError("Please implement in child class")
 
     def load(self,filename):
         with filename.open('rt') as infile:
@@ -259,6 +263,7 @@ class ResourceTableModel(ResourceTableBase):
         mem = 2
         time = 3
         queue = 4
+        custom_requests = 5
 
     def __init__(self, parent, *args,**kwargs):
         super(ResourceTableModel, self).__init__(parent, *args,**kwargs)
@@ -292,11 +297,15 @@ class ResourceTableModel(ResourceTableBase):
         else:
             queue = "${QUEUE_NAME}"
 
+        custom_requests = None
+        if self.mylist[self.ROWTYPE.custom_requests][0] == True:
+            custom_requests = self.mylist[self.ROWTYPE.custom_requests][2]
+
 
         return Resources(
             cpus_per_node=ppn, nodes=numnodes,
             memory=mem, walltime = time,
-            queue = queue
+            queue = queue, custom_requests = custom_requests
         )
 
 
@@ -309,15 +318,26 @@ class ResourceTableModel(ResourceTableBase):
 
     def make_default_list(self):
         self.mylist = [
-            [False,"CPUs per Node",1],
+            [False, "CPUs per Node",1],
             [False, "Number of Nodes",1],
             [False, "Memory [MB]",1024],
             [False, "Time [Wall]", 86400],
-            [False, "Queue", "default"]
+            [False, "Queue", "default"],
+            [False, "Custom Requests", ""]
         ]
         self.header = ["Enable", "Property", "Value"]
         self.alignments = [pyside_int_workaround(QtCore.Qt.AlignCenter), pyside_int_workaround(QtCore.Qt.AlignLeft| QtCore.Qt.AlignVCenter),pyside_int_workaround(QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter)]
 
+    def load(self,filename):
+        self.make_default_list()
+        with filename.open('rt') as infile:
+            updatelist = yaml.safe_load(infile)
+
+        updatedict = { b[1] : b for b in updatelist}
+        for entry in self.mylist:
+            if entry[1] in updatedict:
+                for num in [0,2]:
+                    entry[num] = updatedict[entry[1]][num]
 
 
 class GlobalFileChooserDelegate(QtWidgets.QStyledItemDelegate):
