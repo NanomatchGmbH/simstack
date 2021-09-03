@@ -632,9 +632,15 @@ class SSHConnector(CallableQThread):
                     exstr = str(e)
                     if exstr.endswith("not found in known_hosts"):
                         reply = QMessageBox.question(None, 'SSH HostKey unknown',
+
                             'An unknown hostkey was encountered, when connecting to %s. If this is your first time connecting, this is expected. Add the Host to your local hostkeys?'%name, QMessageBox.Yes, QMessageBox.No)
                         if reply == QMessageBox.Yes:
-                            cm.connect(connect_to_unknown_hosts=True)
+                            if hasattr(cm, "set_connect_to_unknown_hosts"):
+                                #This is backwards compatibility for horeka
+                                cm.set_connect_to_unknown_hosts(True)
+                                cm.connect()
+                            else:
+                                cm.connect(connect_to_unknown_hosts=True)
                             cm.save_hostkeyfile(local_hostkey_file)
                         else:
                             raise e from e
@@ -645,6 +651,7 @@ class SSHConnector(CallableQThread):
                 returncode_serverstart = self.start_server(registry)
             except paramiko.ssh_exception.SSHException as e:
                 statusmessage = str(e)
+                traceback.print_exc()
                 error = ErrorCodes.CONN_ERROR
                 del self._clustermanagers[name]
             except Again as e:
