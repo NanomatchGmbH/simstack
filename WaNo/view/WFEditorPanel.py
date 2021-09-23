@@ -2124,7 +2124,7 @@ class AdvancedForEachView(WFControlWithTopMiddleAndBottom):
         self.itername_widget.setText(self.model.itername)
 
     def _on_line_edit(self):
-        self.model.itername = self.itername_widget.text()
+        self.model.itername = self.itername_widget.text().replace(" ","")
 
     def line_edited(self):
 
