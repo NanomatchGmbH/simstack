@@ -392,7 +392,7 @@ class GlobalFileChooserDelegate(QtWidgets.QStyledItemDelegate):
         #openwfbutton.connect_workaround(self.load_wf_files)
         #openwfbutton.external_label = label
         #openwfbutton.editor = custom_widget
-        myopenreport = partial(self.open_remote_importer_files,label=label, custom_widget=custom_widget )
+        myopenreport = lambda: self.open_remote_importer_files(label=label, custom_widget=custom_widget)
         openwfbutton.clicked.connect(myopenreport)
         hbl.addWidget(openwfbutton)
 
