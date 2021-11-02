@@ -57,6 +57,8 @@ class AbstractWanoQTView(AbstractWanoView):
         raise NotImplementedError("Please implement in child class")
 
     def open_remote_importer(self):
+        if self.model.is_force_disabled():
+            return
         varpaths = self.model.get_root().get_parent_wf().assemble_variables("")
         mydialog = RemoteImporterDialog(varname ="Import variable \"%s\" from:" % self.model.name, importlist = varpaths)
         mydialog.setModal(True)
@@ -87,4 +89,6 @@ class AbstractWanoQTView(AbstractWanoView):
             if hasattr(self.model, "tooltip_text"):
                 self.label.setToolTip(self.model.tooltip_text)
         super().init_from_model()
+        if self.model.is_force_disabled():
+            self.set_disable(self.model.is_force_disabled())
 
