@@ -14,7 +14,6 @@ import uuid
 import abc
 
 from enum import Enum
-from functools import partial
 from os.path import join
 import posixpath
 from pathlib import Path
@@ -2447,19 +2446,15 @@ class VariableView(WFControlWithTopMiddleAndBottom):
         self._varequation_widget.editingFinished.connect(self._on_varequation_line_edit)
 
         # We define two functors to only have a single open_remote_importer callback function.
-        open_remote_importer_func_varname = partial(self.open_remote_importer,
-                                                    target_function_view = self._varname_widget.setText,
-                                                    target_function_model = self.model.set_varname
-                                                    )
+        open_remote_importer_func_varname = lambda: self.open_remote_importer(target_function_view = self._varname_widget.setText,
+                                                                             target_function_model = self.model.set_varname)
         self._varname_import_button = QtWidgets.QPushButton(QtGui.QIcon.fromTheme("insert-object"), "")
         self._varname_import_button.clicked.connect(open_remote_importer_func_varname)
         self.topLineLayout.addWidget(self._varname_widget)
         self.topLineLayout.addWidget(self._varname_import_button)
 
-        open_remote_importer_func_varequation = partial(self.open_remote_importer,
-                                                target_function_view = self._varequation_widget.setText,
-                                                target_function_model = self.model.set_varequation
-                                            )
+        open_remote_importer_func_varequation = lambda: self.open_remote_importer(target_function_view = self._varequation_widget.setText,
+                                                target_function_model = self.model.set_varequation)
         self.topLineLayout.addWidget(self._varequation_widget)
         self._global_import_button = QtWidgets.QPushButton(QtGui.QIcon.fromTheme("insert-object"),"")
         self._global_import_button.clicked.connect(open_remote_importer_func_varequation)
