@@ -1003,9 +1003,9 @@ class AdvancedForEachModel(ForEachModel):
 
     def assemble_variables(self, path):
         if path == "":
-            mypath = "ForEach.${%s_ITER}"%self.itername.replace(" ","")
+            mypath = "AdvancedForEach.${%s_ITER}"%self.itername.replace(" ","")
         else:
-            mypath = "%s.ForEach.${%s_ITER}" % (path, self.itername.replace(" ",""))
+            mypath = "%s.AdvancedForEach.${%s_ITER}" % (path, self.itername.replace(" ",""))
 
         myvars = self.subwfmodel.assemble_variables(mypath)
         iterators = self.itername.replace(" ","").split(",")
