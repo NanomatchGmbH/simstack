@@ -9,40 +9,11 @@
 # http://www.hardcoded.net/licenses/bsd_license
 
 import logging
-import zipfile
-from pathlib import Path
 
-from Qt.QtCore import QAbstractItemModel, QModelIndex, QFileInfo
+from Qt.QtCore import QAbstractItemModel, QModelIndex
 from Qt.QtWidgets import QFileIconProvider
 import Qt.QtCore
 import abc
-import shutil
-
-def copytree(src, dst, symlinks=False, ignore=None):
-    for item in os.listdir(src):
-        s = os.path.join(src, item)
-        d = os.path.join(dst, item)
-        if os.path.isdir(s):
-            shutil.copytree(s, d, symlinks, ignore)
-        else:
-            shutil.copy2(s, d)
-
-def copytree_pathlib(srcpath: Path, destpath: Path, symlinks = False, ignore = None):
-    if isinstance(srcpath, zipfile.Path):
-        zipfilepath = str(srcpath)[:-1]
-        zz = zipfile.ZipFile(zipfilepath)
-        zz.extractall(destpath)
-    elif srcpath.is_dir():
-        copytree(str(srcpath), str(destpath), symlinks=symlinks, ignore=ignore)
-
-def filewalker(basedir):
-    for root,dirs,files in os.walk(basedir):
-        if len(files) > 0:
-            for mf in files:
-                fullpath = os.path.join(root,mf)
-                if os.path.isfile(fullpath):
-                    yield fullpath
-
 
 class NodeContainer(object):
     def __init__(self):
@@ -205,7 +176,6 @@ class TreeModel(QAbstractItemModel,NodeContainer):
         bottomRight = self.sibling(bottomLeft.row(), columnCount - 1, bottomLeft)
         self.dataChanged.emit(topLeft, bottomRight)
 
-import glob,os
 
 class FileSystemElement(object):
     def __init__(self,path,abspath):
@@ -326,7 +296,7 @@ class NamedNode(TreeNode):
         return NamedNode(self.model,self,ref,row)
 
 if __name__ == '__main__':
-    import sys, os, pprint, time
+    import sys, os
     from Qt.QtCore import *
     from Qt.QtWidgets import *
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

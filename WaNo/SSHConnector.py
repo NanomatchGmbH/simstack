@@ -29,7 +29,7 @@ from SimStackServer.ClusterManager import ClusterManager
 from SimStackServer.MessageTypes import ErrorCodes
 from WaNo.SimStackPaths import SimStackPaths
 
-from WaNo.lib.FileSystemTree import filewalker
+from SimStackServer.Util.FileUtilities import filewalker
 from WaNo.lib.CallableQThread import CallableQThread
 from WaNo.lib.TPCThread import TPCThread
 from WaNo.lib.BetterThreadPoolExecutor import BetterThreadPoolExecutor

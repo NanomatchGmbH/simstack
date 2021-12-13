@@ -36,7 +36,7 @@ from WaNo.Constants import SETTING_KEYS
 from WaNo.view.RemoteImporterDialog import RemoteImporterDialog
 
 from WaNo.view.WFEditorWidgets import WFEWaNoListWidget, WFEListWidget
-from WaNo.lib.FileSystemTree import copytree, copytree_pathlib
+from SimStackServer.Util.FileUtilities import copytree, copytree_pathlib
 
 #def mapClassToTag(name):
 #    xx = name.replace('Widget','')
