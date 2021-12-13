@@ -2097,9 +2097,9 @@ class AdvancedForEachView(WFControlWithTopMiddleAndBottom):
         self.list_of_variables = QtWidgets.QLineEdit('zip([1,2,3],[4,5,6]')
         self.list_of_variables.editingFinished.connect(self.line_edited)
         self.topLineLayout.addWidget(self.list_of_variables)
-        #self._global_import_button = QtWidgets.QPushButton(QtGui.QIcon.fromTheme("insert-object"), "")
-        #self._global_import_button.clicked.connect(self.open_remote_importer)
-        #self.topLineLayout.addWidget(self._global_import_button)
+        self._open_variables = QtWidgets.QPushButton(QtGui.QIcon.fromTheme("drive-removable-media"),"")
+        self._open_variables.clicked.connect(self.open_remote_importer)
+        self.topLineLayout.addWidget(self._open_variables)
         return self.topwidget
 
     def open_remote_importer(self):
@@ -2110,10 +2110,12 @@ class AdvancedForEachView(WFControlWithTopMiddleAndBottom):
         mydialog.exec()
         result = mydialog.result()
         if mydialog.result() == True:
+            cursor_now = self.list_of_variables.cursorPosition()
             choice = mydialog.getchoice()
-            self.model.set_filelist(choice)
-            self.list_of_variables.setText(choice)
-            self.model.set_is_file_iterator(False)
+            previous_text = self.list_of_variables.text()
+            nowtext=f"{previous_text[0:cursor_now]} {choice} {previous_text[cursor_now:]}"
+            self.model.set_filelist(nowtext)
+            self.list_of_variables.setText(nowtext)
         else:
             pass
 
