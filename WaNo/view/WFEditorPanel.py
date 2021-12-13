@@ -1367,6 +1367,9 @@ class SubWorkflowView(QtWidgets.QFrame):
     def init_from_model(self):
         self.relayout()
 
+    def set_minimum_width(self, minimum_width):
+        self.minimum_width = minimum_width
+
     #Place elements places elements top down.
     def place_elements(self):
         self.my_width = self.minimum_width
@@ -2136,13 +2139,15 @@ class AdvancedForEachView(WFControlWithTopMiddleAndBottom):
         return self.model.subwfview
 
     def sizeHint(self):
+        minwidth = 500
         if self.model is not None:
             size = self.model.subwfview.sizeHint() + QtCore.QSize(25,80)
-            if size.width() < 300:
-                size.setWidth(300)
+            if size.width() < minwidth:
+                size.setWidth(minwidth)
+                self.model.subwfview.set_minimum_width(minwidth)
             return size
         else:
-            return QtCore.QSize(500,100)
+            return QtCore.QSize(500,500)
 
     def place_elements(self):
         if not self.dontplace:
