@@ -17,6 +17,8 @@ import os
 
 import Qt
 #if Qt.__binding__ == "PyQt5":
+from SimStackServer.Util.ClientResourceModelToServerResourceModel import ClientResourceModelToServerResourceModel
+
 if False:
     # The handling of intflags differs between implementations. Currently we get a warning for pyqt5, but it will be fixed in a future pyqt5 release, therefore we take it.
     def pyside_int_workaround(val):
@@ -257,13 +259,7 @@ class ImportTableModel(ResourceTableBase):
 
 
 class ResourceTableModel(ResourceTableBase):
-    class ROWTYPE(IntEnum):
-        ppn = 0
-        numnodes = 1
-        mem = 2
-        time = 3
-        queue = 4
-        custom_requests = 5
+
 
     def __init__(self, parent, *args,**kwargs):
         super(ResourceTableModel, self).__init__(parent, *args,**kwargs)
@@ -273,41 +269,7 @@ class ResourceTableModel(ResourceTableBase):
         self.alignments = [pyside_int_workaround(QtCore.Qt.AlignCenter),pyside_int_workaround(QtCore.Qt.AlignLeft| QtCore.Qt.AlignVCenter),pyside_int_workaround(QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter)]
 
     def render_to_simstack_server_model(self):
-        from SimStackServer.WorkflowModel import Resources
-
-        ppn = None
-        if self.mylist[self.ROWTYPE.ppn][0] == True:
-            ppn = self.mylist[self.ROWTYPE.ppn][2]
-
-        numnodes = None
-        if self.mylist[self.ROWTYPE.numnodes][0] == True:
-            numnodes = self.mylist[self.ROWTYPE.numnodes][2]
-
-        mem = None
-        if self.mylist[self.ROWTYPE.mem][0] == True:
-            mem = int(float(self.mylist[self.ROWTYPE.mem][2]))
-
-        time = None
-        if self.mylist[self.ROWTYPE.time][0] == True:
-            time = self.mylist[self.ROWTYPE.time][2]
-
-        queue = None
-        if self.mylist[self.ROWTYPE.queue][0] == True:
-            queue = self.mylist[self.ROWTYPE.queue][2]
-        else:
-            queue = "${QUEUE_NAME}"
-
-        custom_requests = None
-        if self.mylist[self.ROWTYPE.custom_requests][0] == True:
-            custom_requests = self.mylist[self.ROWTYPE.custom_requests][2]
-
-
-        return Resources(
-            cpus_per_node=ppn, nodes=numnodes,
-            memory=mem, walltime = time,
-            queue = queue, custom_requests = custom_requests
-        )
-
+        return ClientResourceModelToServerResourceModel(self.mylist)
 
     def flags(self, index):
         if (index.column() == 1):
