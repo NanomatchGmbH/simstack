@@ -17,7 +17,8 @@ import os
 
 import Qt
 #if Qt.__binding__ == "PyQt5":
-from SimStackServer.Util.ClientResourceModelToServerResourceModel import ClientResourceModelToServerResourceModel
+from SimStackServer.Util.ClientResourceModelToServerResourceModel import ClientResourceModelToServerResourceModel, \
+    get_default_resource_list, load_resource_list
 
 if False:
     # The handling of intflags differs between implementations. Currently we get a warning for pyqt5, but it will be fixed in a future pyqt5 release, therefore we take it.
@@ -279,28 +280,12 @@ class ResourceTableModel(ResourceTableBase):
 
 
     def make_default_list(self):
-        self.mylist = [
-            [False, "CPUs per Node",1],
-            [False, "Number of Nodes",1],
-            [False, "Memory [MB]",1024],
-            [False, "Time [Wall]", 86400],
-            [False, "Queue", "default"],
-            [False, "Custom Requests", ""]
-        ]
+        self.mylist = get_default_resource_list()
         self.header = ["Enable", "Property", "Value"]
         self.alignments = [pyside_int_workaround(QtCore.Qt.AlignCenter), pyside_int_workaround(QtCore.Qt.AlignLeft| QtCore.Qt.AlignVCenter),pyside_int_workaround(QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter)]
 
     def load(self,filename):
-        self.make_default_list()
-        with filename.open('rt') as infile:
-            updatelist = yaml.safe_load(infile)
-
-        updatedict = { b[1] : b for b in updatelist}
-        for entry in self.mylist:
-            if entry[1] in updatedict:
-                for num in [0,2]:
-                    entry[num] = updatedict[entry[1]][num]
-
+        self.mylist = load_resource_list(filename)
 
 class GlobalFileChooserDelegate(QtWidgets.QStyledItemDelegate):
     def __init__(self, parent):
