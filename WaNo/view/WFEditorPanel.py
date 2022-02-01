@@ -157,7 +157,14 @@ class WFWaNoWidget(QtWidgets.QToolButton,DragDropTargetTracker):
         returnobject = cls(text=wano.name, wano=wano, parent=parent)
         #overwrite old uuid
         returnobject.uuid=uuid
-        returnobject._read_delta(delta_wano_dir)
+        try:
+            returnobject._read_delta(delta_wano_dir)
+        except FileNotFoundError as e:
+            # This is V1 support, in this case we do not actually have a delta.
+            if delta_wano_dir == folder:
+                pass
+            else:
+                raise e from e
         return returnobject
 
     def save_delta(self, foldername):
@@ -444,10 +451,14 @@ class SubWFModel(WFItemModel,WFItemListInterface):
                 #print(len(self.elements),myid)
                 assert (myid == len(self.elements))
                 wanofolder = foldername_path/"wanos"/uuid
-                wd = WaNoDelta(wanofolder)
-                wano_name = wd.name
-                basewanodir = foldername_path/"base_wanos"/wano_name
 
+                if self.get_root().get_wf_read_version() == "2.0":
+                    wd = WaNoDelta(wanofolder)
+                    wano_name = wd.name
+                    basewanodir = foldername_path / "base_wanos" / wano_name
+                else:
+                    #backwards compat to v1 workflows
+                    basewanodir = wanofolder
                 widget = WFWaNoWidget.instantiate_from_folder(basewanodir,
                                                               wanofolder,
                                                               type,
@@ -1069,6 +1080,7 @@ class WFModel(object):
         self.elementnames = []
         self.foldername = None
         self.wf_name = "Unset"
+        self._wf_read_version = "2.0"
         #Few Use Cases
         """
             Workflow containing Workflow:
@@ -1089,6 +1101,9 @@ class WFModel(object):
             #element.displayname i.e.. It really must be unique except for multicopies using for and while
             #it doesn't have to be unique among workflow nesting.
         """
+
+    def get_wf_read_version(self):
+        return self._wf_read_version
 
     def get_root(self):
         return self
@@ -1244,6 +1259,8 @@ class WFModel(object):
         xml_filename = os.path.join(foldername,os.path.basename(foldername)) + ".xml"
         tree = etree.parse(xml_filename)
         root = tree.getroot()
+        wfxml_version = root.attrib.get("wfxml_version", "1.0")
+        self._wf_read_version = wfxml_version
         foldername_path = pathlib.Path(foldername)
         for child in root:
             if child.tag == "WaNo":
@@ -1254,9 +1271,15 @@ class WFModel(object):
                 #print(len(self.elements),myid)
                 assert (myid == len(self.elements))
                 wanofolder = foldername_path/"wanos"/uuid
-                wd = WaNoDelta(wanofolder)
-                wano_name = wd.name
-                basewanodir = foldername_path/"base_wanos"/wano_name
+                if self._wf_read_version == "2.0":
+                    wd = WaNoDelta(wanofolder)
+                    wano_name = wd.name
+                    basewanodir = foldername_path/"base_wanos"/wano_name
+
+                else:
+                    #backwards compat to v1 workflows
+                    basewanodir = wanofolder
+
                 widget = WFWaNoWidget.instantiate_from_folder(basewanodir,
                                                               wanofolder,
                                                               type,
