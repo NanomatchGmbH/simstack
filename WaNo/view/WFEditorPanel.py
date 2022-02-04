@@ -168,7 +168,7 @@ class WFWaNoWidget(QtWidgets.QToolButton,DragDropTargetTracker):
         return returnobject
 
     def save_delta(self, foldername):
-        outfolder = foldername/"wanos"/str(self.uuid)
+        outfolder = foldername/"wano_configurations"/str(self.uuid)
         os.makedirs(outfolder, exist_ok=True)
         print(f"Saving to {outfolder}")
         if self.wano_model is not None:
@@ -450,13 +450,14 @@ class SubWFModel(WFItemModel,WFItemListInterface):
                 myid = int(child.attrib["id"])
                 #print(len(self.elements),myid)
                 assert (myid == len(self.elements))
-                wanofolder = foldername_path/"wanos"/uuid
 
                 if self.get_root().get_wf_read_version() == "2.0":
+                    wanofolder = foldername_path / "wano_configurations" / uuid
                     wd = WaNoDelta(wanofolder)
                     wano_name = wd.name
                     basewanodir = foldername_path / "base_wanos" / wano_name
                 else:
+                    wanofolder = foldername_path / "wanos" / uuid
                     #backwards compat to v1 workflows
                     basewanodir = wanofolder
                 widget = WFWaNoWidget.instantiate_from_folder(basewanodir,
@@ -1270,13 +1271,13 @@ class WFModel(object):
                 myid = int(child.attrib["id"])
                 #print(len(self.elements),myid)
                 assert (myid == len(self.elements))
-                wanofolder = foldername_path/"wanos"/uuid
-                if self._wf_read_version == "2.0":
+                if self.get_root().get_wf_read_version() == "2.0":
+                    wanofolder = foldername_path / "wano_configurations" / uuid
                     wd = WaNoDelta(wanofolder)
                     wano_name = wd.name
-                    basewanodir = foldername_path/"base_wanos"/wano_name
-
+                    basewanodir = foldername_path / "base_wanos" / wano_name
                 else:
+                    wanofolder = foldername_path / "wanos" / uuid
                     #backwards compat to v1 workflows
                     basewanodir = wanofolder
 
