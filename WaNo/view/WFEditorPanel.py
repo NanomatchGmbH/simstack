@@ -200,7 +200,7 @@ class WFWaNoWidget(QtWidgets.QToolButton,DragDropTargetTracker):
         return me
 
     def instantiate_in_folder(self,folder):
-        outfolder = folder/"base_wanos"/self.wano.name
+        outfolder = folder/"wanos"/self.wano.name
 
         try:
             os.makedirs(outfolder)
@@ -455,7 +455,7 @@ class SubWFModel(WFItemModel,WFItemListInterface):
                     wanofolder = foldername_path / "wano_configurations" / uuid
                     wd = WaNoDelta(wanofolder)
                     wano_name = wd.name
-                    basewanodir = foldername_path / "base_wanos" / wano_name
+                    basewanodir = foldername_path / "wanos" / wano_name
                 else:
                     wanofolder = foldername_path / "wanos" / uuid
                     #backwards compat to v1 workflows
@@ -1275,7 +1275,7 @@ class WFModel(object):
                     wanofolder = foldername_path / "wano_configurations" / uuid
                     wd = WaNoDelta(wanofolder)
                     wano_name = wd.name
-                    basewanodir = foldername_path / "base_wanos" / wano_name
+                    basewanodir = foldername_path / "wanos" / wano_name
                 else:
                     wanofolder = foldername_path / "wanos" / uuid
                     #backwards compat to v1 workflows
