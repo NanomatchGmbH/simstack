@@ -84,4 +84,5 @@ external/Qt.py
 2del/*
 2del
 #Contains embedded configs in case of an embedded client
-embedded/*
+embedded*
+
