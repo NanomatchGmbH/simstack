@@ -83,4 +83,5 @@ external/Qt.py
 #Timo Files
 2del/*
 2del
-
+#Contains embedded configs in case of an embedded client
+embedded/*
