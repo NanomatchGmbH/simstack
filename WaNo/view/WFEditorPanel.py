@@ -454,8 +454,8 @@ class SubWFModel(WFItemModel,WFItemListInterface):
                 if self.get_root().get_wf_read_version() == "2.0":
                     wanofolder = foldername_path / "wano_configurations" / uuid
                     wd = WaNoDelta(wanofolder)
-                    wano_name = wd.name
-                    basewanodir = foldername_path / "wanos" / wano_name
+                    wano_folder = wd.folder
+                    basewanodir = foldername_path / "wanos" / wano_folder
                 else:
                     wanofolder = foldername_path / "wanos" / uuid
                     #backwards compat to v1 workflows
@@ -1274,8 +1274,8 @@ class WFModel(object):
                 if self.get_root().get_wf_read_version() == "2.0":
                     wanofolder = foldername_path / "wano_configurations" / uuid
                     wd = WaNoDelta(wanofolder)
-                    wano_name = wd.name
-                    basewanodir = foldername_path / "wanos" / wano_name
+                    wano_folder = wd.folder
+                    basewanodir = foldername_path / "wanos" / wano_folder
                 else:
                     wanofolder = foldername_path / "wanos" / uuid
                     #backwards compat to v1 workflows
