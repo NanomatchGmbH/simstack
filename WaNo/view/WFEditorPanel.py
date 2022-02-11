@@ -4,6 +4,8 @@ from __future__ import unicode_literals
 from __future__ import absolute_import
 
 import datetime
+import hashlib
+import pathlib
 import time
 import os
 
@@ -26,9 +28,12 @@ import Qt.QtWidgets  as QtWidgets
 from Qt.QtCore import Signal
 
 import SimStackServer.WaNo.WaNoFactory as WaNoFactory
+from SimStackServer.WaNo.AbstractWaNoModel import WaNoInstantiationError
+from SimStackServer.WaNo.WaNoDelta import WaNoDelta
+from SimStackServer.WaNo.WaNoModels import WaNoModelRoot
 from SimStackServer.WorkflowModel import WorkflowExecModule, Workflow, DirectedGraph, WorkflowElementList, SubGraph, \
     ForEachGraph, StringList, WFPass, IfGraph, WhileGraph, VariableElement
-from SimStackServer.WaNo.MiscWaNoTypes import WaNoListEntry
+from SimStackServer.WaNo.MiscWaNoTypes import WaNoListEntry, get_wano_xml_path
 from WaNo.SimStackPaths import SimStackPaths
 from WaNo.WaNoSettingsProvider import WaNoSettingsProvider
 from WaNo.Constants import SETTING_KEYS
@@ -94,6 +99,8 @@ class DragDropTargetTracker(object):
             # print("Passing")
             pass
 
+
+
 class WFWaNoWidget(QtWidgets.QToolButton,DragDropTargetTracker):
     def __init__(self, text, wano :WaNoListEntry, parent):
         super(WFWaNoWidget, self).__init__(parent)
@@ -130,7 +137,7 @@ class WFWaNoWidget(QtWidgets.QToolButton,DragDropTargetTracker):
         self.wano = copy.copy(wano)
         self.model = self
         self.view = self
-        self.wano_model = None
+        self.wano_model :WaNoModelRoot = None
         self.wano_view = None
         self.constructed = False
         self.uuid = str(uuid.uuid4())
@@ -140,7 +147,7 @@ class WFWaNoWidget(QtWidgets.QToolButton,DragDropTargetTracker):
         # read output and check if it actually works
 
     @classmethod
-    def instantiate_from_folder(cls,folder,wanotype, parent):
+    def instantiate_from_folder(cls, folder, delta_wano_dir, wanotype, parent):
         folder = Path(folder)
         iconpath = folder / (wanotype + ".png")
         if not os.path.isfile(iconpath):
@@ -148,13 +155,32 @@ class WFWaNoWidget(QtWidgets.QToolButton,DragDropTargetTracker):
             wano_icon = icon.pixmap(icon.actualSize(QtCore.QSize(128, 128)))
         else:
             wano_icon = QtGui.QIcon(str(iconpath))
-        uuid = folder.name
+        uuid = delta_wano_dir.name
         wano = WaNoListEntry(name=wanotype, folder=folder, icon = wano_icon)
         #[wanotype,folder,os.path.join(folder,wanotype) + ".xml", wano_icon]
         returnobject = cls(text=wano.name, wano=wano, parent=parent)
         #overwrite old uuid
         returnobject.uuid=uuid
+        try:
+            returnobject._read_delta(delta_wano_dir)
+        except FileNotFoundError as e:
+            # This is V1 support, in this case we do not actually have a delta.
+            if delta_wano_dir == folder:
+                pass
+            else:
+                raise e from e
         return returnobject
+
+    def save_delta(self, foldername):
+        outfolder = foldername/"wano_configurations"/str(self.uuid)
+        os.makedirs(outfolder, exist_ok=True)
+        print(f"Saving to {outfolder}")
+        if self.wano_model is not None:
+            self.wano_model.save(outfolder)
+
+    def _read_delta(self, foldername):
+        self.wano_model.read_delta(foldername)
+        self.wano_model.update_views_from_models()
 
     def place_elements(self):
         pass
@@ -165,7 +191,6 @@ class WFWaNoWidget(QtWidgets.QToolButton,DragDropTargetTracker):
 
     def mouseMoveEvent(self, e):
         self.mouseMoveEvent_feature(e)
-
 
     def setColor(self,color):
         p = QtGui.QPalette()
@@ -178,16 +203,41 @@ class WFWaNoWidget(QtWidgets.QToolButton,DragDropTargetTracker):
         me.attrib["uuid"] = str(self.uuid)
         return me
 
-    def instantiate_in_folder(self,folder):
-        outfolder = folder/"wanos"/self.uuid
 
-        try:
+
+    def _compare_wano_equality(self, wano1: WaNoListEntry, wano2: WaNoListEntry):
+        xml1 = get_wano_xml_path(wano1.folder, wano_name_override=wano1.name)
+        md51 = hashlib.md5()
+        with xml1.open('rb') as infile:
+            md51.update(infile.read())
+        md52 = hashlib.md5()
+        xml2 = get_wano_xml_path(wano2.folder, wano_name_override=wano1.name)
+        with xml2.open('rb') as infile:
+            md52.update(infile.read())
+        return md51.hexdigest() == md52.hexdigest()
+
+
+    def instantiate_in_folder(self,folder):
+        outfolder = folder/"wanos"/self.wano.name
+
+
+        folder_exists = outfolder.is_dir()
+        if not folder_exists:
             os.makedirs(outfolder)
-        except OSError as e:
-            pass
 
         #print(self.wano[1],outfolder)
         if outfolder != self.wano.folder:
+            # In case we did not create the folder, the wano might already be there and we need
+            # to check whether the same WaNo is in the folder. Otherwise problems might occur.
+            if folder_exists:
+                newfolderwle = copy.copy(self.wano)
+                newfolderwle.folder = outfolder
+                if self._compare_wano_equality(newfolderwle, self.wano):
+                    self.wano.folder = outfolder
+                    #self.logger.info(f"Directory {outfolder} already instantiated with equivalent WaNo.")
+                    return True
+                else:
+                    raise WaNoInstantiationError(f"Directory {outfolder} already instantiated with different WaNo with equivalent name in folder {self.wano.folder}. Please check, if you imported two different WaNos (e.g. by porting an old version workflow).")
             try:
                 print("Copying %s to %s"%(outfolder,self.wano.folder))
 
@@ -199,9 +249,8 @@ class WFWaNoWidget(QtWidgets.QToolButton,DragDropTargetTracker):
                 return False
 
         self.wano.folder = outfolder
-
-        self.wano_model.update_xml()
-        return self.wano_model.save_xml(self.wano)
+        #self.wano_model.save(outfolder)
+        return True
 
     def render(self, path_list, output_path_list, basefolder,stageout_basedir=""):
         #myfolder = os.path.join(basefolder,self.uuid)
@@ -420,6 +469,8 @@ class SubWFModel(WFItemModel,WFItemListInterface):
         #xml_filename = os.path.join(foldername,os.path.basename(foldername)) + ".xml"
         #tree = etree.parse(xml_filename)
         #root = tree.getroot()
+        foldername_path = pathlib.Path(full_foldername)
+
         for child in xml_subelement:
             if child.tag == "WaNo":
                 type = child.attrib["type"]
@@ -428,8 +479,20 @@ class SubWFModel(WFItemModel,WFItemListInterface):
                 myid = int(child.attrib["id"])
                 #print(len(self.elements),myid)
                 assert (myid == len(self.elements))
-                wanofolder = os.path.join(full_foldername,"wanos",uuid)
-                widget = WFWaNoWidget.instantiate_from_folder(wanofolder, type, parent=self.view)
+
+                if self.get_root().get_wf_read_version() == "2.0":
+                    wanofolder = foldername_path / "wano_configurations" / uuid
+                    wd = WaNoDelta(wanofolder)
+                    wano_folder = wd.folder
+                    basewanodir = foldername_path / "wanos" / wano_folder
+                else:
+                    wanofolder = foldername_path / "wanos" / uuid
+                    #backwards compat to v1 workflows
+                    basewanodir = wanofolder
+                widget = WFWaNoWidget.instantiate_from_folder(basewanodir,
+                                                              wanofolder,
+                                                              type,
+                                                              parent=self.view)
                 widget.setText(name)
                 self.elements.append(widget)
                 self.elementnames.append(name)
@@ -457,6 +520,7 @@ class SubWFModel(WFItemModel,WFItemListInterface):
                 subxml.attrib["id"] = str(myid)
                 subxml.attrib["name"] = name
                 success = ele.instantiate_in_folder(my_foldername)
+                ele.save_delta(foldername)
                 root.append(subxml)
                 if not success:
                     break
@@ -1046,6 +1110,7 @@ class WFModel(object):
         self.elementnames = []
         self.foldername = None
         self.wf_name = "Unset"
+        self._wf_read_version = "2.0"
         #Few Use Cases
         """
             Workflow containing Workflow:
@@ -1066,6 +1131,9 @@ class WFModel(object):
             #element.displayname i.e.. It really must be unique except for multicopies using for and while
             #it doesn't have to be unique among workflow nesting.
         """
+
+    def get_wf_read_version(self):
+        return self._wf_read_version
 
     def get_root(self):
         return self
@@ -1188,6 +1256,7 @@ class WFModel(object):
             pass
 
         root = etree.Element("root")
+        root.attrib["wfxml_version"] = "2.0"
         #TODO revert changes in filesystem in case instantiate_in_folder fails
         for myid,(ele,name) in enumerate(zip(self.elements,self.elementnames)):
             if ele.is_wano:
@@ -1195,7 +1264,10 @@ class WFModel(object):
                 subxml.attrib["id"] = str(myid)
                 subxml.attrib["name"] = name
                 #print("Instantiating in folder: %s, wanocheat: %s"%(foldername,ele.wano[1]))
+                # This call copies everything:
                 success = ele.instantiate_in_folder(foldername)
+                # We also need to save the delta xml here:
+                ele.save_delta(foldername)
                 root.append(subxml)
                 if not success:
                     break
@@ -1217,6 +1289,9 @@ class WFModel(object):
         xml_filename = os.path.join(foldername,os.path.basename(foldername)) + ".xml"
         tree = etree.parse(xml_filename)
         root = tree.getroot()
+        wfxml_version = root.attrib.get("wfxml_version", "1.0")
+        self._wf_read_version = wfxml_version
+        foldername_path = pathlib.Path(foldername)
         for child in root:
             if child.tag == "WaNo":
                 type = child.attrib["type"]
@@ -1225,8 +1300,20 @@ class WFModel(object):
                 myid = int(child.attrib["id"])
                 #print(len(self.elements),myid)
                 assert (myid == len(self.elements))
-                wanofolder = os.path.join(foldername,"wanos",uuid)
-                widget = WFWaNoWidget.instantiate_from_folder(wanofolder, type, parent=self.view)
+                if self.get_root().get_wf_read_version() == "2.0":
+                    wanofolder = foldername_path / "wano_configurations" / uuid
+                    wd = WaNoDelta(wanofolder)
+                    wano_folder = wd.folder
+                    basewanodir = foldername_path / "wanos" / wano_folder
+                else:
+                    wanofolder = foldername_path / "wanos" / uuid
+                    #backwards compat to v1 workflows
+                    basewanodir = wanofolder
+
+                widget = WFWaNoWidget.instantiate_from_folder(basewanodir,
+                                                              wanofolder,
+                                                              type,
+                                                              parent=self.view)
                 widget.setText(name)
                 self.elements.append(widget)
                 self.elementnames.append(name)
