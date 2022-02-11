@@ -4,6 +4,7 @@ from __future__ import unicode_literals
 from __future__ import absolute_import
 
 import datetime
+import hashlib
 import pathlib
 import time
 import os
@@ -27,11 +28,12 @@ import Qt.QtWidgets  as QtWidgets
 from Qt.QtCore import Signal
 
 import SimStackServer.WaNo.WaNoFactory as WaNoFactory
+from SimStackServer.WaNo.AbstractWaNoModel import WaNoInstantiationError
 from SimStackServer.WaNo.WaNoDelta import WaNoDelta
 from SimStackServer.WaNo.WaNoModels import WaNoModelRoot
 from SimStackServer.WorkflowModel import WorkflowExecModule, Workflow, DirectedGraph, WorkflowElementList, SubGraph, \
     ForEachGraph, StringList, WFPass, IfGraph, WhileGraph, VariableElement
-from SimStackServer.WaNo.MiscWaNoTypes import WaNoListEntry
+from SimStackServer.WaNo.MiscWaNoTypes import WaNoListEntry, get_wano_xml_path
 from WaNo.SimStackPaths import SimStackPaths
 from WaNo.WaNoSettingsProvider import WaNoSettingsProvider
 from WaNo.Constants import SETTING_KEYS
@@ -96,6 +98,8 @@ class DragDropTargetTracker(object):
             # In this case we assume both types have "correct" dropevents
             # print("Passing")
             pass
+
+
 
 class WFWaNoWidget(QtWidgets.QToolButton,DragDropTargetTracker):
     def __init__(self, text, wano :WaNoListEntry, parent):
@@ -199,16 +203,41 @@ class WFWaNoWidget(QtWidgets.QToolButton,DragDropTargetTracker):
         me.attrib["uuid"] = str(self.uuid)
         return me
 
+
+
+    def _compare_wano_equality(self, wano1: WaNoListEntry, wano2: WaNoListEntry):
+        xml1 = get_wano_xml_path(wano1.folder, wano_name_override=wano1.name)
+        md51 = hashlib.md5()
+        with xml1.open('rb') as infile:
+            md51.update(infile.read())
+        md52 = hashlib.md5()
+        xml2 = get_wano_xml_path(wano2.folder, wano_name_override=wano1.name)
+        with xml2.open('rb') as infile:
+            md52.update(infile.read())
+        return md51.hexdigest() == md52.hexdigest()
+
+
     def instantiate_in_folder(self,folder):
         outfolder = folder/"wanos"/self.wano.name
 
-        try:
+
+        folder_exists = outfolder.is_dir()
+        if not folder_exists:
             os.makedirs(outfolder)
-        except OSError as e:
-            pass
 
         #print(self.wano[1],outfolder)
         if outfolder != self.wano.folder:
+            # In case we did not create the folder, the wano might already be there and we need
+            # to check whether the same WaNo is in the folder. Otherwise problems might occur.
+            if folder_exists:
+                newfolderwle = copy.copy(self.wano)
+                newfolderwle.folder = outfolder
+                if self._compare_wano_equality(newfolderwle, self.wano):
+                    self.wano.folder = outfolder
+                    #self.logger.info(f"Directory {outfolder} already instantiated with equivalent WaNo.")
+                    return True
+                else:
+                    raise WaNoInstantiationError(f"Directory {outfolder} already instantiated with different WaNo with equivalent name in folder {self.wano.folder}. Please check, if you imported two different WaNos (e.g. by porting an old version workflow).")
             try:
                 print("Copying %s to %s"%(outfolder,self.wano.folder))
 
