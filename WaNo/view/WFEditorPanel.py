@@ -179,7 +179,7 @@ class WFWaNoWidget(QtWidgets.QToolButton,DragDropTargetTracker):
             self.wano_model.save(outfolder)
 
     def _read_delta(self, foldername):
-        self.wano_model.read_delta(foldername)
+        self.wano_model.read(foldername)
         self.wano_model.update_views_from_models()
 
     def place_elements(self):
