@@ -139,7 +139,7 @@ class ExportTableModel(ResourceTableBase):
         # print("Setting %d %d"%(col,row))
         if role == QtCore.Qt.EditRole:
             if value.strip() == "":
-                return ""
+                return False
 
         if row == len(self.mylist):
             self.beginInsertRows(QtCore.QModelIndex(), self.rowCount(), self.rowCount())
@@ -214,7 +214,7 @@ class ImportTableModel(ResourceTableBase):
         #print("Setting %d %d"%(col,row))
         if role == QtCore.Qt.EditRole:
             if value.strip() == "":
-                return ""
+                return False
         if row == len(self.mylist):
             self.beginInsertRows(QtCore.QModelIndex(), self.rowCount(), self.rowCount())
             self.add_entry()
