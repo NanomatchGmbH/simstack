@@ -6,6 +6,8 @@ from __future__ import absolute_import
 import datetime
 import hashlib
 import pathlib
+import shutil
+import sys
 import time
 import os
 
@@ -1997,8 +1999,17 @@ class WFTabsWidget(QtWidgets.QTabWidget):
             if message == QtWidgets.QMessageBox.Cancel:
                 return False
             else:
-                pass
-                #shutil.rmtree(fullpath)
+                fullpath_path = Path(fullpath)
+                assert fullpath_path.is_dir(), "Given path has to be directory."
+                assert (fullpath_path / "wanos").is_dir(), "When overwriting an old workflow, the old directory has to include a wanos directory."
+                assert fullpath_path != Path.home(), "Path cannot be home directory."
+                assert fullpath_path != fullpath_path.anchor, "Path cannot be filesystem root."
+                wanodir = fullpath_path / "wanos"
+                wanoconfigdir = fullpath_path / "wano_configurations"
+                xmlpath = fullpath_path / f"{fullpath_path.name}.xml"
+                shutil.rmtree(wanodir)
+                shutil.rmtree(wanoconfigdir)
+                os.unlink(xmlpath)
 
         return self.saveFile(fullpath)
 
