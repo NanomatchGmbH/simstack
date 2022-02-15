@@ -822,11 +822,15 @@ class WaNoDropDownView(AbstractWanoQTView):
 
     def init_from_model(self):
         chosen_before = self.model.chosen
+        if chosen_before < 0:
+            chosen_before = 0
         self.combobox.clear()
         self.label.setText(self.model.name)
+
         for myid,entry in enumerate(self.model.choices):
             self.combobox.addItem(entry)
-        self.combobox.setCurrentIndex(self.model.chosen)
+
+        self.combobox.setCurrentIndex(chosen_before)
         self.init = True
         self.model.set_chosen(chosen_before)
         super().init_from_model()
@@ -871,14 +875,16 @@ class WaNoChoiceView(AbstractWanoQTView):
         self.bg.setParent(self._qt_parent)
 
     def init_from_model(self):
+        chosen_before = self.model.chosen
         self.actual_widget.setTitle(self.model.name)
-        for myid,entry in enumerate(self.model.choices):
-            checkbox = QtWidgets.QRadioButton(entry,parent=self.actual_widget)
-            self.buttons.append(checkbox)
-            self.bg.addButton(checkbox,myid)
-            self.vbox.addWidget(checkbox)
+        if len(self.buttons) == 0:
+            for myid,entry in enumerate(self.model.choices):
+                checkbox = QtWidgets.QRadioButton(entry,parent=self.actual_widget)
+                self.buttons.append(checkbox)
+                self.bg.addButton(checkbox,myid)
+                self.vbox.addWidget(checkbox)
         #print(self.model.chosen)
-        self.buttons[self.model.chosen].setChecked(True)
+        self.buttons[chosen_before].setChecked(True)
         super().init_from_model()
 
     def onButtonClicked(self, id):
