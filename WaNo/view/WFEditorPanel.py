@@ -1964,6 +1964,8 @@ class WFTabsWidget(QtWidgets.QTabWidget):
             foldername = self.currentTabText()
             workflow_path = Path(workflow_path)
             fullpath = workflow_path / foldername
+            if fullpath.is_dir():
+                self._remove_wf_contents(fullpath)
             return self.saveFile(fullpath)
 
     illegal_chars = r"<>|\#~*´`"
@@ -1972,6 +1974,19 @@ class WFTabsWidget(QtWidgets.QTabWidget):
         if any((c in self.illegal_chars) for c in wfname):
             return True
         return False
+
+    def _remove_wf_contents(self, foldername: pathlib.Path):
+        fullpath_path = Path(foldername)
+        assert fullpath_path.is_dir(), "Given path has to be directory."
+        assert (fullpath_path / "wanos").is_dir(), "When overwriting an old workflow, the old directory has to include a wanos directory."
+        assert fullpath_path != Path.home(), "Path cannot be home directory."
+        assert fullpath_path != fullpath_path.anchor, "Path cannot be filesystem root."
+        wanodir = fullpath_path / "wanos"
+        wanoconfigdir = fullpath_path / "wano_configurations"
+        xmlpath = fullpath_path / f"{fullpath_path.name}.xml"
+        shutil.rmtree(wanodir)
+        shutil.rmtree(wanoconfigdir)
+        os.unlink(xmlpath)
 
     def saveAs(self):
         foldername,ok = QtWidgets.QInputDialog.getText(self, self.tr("Specify Workflow Name"),
@@ -1999,17 +2014,7 @@ class WFTabsWidget(QtWidgets.QTabWidget):
             if message == QtWidgets.QMessageBox.Cancel:
                 return False
             else:
-                fullpath_path = Path(fullpath)
-                assert fullpath_path.is_dir(), "Given path has to be directory."
-                assert (fullpath_path / "wanos").is_dir(), "When overwriting an old workflow, the old directory has to include a wanos directory."
-                assert fullpath_path != Path.home(), "Path cannot be home directory."
-                assert fullpath_path != fullpath_path.anchor, "Path cannot be filesystem root."
-                wanodir = fullpath_path / "wanos"
-                wanoconfigdir = fullpath_path / "wano_configurations"
-                xmlpath = fullpath_path / f"{fullpath_path.name}.xml"
-                shutil.rmtree(wanodir)
-                shutil.rmtree(wanoconfigdir)
-                os.unlink(xmlpath)
+                self._remove_wf_contents(fullpath)
 
         return self.saveFile(fullpath)
 
