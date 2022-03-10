@@ -1964,8 +1964,6 @@ class WFTabsWidget(QtWidgets.QTabWidget):
             foldername = self.currentTabText()
             workflow_path = Path(workflow_path)
             fullpath = workflow_path / foldername
-            if fullpath.is_dir():
-                self._remove_wf_contents(fullpath)
             return self.saveFile(fullpath)
 
     illegal_chars = r"<>|\#~*´`"
