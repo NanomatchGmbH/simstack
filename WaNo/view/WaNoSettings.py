@@ -308,6 +308,82 @@ class WaNoTabButtonsWidget(QWidget):
         self.__init_ui()
         self.__connect_signals()
 
+class SimStackClusterSettingsView(QDialog):
+    def __init__(self):
+        super().__init__()
+        self.__tabs     = None
+
+        self.__signalMapper_title       = QSignalMapper(self)
+        self.__signalMapper_default     = QSignalMapper(self)
+        self.__ignore_default_signal    = False
+
+        self.__init_ui()
+
+        self.__connect_signals()
+
+    def __on_save(self):
+        self.accept()
+
+    def __on_cancel(self):
+        self.reject()
+
+
+    def __on_add_registry(self):
+        self.__add_tab(self.DEFAULT_NAME, self.__tabs.count() - 1)
+        self.__tabs.setCurrentIndex(self.__tabs.count() - 1)
+
+    def __connect_signals(self):
+        self.__tab_buttons.addClicked.connect(self.__on_add_registry)
+        self.__tab_buttons.removeClicked.connect(self.__on_remove_registry)
+        self.__btn_save.clicked.connect(self.__on_save)
+        self.__btn_cancel.clicked.connect(self.__on_cancel)
+
+        self.__signalMapper_title.mapped.connect(self.__title_edited)
+        #self.__signalMapper_default.mapped.connect(self.__on_default_set)
+
+    def __on_remove_registry(self):
+        # -1 for tab buttons
+        index = self.__tabs.currentIndex()
+        if (index > 0):
+            tabWidget = self.__tabs.widget(index)
+            self.__signalMapper_title.removeMappings(tabWidget)
+            self.__signalMapper_default.removeMappings(tabWidget)
+            self.__tabs.removeTab(index)
+
+        if (self.__tabs.count() == 1):
+            self.__tab_buttons.disable_remove()
+
+    def __title_edited(self, index):
+        tabWidget = self.__tabs.widget(index)
+        if (not tabWidget is None):
+            text = tabWidget.get_name()
+            self.__tabs.setTabText(index, text if text != "" else self.DEFAULT_NAME)
+
+    def __init_ui(self):
+        layout = QVBoxLayout(self)
+        self.__tabs = QTabWidget(self)
+        self.__tab_buttons = WaNoTabButtonsWidget(self)
+
+        self.__btn_save = QPushButton(self)
+        self.__btn_cancel = QPushButton(self)
+
+        self.__btn_save.setText("Save")
+        self.__btn_cancel.setText("Cancel")
+
+        # self.__tabs.setTabPosition(QTabWidget.TabPosition.West)
+        self.__tabs.addTab(QLabel('Add Registry by clicking \"+\"'), '')
+        self.__tabs.setTabEnabled(0, False)
+        self.__tabs.setUsesScrollButtons(True)
+        self.__tabs.tabBar().setTabButton(0, QTabBar.RightSide, self.__tab_buttons)
+
+        layout.addWidget(self.__tabs)
+        layout.addWidget(self.__btn_save)
+        layout.addWidget(self.__btn_cancel)
+        self.setLayout(layout)
+
+        self.setMinimumSize(420, 520)
+
+
 class WaNoUnicoreSettings(QDialog):
     DEFAULT_NAME = "[Unnamed Registry]"
 
