@@ -218,30 +218,33 @@ class WFWaNoWidget(QtWidgets.QToolButton,DragDropTargetTracker):
 
 
     def instantiate_in_folder(self,folder):
-        outfolder = folder/"wanos"/self.wano.name
-
+        outfolder : Path = folder/"wanos"/self.wano.name
 
         folder_exists = outfolder.is_dir()
         if not folder_exists:
             os.makedirs(outfolder)
+            folder_empty = True
+        else:
+            folder_empty = not any(outfolder.iterdir())
 
-        #print(self.wano[1],outfolder)
         if outfolder != self.wano.folder:
             # In case we did not create the folder, the wano might already be there and we need
             # to check whether the same WaNo is in the folder. Otherwise problems might occur.
-            if folder_exists:
+            if folder_exists and not folder_empty:
+                print(folder_empty, outfolder)
                 newfolderwle = copy.copy(self.wano)
                 newfolderwle.folder = outfolder
                 if self._compare_wano_equality(newfolderwle, self.wano):
                     self.wano.folder = outfolder
+                    self.wano_model.set_wano_dir_root(outfolder)
                     #self.logger.info(f"Directory {outfolder} already instantiated with equivalent WaNo.")
                     return True
                 else:
                     raise WaNoInstantiationError(f"Directory {outfolder} already instantiated with different WaNo with equivalent name in folder {self.wano.folder}. Please check, if you imported two different WaNos (e.g. by porting an old version workflow).")
             try:
-                print("Copying %s to %s"%(outfolder,self.wano.folder))
-
+                print("Copying %s to %s"%(self.wano.folder, outfolder))
                 copytree_pathlib(self.wano.folder, outfolder)
+
             except Exception as e:
                 self.logger.error("Failed to copy tree: %s." % str(e))
                 import traceback
@@ -249,6 +252,8 @@ class WFWaNoWidget(QtWidgets.QToolButton,DragDropTargetTracker):
                 return False
 
         self.wano.folder = outfolder
+        self.wano_model.set_wano_dir_root(outfolder)
+
         #self.wano_model.save(outfolder)
         return True
 
@@ -1955,7 +1960,8 @@ class WFTabsWidget(QtWidgets.QTabWidget):
         wanoconfigdir = fullpath_path / "wano_configurations"
         xmlpath = fullpath_path / f"{fullpath_path.name}.xml"
         shutil.rmtree(wanodir)
-        shutil.rmtree(wanoconfigdir)
+        if wanoconfigdir.is_dir():
+            shutil.rmtree(wanoconfigdir)
         os.unlink(xmlpath)
 
     def saveAs(self):
