@@ -1,38 +1,52 @@
 import sys
 from Qt import QtGui, QtWidgets
 
+
+
 from SimStackServer.WorkflowModel import Resources
 from functools import partial
 import numpy as np
 
+from WaNo.view.HorizontalTextEditWithFileImport import HorizontalTextEditWithFileImport
+from WaNo.view.QHVLine import QHLine
+
 
 class ResourcesView(QtWidgets.QWidget):
+    _field_name_to_display_name = {
+        "base_URI": "Hostname"
+    }
+    _field_name_to_intention = {
+        "extra_config": "file",
+        "ssh_private_key" : "file"
+    }
+    render_order = [
+
+
+    ]
     def __init__(self, resources):
         super().__init__()
         self._resources = resources
         self.initUI()
 
-    def initUI(self):
-        self.setGeometry(300, 300, 400, 800)
-        self.setWindowTitle('Resource view')
-        #self.setWindowIcon(QtGui.QIcon('web.png'))
+    @classmethod
+    def field_name_to_display_name(cls, field_name: str) -> str:
+        return cls._field_name_to_display_name.get(field_name,field_name)
 
-    def renderAll(self):
-        flo = QtWidgets.QFormLayout()
-        for field in self._resources.fields():
-            this_key = field[0]
-            this_value = field[2]
-            if isinstance(this_value, int):
-                this_i = QtWidgets.QSpinBox()
-                this_i.setMinimum(0)
-                this_i.setMaximum(100000)
-                this_i.setValue(this_value)
-                flo.addRow(this_key, this_i)
-            elif isinstance(this_value, str):
-                this_s = QtWidgets.QLineEdit()
-                this_s.setText(this_value)
-                flo.addRow(this_key, this_s)
-        self.setLayout(flo)
+    def field_name_to_intention(self, field_name: str) -> str:
+        if field_name in self._field_name_to_intention:
+            return self._field_name_to_intention[field_name]
+
+        mytype = self._resources.field_type(field_name)
+        if mytype in [int, np.uint64]:
+            return "int"
+        elif mytype == str:
+            return "str"
+
+    def initUI(self):
+        #self.setGeometry(300, 300, 400, 800)
+        self.setWindowTitle('Resource view')
+        self.renderJobResources()
+        #self.setWindowIcon(QtGui.QIcon('web.png'))
 
     @staticmethod
     def _fieldChanger(fieldname: str, model: Resources, newvalue):
@@ -51,24 +65,47 @@ class ResourcesView(QtWidgets.QWidget):
         Shows only job specific resouces -> things like sw dir not to be modified
         :return:
         """
-        flo = QtWidgets.QFormLayout()
-        for field in self._resources.fields():
-            this_key = field[0]
-            if not this_key in ["walltime", "cpu_per_node", "nodes", "queue", "memory", "custom_requests"]:
-                continue
+        minHeight = 20
+        current_flo = QtWidgets.QFormLayout()
+        current_flo.addRow(QtWidgets.QLabel("<b>Host Settings</b>"), QtWidgets.QWidget())
+
+        for this_key in self._resources.render_order():
+            field_name = self.field_name_to_display_name(this_key)
+            #if not this_key in ["walltime", "cpu_per_node", "nodes", "queue", "memory", "custom_requests"]:
+            #    continue
+            if this_key == "nodes":
+                #vbox.addLayout(flo1)
+                current_flo.addRow(QtWidgets.QLabel("<b>Default Resources</b>"), QtWidgets.QWidget())
+                #vbox.addWidget(qhl)
+                #current_flo = flo2
             this_value = self._resources.get_field_value(this_key)
-            myfunc = partial(self._fieldChanger, field[0], self._resources)
-            if isinstance(this_value, int) or isinstance(this_value, np.uint64):
+            intention = self.field_name_to_intention(this_key)
+            myfunc = partial(self._fieldChanger, this_key, self._resources)
+            if intention == "int":
                 this_i = QtWidgets.QSpinBox()
                 this_i.valueChanged.connect(myfunc)
                 this_i.setMinimum(0)
                 this_i.setMaximum(100000)
                 this_i.setValue(this_value)
-                flo.addRow(this_key, this_i)
-            elif isinstance(this_value, str):
+                current_flo.addRow(field_name, this_i)
+            elif intention =="file":
+                this_i = HorizontalTextEditWithFileImport()
+                this_i.line_edit.setText(this_value)
+                this_i.line_edit.textChanged.connect(myfunc)
+                current_flo.addRow(field_name, this_i)
+            elif intention =="str":
                 this_i = QtWidgets.QLineEdit()
                 this_i.setText(this_value)
-                #this_i.editingFinished.connect(myfunc)
                 this_i.textChanged.connect(myfunc)
-                flo.addRow(this_key, this_i)
-        self.setLayout(flo)
+                current_flo.addRow(field_name, this_i)
+
+        minimumwidth = 0
+        minimumheight = 0
+        for i in range(0, current_flo.rowCount()):
+            itemAt = current_flo.itemAt(i, QtWidgets.QFormLayout.FieldRole).widget()
+
+            itemAt.setMinimumHeight(minHeight)
+            minHeight_new = itemAt.minimumHeight()
+            print(minHeight_new)
+
+        self.setLayout(current_flo)

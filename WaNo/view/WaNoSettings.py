@@ -6,6 +6,9 @@ from Qt.QtWidgets import QDialog, QLabel, QGridLayout, QLineEdit, QPushButton, \
 from Qt.QtGui import QIntValidator
 from Qt.QtCore import Signal, QSignalMapper, QDir
 
+from SimStackServer.WorkflowModel import Resources
+from WaNo.view.ResourcesView import ResourcesView
+
 
 class WaNoPathSettings(QDialog):
     def __init__(self,pathsettings,parent):
@@ -309,6 +312,8 @@ class WaNoTabButtonsWidget(QWidget):
         self.__connect_signals()
 
 class SimStackClusterSettingsView(QDialog):
+    DEFAULT_NAME = "[Unnamed Registry]"
+
     def __init__(self):
         super().__init__()
         self.__tabs     = None
@@ -326,6 +331,20 @@ class SimStackClusterSettingsView(QDialog):
 
     def __on_cancel(self):
         self.reject()
+
+    def __add_tab(self, name, index):
+        resources = Resources()
+        tabWidget = ResourcesView(resources)
+        self.__tabs.addTab(tabWidget, name)
+
+        # We want to identify the Tab by index -> +1 for tab buttons
+        #self.__signalMapper_title.setMapping(tabWidget, index + 1)
+        #tabWidget.title_edited.connect(self.__signalMapper_title.map)
+
+        #self.__signalMapper_default.setMapping(tabWidget, index + 1)
+        #tabWidget.default_set.connect(self.__signalMapper_default.map)
+
+        return tabWidget
 
 
     def __on_add_registry(self):
