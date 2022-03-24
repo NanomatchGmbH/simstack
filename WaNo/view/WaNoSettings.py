@@ -6,6 +6,7 @@ from Qt.QtWidgets import QDialog, QLabel, QGridLayout, QLineEdit, QPushButton, \
 from Qt.QtGui import QIntValidator
 from Qt.QtCore import Signal, QSignalMapper, QDir
 
+from SimStackServer.Settings.ClusterSettingsProvider import ClusterSettingsProvider
 from SimStackServer.WorkflowModel import Resources
 from WaNo.view.ResourcesView import ResourcesView
 
@@ -322,8 +323,11 @@ class SimStackClusterSettingsView(QDialog):
         self.__signalMapper_default     = QSignalMapper(self)
         self.__ignore_default_signal    = False
 
+        self._registries = ClusterSettingsProvider.get_registries()
+
         self.__init_ui()
 
+        self._init_tabs()
         self.__connect_signals()
 
     def __on_save(self):
@@ -332,9 +336,14 @@ class SimStackClusterSettingsView(QDialog):
     def __on_cancel(self):
         self.reject()
 
-    def __add_tab(self, name, index):
-        resources = Resources()
-        tabWidget = ResourcesView(resources)
+    def _init_tabs(self):
+        for registry_name, resource in self._registries.items():
+            self.__add_tab(registry_name, self.__tabs.count() -1, resource)
+
+    def __add_tab(self, name, index, resource = None):
+        if resource is None:
+            resource = Resources()
+        tabWidget = ResourcesView(resource)
         self.__tabs.addTab(tabWidget, name)
 
         # We want to identify the Tab by index -> +1 for tab buttons
@@ -345,9 +354,17 @@ class SimStackClusterSettingsView(QDialog):
         #tabWidget.default_set.connect(self.__signalMapper_default.map)
 
         return tabWidget
-
+    """
+        Logic: 
+           Press plus -> new resource name is queried
+           resource is added to ClusterSettingsProvider with name
+           added to settings with defaultsettings
+    """
 
     def __on_add_registry(self):
+        tabname,ok = QtWidgets.QInputDialog.getText(self, self.tr("Specify Workflow Name"),
+                                     self.tr("Name"), QtWidgets.QLineEdit.Normal,
+                                     "WorkflowName")
         self.__add_tab(self.DEFAULT_NAME, self.__tabs.count() - 1)
         self.__tabs.setCurrentIndex(self.__tabs.count() - 1)
 
