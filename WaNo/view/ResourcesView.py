@@ -60,11 +60,14 @@ class ResourcesView(QtWidgets.QWidget):
         # adapt value below
         model.set_field_value(fieldname, newvalue)
 
-    def renderJobResources(self):
+    def renderJobResources(self, exclude_items = None):
         """
         Shows only job specific resouces -> things like sw dir not to be modified
         :return:
         """
+        if exclude_items is None:
+            exclude_items = {}
+
         minHeight = 20
         current_flo = QtWidgets.QFormLayout()
         current_flo.addRow(QtWidgets.QLabel("<b>Host Settings</b>"), QtWidgets.QWidget())
@@ -105,7 +108,7 @@ class ResourcesView(QtWidgets.QWidget):
             itemAt = current_flo.itemAt(i, QtWidgets.QFormLayout.FieldRole).widget()
 
             itemAt.setMinimumHeight(minHeight)
-            minHeight_new = itemAt.minimumHeight()
-            print(minHeight_new)
+            #minHeight_new = itemAt.minimumHeight()
+            #print(minHeight_new)
 
         self.setLayout(current_flo)
