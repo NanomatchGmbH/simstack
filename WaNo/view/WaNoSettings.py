@@ -3,6 +3,7 @@ from os.path import join
 from Qt.QtWidgets import QDialog, QLabel, QGridLayout, QLineEdit, QPushButton, \
         QTabWidget, QWidget, QVBoxLayout, QHBoxLayout, QCheckBox, QTabBar, \
         QToolButton, QFileIconProvider, QFileDialog, QComboBox
+import Qt.QtWidgets as QtWidgets
 from Qt.QtGui import QIntValidator
 from Qt.QtCore import Signal, QSignalMapper, QDir
 
@@ -362,11 +363,19 @@ class SimStackClusterSettingsView(QDialog):
     """
 
     def __on_add_registry(self):
-        tabname,ok = QtWidgets.QInputDialog.getText(self, self.tr("Specify Workflow Name"),
+        clustername,ok = QtWidgets.QInputDialog.getText(self, self.tr("Specify Cluster Name"),
                                      self.tr("Name"), QtWidgets.QLineEdit.Normal,
-                                     "WorkflowName")
-        self.__add_tab(self.DEFAULT_NAME, self.__tabs.count() - 1)
-        self.__tabs.setCurrentIndex(self.__tabs.count() - 1)
+                                     "Cluster Name")
+        if ok:
+            if clustername in self._registries:
+                # warn and return
+                message = f"Clustername {clustername} already exists. Please remove first."
+                QtWidgets.QMessageBox.critical(None, "Clustername already exists.", message)
+                return
+            new_resource = Resources()
+            self.__add_tab(clustername, self.__tabs.count() - 1, resource=new_resource)
+            self._registries[clustername] = new_resource
+            self.__tabs.setCurrentIndex(self.__tabs.count() - 1)
 
     def __connect_signals(self):
         self.__tab_buttons.addClicked.connect(self.__on_add_registry)
