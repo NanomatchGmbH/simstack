@@ -332,14 +332,17 @@ class SimStackClusterSettingsView(QDialog):
         self.__connect_signals()
 
     def __on_save(self):
+        ClusterSettingsProvider.get_instance().write_settings()
         self.accept()
 
     def __on_cancel(self):
         self.reject()
 
     def _init_tabs(self):
-        for registry_name, resource in self._registries.items():
+        for tab_id, (registry_name, resource) in enumerate(self._registries.items()):
             self.__add_tab(registry_name, self.__tabs.count() -1, resource)
+            if tab_id == 0:
+                self.__tabs.setCurrentIndex(self.__tabs.count() - 1)
 
     def __add_tab(self, name, index, resource = None):
         if resource is None:
@@ -355,12 +358,7 @@ class SimStackClusterSettingsView(QDialog):
         #tabWidget.default_set.connect(self.__signalMapper_default.map)
 
         return tabWidget
-    """
-        Logic: 
-           Press plus -> new resource name is queried
-           resource is added to ClusterSettingsProvider with name
-           added to settings with defaultsettings
-    """
+
 
     def __on_add_registry(self):
         clustername,ok = QtWidgets.QInputDialog.getText(self, self.tr("Specify Cluster Name"),
@@ -390,6 +388,8 @@ class SimStackClusterSettingsView(QDialog):
         # -1 for tab buttons
         index = self.__tabs.currentIndex()
         if (index > 0):
+            registry_name = self.__tabs.tabText(index)
+            ClusterSettingsProvider.remove_resource(registry_name)
             tabWidget = self.__tabs.widget(index)
             self.__signalMapper_title.removeMappings(tabWidget)
             self.__signalMapper_default.removeMappings(tabWidget)
