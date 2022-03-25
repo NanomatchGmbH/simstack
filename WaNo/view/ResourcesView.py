@@ -69,7 +69,6 @@ class ResourcesView(QtWidgets.QWidget):
         """
 
         # adapt value below
-        print(fieldname, newvalue)
         model.set_field_value(fieldname, newvalue)
 
     def renderJobResources(self, exclude_items = None):
