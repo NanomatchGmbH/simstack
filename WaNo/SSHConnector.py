@@ -132,73 +132,6 @@ class SSHConnector(CallableQThread):
             message = ""
         self.error.emit(base_uri, operation.value, error.value, message)
 
-   
-    @CallableQThread.callback
-    def cb_worker_exit(self, base_uri):
-        pass
-
-    @staticmethod
-    def create_basic_args(base_uri):
-        return {'args': (base_uri,), 'kwargs': {}}
-
-    @staticmethod
-    def create_basic_path_args(base_uri, path):
-        data = SSHConnector.create_basic_args(base_uri)
-        data['args'] += (path,)
-        return data
-
-    @staticmethod
-    def create_workflow_job_args(base_uri, submitname, dir_to_upload, xml):
-        data = SSHConnector.create_basic_args(base_uri)
-        data['args'] += (submitname, dir_to_upload, xml)
-        return data
-
-    @staticmethod
-    def create_update_resources_args(base_uri):
-        return SSHConnector.create_basic_args(base_uri)
-
-    @staticmethod
-    def create_update_job_list_args(base_uri):
-        return SSHConnector.create_basic_args(base_uri)
-
-    @staticmethod
-    def create_update_workflow_list_args(base_uri):
-        return SSHConnector.create_basic_args(base_uri)
-
-    @staticmethod
-    def create_update_workflow_job_list_args(base_uri, wfid):
-        return SSHConnector.create_basic_path_args(base_uri, wfid)
-
-    @staticmethod
-    def create_update_dir_list_args(base_uri, path):
-        return SSHConnector.create_basic_path_args(base_uri, path)
-
-    @staticmethod
-    def create_delete_file_args(base_uri, filename):
-        return SSHConnector.create_basic_path_args(base_uri, filename)
-
-    @staticmethod
-    def create_delete_job_args(base_uri, job):
-        return SSHConnector.create_basic_path_args(base_uri, job)
-
-    @staticmethod
-    def create_abort_job_args(base_uri, job):
-        return SSHConnector.create_basic_path_args(base_uri, job)
-
-    @staticmethod
-    def create_delete_workflow_args(base_uri, workflow):
-        return SSHConnector.create_basic_path_args(base_uri, workflow)
-
-    @staticmethod
-    def create_abort_workflow_args(base_uri, workflow):
-        return SSHConnector.create_basic_path_args(base_uri, workflow)
-
-    @staticmethod
-    def create_data_transfer_args(base_uri, from_path, to_path):
-        data = SSHConnector.create_basic_args(base_uri)
-        data['args'] += (from_path, to_path)
-        return data
-
     def start_server(self, registry_name :str, callback=(None, (), {})):
         cm = self._get_cm(registry_name)
         cm: ClusterManager
@@ -343,14 +276,6 @@ class SSHConnector(CallableQThread):
             cm.disconnect()
         self._exec_callback(callback, error, statusmessage)
 
-    def run_single_job(self, base_uri, wano_dir, name):
-        worker = self._get_error_or_fail(base_uri)
-        if not worker is None:
-            worker.run_single_job(
-                    wano_dir,
-                    name,
-                    (self._emit_error, (base_uri, OPERATIONS.RUN_SINGLE_JOB), {}))
-
     @eagain_catcher
     def run_workflow_job(self, registry_name, submitname, dir_to_upload, xml, progress_callback = None, callback = None):
 
@@ -483,51 +408,8 @@ class SSHConnector(CallableQThread):
         for local_file in toupload:
             cm.put_file(local_file, destination)
 
-    def unicore_operation(self, operation, data, callback=(None, (), {})):
-        ops = OPERATIONS
-
-        if operation == ops.CONNECT_REGISTRY:
-            self.connect_registry(data, callback = callback)
-        elif operation == ops.DISCONNECT_REGISTRY:
-            self.disconnect_registry(data, callback = callback)
-        elif operation == ops.RUN_SINGLE_JOB:
-            self.run_single_job(*data['args'])
-        elif operation == ops.RUN_WORKFLOW_JOB:
-            self.run_workflow_job(*data['args'])
-        elif operation == ops.UPDATE_JOB_LIST:
-            self.update_job_list(*data['args'], callback=callback)
-        elif operation == ops.UPDATE_WF_LIST:
-            self.update_workflow_list(*data['args'], callback=callback)
-        elif operation == ops.UPDATE_WF_JOB_LIST:
-            self.update_workflow_job_list(*data['args'], callback=callback)
-        elif operation == ops.UPDATE_DIR_LIST:
-            self.update_dir_list(*data, callback=callback)
-        elif operation == ops.DELETE_FILE:
-            self.delete_file(*data['args'], callback=callback)
-        elif operation == ops.DELETE_JOB:
-            self.delete_job(*data['args'], callback=callback)
-        elif operation == ops.ABORT_JOB:
-            self.abort_job(*data['args'], callback=callback)
-        elif operation == ops.DELETE_WORKFLOW:
-            self.delete_workflow(*data['args'], callback=callback)
-        elif operation == ops.ABORT_WORKFLOW:
-            self.abort_workflow(*data['args'], callback=callback)
-        elif operation == ops.DOWNLOAD_FILE:
-            self.download_file(*data['args'], callback=callback)
-        elif operation == ops.UPLOAD_FILE:
-            self.upload_file(*data['args'], callback=callback)
-        elif operation == ops.UPDATE_RESOURCES:
-            self.update_resources(*data['args'], callback=callback)
-        else:
-            self.logger.error("Got unknown operation: %s" % ops(operation) \
-                    if isinstance(operation, int) else str(operation))
 
     def run(self):
-        self.cbReceiver.exec_unicore_callback_operation.connect(
-                self.unicore_operation, type=Qt.QueuedConnection)
-        self.cbReceiver.exec_unicore_operation.connect(
-                self.unicore_operation, type=Qt.QueuedConnection)
-
         self.logger.debug("Started SSHConnector Thread.")
         self.exec_()
 
