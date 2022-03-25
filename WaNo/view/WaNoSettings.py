@@ -6,6 +6,7 @@ from Qt.QtWidgets import QDialog, QLabel, QGridLayout, QLineEdit, QPushButton, \
 import Qt.QtWidgets as QtWidgets
 from Qt.QtGui import QIntValidator
 from Qt.QtCore import Signal, QSignalMapper, QDir
+import Qt.QtCore as QtCore
 
 from SimStackServer.Settings.ClusterSettingsProvider import ClusterSettingsProvider
 from SimStackServer.WorkflowModel import Resources
@@ -319,15 +320,8 @@ class SimStackClusterSettingsView(QDialog):
     def __init__(self):
         super().__init__()
         self.__tabs     = None
-
-        self.__signalMapper_title       = QSignalMapper(self)
-        self.__signalMapper_default     = QSignalMapper(self)
-        self.__ignore_default_signal    = False
-
         self._registries = ClusterSettingsProvider.get_registries()
-
         self.__init_ui()
-
         self._init_tabs()
         self.__connect_signals()
 
@@ -349,13 +343,6 @@ class SimStackClusterSettingsView(QDialog):
             resource = Resources()
         tabWidget = ResourcesView(resource)
         self.__tabs.addTab(tabWidget, name)
-
-        # We want to identify the Tab by index -> +1 for tab buttons
-        #self.__signalMapper_title.setMapping(tabWidget, index + 1)
-        #tabWidget.title_edited.connect(self.__signalMapper_title.map)
-
-        #self.__signalMapper_default.setMapping(tabWidget, index + 1)
-        #tabWidget.default_set.connect(self.__signalMapper_default.map)
 
         return tabWidget
 
@@ -381,18 +368,12 @@ class SimStackClusterSettingsView(QDialog):
         self.__btn_save.clicked.connect(self.__on_save)
         self.__btn_cancel.clicked.connect(self.__on_cancel)
 
-        self.__signalMapper_title.mapped.connect(self.__title_edited)
-        #self.__signalMapper_default.mapped.connect(self.__on_default_set)
-
     def __on_remove_registry(self):
         # -1 for tab buttons
         index = self.__tabs.currentIndex()
         if (index > 0):
             registry_name = self.__tabs.tabText(index)
             ClusterSettingsProvider.remove_resource(registry_name)
-            tabWidget = self.__tabs.widget(index)
-            self.__signalMapper_title.removeMappings(tabWidget)
-            self.__signalMapper_default.removeMappings(tabWidget)
             self.__tabs.removeTab(index)
 
         if (self.__tabs.count() == 1):
@@ -414,9 +395,9 @@ class SimStackClusterSettingsView(QDialog):
 
         self.__btn_save.setText("Save")
         self.__btn_cancel.setText("Cancel")
-
-        # self.__tabs.setTabPosition(QTabWidget.TabPosition.West)
-        self.__tabs.addTab(QLabel('Add Registry by clicking \"+\"'), '')
+        default_label = QLabel('Add Registry by clicking \"+\"')
+        default_label.setAlignment(QtCore.Qt.AlignCenter)
+        self.__tabs.addTab(default_label, '')
         self.__tabs.setTabEnabled(0, False)
         self.__tabs.setUsesScrollButtons(True)
         self.__tabs.tabBar().setTabButton(0, QTabBar.RightSide, self.__tab_buttons)
@@ -427,190 +408,3 @@ class SimStackClusterSettingsView(QDialog):
         self.setLayout(layout)
 
         self.setMinimumSize(420, 520)
-
-
-class WaNoUnicoreSettings(QDialog):
-    DEFAULT_NAME = "[Unnamed Registry]"
-
-    def get_settings(self):
-        registries = []
-        for index in range(1, self.__tabs.count()):
-            tabWidget = self.__tabs.widget(index)
-            registries.append(
-                    self.__build_registry_settings(
-                        tabWidget.get_name().strip(),
-                        tabWidget.get_uri().strip(),
-                        tabWidget.get_port().strip(),
-                        tabWidget.get_user().strip(),
-                        tabWidget.get_sshprivatekey().strip(),
-                        tabWidget.get_calculation_basepath().strip(),
-                        tabWidget.get_extra_config().strip(),
-                        tabWidget.get_queueing_system().strip(),
-                        tabWidget.get_software_directory().strip(),
-                        tabWidget.get_default_queue().strip(),
-                        tabWidget.get_default()
-                    )
-                )
-
-        return registries
-
-    def __build_registry_settings(self, name,
-                                  uri,
-                                  port,
-                                  user,
-                                  sshprivatekey,
-                                  calculation_basepath,
-                                  extraconfig,
-                                  queueing_system,
-                                  software_directory,
-                                  default_queue,
-                                  default):
-        returndict = {
-                'name': name,
-                'baseURI': uri,
-                'port': port,
-                'username': user,
-                'sshprivatekey': sshprivatekey,
-                'calculation_basepath': calculation_basepath,
-                'extraconfig': extraconfig,
-                'queueing_system' : queueing_system,
-                'software_directory': software_directory,
-                'default_queue': default_queue,
-                'default': default
-            }
-        return returndict
-
-    def __add_tab(self, name, index):
-        tabWidget = WaNoRegistrySettings()
-        self.__tabs.addTab(tabWidget, name)
-
-        # We want to identify the Tab by index -> +1 for tab buttons
-        self.__signalMapper_title.setMapping(tabWidget, index + 1)
-        tabWidget.title_edited.connect(self.__signalMapper_title.map)
-
-        self.__signalMapper_default.setMapping(tabWidget, index + 1)
-        tabWidget.default_set.connect(self.__signalMapper_default.map)
-
-        return tabWidget
-
-
-    def __on_add_registry(self):
-        self.__add_tab(self.DEFAULT_NAME, self.__tabs.count() - 1)
-        self.__tabs.setCurrentIndex(self.__tabs.count() - 1)
-
-    def __on_remove_registry(self):
-        # -1 for tab buttons
-        index = self.__tabs.currentIndex()
-        if (index > 0):
-            tabWidget = self.__tabs.widget(index)
-            self.__signalMapper_title.removeMappings(tabWidget)
-            self.__signalMapper_default.removeMappings(tabWidget)
-            self.__tabs.removeTab(index)
-
-        if (self.__tabs.count() == 1):
-            self.__tab_buttons.disable_remove()
-
-    def __on_save(self):
-        self.accept()
-
-    def __on_cancel(self):
-        self.reject()
-
-    def __connect_signals(self):
-        self.__tab_buttons.addClicked.connect(self.__on_add_registry)
-        self.__tab_buttons.removeClicked.connect(self.__on_remove_registry)
-        self.__btn_save.clicked.connect(self.__on_save)
-        self.__btn_cancel.clicked.connect(self.__on_cancel)
-
-        self.__signalMapper_title.mapped.connect(self.__title_edited)
-        self.__signalMapper_default.mapped.connect(self.__on_default_set)
-
-    def __title_edited(self, index):
-        tabWidget = self.__tabs.widget(index)
-        if (not tabWidget is None):
-            text = tabWidget.get_name()
-            self.__tabs.setTabText(index, text if text != "" else self.DEFAULT_NAME)
-
-    def __on_default_set(self, index):
-        tabWidget = self.__tabs.widget(index)
-        if not self.__ignore_default_signal:
-            self.__ignore_default_signal = True
-            for i in [x for x in range(1, self.__tabs.count()) if x != index]:
-                t = self.__tabs.widget(i)
-                t.set_default(False)
-            self.__ignore_default_signal = False
-
-    @staticmethod
-    def __set_unset_registry_defaults(registry):
-        defaults = {}
-        # Name, baseURI, username, is_default do not have defaults, we crash in case they aren't set.
-        defaults['calculation_basepath'] = "simstack_workspace"
-        defaults['queueing_system'] = "slurm"
-        defaults['software_directory'] = "/home/nanomatch/nanomatch"
-        defaults['default_queue'] = "default"
-        defaults['port'] = 22
-        defaults['sshprivatekey'] = "UseSystemDefault"
-        defaults['extraconfig'] = "None Required (default)"
-
-        for key in defaults.keys():
-            if key not in registry:
-                registry[key] = defaults[key]
-
-
-    def __update(self, config):
-        if self.__tabs is None:
-            raise RuntimeError("WaNoUnicoreSettings not initialized correctly")
-
-        if not config is None and len(config) > 0:
-            for i, registry in enumerate(config):
-                self.__set_unset_registry_defaults(registry)
-                tabWidget = self.__add_tab(registry['name'], i)
-                tabWidget.set_fields(registry['name'], registry['baseURI'], registry['port'], registry['username'],
-                                     registry['sshprivatekey'], registry['calculation_basepath'],
-                                     registry['extraconfig'],
-                                     registry['queueing_system'], registry['software_directory'],
-                                     registry['default_queue'], registry['is_default'])
-
-
-            if (len(config) > 0):
-                self.__tabs.setCurrentIndex(1) # not 0, because of tab buttons
-
-    def __init_ui(self):
-        layout = QVBoxLayout(self)
-        self.__tabs                     = QTabWidget(self)
-        self.__tab_buttons              = WaNoTabButtonsWidget(self)
-
-        self.__btn_save                 = QPushButton(self)
-        self.__btn_cancel               = QPushButton(self)
-
-        self.__btn_save.setText("Save")
-        self.__btn_cancel.setText("Cancel")
-
-        #self.__tabs.setTabPosition(QTabWidget.TabPosition.West)
-        self.__tabs.addTab(QLabel('Add Registry by clicking \"+\"'), '')
-        self.__tabs.setTabEnabled(0, False)
-        self.__tabs.setUsesScrollButtons(True)
-        self.__tabs.tabBar().setTabButton(0, QTabBar.RightSide, self.__tab_buttons)
-        
-
-        layout.addWidget(self.__tabs)
-        layout.addWidget(self.__btn_save)
-        layout.addWidget(self.__btn_cancel)
-        self.setLayout(layout)
-
-        self.setMinimumSize(420, 520)
-
-    def __init__(self, config):
-        super(WaNoUnicoreSettings, self).__init__()
-        self.__tabs     = None
-        self.__config   = config
-
-        self.__signalMapper_title       = QSignalMapper(self)
-        self.__signalMapper_default     = QSignalMapper(self)
-        self.__ignore_default_signal    = False
-
-        self.__init_ui()
-
-        self.__connect_signals()
-        self.__update(config)
-        self.get_settings()

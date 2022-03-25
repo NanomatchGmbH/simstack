@@ -10,7 +10,7 @@ import Qt.QtWidgets  as QtWidgets
 
 from Qt.QtCore import Signal
 
-from .WaNoSettings import WaNoUnicoreSettings, WaNoPathSettings, SimStackClusterSettingsView
+from .WaNoSettings import WaNoPathSettings, SimStackClusterSettingsView
 from .ViewTimer import ViewTimer
 
 from Qt.QtCore import QMutex
@@ -153,13 +153,10 @@ class WFEditorMainWindow(QtWidgets.QMainWindow):
 
     def open_dialog_registry_settings(self, current_registries):
         dialog = SimStackClusterSettingsView()
-        #dialog = WaNoUnicoreSettings(current_registries)
 
         if (dialog.exec_()):
             pass
-            #self.save_registries.emit(dialog.get_settings())
         else:
-            #print("fail")
             pass
 
     def open_dialog_path_settings(self,pathsettings):
