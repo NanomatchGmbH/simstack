@@ -6,6 +6,8 @@ from Qt.QtCore import Signal, Slot, QSize
 
 from enum import Enum
 
+from WaNo.lib.QtClusterSettingsProvider import QtClusterSettingsProvider
+
 
 class WaNoRegistrySelection(QWidget):
     class CONNECTION_STATES(Enum):
@@ -30,6 +32,16 @@ class WaNoRegistrySelection(QWidget):
 
     def select_registry(self, index):
         self.registryComboBox.setCurrentIndex(index)
+
+    def _new_update_registries(self):
+        self.__emit_signal = False
+        currentText = self.registryComboBox.currentText()
+        self.registryComboBox.clear()
+        registries = [*QtClusterSettingsProvider.get_registries().keys()]
+        for r in registries:
+            self.registryComboBox.addItem(r)
+        self.registryComboBox.setCurrentText(currentText)
+        self.__emit_signal = True
 
     def update_registries(self, registies, index=0):
         self.__emit_signal = False
@@ -83,11 +95,14 @@ class WaNoRegistrySelection(QWidget):
     def __connect_signals(self):
         self.isConnectedIcon.clicked.connect(self.__on_button_clicked)
         self.registryComboBox.currentTextChanged.connect(self.__on_selection_changed)
+        QtClusterSettingsProvider.get_instance().settings_changed.connect(self._new_update_registries)
 
     def __init__(self, parent):
         super(WaNoRegistrySelection, self).__init__(parent)
+
         self.setSizePolicy(QSizePolicy.Minimum,QSizePolicy.Minimum)
         self.__init_ui(parent)
         self.setStatus(WaNoRegistrySelection.CONNECTION_STATES.disconnected)
         self.__emit_signal = True
+
         self.__connect_signals()

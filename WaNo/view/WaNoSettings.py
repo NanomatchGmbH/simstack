@@ -10,6 +10,7 @@ import Qt.QtCore as QtCore
 
 from SimStackServer.Settings.ClusterSettingsProvider import ClusterSettingsProvider
 from SimStackServer.WorkflowModel import Resources
+from WaNo.lib.QtClusterSettingsProvider import QtClusterSettingsProvider
 from WaNo.view.ResourcesView import ResourcesView
 
 
@@ -135,13 +136,13 @@ class SimStackClusterSettingsView(QDialog):
     def __init__(self):
         super().__init__()
         self.__tabs     = None
-        self._registries = ClusterSettingsProvider.get_registries()
+        self._registries = QtClusterSettingsProvider.get_registries()
         self.__init_ui()
         self._init_tabs()
         self.__connect_signals()
 
     def __on_save(self):
-        ClusterSettingsProvider.get_instance().write_settings()
+        QtClusterSettingsProvider.get_instance().write_settings()
         self.accept()
 
     def __on_cancel(self):
@@ -172,9 +173,9 @@ class SimStackClusterSettingsView(QDialog):
                 message = f"Clustername {clustername} already exists. Please remove first."
                 QtWidgets.QMessageBox.critical(None, "Clustername already exists.", message)
                 return
-            new_resource = Resources()
+            csp = QtClusterSettingsProvider.get_instance()
+            new_resource = csp.add_resource(resource_name=clustername)
             self.__add_tab(clustername, self.__tabs.count() - 1, resource=new_resource)
-            self._registries[clustername] = new_resource
             self.__tabs.setCurrentIndex(self.__tabs.count() - 1)
 
     def __connect_signals(self):
@@ -188,7 +189,8 @@ class SimStackClusterSettingsView(QDialog):
         index = self.__tabs.currentIndex()
         if (index > 0):
             registry_name = self.__tabs.tabText(index)
-            ClusterSettingsProvider.remove_resource(registry_name)
+            csp = QtClusterSettingsProvider.get_instance()
+            csp.remove_resource(registry_name)
             self.__tabs.removeTab(index)
 
         if (self.__tabs.count() == 1):

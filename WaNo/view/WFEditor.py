@@ -15,7 +15,6 @@ class WFEditor(QWidget):
     REGISTRY_CONNECTION_STATES = WaNoRegistrySelection.CONNECTION_STATES
 
     _controls = [
-            #("SubWorkflow", "ctrl_img/ForEach.png"),
             ("ForEach", "ctrl_img/ForEach.png"),
             ("AdvancedFor", "ctrl_img/ForEach.png"),
             ("If", "ctrl_img/If.png"),
@@ -65,8 +64,6 @@ class WFEditor(QWidget):
 
         self.registrySelection = WaNoRegistrySelection(self)
 
-        #infobox = self.__build_infobox()
-
         leftPanel = QSplitter(Qt.Vertical)
         leftPanel.setSizePolicy(QSizePolicy.Maximum,QSizePolicy.Expanding)
         leftPanel.setMaximumWidth(150)
@@ -78,23 +75,10 @@ class WFEditor(QWidget):
 
         layout = QHBoxLayout()
 
-        #hbox_splitter = QSplitter(Qt.Horizontal)
-        #layout.addWidget(self.fileTreePanel)
         layout.addWidget(leftPanel)
         layout.addWidget(self.workflowWidget)
         layout.addWidget(rightPanel)
-        """
-        hbox_splitter.addWidget(leftPanel)
-        hbox_splitter.setStretchFactor(0,2)
-        hbox_splitter.addWidget(self.workflowWidget)
-        hbox_splitter.setStretchFactor(1, 4)
-        hbox_splitter.addWidget(rightPanel)
-        hbox_splitter.setStretchFactor(2, 2)
-        layout.addWidget(hbox_splitter)
-        """
-        #layout.addStretch(1)
-         
-        #self.mainPanels = layout  
+
         self.setLayout(layout)
 
         self.wanoListWidget = WFEWaNoListWidget(self)
@@ -136,7 +120,6 @@ class WFEditor(QWidget):
         rightPanel.setStretchFactor(0, 0)
         rightPanel.addWidget(self.settingsAndFilesTabs)
         rightPanel.setStretchFactor(1, 1)
-#        rightPanel.addWidget(infobox)
 
         
         self.lastActive = None

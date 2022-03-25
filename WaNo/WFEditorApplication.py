@@ -27,6 +27,7 @@ from WaNo.SimStackPaths import SimStackPaths
 from SimStackServer.WaNo.WaNoExceptions import WorkflowSubmitError
 
 from SimStackServer.WaNo.MiscWaNoTypes import WaNoListEntry, get_wano_xml_path
+from WaNo.lib.QtClusterSettingsProvider import QtClusterSettingsProvider
 
 from WaNo.view.WFViewManager import WFViewManager
 from WaNo.WaNoGitRevision import get_git_revision
@@ -560,7 +561,7 @@ class WFEditorApplication(CallableQThread):
         return default
 
     def _get_registry_names(self):
-        registries = ClusterSettingsProvider.get_registries()
+        registries = QtClusterSettingsProvider.get_registries()
         return [*registries.keys()]
 
     def _set_current_registry_name(self, registry_name: str):
@@ -582,11 +583,6 @@ class WFEditorApplication(CallableQThread):
                 else registry[SETTING_KEYS['registry.workflows']]
 
 
-
-
-    ############################################################################
-    #                             update                                       #
-    ############################################################################
     def _update_wanos(self):
         self.__load_wanos_from_repo(
                 self.__settings.get_value(SETTING_KEYS['wanoRepo'])
@@ -715,7 +711,7 @@ class WFEditorApplication(CallableQThread):
         self._view_manager  = WFViewManager(UnicoreStateFactory.get_reader())
 
         self._current_registry_name = None
-        self._registries = ClusterSettingsProvider.get_registries()
+        self._registries = QtClusterSettingsProvider.get_registries()
         self.wanos = []
 
         self._connect_signals()

@@ -36,6 +36,8 @@ from WaNo.lib.CallableQThread import CallableQThread
 
 from functools import wraps
 
+from WaNo.lib.QtClusterSettingsProvider import QtClusterSettingsProvider
+
 """ Number of data transfer workers per regisrtry. """
 MAX_DT_WORKERS_PER_REGISTRY = 3
 
@@ -435,7 +437,7 @@ class SSHConnector(CallableQThread):
         super(SSHConnector, self).__init__()
         self.logger         = logging.getLogger("SSHConnection")
         self.cbReceiver     = cbReceiver
-        self._registries = ClusterSettingsProvider.get_registries()
+        self._registries = QtClusterSettingsProvider.get_registries()
         self._clustermanagers = {}
 
         self.workers        = {}
