@@ -24,9 +24,9 @@ class WFEditor(QWidget):
             ("While", "ctrl_img/While.png")
         ]
 
-    registry_changed        = Signal(int, name="RegistryChanged")
+    registry_changed        = Signal(str, name="RegistryChanged")
     disconnect_registry     = Signal(name='disconnectRegistry')
-    connect_registry        = Signal(int, name='connectRegistry')
+    connect_registry        = Signal(str, name='connectRegistry')
 
     request_job_list_update     = Signal(name="requestJobListUpdate")
     request_worflow_list_update = Signal(name="requestWorkflowListUpdate")

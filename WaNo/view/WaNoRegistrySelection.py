@@ -24,9 +24,9 @@ class WaNoRegistrySelection(QWidget):
             'cs-xlet-error.svg',
         ]
 
-    registrySelectionChanged    = Signal(int, name='registrySelectionChanged')
+    registrySelectionChanged    = Signal(str, name='registrySelectionChanged')
     disconnect_registry          = Signal(name='disconnectRegistry')
-    connect_registry             = Signal(int, name='connectRegistry')
+    connect_registry             = Signal(str, name='connectRegistry')
 
     def select_registry(self, index):
         self.registryComboBox.setCurrentIndex(index)
@@ -70,19 +70,19 @@ class WaNoRegistrySelection(QWidget):
         self.setLayout(layout)
         #self.resize(self.sizeHint())
 
-    def __on_selection_changed(self, index):
+    def __on_selection_changed(self, registry_name):
         if self.__emit_signal:
-            self.registrySelectionChanged.emit(index)
+            self.registrySelectionChanged.emit(registry_name)
 
     def __on_button_clicked(self):
         if self.__status == self.CONNECTION_STATES.connected:
             self.disconnect_registry.emit()
         elif self.__status == self.CONNECTION_STATES.disconnected:
-            self.connect_registry.emit(self.registryComboBox.currentIndex())
+            self.connect_registry.emit(self.registryComboBox.currentText())
 
     def __connect_signals(self):
         self.isConnectedIcon.clicked.connect(self.__on_button_clicked)
-        self.registryComboBox.currentIndexChanged.connect(self.__on_selection_changed)
+        self.registryComboBox.currentTextChanged.connect(self.__on_selection_changed)
 
     def __init__(self, parent):
         super(WaNoRegistrySelection, self).__init__(parent)

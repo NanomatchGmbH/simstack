@@ -27,16 +27,13 @@ from Qt.QtWidgets import QMessageBox
 
 from SimStackServer.ClusterManager import ClusterManager
 from SimStackServer.MessageTypes import ErrorCodes
+from SimStackServer.Settings.ClusterSettingsProvider import ClusterSettingsProvider
+from SimStackServer.WorkflowModel import Resources
 from WaNo.SimStackPaths import SimStackPaths
 
 from SimStackServer.Util.FileUtilities import filewalker
 from WaNo.lib.CallableQThread import CallableQThread
-from WaNo.lib.TPCThread import TPCThread
-from WaNo.lib.BetterThreadPoolExecutor import BetterThreadPoolExecutor
 
-from WaNo.UnicoreState import UnicoreDataTransferStates
-from WaNo.UnicoreState import UnicoreDataTransferDirection as Direction
-from WaNo.UnicoreHelpers import extract_storage_path
 from functools import wraps
 
 """ Number of data transfer workers per regisrtry. """
@@ -125,345 +122,6 @@ def eagain_catcher(f):
             WFViewManager.show_error(message)
     return wrapper
 
-class UnicoreWorker(TPCThread):
-    OPERATIONS = Enum("Operations",
-            """
-            DELETE
-            ABORT
-            """
-            )
-    def _exec_callback(self, callback, *args, **kwargs):
-        cb_function = callback
-
-        if isinstance(callback, tuple):
-            cb_function = callback[0]
-            if isinstance(callback[1], tuple):
-                args = callback[1] + args
-            else:
-                args = (callback[1],) + args
-            kwargs = callback[2]
-
-        cb_function(*args, **kwargs)
-
-
-    @TPCThread._from_other_thread
-    def connect(self, callback, username, password, base_uri, con_settings):
-        print("Not used anymore")
-        #self._exec_callback(callback, base_uri, err, status)
-
-    @TPCThread._from_other_thread
-    def run_workflow_job(self, submitname, dir_to_upload, xml, error_callback):
-        # NOTE: error_callback already contains args (base_uri and operation)
-        wf_manager = self.registry.get_workflow_manager()
-        storage_manager = self.registry.get_storage_manager()
-
-        status, err, error_message, storage = storage_manager.create(name=submitname)
-        if (err != ErrorCodes.NO_ERROR or not status in range(200, 300)):
-            self._exec_callback(error_callback, err, error_message)
-            return
-
-        try:
-            storage_id = storage[1].get_id()
-        except:
-            storage_id = storage.get_id()
-        
-
-        for filename in filewalker(dir_to_upload):
-            cp = os.path.commonprefix([dir_to_upload, filename])
-            relpath = os.path.relpath(filename, cp)
-            print("Uploading '%s'..." % filename)
-            storage_manager.upload_file(filename, storage_id=storage_id, remote_filename=relpath)
-            #imports.add_import(filename,relpath)
-
-        storage_uri = storage_manager.get_base_uri()
-        status, err, error_message, wf = wf_manager.create(storage_id, submitname)
-        if (err != ErrorCodes.NO_ERROR or not status in range(200, 300)):
-            self._exec_callback(error_callback, err, error_message)
-            return
-
-        print("err: %s\nstatus: %s\nwf: %s" % (str(err), str(status), str(wf)))
-
-        workflow_id = wf.split("/")[-1]
-
-        storage_management_uri = storage_manager.get_storage_management_uri()
-
-        xmlstring = etree.tostring(xml,pretty_print=False).decode("utf-8").replace("${WORKFLOW_ID}",workflow_id)
-        xmlstring = xmlstring.replace("${STORAGE_ID}","%s%s"%(storage_management_uri,storage_id))
-
-        #with open("wf.xml",'w') as wfo:
-        #    wfo.write(xmlstring)
-
-        print("err: %s, status: %s, wf_manager: %s" % (err, status, wf))
-        #### TIMO HERE
-        wf_manager.run(wf.split('/')[-1], xmlstring)
-
-    @TPCThread._from_other_thread
-    def update_resources(self, callback, base_uri):
-        self._logger.debug("Querying resources.")
-        site_manager = self.registry.get_site_manager()
-        site_manager.update_list()
-        resources = site_manager.get_selected().get_resources()
-        self._exec_callback(callback, base_uri, resources)
-
-    @TPCThread._from_other_thread
-    def update_job_list(self, callback, base_uri):
-        self._logger.debug("Querying jobs from Unicore Registry")
-        jobs = []
-
-        job_manager = self.registry.get_job_manager()
-        job_manager.update_list()
-        jobs = [{
-                    'id': s.get_id(),
-                    'name': s.get_name(),
-                    'type': 'j',
-                    'path': s.get_working_dir(),
-                    'status': s.get_status()
-                } for s in job_manager.get_list()]
-
-        self._exec_callback(callback, base_uri, jobs)
-
-    @TPCThread._from_other_thread
-    def update_workflow_list(self, callback, base_uri):
-        self._logger.debug("Querying workflows from Unicore Registry")
-        workflows = []
-
-        wf_manager = self.registry.get_workflow_manager()
-        wf_manager.update_list()
-        workflows = [{
-                'id': s.get_id(),
-                'name': s.get_name(),
-                'type': 'w',
-                'path': s.get_working_dir(),
-                'status': s.get_status()
-                } for s in wf_manager.get_list()]
-
-        self._exec_callback(callback, base_uri, workflows)
-
-    @TPCThread._from_other_thread
-    def update_workflow_job_list(self, callback, base_uri, wfid):
-        wf_manager = self.registry.get_workflow_manager()
-        wf = wf_manager.get_by_id(wfid)
-        if wf == None:
-            #this is most probably a deletion and then update, don't do anything
-            return
-        wf.update()
-
-        job_manager = self.registry.get_job_manager()
-        job_manager.update_list()
-
-        jobs = [job_manager.get_by_id(jobid) for jobid in wf.get_jobs()]
-        print("jobs for wf: %s." % jobs)
-        files = []
-        for job in jobs:
-            if job != None:
-                files.append({
-                    'id': job.get_id(),
-                    'name': job.get_name(),
-                    'type': 'j',
-                    'path': job.get_working_dir(),
-                    'status': job.get_status()
-                })
-        if len(files) == 0:
-            print("No files found in workflow")
-
-        #print("jobs:\n\n\n\n%s\n\n\n" % job_manager.get_list())
-        print("Got files for wf: %s" % files)
-
-        self._exec_callback(callback, base_uri, wfid, files)
-
-    @TPCThread._from_other_thread
-    def list_dir(self, callback, base_uri, path):
-        self._logger.debug("Querying %s from Unicore Registry" % path)
-        files = []
-
-        storage, qpath = extract_storage_path(path)
-        #TODO use job manager?!
-        storage_manager = self.registry.get_storage_manager()
-        storage_manager.update_list()
-        files = storage_manager.get_file_list(storage_id=storage, path=qpath)
-        self._exec_callback(callback, base_uri, path, files)
-
-    @TPCThread._from_other_thread
-    def delete_file(self, callback, base_uri, filename):
-        storage, path = extract_storage_path(filename)
-        storage_manager = self.registry.get_storage_manager()
-
-        self._logger.debug("deleting %s:%s" % (storage, path))
-        if not path is None and not path == "":
-            status, err = storage_manager.delete_file(path, storage_id=storage)
-            self._exec_callback(callback, base_uri, status, err)
-
-    def abort_or_delete_job(self, callback, base_uri, job, operation):
-        job, path = extract_storage_path(job)
-        job_manager = self.registry.get_job_manager()
-
-        if path is None or path == "":
-            job_obj = job_manager.get_by_id(job)
-            if operation == self.OPERATIONS.DELETE:
-                self._logger.debug("deleting job: %s" % job)
-                status, err, _unused = job_manager.delete(job=job_obj)
-            else:
-                self._logger.debug("aborting job: %s" % job)
-                status, err, _unused = job_manager.abort(job=job_obj)
-            self._exec_callback(callback, base_uri, status, err)
-
-    @TPCThread._from_other_thread
-    def delete_job(self, callback, base_uri, job):
-        self.abort_or_delete_job(callback, base_uri, job, self.OPERATIONS.DELETE)
-
-    @TPCThread._from_other_thread
-    def abort_job(self, callback, base_uri, job):
-        self.abort_or_delete_job(callback, base_uri, job, self.OPERATIONS.ABORT)
-
-    def abort_or_delete_workflow(self, callback, base_uri, workflow, operation):
-        wf, path = extract_storage_path(workflow)
-        print(wf,path)
-        wf_manager = self.registry.get_workflow_manager()
-
-        if path is None or path == "":
-            wf_obj = wf_manager.get_by_id(wf)
-            if operation == self.OPERATIONS.DELETE:
-                self._logger.debug("deleting workflow: %s" % workflow)
-                status, err, _unused = wf_manager.delete(workflow=wf_obj)
-            else:
-                self._logger.debug("aborting workflow: %s" % workflow)
-                status, err, _unused = wf_manager.abort(workflow=wf_obj)
-
-            self._exec_callback(callback, base_uri, status, err)
-
-    @TPCThread._from_other_thread
-    def delete_workflow(self, callback, base_uri, workflow):
-        self.abort_or_delete_workflow(callback, base_uri, workflow,
-                self.OPERATIONS.DELETE)
-
-    @TPCThread._from_other_thread
-    def abort_workflow(self, callback, base_uri, workflow):
-        self.abort_or_delete_workflow(callback, base_uri, workflow,
-                self.OPERATIONS.ABORT)
-
-    def start(self):
-        super(UnicoreWorker, self).start()
-        import platform
-        import ctypes
-        if platform.system() == "Linux":
-            self._logger.debug("UnicoreWorker Thread ID: %d\t%d" % \
-                    (threading.current_thread().ident,
-                    ctypes.CDLL('libc.so.6').syscall(186)))
-
-    def __init__(self, registry, logger, reg_state):
-        super(UnicoreWorker, self).__init__()
-        self._logger        = logger
-        self.registry       = registry
-        self._state         = reg_state
-
-class UnicoreDataTransfer(object):
-    def _update_transfer_status(self, uri, localfile, progress, total):
-#        print("\t%6.2f (%6.2f / %6.2f)\t%s" % (progress / total * 100., progress,
-#            total, uri))
-        self._state.get_writer_instance().set_multiple_values({
-                'total': total,
-                'progress': progress,
-                'state': UnicoreDataTransferStates.RUNNING
-            })
-        self._total = total
-
-    def run(self):
-        raise NotImplementedError("Must be implemented in sub-class.")
-
-    def _done_callback(self, result):
-        last_progress = self._state.get_reader_instance().get_value('progress')
-        finished = last_progress >= self._total * 0.99
-        self._state.get_writer_instance().set_multiple_values({
-                'total': self._total,
-                'progress': self._total if finished else last_progress,
-                'state': UnicoreDataTransferStates.DONE
-            })
-        if not self._callback[0] is None:
-            self._callback[0](*self._callback[1], **self._callback[2])
-
-    def cancel(self):
-        # TODO: concurrent.futures.Future.cancel():
-        # A future cannot be cancelled if it is running or has already completed.
-        #TODO lock!
-        if not self._future is None:
-            self._future.cancel()
-        self._canceled = True
-
-    def submit(self, executor):
-        # TODO: make sure, this is started only once. Must be locked
-        # TODO: make sure, this job was not cancled.
-        self._future = executor.submit(self.run)
-        executor.add_done_callback(self._future, self._done_callback)
-
-    def __init__(self, registry, transfer_state, callback=(None, (), {})):
-        self._registry  = registry
-        self._state     = transfer_state
-        self._future    = None
-        self._canceled  = False
-        self._total     = 0
-        self._callback  = callback
-
-class UnicoreDownload(UnicoreDataTransfer):
-    def run(self):
-        #TODO ensure, that the registry is still connected
-        #storage, path = extract_storage_path(from_path)
-        storage_manager = self._registry.get_storage_manager()
-        source  = None
-        dest    = None
-        storage = None
-
-        with self._state.get_reader_instance() as status:
-            source  = status['source']
-            dest    = status['dest']
-            storage = status['storage']
-
-        ret_status, err = storage_manager.get_file(
-                source,
-                dest,
-                storage_id=storage,
-                callback=self._update_transfer_status)
-        print("status: %s, err: %s" % (ret_status, err))
-
-        #TODO handle return values and return them.
-        return 0
-
-    def __init__(self, registry, transfer_state, callback):
-        super(UnicoreDownload, self).__init__(registry, transfer_state, callback)
-
-class UnicoreUpload(UnicoreDataTransfer):
-    def run(self):
-        #storage, path = extract_storage_path(self.dest_dir)
-        storage_manager = self._registry.get_storage_manager()
-        source  = None
-        dest    = None
-        storage = None
-
-        with self._state.get_reader_instance() as status:
-            source  = status['source']
-            dest    = status['dest']
-            storage = status['storage']
-
-        remote_filepath = os.path.join(
-                dest,
-                os.path.basename(source))
-
-        print("uploading '%s' to %s:%s" % (
-                source,
-                storage,
-                dest))
-
-        ret_status, err, json = storage_manager.upload_file(
-                source,
-                remote_filename=remote_filepath,
-                storage_id=storage,
-                callback=self._update_transfer_status)
-        print("status: %s, err: %s, json: %s" % (ret_status, err, json))
-
-        #TODO handle return values and return them.
-        return 0
-
-    def __init__(self, registry, transfer_state, callback):
-        super(UnicoreUpload, self).__init__(registry, transfer_state, callback)
 
 
 class SSHConnector(CallableQThread):
@@ -487,12 +145,6 @@ class SSHConnector(CallableQThread):
     def create_basic_path_args(base_uri, path):
         data = SSHConnector.create_basic_args(base_uri)
         data['args'] += (path,)
-        return data
-
-    @staticmethod
-    def create_single_job_args(base_uri, wano_dir, name):
-        data = SSHConnector.create_basic_args(base_uri)
-        data['args'] += (wano_dir, name)
         return data
 
     @staticmethod
@@ -547,21 +199,22 @@ class SSHConnector(CallableQThread):
         data['args'] += (from_path, to_path)
         return data
 
-    def start_server(self, registry, callback=(None, (), {})):
-        cm = self._get_cm(registry)
+    def start_server(self, registry_name :str, callback=(None, (), {})):
+        cm = self._get_cm(registry_name)
         cm: ClusterManager
-        software_dir = registry["software_directory"]
+        registry : Resources= self._registries[registry_name]
+        software_dir = registry.sw_dir_on_resource
         VDIR = cm.get_newest_version_directory(software_dir)
-        software_dir += '/' + VDIR
         if VDIR == "V2":
             raise NotImplementedError("V2 connection capability removed from SimStack client. Please upgrade to V4.")
         elif VDIR == "V3":
             raise NotImplementedError("V3 connection capability removed from SimStack client. Please upgrade to V4.")
         elif VDIR != "V4":
             print("Found a newer server installation than this client supports (Found: %s). Please upgrade your client. Trying to connect with V4."%VDIR)
-        VDIR == "V4"
+        VDIR = "V4"
+        software_dir += '/' + VDIR
         myenv = "simstack_server"
-        if registry["queueing_system"] == "AiiDA":
+        if registry.queueing_system == "AiiDA":
             myenv = "aiida"
             pythonproc = software_dir + '/local_anaconda/envs/%s/bin/python' %myenv
             execproc = "source %s/local_anaconda/etc/profile.d/conda.sh; conda activate %s; %s" % (
@@ -576,7 +229,6 @@ class SSHConnector(CallableQThread):
             raise FileNotFoundError("%s serverproc was not found. Please check, whether the software directory in Configuration->Servers is correct and the file exists" % serverproc)
 
         command = "%s %s"%(execproc, serverproc)
-        #print(command)
         cm.connect_zmq_tunnel(command)
         return ErrorCodes.NO_ERROR
 
@@ -586,15 +238,11 @@ class SSHConnector(CallableQThread):
         return maindir
 
     @eagain_catcher
-    def connect_registry(self, registry, callback=(None, (), {})):
-        name = registry["name"]
+    def connect_registry(self, registry_name: str, callback=(None, (), {})):
+        name = registry_name
         error = ErrorCodes.NO_ERROR
         statusmessage = ""
-
-        if not "port" in registry:
-            registry["port"] = 22
-
-
+        registry = self._registries[name]
         try:
             # We disconnect in case of reconnect
             if name in self._clustermanagers:
@@ -604,21 +252,19 @@ class SSHConnector(CallableQThread):
         except ConnectionError as e:
             pass
 
-        private_key = registry["sshprivatekey"]
+        private_key = registry.ssh_private_key
         if private_key == "<embedded>":
             pkfile = SimStackPaths.get_embedded_sshkey()
             if os.path.isfile(pkfile):
                 private_key = pkfile
             else:
                 raise FileNotFoundError("Could not find private key at path <%s>"%pkfile)
-        extra_config = "None Required"
-        if "extraconfig" in registry:
-            extra_config = registry["extraconfig"]
-        cm = ClusterManager(url=registry["baseURI"], port=registry["port"],
-                            calculation_basepath=registry["calculation_basepath"], user=registry["username"],
+        extra_config = registry.extra_config
+        cm = ClusterManager(url=registry.base_URI, port=registry.port,
+                            calculation_basepath=registry.basepath, user=registry.username,
                             sshprivatekey=private_key,
                             extra_config=extra_config,
-                            queueing_system=registry["queueing_system"], default_queue=registry["default_queue"])
+                            queueing_system=registry.queueing_system, default_queue=registry.queue)
         self._clustermanagers[name] = cm
 
         if not cm.is_connected():
@@ -648,7 +294,7 @@ class SSHConnector(CallableQThread):
                         raise e from e
                 error = ErrorCodes.NO_ERROR
                 statusmessage = "Connected."
-                returncode_serverstart = self.start_server(registry)
+                returncode_serverstart = self.start_server(registry_name)
             except paramiko.ssh_exception.SSHException as e:
                 statusmessage = str(e)
                 traceback.print_exc()
@@ -675,7 +321,7 @@ class SSHConnector(CallableQThread):
                 del self._clustermanagers[name]
         else:
             print("Already connected, will not connect again.")
-        self._exec_callback(callback, registry["baseURI"], error, statusmessage)
+        self._exec_callback(callback, registry.base_URI, error, statusmessage)
 
     def _get_error_or_fail(self, base_uri):
         worker = None
@@ -688,8 +334,8 @@ class SSHConnector(CallableQThread):
                     ERROR.REGISTRY_NOT_CONNECTED)
         return worker
 
-    def disconnect_registry(self, registry, callback):
-        name = registry["name"]
+    def disconnect_registry(self, registry_name, callback):
+        name = registry_name
         error = ErrorCodes.NO_ERROR
         statusmessage = ""
         if name in self._clustermanagers:
@@ -706,9 +352,9 @@ class SSHConnector(CallableQThread):
                     (self._emit_error, (base_uri, OPERATIONS.RUN_SINGLE_JOB), {}))
 
     @eagain_catcher
-    def run_workflow_job(self, registry, submitname, dir_to_upload, xml, progress_callback = None, callback = None):
+    def run_workflow_job(self, registry_name, submitname, dir_to_upload, xml, progress_callback = None, callback = None):
 
-        cm = self._get_cm(registry)
+        cm = self._get_cm(registry_name)
         counter = 0
 
 
@@ -756,35 +402,35 @@ class SSHConnector(CallableQThread):
             worker.update_resources(callback, base_uri)
 
     @eagain_catcher
-    def update_workflow_list(self, registry, callback=(None, (), {})):
-        cm = self._get_cm(registry)
+    def update_workflow_list(self, registry_name, callback=(None, (), {})):
+        cm = self._get_cm(registry_name)
         workflows = cm.get_workflow_list()
-        self._exec_callback(callback, registry, workflows)
+        self._exec_callback(callback, registry_name, workflows)
 
     def exit(self):
         for cm in self._clustermanagers.values():
             cm.disconnect()
 
     @eagain_catcher
-    def update_workflow_job_list(self, registry, wfid, callback=(None, (), {})):
-        cm = self._get_cm(registry)
+    def update_workflow_job_list(self, registry_name, wfid, callback=(None, (), {})):
+        cm = self._get_cm(registry_name)
         files = cm.get_workflow_job_list(wfid)
-        self._exec_callback(callback, registry, wfid, files)
+        self._exec_callback(callback, registry_name, wfid, files)
 
     @eagain_catcher
-    def update_dir_list(self, registry, path, callback=(None, (), {})):
-        cm = self._get_cm(registry)
+    def update_dir_list(self, registry_name, path, callback=(None, (), {})):
+        cm = self._get_cm(registry_name)
         files = cm.list_dir(path)
-        self._exec_callback(callback, registry, path, files)
+        self._exec_callback(callback, registry_name, path, files)
 
     @eagain_catcher
-    def delete_file(self, registry, filename, callback=(None, (), {})):
-        cm = self._get_cm(registry)
+    def delete_file(self, registry_name, filename, callback=(None, (), {})):
+        cm = self._get_cm(registry_name)
         if cm.is_directory(filename):
             cm.rmtree(filename)
         else:
             cm.delete_file(filename)
-        self._exec_callback(callback, registry, filename, ErrorCodes.NO_ERROR)
+        self._exec_callback(callback, registry_name, filename, ErrorCodes.NO_ERROR)
 
     def delete_job(self, base_uri, job, callback=(None, (), {})):
         worker = self._get_error_or_fail(base_uri)
@@ -796,61 +442,24 @@ class SSHConnector(CallableQThread):
         if not worker is None:
             worker.abort_job(callback, base_uri, job)
 
-    def get_workflow_url(self, registry, workflow):
-        cm = self._get_cm(registry)
+    def get_workflow_url(self, registry_name, workflow):
+        cm = self._get_cm(registry_name)
         return cm.get_url_for_workflow(workflow)
 
     @eagain_catcher
-    def delete_workflow(self, registry, workflow_submitname, callback=(None, (), {})):
-        cm = self._get_cm(registry)
+    def delete_workflow(self, registry_name, workflow_submitname, callback=(None, (), {})):
+        cm = self._get_cm(registry_name)
         cm.delete_wf(workflow_submitname)
-        #worker = self._get_error_or_fail(base_uri)
-        #if not worker is None:
-        #    worker.delete_workflow(callback, base_uri, workflow)
 
     @eagain_catcher
-    def abort_workflow(self, registry, workflow_submitname, callback=(None, (), {})):
-        cm = self._get_cm(registry)
+    def abort_workflow(self, registry_name, workflow_submitname, callback=(None, (), {})):
+        cm = self._get_cm(registry_name)
         cm.abort_wf(workflow_submitname)
         self.logger.debug("Sending Workflow Abort message for workflows %s"%workflow_submitname)
 
-
-    def _data_transfer(self, base_uri, localfile, remotefile, direction,
-            callback=(None, (), {})):
-        """
-        Args:
-            callback (function) callback that is executed when transfer completes
-        """
-        if not base_uri in self.workers:
-            # TODO emit error
-            return
-
-        storage, remote_path = extract_storage_path(remotefile)
-        registry    = self.workers[base_uri]['registry']
-        transfers   = self.workers[base_uri]['data_transfers']
-        executor    = self.workers[base_uri]['data_transfer_executor']
-
-        source = localfile if (direction == Direction.UPLOAD) else remote_path
-        destination = remote_path if (direction == Direction.UPLOAD) else localfile
-
-        index = self.unicore_state.add_data_transfer(
-                base_uri,
-                source,
-                destination,
-                storage,
-                direction.value)
-        transfer_state = self.unicore_state.get_data_transfer(
-                base_uri, index)
-
-        if (direction == Direction.UPLOAD):
-            transfers[index] = UnicoreUpload(registry, transfer_state, callback)
-        else:
-            transfers[index] = UnicoreDownload(registry, transfer_state, callback)
-        transfers[index].submit(executor)
-
     @eagain_catcher
-    def download_file(self, registry, download_files, local_dest, progress_callback = None, callback=(None, (), {})):
-        cm = self._get_cm(registry)
+    def download_file(self, registry_name, download_files, local_dest, progress_callback = None, callback=(None, (), {})):
+        cm = self._get_cm(registry_name)
         todl = download_files
         if isinstance(download_files, str):
             todl = [download_files]
@@ -858,15 +467,15 @@ class SSHConnector(CallableQThread):
         for remote_file in todl:
             cm.get_file(remote_file, local_dest, progress_callback)
 
-    def _get_cm(self, registry) -> ClusterManager:
-        name = registry["name"]
+    def _get_cm(self, registry_name) -> ClusterManager:
+        name = registry_name
         if not name in self._clustermanagers:
             raise ConnectionError("Clustermanager %s was not connected."%name)
         return self._clustermanagers[name]
 
     @eagain_catcher
-    def upload_files(self, registry, upload_files, destination, progress_callback = None, callback=(None, (), {})):
-        cm = self._get_cm(registry)
+    def upload_files(self, registry_name, upload_files, destination, progress_callback = None, callback=(None, (), {})):
+        cm = self._get_cm(registry_name)
         toupload = upload_files
         if isinstance(upload_files, str):
             toupload = [upload_files]
@@ -944,6 +553,7 @@ class SSHConnector(CallableQThread):
         super(SSHConnector, self).__init__()
         self.logger         = logging.getLogger("SSHConnection")
         self.cbReceiver     = cbReceiver
+        self._registries = ClusterSettingsProvider.get_registries()
         self._clustermanagers = {}
 
         self.workers        = {}

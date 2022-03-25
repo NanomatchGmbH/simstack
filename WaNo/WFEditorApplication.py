@@ -19,8 +19,10 @@ import time
 import datetime
 
 from SimStackServer.MessageTypes import ErrorCodes
+from SimStackServer.Settings.ClusterSettingsProvider import ClusterSettingsProvider
 from SimStackServer.Util.FileUtilities import trace_to_logger
 from SimStackServer.WaNo.WaNoModels import FileNotFoundErrorSimStack
+from SimStackServer.WorkflowModel import Resources
 from WaNo.SimStackPaths import SimStackPaths
 from SimStackServer.WaNo.WaNoExceptions import WorkflowSubmitError
 
@@ -94,66 +96,6 @@ class WFEditorApplication(CallableQThread):
         self._logger.error("Unicore Error for '%s' in operation '%s': %s." % \
                 (base_uri, uops(operation), uerror(error)))
 
-    def _on_save_registries(self, registriesList):
-        self._logger.debug("Saving UNICORE registries.")
-
-        # first, delete all previous settings
-        self.__settings.delete_value(SETTING_KEYS['registries'])
-
-        # second, add new registries
-        for i, registry in enumerate(registriesList):
-            settings_path = "%s.%d" % (SETTING_KEYS['registries'], i)
-            self.__settings.set_value(
-                    "%s.%s" % (settings_path, SETTING_KEYS['registry.name']),
-                    registry['name']
-                )
-            self.__settings.set_value(
-                    "%s.%s" % (settings_path, SETTING_KEYS['registry.baseURI']),
-                    registry['baseURI']
-                )
-            self.__settings.set_value(
-                "%s.%s" % (settings_path, SETTING_KEYS['registry.port']),
-                registry['port']
-            )
-            self.__settings.set_value(
-                    "%s.%s" % (settings_path, SETTING_KEYS['registry.username']),
-                    registry['username']
-                )
-            self.__settings.set_value(
-                "%s.%s" % (settings_path, SETTING_KEYS['registry.sshprivatekey']),
-                registry['sshprivatekey']
-            )
-            self.__settings.set_value(
-                    "%s.%s" % (settings_path, SETTING_KEYS['registry.calculation_basepath']),
-                    registry['calculation_basepath']
-                )
-            self.__settings.set_value(
-                    "%s.%s" % (settings_path, SETTING_KEYS['registry.extraconfig']),
-                    registry['extraconfig']
-                )
-            self.__settings.set_value(
-                "%s.%s" % (settings_path, SETTING_KEYS['registry.software_directory']),
-                registry['software_directory']
-            )
-            self.__settings.set_value(
-                "%s.%s" % (settings_path, SETTING_KEYS['registry.queueing_system']),
-                registry['queueing_system']
-            )
-            self.__settings.set_value(
-                "%s.%s" % (settings_path, SETTING_KEYS['registry.default_queue']),
-                registry['default_queue']
-            )
-            self.__settings.set_value(
-                    "%s.%s" % (settings_path, SETTING_KEYS['registry.is_default']),
-                    registry['default']
-                )
-
-
-        # last, save new settings to file
-        self.__settings.save()
-        
-        # update registry list
-        self._update_saved_registries()
 
     def _on_save_paths(self,path_dict):
         self.__settings.set_path_settings(path_dict)
@@ -169,16 +111,11 @@ class WFEditorApplication(CallableQThread):
     def _on_open_path_settings(self):
         self._view_manager.open_dialog_path_settings(self.__settings.get_path_settings())
 
-    def _on_registry_changed(self, index):
-        self._logger.info("Registry changed to '%s'." % \
-                self.__settings.get_value(
-                    "%s.%d.name" % (SETTING_KEYS['registries'], index)
-                )
-            )
-        self._reconnect_unicore(index)
+    def _on_registry_changed(self, registry_name: str):
+        self._reconnect_unicore(registry_name)
 
-    def _on_registry_connect(self, index):
-        self._connect_unicore(index)
+    def _on_registry_connect(self, registry_name):
+        self._connect_unicore(registry_name)
 
     def _on_registry_disconnect(self):
         self._disconnect_unicore()
@@ -213,27 +150,24 @@ class WFEditorApplication(CallableQThread):
         self._view_manager.update_workflow_list(workflows)
 
     def _on_fs_worflow_list_update_request(self):
-        registry = self._get_current_registry()
-        self._unicore_connector.update_workflow_list(registry,  (self._on_workflow_list_updated, (), {}) )
+        registry_name = self._get_current_registry_name()
+        self._unicore_connector.update_workflow_list(registry_name,  (self._on_workflow_list_updated, (), {}) )
 
     #@QThreadCallback.callback
     def _on_fs_list_updated(self, base_uri, path, files):
         self._view_manager.update_filesystem_model(path, files)
 
     def _on_fs_job_update_request(self, path):
-        registry = self._get_current_registry()
-        print("Got a request to update %s"%path)
-
-
-        self._unicore_connector.update_dir_list(registry,path,
+        registry_name = self._get_current_registry_name()
+        self._unicore_connector.update_dir_list(registry_name,path,
                 (self._on_fs_list_updated, (), {})
         )
 
 
     def _on_fs_workflow_update_request(self, wfid):
         self._logger.debug("Querying %s from Unicore Registry" % wfid)
-        registry = self._get_current_registry()
-        self._unicore_connector.update_workflow_job_list(registry, wfid,
+        registry_name = self._get_current_registry_name()
+        self._unicore_connector.update_workflow_job_list(registry_name, wfid,
                 (self._on_fs_list_updated, (), {})
         )
 
@@ -395,14 +329,14 @@ class WFEditorApplication(CallableQThread):
         #)
 
     def _on_fs_delete_workflow(self, workflow):
-        registry = self._get_current_registry()
-        self._unicore_connector.delete_workflow(registry,workflow,
+        registry_name = self._get_current_registry_name()
+        self._unicore_connector.delete_workflow(registry_name,workflow,
                 (self._on_workflow_deleted, (), { 'workflow': workflow})
         )
 
     def _on_fs_abort_workflow(self, workflow):
-        registry = self._get_current_registry()
-        self._unicore_connector.abort_workflow(registry, workflow,
+        registry_name = self._get_current_registry_name()
+        self._unicore_connector.abort_workflow(registry_name, workflow,
                 (self._on_workflow_aborted, (), { 'workflow': workflow})
         )
 
@@ -494,14 +428,8 @@ class WFEditorApplication(CallableQThread):
 
         return workflows
 
-    ############################################################################
-    #                       unicore  callbacks                                 #
-    ############################################################################
-    #@QThreadCallback.callback
-    def _cb_connect(self, base_uri, error, status, registry=None):
-        #print("cb_connect@WFEditorApplication: err=%s, status=%s" % (str(error), str(status)))
-
-        if registry is None:
+    def _cb_connect(self, base_uri, error, status, registry_name=None):
+        if registry_name is None:
             self._logger.error("Callback did not get expected data.")
             return
 
@@ -515,54 +443,43 @@ class WFEditorApplication(CallableQThread):
             self._view_manager.show_error(
                     "Failed to connect to registry '%s'\n"\
                     "Connection returned status: %s." % \
-                    (registry[SETTING_KEYS['registry.name']], status)
+                    (registry_name, status)
                 )
             self._set_unicore_disconnected()
 
-        # TODO Status updates should be delegated to update method...
-        # can we manually trigger it / expire the timer?
 
-    ############################################################################
-    #                       unicore  callbacks                                 #
-    ############################################################################
-    #@QThreadCallback.callback
-    def _cb_disconnect(self, error, status, registry=None):
+    def _cb_disconnect(self, error, status, registry_name=None):
         self._set_unicore_disconnected()
 
-    ############################################################################
-    #                              unicore                                     #
-    ############################################################################
-    # no_status_update shuld be set to true if there are multiple successive calls
-    # that all would individually update the connection status.
-    # This avoids flickering of the icon.
+
     def _disconnect_unicore(self, no_status_update=False):
         self._logger.info("Disconnecting from registry")
         #self._set_unicore_disconnected()
 
-        registry = self._get_current_registry()
+        registry_name = self._get_current_registry_name()
         self._unicore_connector.disconnect_registry(
-            registry,
-            (self._cb_disconnect,(),{'registry': registry})
+            registry_name,
+            (self._cb_disconnect,(),{'registry_name': registry_name})
         )
 
-    def _connect_unicore(self, index, no_status_update=False):
-        if index == -1:
+    def _connect_unicore(self, registry_name, no_status_update=False):
+        if registry_name == "":
             message = "No server definition selected. Please define a server in the Configuration -> Servers Dialog."
             WFViewManager.show_error(message)
             return
         if not no_status_update:
             self._set_unicore_connecting()
 
-        self._set_current_registry_index(index)
+        self._set_current_registry_name(registry_name)
 
         registry = self._get_current_registry()
         self._logger.info("Connecting to registry '%s'." % \
-                registry[SETTING_KEYS['registry.name']]
+                registry_name
             )
 
         self._unicore_connector.connect_registry(
-            registry,
-            (self._cb_connect,(),{'registry': registry})
+            registry_name,
+            (self._cb_connect,(),{'registry_name': registry_name})
         )
 
 
@@ -599,12 +516,6 @@ class WFEditorApplication(CallableQThread):
             self._view_manager.show_error(errormessage)
             return
 
-
-        #print(etree.tostring(wf_xml, pretty_print=True).decode("utf-8"))
-        #if jobtype == SubmitType.SINGLE_WANO:
-        #    print("Running", directory)
-        #    self.run_job(directory,name)
-        #    self._view_manager.show_status_message("Started job: %s" % name)
         self.run_workflow(wf_xml,directory,name)
         self._view_manager.show_status_message("Started workflow: %s" % name)
 
@@ -618,18 +529,15 @@ class WFEditorApplication(CallableQThread):
         self._unicore_connector.run_workflow_job(registry,submitname,to_upload,xml)
 
 
-    def _reconnect_unicore(self, registry_index):
+    def _reconnect_unicore(self, registry_name):
         self._logger.info("Reconnecting to Unicore Registry.")
         self._set_unicore_connecting()
         # quietly disconnect
-        self._disconnect_unicore(no_status_update = True)
+        if self._get_current_registry_name():
+            self._disconnect_unicore(no_status_update = True)
 
-        success = self._connect_unicore(registry_index)
+        success = self._connect_unicore(registry_name)
 
-
-    ############################################################################
-    #                             helpers                                      #
-    ############################################################################
     def _set_unicore_disconnected(self):
         self._view_manager.set_registry_connection_status(
                 self._view_manager.REGISTRY_CONNECTION_STATES.disconnected
@@ -643,46 +551,33 @@ class WFEditorApplication(CallableQThread):
                 self._view_manager.REGISTRY_CONNECTION_STATES.connecting
             )
 
-    def _get_registry_by_index(self, index):
-        registry = None
-        query_str = "%s.%d" % (SETTING_KEYS['registries'], index)
-        try:
-            registry = self.__settings.get_value(query_str)
-        except:
-            pass
-        return registry
+    def _get_registry_by_name(self, registry_name: str):
+        return self._registries[registry_name]
 
     def _get_default_registry(self):
         default = 0
-        registries = self.__settings.get_value(SETTING_KEYS['registries'])
-
-        for i, r in enumerate(registries):
-            if r[SETTING_KEYS['registry.is_default']]:
-                default = i
-                break
-
+        """
+            Default handler should be: last selected
+            TODO
+        """
         return default
 
     def _get_registry_names(self):
-        registries = self.__settings.get_value(SETTING_KEYS['registries'])
-        return [r[SETTING_KEYS['registry.name']] for r in registries]
+        registries = ClusterSettingsProvider.get_registries()
+        return [*registries.keys()]
 
-    def _set_current_registry_index(self, index):
-        self._current_registry_index = index if not index is None \
-                and index >= 0 and index < len(self._get_registry_names()) \
-                else self._get_default_registry()
+    def _set_current_registry_name(self, registry_name: str):
+        self._current_registry_name = registry_name
 
-    def _get_current_registry_index(self):
-        return self._current_registry_index
+    def _get_current_registry_name(self):
+        return self._current_registry_name
 
-    def _get_current_registry(self):
-        idx = self._get_current_registry_index()
-        return self._get_registry_by_index(idx)
+    def _get_current_registry(self) -> Resources:
+        return self._registries[self._get_current_registry_name()]
 
     def _get_current_base_uri(self):
         registry = self._get_current_registry()
-        return "" if registry is None \
-                else registry[SETTING_KEYS['registry.baseURI']]
+        return registry.base_URI
 
     def _get_current_workflow_uri(self):
         registry = self._get_current_registry()
@@ -742,7 +637,6 @@ class WFEditorApplication(CallableQThread):
         self._update_all()
 
     def _connect_signals(self):
-        self._view_manager.save_registries.connect(self._on_save_registries)
         self._view_manager.save_paths.connect(self._on_save_paths)
         self._view_manager.open_registry_settings.connect(self._on_open_registry_settings)
         self._view_manager.open_path_settings.connect(self._on_open_path_settings)
@@ -823,7 +717,8 @@ class WFEditorApplication(CallableQThread):
 
         self._view_manager  = WFViewManager(UnicoreStateFactory.get_reader())
 
-        self._current_registry_index = 0
+        self._current_registry_name = None
+        self._registries = ClusterSettingsProvider.get_registries()
         self.wanos = []
 
         self._connect_signals()
