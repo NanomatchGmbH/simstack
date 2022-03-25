@@ -192,25 +192,25 @@ class WFEditorApplication(CallableQThread):
 
 
     def _on_fs_download(self, from_path, to_path):
-        registry = self._get_current_registry()
-        self._unicore_connector.download_file(registry,
+        registry_name = self._get_current_registry_name()
+        self._unicore_connector.download_file(registry_name,
                                               from_path,
                                               to_path,
                                               callback=(self._view_manager.on_download_complete,
-                                                        (registry, from_path, to_path)
+                                                        (registry_name, from_path, to_path)
                                                         ,{})
         )
 
 
     def _on_fs_upload(self, local_files, dest_dir):
-        registry = self._get_current_registry()
+        registry_name = self._get_current_registry_name()
 
         self._unicore_connector.upload_files(
-            registry,
+            registry_name,
             local_files,
             dest_dir,
             (self._view_manager.on_upload_complete, (
-                registry, local_files, dest_dir), {})
+                registry_name, local_files, dest_dir), {})
         )
 
     #@QThreadCallback.callback
@@ -232,8 +232,8 @@ class WFEditorApplication(CallableQThread):
                 self._on_fs_job_update_request(to_update)
 
     def _on_fs_delete_file(self, filename):
-        registry = self._get_current_registry()
-        self._unicore_connector.delete_file(registry, filename, (self._on_file_deleted, (), { 'to_del': filename } ))
+        registry_name = self._get_current_registry_name()
+        self._unicore_connector.delete_file(registry_name, filename, (self._on_file_deleted, (), { 'to_del': filename } ))
 
 
     #@QThreadCallback.callback
@@ -302,9 +302,9 @@ class WFEditorApplication(CallableQThread):
             )
 
     def _on_fs_browse_workflow(self, workflow):
-        registry = self._get_current_registry()
+        registry_name = self._get_current_registry_name()
         #print("Im workflow",workflow)
-        myurl = self._unicore_connector.get_workflow_url(registry, workflow)
+        myurl = self._unicore_connector.get_workflow_url(registry_name, workflow)
         print(myurl)
         binding = Qt.__binding__
         if binding == "PyQt5":
@@ -324,13 +324,10 @@ class WFEditorApplication(CallableQThread):
         web.load(QUrl(myurl))
         web.window().resize(800,600)
         web.show()
-        #self._unicore_connector.delete_workflow(registry,workflow,
-        #        (self._on_workflow_deleted, (), { 'workflow': workflow})
-        #)
 
     def _on_fs_delete_workflow(self, workflow):
         registry_name = self._get_current_registry_name()
-        self._unicore_connector.delete_workflow(registry_name,workflow,
+        self._unicore_connector.delete_workflow(registry_name, workflow,
                 (self._on_workflow_deleted, (), { 'workflow': workflow})
         )
 
@@ -521,12 +518,12 @@ class WFEditorApplication(CallableQThread):
 
 
     def run_workflow(self, xml, directory, name):
-        registry= self._get_current_registry()
+        registry_name = self._get_current_registry_name()
         now = datetime.datetime.now()
         nowstr = now.strftime("%Y-%m-%d-%Hh%Mm%Ss")
         submitname = "%s-%s" %(nowstr, name)
         to_upload = os.path.join(directory,"workflow_data")
-        self._unicore_connector.run_workflow_job(registry,submitname,to_upload,xml)
+        self._unicore_connector.run_workflow_job(registry_name,submitname,to_upload,xml)
 
 
     def _reconnect_unicore(self, registry_name):
