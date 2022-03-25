@@ -17,7 +17,8 @@ class ResourcesView(QtWidgets.QWidget):
     }
     _field_name_to_intention = {
         "extra_config": "file",
-        "ssh_private_key" : "file"
+        "ssh_private_key" : "file",
+        "queueing_system": "queueing_system"
     }
     render_order = [
 
@@ -42,6 +43,16 @@ class ResourcesView(QtWidgets.QWidget):
         elif mytype == str:
             return "str"
 
+    def _get_queue_dropdown_widget(self):
+        qs = QtWidgets.QComboBox(self)
+        qs.addItem("pbs")
+        qs.addItem("slurm")
+        qs.addItem("lsf")
+        qs.addItem("sge_smp")
+        qs.addItem("AiiDA")
+        qs.addItem("Internal")
+        return qs
+
     def initUI(self):
         #self.setGeometry(300, 300, 400, 800)
         self.setWindowTitle('Resource view')
@@ -58,6 +69,7 @@ class ResourcesView(QtWidgets.QWidget):
         """
 
         # adapt value below
+        print(fieldname, newvalue)
         model.set_field_value(fieldname, newvalue)
 
     def renderJobResources(self, exclude_items = None):
@@ -101,14 +113,15 @@ class ResourcesView(QtWidgets.QWidget):
                 this_i.setText(this_value)
                 this_i.textChanged.connect(myfunc)
                 current_flo.addRow(field_name, this_i)
+            elif intention == "queueing_system":
+                this_i = self._get_queue_dropdown_widget()
+                this_i.setCurrentText(this_value)
+                this_i.currentTextChanged.connect(myfunc)
+                current_flo.addRow(field_name, this_i)
 
-        minimumwidth = 0
-        minimumheight = 0
         for i in range(0, current_flo.rowCount()):
             itemAt = current_flo.itemAt(i, QtWidgets.QFormLayout.FieldRole).widget()
-
             itemAt.setMinimumHeight(minHeight)
-            #minHeight_new = itemAt.minimumHeight()
-            #print(minHeight_new)
+
 
         self.setLayout(current_flo)
