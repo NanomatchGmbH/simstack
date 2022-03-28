@@ -6,7 +6,6 @@ from SimStackServer.WorkflowModel import Resources
 class QtSettingsChangedWorkaround(QObject):
     settings_changed = Signal(name="SettingsChanged")
     def __init__(self):
-        print("This init is actually running")
         super().__init__()
 
 class QtClusterSettingsProvider(ClusterSettingsProvider, QtSettingsChangedWorkaround):
