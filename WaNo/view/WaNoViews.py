@@ -10,7 +10,7 @@ from WaNo.view.AbstractWaNoView import AbstractWanoQTView, AbstractWanoView
 from Qt import QtGui, QtCore, QtWidgets
 import os
 
-
+from WaNo.view.ResourcesView import ResourcesView
 
 
 class GroupBoxWithButton(QtWidgets.QGroupBox):
@@ -532,11 +532,7 @@ class WanoQtViewRoot(AbstractWanoQTView):
         return self.actual_widget
 
     def get_resource_widget(self):
-        model = self.model.get_resource_model()
-        from WaNo.view.PropertyListView import ResourceView
-        self.resourceview = ResourceView()
-        self.resourceview.setModel(model)
-        return self.resourceview
+        return ResourcesView(self.model.get_new_resource_model(), render_type = "wano")
 
     def get_import_widget(self):
         model = self.model.get_import_model()

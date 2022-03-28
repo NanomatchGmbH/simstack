@@ -29,8 +29,9 @@ class ResourcesView(QtWidgets.QWidget):
         "queueing_system",
         "extra_config"
     }
-    def __init__(self, resources):
+    def __init__(self, resources, render_type: str):
         super().__init__()
+        self._render_type = render_type
         self._resources = resources
         self._cluster_dropdown = None
         self.initUI()
@@ -91,7 +92,10 @@ class ResourcesView(QtWidgets.QWidget):
     def initUI(self):
         #self.setGeometry(300, 300, 400, 800)
         self.setWindowTitle('Resource view')
-        self.render_server_config()
+        if self._render_type == "wano":
+            self.render_wano_resource_config()
+        else:
+            self.render_server_config()
         #self.setWindowIcon(QtGui.QIcon('web.png'))
 
     @staticmethod

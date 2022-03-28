@@ -157,7 +157,7 @@ class SimStackClusterSettingsView(QDialog):
     def __add_tab(self, name, index, resource = None):
         if resource is None:
             resource = Resources()
-        tabWidget = ResourcesView(resource)
+        tabWidget = ResourcesView(resource, render_type="clustersettings")
         self.__tabs.addTab(tabWidget, name)
 
         return tabWidget
