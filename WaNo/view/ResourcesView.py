@@ -1,12 +1,11 @@
 import sys
-from Qt import QtGui, QtWidgets
-
-
+from Qt import QtGui, QtWidgets, QtCore
 
 from SimStackServer.WorkflowModel import Resources
 from functools import partial
 import numpy as np
 
+from WaNo.lib.QtClusterSettingsProvider import QtClusterSettingsProvider
 from WaNo.view.HorizontalTextEditWithFileImport import HorizontalTextEditWithFileImport
 from WaNo.view.QHVLine import QHLine
 
@@ -20,13 +19,20 @@ class ResourcesView(QtWidgets.QWidget):
         "ssh_private_key" : "file",
         "queueing_system": "queueing_system"
     }
-    render_order = [
-
-
-    ]
+    wano_exclusion_items = {
+        "base_URI",
+        "username",
+        "port",
+        "ssh_private_key",
+        "sw_dir_on_resource",
+        "basepath",
+        "queueing_system",
+        "extra_config"
+    }
     def __init__(self, resources):
         super().__init__()
         self._resources = resources
+        self._cluster_dropdown = None
         self.initUI()
 
     @classmethod
@@ -53,10 +59,39 @@ class ResourcesView(QtWidgets.QWidget):
         qs.addItem("Internal")
         return qs
 
+    def _update_cluster_dropdown(self):
+        connected_server_text = "<Connected Server>"
+        curchoice = self._cluster_dropdown.currentText()
+        self._cluster_dropdown.clear()
+        self._cluster_dropdown.addItem(connected_server_text)
+        csp = QtClusterSettingsProvider.get_instance()
+        regs = [*csp.get_registries().keys()]
+        for reg in regs:
+            self._cluster_dropdown.addItem(reg)
+        if curchoice == "":
+            curchoice = connected_server_text
+        self._cluster_dropdown.setCurrentText(curchoice)
+
+    def _init_cluster_dropdown_widget(self):
+        if self._cluster_dropdown:
+            # Do not double init
+            return
+
+        self._cluster_dropdown = QtWidgets.QComboBox(self)
+        #self._cluster_dropdown.setEditable(True)
+        #self._cluster_dropdown.lineEdit().setAlignment(QtCore.Qt.AlignCenter)
+        #self._cluster_dropdown.lineEdit().setReadOnly(True)
+        csp = QtClusterSettingsProvider.get_instance()
+        csp.settings_changed.connect(self._update_cluster_dropdown)
+        self._update_cluster_dropdown()
+
+        return self._cluster_dropdown
+
+
     def initUI(self):
         #self.setGeometry(300, 300, 400, 800)
         self.setWindowTitle('Resource view')
-        self.renderJobResources()
+        self.render_server_config()
         #self.setWindowIcon(QtGui.QIcon('web.png'))
 
     @staticmethod
@@ -71,7 +106,7 @@ class ResourcesView(QtWidgets.QWidget):
         # adapt value below
         model.set_field_value(fieldname, newvalue)
 
-    def renderJobResources(self, exclude_items = None):
+    def _get_formlayout(self, exclude_items = None, headers = True):
         """
         Shows only job specific resouces -> things like sw dir not to be modified
         :return:
@@ -81,13 +116,16 @@ class ResourcesView(QtWidgets.QWidget):
 
         minHeight = 20
         current_flo = QtWidgets.QFormLayout()
-        current_flo.addRow(QtWidgets.QLabel("<b>Host Settings</b>"), QtWidgets.QWidget())
+        if headers:
+            current_flo.addRow(QtWidgets.QLabel("<b>Host Settings</b>"), QtWidgets.QWidget())
 
         for this_key in self._resources.render_order():
+            if this_key in exclude_items:
+                continue
             field_name = self.field_name_to_display_name(this_key)
             #if not this_key in ["walltime", "cpu_per_node", "nodes", "queue", "memory", "custom_requests"]:
             #    continue
-            if this_key == "nodes":
+            if this_key == "nodes" and headers:
                 #vbox.addLayout(flo1)
                 current_flo.addRow(QtWidgets.QLabel("<b>Default Resources</b>"), QtWidgets.QWidget())
                 #vbox.addWidget(qhl)
@@ -122,5 +160,21 @@ class ResourcesView(QtWidgets.QWidget):
             itemAt = current_flo.itemAt(i, QtWidgets.QFormLayout.FieldRole).widget()
             itemAt.setMinimumHeight(minHeight)
 
+        return current_flo
 
+    def render_wano_resource_config(self):
+        vbox = QtWidgets.QVBoxLayout()
+        hbox = QtWidgets.QHBoxLayout()
+        label = QtWidgets.QLabel("Resource")
+        hbox.addWidget(label)
+        current_flo = self._get_formlayout(exclude_items=self.wano_exclusion_items, headers=False)
+        cdd = self._init_cluster_dropdown_widget()
+        hbox.addWidget(cdd)
+        vbox.addLayout(hbox)
+        vbox.addLayout(current_flo)
+        self.setLayout(vbox)
+
+    def render_server_config(self):
+        #return self.render_wano_resource_config()
+        current_flo = self._get_formlayout(headers = True)
         self.setLayout(current_flo)
