@@ -412,7 +412,6 @@ class SSHConnector(CallableQThread):
 
 
     def run(self):
-        self.logger.debug("Started SSHConnector Thread.")
         self.exec_()
 
 
