@@ -552,14 +552,14 @@ class SSHConnector(CallableQThread):
         cm: ClusterManager
         software_dir = registry["software_directory"]
         VDIR = cm.get_newest_version_directory(software_dir)
-        software_dir += '/' + VDIR
         if VDIR == "V2":
             raise NotImplementedError("V2 connection capability removed from SimStack client. Please upgrade to V4.")
         elif VDIR == "V3":
             raise NotImplementedError("V3 connection capability removed from SimStack client. Please upgrade to V4.")
         elif VDIR != "V4":
             print("Found a newer server installation than this client supports (Found: %s). Please upgrade your client. Trying to connect with V4."%VDIR)
-        VDIR == "V4"
+        VDIR = "V4"
+        software_dir += '/' + VDIR
         myenv = "simstack_server"
         if registry["queueing_system"] == "AiiDA":
             myenv = "aiida"
