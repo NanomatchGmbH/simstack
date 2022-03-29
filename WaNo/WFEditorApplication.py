@@ -690,18 +690,6 @@ class WFEditorApplication(CallableQThread):
         self._logger.addHandler(ch)
         ##### END TODO
 
-        #TODO debug only
-        import platform
-        import ctypes
-        import threading
-        if platform.system() == "Linux":
-            self._logger.debug("Gui Thread ID: %d\t%d" % \
-                    (threading.current_thread().ident,
-                    ctypes.CDLL('libc.so.6').syscall(186)))
-        ##### END TODO
-
-
-        self._unicore       = None # TODO pyura API
 
         self._unicore_connector = SSHConnector(self,
                 UnicoreStateFactory.get_writer())

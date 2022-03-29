@@ -299,6 +299,7 @@ class WFEFileSystemModel(DataTreeModel):
         self.rowsInserted.connect(self.print_rowsInserted)
 
     def print_rowsInserted(self, index, fromIndex, toIndex):
+        return
         print("\n\nInsertedSignal for child %s of %s, %d, %d" % \
                 ("(invalid)" if not index.isValid() \
                         else index.internalPointer().getText(),
@@ -466,7 +467,6 @@ class WFEUnicoreRemoteFileSystemModel(WFEFileSystemModel):
         }
 
         super(WFEUnicoreRemoteFileSystemModel, self).__init__(parent)
-        print("WFEUnicoreRemoteFileSystemModel")
         self._add_headers()
 
     def createNode(self, data, parent=None):

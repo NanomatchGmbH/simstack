@@ -259,33 +259,6 @@ class ImportTableModel(ResourceTableBase):
                            pyside_int_workaround(QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter),pyside_int_workaround(QtCore.Qt.AlignCenter)]
 
 
-class ResourceTableModel(ResourceTableBase):
-
-
-    def __init__(self, parent, *args,**kwargs):
-        super(ResourceTableModel, self).__init__(parent, *args,**kwargs)
-        self.mylist = [
-        ]
-        self.header = ["Enable", "Property", "Value"]
-        self.alignments = [pyside_int_workaround(QtCore.Qt.AlignCenter),pyside_int_workaround(QtCore.Qt.AlignLeft| QtCore.Qt.AlignVCenter),pyside_int_workaround(QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter)]
-
-    def render_to_simstack_server_model(self):
-        return ClientResourceModelToServerResourceModel(self.mylist)
-
-    def flags(self, index):
-        if (index.column() == 1):
-            return QtCore.Qt.ItemIsEnabled
-        else:
-            return QtCore.Qt.ItemIsEditable | QtCore.Qt.ItemIsEnabled
-
-
-    def make_default_list(self):
-        self.mylist = get_default_resource_list()
-        self.header = ["Enable", "Property", "Value"]
-        self.alignments = [pyside_int_workaround(QtCore.Qt.AlignCenter), pyside_int_workaround(QtCore.Qt.AlignLeft| QtCore.Qt.AlignVCenter),pyside_int_workaround(QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter)]
-
-    def load(self,filename):
-        self.mylist = load_resource_list(filename)
 
 class GlobalFileChooserDelegate(QtWidgets.QStyledItemDelegate):
     def __init__(self, parent):
@@ -676,36 +649,3 @@ class ExportView(QtWidgets.QTableView):
             return
         super(ExportView, self).keyPressEvent(event)
 
-if __name__ == "__main__":
-    from sys import argv, exit
-
-
-    class Widget(QtWidgets.QWidget):
-        """
-        A simple test widget to contain and own the model and table.
-        """
-
-        def __init__(self, parent=None):
-            QtWidgets.QWidget.__init__(self, parent)
-
-            l = QtWidgets.QVBoxLayout(self)
-
-            self._tm = ResourceTableModel(self)
-
-            #self._tm = ImportTableModel(self)
-            self._tm.make_default_list()
-            self._tv = TableView(self)
-            self._tv.setModel(self._tm)
-            for row in range(0, self._tm.rowCount()):
-                self._tv.openPersistentEditor(self._tm.index(row, 0))
-
-
-            l.addWidget(self._tv)
-            self._tv.resizeColumnsToContents()
-
-
-    a = QtWidgets.QApplication(argv)
-    w = Widget()
-    w.show()
-    w.raise_()
-    exit(a.exec_())
