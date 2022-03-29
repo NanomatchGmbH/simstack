@@ -10,6 +10,7 @@ from WaNo.lib.QtClusterSettingsProvider import QtClusterSettingsProvider
 
 
 class WaNoRegistrySelection(QWidget):
+    instance = None
     class CONNECTION_STATES(Enum):
         connected = 0
         connecting = 1
@@ -50,6 +51,10 @@ class WaNoRegistrySelection(QWidget):
             self.registryComboBox.addItem(r)
         self.select_registry(index)
         self.__emit_signal = True
+
+    @classmethod
+    def get_instance(cls):
+        return cls.instance
 
     def get_iconpath(self,icon):
         script_path = os.path.dirname(os.path.realpath(__file__))
@@ -99,6 +104,7 @@ class WaNoRegistrySelection(QWidget):
 
     def __init__(self, parent):
         super(WaNoRegistrySelection, self).__init__(parent)
+        WaNoRegistrySelection.instance = self
 
         self.setSizePolicy(QSizePolicy.Minimum,QSizePolicy.Minimum)
         self.__init_ui(parent)

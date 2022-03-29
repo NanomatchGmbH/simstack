@@ -8,6 +8,7 @@ import numpy as np
 from WaNo.lib.QtClusterSettingsProvider import QtClusterSettingsProvider
 from WaNo.view.HorizontalTextEditWithFileImport import HorizontalTextEditWithFileImport
 from WaNo.view.QHVLine import QHLine
+from WaNo.view.WaNoRegistrySelection import WaNoRegistrySelection
 
 
 class ResourcesView(QtWidgets.QWidget):
@@ -29,12 +30,15 @@ class ResourcesView(QtWidgets.QWidget):
         "queueing_system",
         "extra_config"
     }
+    connected_server_text = "<Connected Server>"
     def __init__(self, resources, render_type: str):
         super().__init__()
         self._render_type = render_type
         self._resources = resources
         self._cluster_dropdown = None
         self.initUI()
+        self._widgets = {}
+
 
     @classmethod
     def field_name_to_display_name(cls, field_name: str) -> str:
@@ -61,17 +65,61 @@ class ResourcesView(QtWidgets.QWidget):
         return qs
 
     def _update_cluster_dropdown(self):
-        connected_server_text = "<Connected Server>"
+
         curchoice = self._cluster_dropdown.currentText()
         self._cluster_dropdown.clear()
-        self._cluster_dropdown.addItem(connected_server_text)
+        self._cluster_dropdown.addItem(self._connected_server_text)
         csp = QtClusterSettingsProvider.get_instance()
         regs = [*csp.get_registries().keys()]
         for reg in regs:
             self._cluster_dropdown.addItem(reg)
         if curchoice == "":
-            curchoice = connected_server_text
+            curchoice = self._connected_server_text
         self._cluster_dropdown.setCurrentText(curchoice)
+
+    def _update_default_choices(self, mychoice: str):
+        """
+        In this function we display the default choices of the resource in case <Connected Server> is set
+        :param mychoice:
+        :return:
+        """
+        return
+        if self._cluster_dropdown.currentText() != self._connected_server_text:
+            return
+        default_resources = Resources()
+        regs = QtClusterSettingsProvider.get_registries()
+        settings = regs[mychoice]
+
+        for this_key in self._resources.render_order():
+            this_value = self._resources.get_field_value(this_key)
+            default_value = default_resources.get_field_value(this_key)
+            intention = self._field_name_to_intention[this_key]
+            if this_value != default_value:
+                default_case = False
+                # In this case we can assume this value was set by the user
+                return
+
+            if intention == "int":
+                this_i = QtWidgets.QSpinBox()
+                this_i.valueChanged.connect(myfunc)
+                this_i.setMinimum(0)
+                this_i.setMaximum(100000)
+                this_i.setValue(this_value)
+            elif intention =="file":
+                this_i = HorizontalTextEditWithFileImport()
+                this_i.line_edit.setText(this_value)
+                this_i.line_edit.textChanged.connect(myfunc)
+            elif intention =="str":
+                this_i = QtWidgets.QLineEdit()
+                this_i.setText(this_value)
+                this_i.textChanged.connect(myfunc)
+            else: # intention == "queueing_system":
+                this_i = self._get_queue_dropdown_widget()
+                this_i.setCurrentText(this_value)
+                this_i.currentTextChanged.connect(myfunc)
+
+
+
 
     def _init_cluster_dropdown_widget(self):
         if self._cluster_dropdown:
@@ -79,24 +127,24 @@ class ResourcesView(QtWidgets.QWidget):
             return
 
         self._cluster_dropdown = QtWidgets.QComboBox(self)
-        #self._cluster_dropdown.setEditable(True)
-        #self._cluster_dropdown.lineEdit().setAlignment(QtCore.Qt.AlignCenter)
-        #self._cluster_dropdown.lineEdit().setReadOnly(True)
+        self._cluster_dropdown.setEditable(True)
+        self._cluster_dropdown.lineEdit().setAlignment(QtCore.Qt.AlignCenter)
+        self._cluster_dropdown.lineEdit().setReadOnly(True)
         csp = QtClusterSettingsProvider.get_instance()
         csp.settings_changed.connect(self._update_cluster_dropdown)
+        wrs :WaNoRegistrySelection = WaNoRegistrySelection.get_instance()
+        wrs.registrySelectionChanged.connect(self._update_default_choices)
         self._update_cluster_dropdown()
 
         return self._cluster_dropdown
 
 
     def initUI(self):
-        #self.setGeometry(300, 300, 400, 800)
         self.setWindowTitle('Resource view')
         if self._render_type == "wano":
             self.render_wano_resource_config()
         else:
             self.render_server_config()
-        #self.setWindowIcon(QtGui.QIcon('web.png'))
 
     @staticmethod
     def _fieldChanger(fieldname: str, model: Resources, newvalue):
@@ -143,23 +191,20 @@ class ResourcesView(QtWidgets.QWidget):
                 this_i.setMinimum(0)
                 this_i.setMaximum(100000)
                 this_i.setValue(this_value)
-                current_flo.addRow(field_name, this_i)
             elif intention =="file":
                 this_i = HorizontalTextEditWithFileImport()
                 this_i.line_edit.setText(this_value)
                 this_i.line_edit.textChanged.connect(myfunc)
-                current_flo.addRow(field_name, this_i)
             elif intention =="str":
                 this_i = QtWidgets.QLineEdit()
                 this_i.setText(this_value)
                 this_i.textChanged.connect(myfunc)
-                current_flo.addRow(field_name, this_i)
-            elif intention == "queueing_system":
+            else: # intention == "queueing_system":
                 this_i = self._get_queue_dropdown_widget()
                 this_i.setCurrentText(this_value)
                 this_i.currentTextChanged.connect(myfunc)
-                current_flo.addRow(field_name, this_i)
-
+            current_flo.addRow(field_name, this_i)
+            self._widgets[this_key] = this_i
         for i in range(0, current_flo.rowCount()):
             itemAt = current_flo.itemAt(i, QtWidgets.QFormLayout.FieldRole).widget()
             itemAt.setMinimumHeight(minHeight)
