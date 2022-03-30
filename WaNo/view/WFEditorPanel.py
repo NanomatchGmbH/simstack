@@ -205,8 +205,6 @@ class WFWaNoWidget(QtWidgets.QToolButton,DragDropTargetTracker):
         me.attrib["uuid"] = str(self.uuid)
         return me
 
-
-
     def _compare_wano_equality(self, wano1: WaNoListEntry, wano2: WaNoListEntry):
         xml1 = get_wano_xml_path(wano1.folder, wano_name_override=wano1.name)
         md51 = hashlib.md5()
@@ -220,30 +218,33 @@ class WFWaNoWidget(QtWidgets.QToolButton,DragDropTargetTracker):
 
 
     def instantiate_in_folder(self,folder):
-        outfolder = folder/"wanos"/self.wano.name
-
+        outfolder : Path = folder/"wanos"/self.wano.name
 
         folder_exists = outfolder.is_dir()
         if not folder_exists:
             os.makedirs(outfolder)
+            folder_empty = True
+        else:
+            folder_empty = not any(outfolder.iterdir())
 
-        #print(self.wano[1],outfolder)
         if outfolder != self.wano.folder:
             # In case we did not create the folder, the wano might already be there and we need
             # to check whether the same WaNo is in the folder. Otherwise problems might occur.
-            if folder_exists:
+            if folder_exists and not folder_empty:
+                print(folder_empty, outfolder)
                 newfolderwle = copy.copy(self.wano)
                 newfolderwle.folder = outfolder
                 if self._compare_wano_equality(newfolderwle, self.wano):
                     self.wano.folder = outfolder
+                    self.wano_model.set_wano_dir_root(outfolder)
                     #self.logger.info(f"Directory {outfolder} already instantiated with equivalent WaNo.")
                     return True
                 else:
                     raise WaNoInstantiationError(f"Directory {outfolder} already instantiated with different WaNo with equivalent name in folder {self.wano.folder}. Please check, if you imported two different WaNos (e.g. by porting an old version workflow).")
             try:
-                print("Copying %s to %s"%(outfolder,self.wano.folder))
-
+                print("Copying %s to %s"%(self.wano.folder, outfolder))
                 copytree_pathlib(self.wano.folder, outfolder)
+
             except Exception as e:
                 self.logger.error("Failed to copy tree: %s." % str(e))
                 import traceback
@@ -251,6 +252,8 @@ class WFWaNoWidget(QtWidgets.QToolButton,DragDropTargetTracker):
                 return False
 
         self.wano.folder = outfolder
+        self.wano_model.set_wano_dir_root(outfolder)
+
         #self.wano_model.save(outfolder)
         return True
 
@@ -300,6 +303,15 @@ class WFItemListInterface(object):
         idx = self.elements.index(element)
         return self.elementnames[idx]
 
+    def collect_wano_widgets(self):
+        outlist = []
+        for element in self.elements:
+            if isinstance(element, WFWaNoWidget):
+                outlist.append(element)
+            elif hasattr(element, "collect_wano_widgets"):
+                outlist = outlist + element.collect_wano_widgets()
+        return outlist
+
     def move_element_to_position(self, element, new_position):
         old_index = self.elements.index(element)
 
@@ -348,6 +360,10 @@ class WFItemListInterface(object):
         self.elements.remove(element)
         del self.elementnames[myid]
         element.view.deleteLater()
+        if isinstance(element, WFWaNoWidget):
+            wws = self.get_wano_names()
+            if not element.wano.name in wws:
+                self.get_root().wano_folder_remove(element.wano.name)
 
 class WFItemModel:
     def __init__(self, *args, **kwargs):
@@ -534,6 +550,11 @@ class SubWFModel(WFItemModel,WFItemListInterface):
         myid = self.elements.index(element)
         self.elements.remove(element)
         del self.elementnames[myid]
+        if isinstance(element, WFWaNoWidget):
+            wws = self.get_root().get_wano_names()
+            if not element.wano.name in wws:
+                self.get_root().wano_folder_remove(element.wano.name)
+
 
     def removeElement(self, element):
         #print("subwf Removing",element)
@@ -560,6 +581,12 @@ class WhileModel(WFItemModel):
 
     def get_condition(self):
         return self._condition
+
+    def collect_wano_widgets(self):
+        outlist = []
+        for model in self.subwf_models:
+            outlist += model.collect_wano_widgets()
+        return outlist
 
     def set_itername(self, itername):
         self.itername = itername
@@ -667,6 +694,12 @@ class IfModel(WFItemModel):
         self.subwf_views = [self._subwf_true_branch_view, self._subwf_false_branch_view]
         self.name = "Branch"
         self._condition = ""
+
+    def collect_wano_widgets(self):
+        outlist = []
+        for model in self.subwf_models:
+            outlist += model.collect_wano_widgets()
+        return outlist
 
     def set_condition(self, condition):
         self._condition = condition
@@ -797,6 +830,11 @@ class ParallelModel(WFItemModel):
         self.subwf_views.append(subwfview)
         self.name = "Parallel"
 
+    def collect_wano_widgets(self):
+        outlist = []
+        for model in self.subwf_models:
+            outlist += model.collect_wano_widgets()
+        return outlist
 
     def render_to_simple_wf(self, path_list, output_path_list, submitdir, jobdir, path, parent_ids):
 
@@ -908,6 +946,8 @@ class ForEachModel(WFItemModel):
         self._is_file_iterator = True
         self._is_multivar_iterator = False
 
+    def collect_wano_widgets(self):
+        return self.subwfmodel.collect_wano_widgets()
 
     def set_is_file_iterator(self, true_or_false):
         self._is_file_iterator = true_or_false
@@ -1105,6 +1145,7 @@ class WFModel(object):
 
         These are copies of the current wanos or workflows
         """
+        self.foldername = None
         self.editor = kwargs['editor']
         self.view = kwargs["view"]
         self.elements = [] # List of Elements,Workflows, ControlElements
@@ -1143,6 +1184,25 @@ class WFModel(object):
     def element_to_name(self,element):
         idx = self.elements.index(element)
         return self.elementnames[idx]
+
+    def wano_folder_remove(self, wano_name: str):
+        if not self.foldername:
+            # The Workflow was not saved yet, no folder to delete.
+            return
+        possible_folder = Path(self.foldername) / "wanos" / wano_name
+        if possible_folder.is_dir():
+            assert possible_folder != Path.home(), "Path cannot be home directory."
+            assert possible_folder != possible_folder.anchor, "Path cannot be filesystem root."
+            shutil.rmtree(possible_folder)
+
+    def collect_wano_widgets(self):
+        outlist = []
+        for element in self.elements:
+            if isinstance(element, WFWaNoWidget):
+                outlist.append(element)
+            elif hasattr(element, "collect_wano_widgets"):
+                outlist = outlist + element.collect_wano_widgets()
+        return outlist
 
     def assemble_variables(self, path):
         myvars = []
@@ -1240,7 +1300,9 @@ class WFModel(object):
 
         return myfiles
 
-
+    def get_wano_names(self):
+        names = { wfwn.wano.name for wfwn in self.collect_wano_widgets() }
+        return names
 
     def save_to_disk(self,foldername):
         success = True
@@ -1393,6 +1455,10 @@ class WFModel(object):
         myid = self.elements.index(element)
         self.elements.remove(element)
         del self.elementnames[myid]
+        if isinstance(element, WFWaNoWidget):
+            wws = self.get_wano_names()
+            if not element.wano.name in wws:
+                self.get_root().wano_folder_remove(element.wano.name)
 
     def openWaNoEditor(self,wanoWidget):
         self.editor.openWaNoEditor(wanoWidget)
@@ -1590,95 +1656,6 @@ class SubWorkflowView(QtWidgets.QFrame):
             return
         e.setDropAction(QtCore.Qt.MoveAction)
         self.relayout()
-        """
-        position = e.pos()
-        new_position = self._locate_element_above(position)
-        ele = e.source()
-        if isinstance(e.source(),WFWaNoWidget) or isinstance(e.source(),WFControlWithTopMiddleAndBottom):
-            if e.source().parent() is self:
-                self.model.move_element_to_position(e.source().model, new_position)
-
-            else:
-                self.model.add_element(ele.model, new_position)
-                ele.parent().removeElement(ele.model)
-                ele.show()
-                ele.raise_()
-                ele.activateWindow()
-
-
-        #elif isinstance(e.source(),WFControlWithTopMiddleAndBottom):
-        #    self.model.move_element_to_position(e.source(), new_position)
-
-        elif isinstance(e.source(),WFEWaNoListWidget):
-            wfe = e.source()
-            dropped = wfe.selectedItems()[0]
-            wano = dropped.WaNo
-            wd = WFWaNoWidget(wano[0],wano,self)
-            ##self.model.add_element(new_position,wd)
-            self.model.add_element(wd,new_position)
-            #Show required for widgets added after
-            wd.show()
-
-        elif isinstance(e.source(),WFEListWidget):
-            wfe = e.source()
-            dropped = wfe.selectedItems()[0]
-            name = dropped.text()
-            model,view = ControlFactory.construct(name,qt_parent=self,logical_parent=self,editor=self.model.editor,wf_root = self.model)
-            self.model.add_element(model,new_position)
-
-
-        else:
-            print("Type %s not yet accepted by dropevent, please implement"%(e.source()))
-            return
-        e.setDropAction(QtCore.Qt.MoveAction)
-        self.relayout()
-        """
-
-        """
-        print("In subwf drop")
-        position = e.pos()
-        new_position = self._locate_element_above(position)
-        ele = e.source()
-        if type(e.source()) is WFWaNoWidget:
-            if e.source().model.parent() is self:
-                self.model.move_element_to_position(e.source().model, new_position)
-
-            else:
-                #e.source().model.parent().removeElement(ele.model)
-                #self.model.add_element(ele.model, new_position)
-                self.model.add_element(ele.model, new_position)
-                e.source().model.parent().removeElement(ele.model)
-                ele.show()
-                ele.raise_()
-                ele.activateWindow()
-
-        elif type(e.source()) is WFControlWithTopMiddleAndBottom:
-            self.model.move_element_to_position(e.source().model, new_position)
-
-        elif type(e.source()) is WFEWaNoListWidget:
-            wfe = e.source()
-            dropped = wfe.selectedItems()[0]
-            wano = dropped.WaNo
-            wd = WFWaNoWidget(wano[0],wano,self)
-            ##self.model.add_element(new_position,wd)
-            self.model.add_element(wd,new_position)
-            #Show required for widgets added after
-            wd.show()
-
-        elif type(e.source()) is WFEListWidget:
-            wfe = e.source()
-            dropped = wfe.selectedItems()[0]
-            name = dropped.text()
-            model, view = ControlFactory.construct(name, qt_parent=self, logical_parent=self, editor=self.model.editor,
-                                                   wf_root=self.model)
-            self.model.add_element(view, new_position)
-        else:
-            print("Type %s not yet accepted by dropevent, please implement"%(e.source()))
-            return
-        e.setDropAction(QtCore.Qt.MoveAction)
-
-        self.relayout()
-        """
 
     def openWaNoEditor(self,wanoWidget):
         self.model.openWaNoEditor(wanoWidget)
@@ -1964,8 +1941,6 @@ class WFTabsWidget(QtWidgets.QTabWidget):
             foldername = self.currentTabText()
             workflow_path = Path(workflow_path)
             fullpath = workflow_path / foldername
-            if fullpath.is_dir():
-                self._remove_wf_contents(fullpath)
             return self.saveFile(fullpath)
 
     illegal_chars = r"<>|\#~*´`"
@@ -1985,7 +1960,8 @@ class WFTabsWidget(QtWidgets.QTabWidget):
         wanoconfigdir = fullpath_path / "wano_configurations"
         xmlpath = fullpath_path / f"{fullpath_path.name}.xml"
         shutil.rmtree(wanodir)
-        shutil.rmtree(wanoconfigdir)
+        if wanoconfigdir.is_dir():
+            shutil.rmtree(wanoconfigdir)
         os.unlink(xmlpath)
 
     def saveAs(self):
@@ -2010,6 +1986,13 @@ class WFTabsWidget(QtWidgets.QTabWidget):
         fullpath = workflow_path / foldername
 
         if fullpath.exists():
+            curtab = self.currentTabText()
+            if curtab != "Untitled":
+                if curtab == foldername:
+                    messageboxtext = f"Chosen workflow directory {foldername} is the same as already save workflow with name {curtab}. Cannot overwrite a workflow with itself. Please choose a different directory."
+                    QtWidgets.QMessageBox.critical(None, "Workflowname invalid", messageboxtext)
+                    return False
+
             message = QtWidgets.QMessageBox.question(self,"Path already exists", "Path %s already exists? Old contents will be removed." %fullpath,QtWidgets.QMessageBox.Yes|QtWidgets.QMessageBox.Cancel)
             if message == QtWidgets.QMessageBox.Cancel:
                 return False
@@ -2103,7 +2086,6 @@ class WFControlWithTopMiddleAndBottom(QtWidgets.QFrame,DragDropTargetTracker):
         self.manual_init()
         #self.editor = kwargs["editor"]
         self.set_style()
-        #TIMO: Try this off later, it's not required imho
         self.setAcceptDrops(False)
         self.model = None
         self.vbox = QtWidgets.QVBoxLayout(self)
