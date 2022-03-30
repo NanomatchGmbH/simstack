@@ -23,7 +23,6 @@ if __name__ == '__main__':
     dir_path = path.join(base_path,"SimStackServer")
     if not dir_path in sys.path:
         sys.path.append(dir_path)
-    print(dir_path)
 
 import ctypes
 import signal

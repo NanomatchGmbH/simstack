@@ -1,3 +1,4 @@
+import copy
 import sys
 from Qt import QtGui, QtWidgets, QtCore
 
@@ -13,12 +14,14 @@ from WaNo.view.WaNoRegistrySelection import WaNoRegistrySelection
 
 class ResourcesView(QtWidgets.QWidget):
     _field_name_to_display_name = {
-        "base_URI": "Hostname"
+        "base_URI": "Hostname",
+        "resource_name": "Resource"
     }
     _field_name_to_intention = {
         "extra_config": "file",
         "ssh_private_key" : "file",
-        "queueing_system": "queueing_system"
+        "queueing_system": "queueing_system",
+        "resource_name": "resource_chooser"
     }
     wano_exclusion_items = {
         "base_URI",
@@ -30,14 +33,19 @@ class ResourcesView(QtWidgets.QWidget):
         "queueing_system",
         "extra_config"
     }
-    connected_server_text = "<Connected Server>"
+    serverconfig_exclusion_items = {
+        "resource_name"
+    }
+    _connected_server_text = "<Connected Server>"
     def __init__(self, resources, render_type: str):
         super().__init__()
+        self._widgets = {}
         self._render_type = render_type
         self._resources = resources
         self._cluster_dropdown = None
+        self.blockSignals(True)
         self.initUI()
-        self._widgets = {}
+        self.blockSignals(False)
 
 
     @classmethod
@@ -65,7 +73,6 @@ class ResourcesView(QtWidgets.QWidget):
         return qs
 
     def _update_cluster_dropdown(self):
-
         curchoice = self._cluster_dropdown.currentText()
         self._cluster_dropdown.clear()
         self._cluster_dropdown.addItem(self._connected_server_text)
@@ -119,7 +126,31 @@ class ResourcesView(QtWidgets.QWidget):
                 this_i.currentTextChanged.connect(myfunc)
 
 
+    def _reinit_values_from_resource(self):
+        for key, widget in self._widgets.items():
+            intention = self.field_name_to_intention(key)
+            this_value = self._resources.get_field_value(key)
+            if intention == "int":
+                widget.setValue(this_value)
+            elif intention =="file":
+                widget.line_edit.setText(this_value)
+            elif intention =="str":
+                widget.setText(this_value)
+            elif intention == "queueing_system":
+                widget.setCurrentText(this_value)
+            elif intention == "resource_chooser":
+                widget.setCurrentText(this_value)
 
+    def _on_cluster_dropdown_change(self, mychoice):
+        if mychoice in {self._connected_server_text, "unset"}:
+            return
+        regs = QtClusterSettingsProvider.get_registries()
+        settings = regs[mychoice]
+        #self._resources = copy.deepcopy(settings)
+        for key in self._resources.render_order():
+            self._resources.set_field_value(key, settings.get_field_value(key))
+
+        self._reinit_values_from_resource()
 
     def _init_cluster_dropdown_widget(self):
         if self._cluster_dropdown:
@@ -130,6 +161,7 @@ class ResourcesView(QtWidgets.QWidget):
         self._cluster_dropdown.setEditable(True)
         self._cluster_dropdown.lineEdit().setAlignment(QtCore.Qt.AlignCenter)
         self._cluster_dropdown.lineEdit().setReadOnly(True)
+        self._cluster_dropdown.currentTextChanged.connect(self._on_cluster_dropdown_change)
         csp = QtClusterSettingsProvider.get_instance()
         csp.settings_changed.connect(self._update_cluster_dropdown)
         wrs :WaNoRegistrySelection = WaNoRegistrySelection.get_instance()
@@ -199,10 +231,16 @@ class ResourcesView(QtWidgets.QWidget):
                 this_i = QtWidgets.QLineEdit()
                 this_i.setText(this_value)
                 this_i.textChanged.connect(myfunc)
-            else: # intention == "queueing_system":
+            elif intention == "queueing_system":
                 this_i = self._get_queue_dropdown_widget()
                 this_i.setCurrentText(this_value)
                 this_i.currentTextChanged.connect(myfunc)
+            elif intention == "resource_chooser":
+                this_i = self._init_cluster_dropdown_widget()
+                this_i.setCurrentText(this_value)
+                this_i.currentTextChanged.connect(myfunc)
+            else:
+                raise NotImplementedError(f"Intention {intention} not implemented in ResourcesView.")
             current_flo.addRow(field_name, this_i)
             self._widgets[this_key] = this_i
         for i in range(0, current_flo.rowCount()):
@@ -212,18 +250,9 @@ class ResourcesView(QtWidgets.QWidget):
         return current_flo
 
     def render_wano_resource_config(self):
-        vbox = QtWidgets.QVBoxLayout()
-        hbox = QtWidgets.QHBoxLayout()
-        label = QtWidgets.QLabel("Resource")
-        hbox.addWidget(label)
         current_flo = self._get_formlayout(exclude_items=self.wano_exclusion_items, headers=False)
-        cdd = self._init_cluster_dropdown_widget()
-        hbox.addWidget(cdd)
-        vbox.addLayout(hbox)
-        vbox.addLayout(current_flo)
-        self.setLayout(vbox)
+        self.setLayout(current_flo)
 
     def render_server_config(self):
-        #return self.render_wano_resource_config()
-        current_flo = self._get_formlayout(headers = True)
+        current_flo = self._get_formlayout(exclude_items=self.serverconfig_exclusion_items, headers = True)
         self.setLayout(current_flo)
