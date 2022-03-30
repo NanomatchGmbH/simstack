@@ -563,20 +563,28 @@ class SSHConnector(CallableQThread):
         myenv = "simstack_server"
         if registry["queueing_system"] == "AiiDA":
             myenv = "aiida"
-            pythonproc = software_dir + '/local_anaconda/envs/%s/bin/python' %myenv
-            execproc = "source %s/local_anaconda/etc/profile.d/conda.sh; conda activate %s; %s" % (
-            software_dir, myenv, pythonproc)
-        else:
-            pythonproc = software_dir + '/local_anaconda/envs/%s/bin/python' % myenv
-            execproc = "source %s/local_anaconda/etc/profile.d/conda.sh; conda activate %s; %s"%(software_dir, myenv, pythonproc)
+
+
+        found_conda_shell = False
+        conda_sh_files = [f"{software_dir}/local_anaconda/etc/profile.d/conda.sh", f"{software_dir}/simstack_conda_userenv.sh"]
+        for conda_sh_file in conda_sh_files:
+            if cm.exists(conda_sh_file):
+                found_conda_shell = conda_sh_file
+                break
+
+        if not found_conda_shell:
+            errmsg = f"""Could not find setup file for conda environment. Please either run postinstall.sh to unpack the embedded conda environment or
+create "{software_dir}/simstack_conda_userenv.sh" to source your own environment with an installed simstack_server environment.
+"""
+            raise FileNotFoundError(errmsg)
+
+        execproc = f"source {found_conda_shell}; conda activate {myenv}; python"
         serverproc = software_dir + '/SimStackServer/SimStackServer.py'
-        if not cm.exists(pythonproc):
-            raise FileNotFoundError("%s pythonproc was not found. Please check, whether the software directory in Configuration->Servers is correct and postinstall.sh was run"%pythonproc)
+
         if not cm.exists(serverproc):
             raise FileNotFoundError("%s serverproc was not found. Please check, whether the software directory in Configuration->Servers is correct and the file exists" % serverproc)
 
         command = "%s %s"%(execproc, serverproc)
-        #print(command)
         cm.connect_zmq_tunnel(command)
         return ErrorCodes.NO_ERROR
 
