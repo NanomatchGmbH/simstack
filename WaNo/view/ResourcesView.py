@@ -43,9 +43,9 @@ class ResourcesView(QtWidgets.QWidget):
         self._render_type = render_type
         self._resources = resources
         self._cluster_dropdown = None
-        self.blockSignals(True)
+        self._init_done = False
         self.initUI()
-        self.blockSignals(False)
+        self._init_done = True
 
 
     @classmethod
@@ -61,6 +61,11 @@ class ResourcesView(QtWidgets.QWidget):
             return "int"
         elif mytype == str:
             return "str"
+
+    def blockSignals(self, do_block):
+        super().blockSignals(do_block)
+        for widget in self._widgets.values():
+            widget.blockSignals(do_block)
 
     def _get_queue_dropdown_widget(self):
         qs = QtWidgets.QComboBox(self)
@@ -142,11 +147,19 @@ class ResourcesView(QtWidgets.QWidget):
                 widget.setCurrentText(this_value)
 
     def _on_cluster_dropdown_change(self, mychoice):
-        if mychoice in {self._connected_server_text, "unset"}:
+        if not self._init_done:
             return
+        if mychoice in {self._connected_server_text, "unset"}:
+            # In case we are going back to connected server, we need to reset all fields, which are server dependent
+            settings = Resources()
+            for field in self.wano_exclusion_items:
+                self._resources.set_field_value(field, settings.get_field_value(field))
+            self._resources.set_field_value("resource_name", self._connected_server_text)
+            self._reinit_values_from_resource()
+            return
+
         regs = QtClusterSettingsProvider.get_registries()
         settings = regs[mychoice]
-        #self._resources = copy.deepcopy(settings)
         for key in self._resources.render_order():
             self._resources.set_field_value(key, settings.get_field_value(key))
 
@@ -210,10 +223,7 @@ class ResourcesView(QtWidgets.QWidget):
             #if not this_key in ["walltime", "cpu_per_node", "nodes", "queue", "memory", "custom_requests"]:
             #    continue
             if this_key == "nodes" and headers:
-                #vbox.addLayout(flo1)
                 current_flo.addRow(QtWidgets.QLabel("<b>Default Resources</b>"), QtWidgets.QWidget())
-                #vbox.addWidget(qhl)
-                #current_flo = flo2
             this_value = self._resources.get_field_value(this_key)
             intention = self.field_name_to_intention(this_key)
             myfunc = partial(self._fieldChanger, this_key, self._resources)
