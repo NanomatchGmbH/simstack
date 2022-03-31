@@ -15,7 +15,14 @@ from WaNo.view.WaNoRegistrySelection import WaNoRegistrySelection
 class ResourcesView(QtWidgets.QWidget):
     _field_name_to_display_name = {
         "base_URI": "Hostname",
-        "resource_name": "Resource"
+        "resource_name": "Resource",
+        "port": "Port",
+        "queueing_system": "Queueing System",
+        "username": "Username",
+        "sw_dir_on_resource": "SW Directory on Resource",
+        "extra_config": "Extra config",
+        "basepath": "Calculation basepath",
+        "ssh_private_key": "SSH private Key"
     }
     _field_name_to_intention = {
         "extra_config": "file",
