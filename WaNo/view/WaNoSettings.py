@@ -156,10 +156,9 @@ class SimStackClusterSettingsView(QDialog):
 
     def __add_tab(self, name, index, resource = None):
         if resource is None:
-            resource = Resources()
+            resource = Resources(resource_name = name)
         tabWidget = ResourcesView(resource, render_type="clustersettings")
         self.__tabs.addTab(tabWidget, name)
-
         return tabWidget
 
 
@@ -175,6 +174,7 @@ class SimStackClusterSettingsView(QDialog):
                 return
             csp = QtClusterSettingsProvider.get_instance()
             new_resource = csp.add_resource(resource_name=clustername)
+            print(new_resource.resource_name)
             self.__add_tab(clustername, self.__tabs.count() - 1, resource=new_resource)
             self.__tabs.setCurrentIndex(self.__tabs.count() - 1)
 
