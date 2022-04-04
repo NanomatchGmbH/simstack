@@ -418,9 +418,10 @@ class WaNoItemBoolView(AbstractWanoQTView):
             self.model.set_data(False)
 
 
+
 class WaNoScriptView(AbstractWanoQTView):
     def __init__(self, *args, **kwargs):
-        super(WaNoScriptView,self).__init__(*args,**kwargs)
+        super().__init__(*args,**kwargs)
         """ Widget code here """
         self.actual_widget = QtWidgets.QWidget(None)
         vbox = QtWidgets.QVBoxLayout()
@@ -428,13 +429,10 @@ class WaNoScriptView(AbstractWanoQTView):
         self.menubar = QtWidgets.QWidget()
         hbox = QtWidgets.QHBoxLayout()
         self.menubar.setLayout(hbox)
-        self.savelabel = QtWidgets.QLabel("Save script")
-        self.savebutton = QtWidgets.QPushButton(QtGui.QIcon.fromTheme("document-save"),"Save Script")
-        self.savebutton.clicked.connect(self.on_save)
-        hbox.addWidget(self.savebutton)
         vbox.addWidget(self.menubar)
         self.textedit = QtWidgets.QTextEdit()
         vbox.addWidget(self.textedit)
+        self.textedit.textChanged.connect(self.line_edited)
         """ Widget code end """
 
     def set_parent(self, parent_view):
@@ -445,12 +443,12 @@ class WaNoScriptView(AbstractWanoQTView):
         return self.actual_widget
 
     def init_from_model(self):
-        text = self.model.get_as_text()
+        text = self.model.get_data()
         self.textedit.setText(text)
         super().init_from_model()
 
-    def on_save(self):
-        self.model.save_text(self.textedit.toPlainText())
+    def line_edited(self):
+        self.model.set_data(self.textedit.toPlainText())
 
 
 
