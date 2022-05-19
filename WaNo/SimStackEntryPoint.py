@@ -8,22 +8,6 @@ from os.path import join
 
 from WaNo.SimStackPaths import SimStackPaths
 
-if __name__ == '__main__':
-    #In case pyura is hosted in the external directory, we append the path on our own
-    base_path = os.path.dirname(os.path.realpath(__file__))
-    dir_path = path.join(base_path,"external")
-
-    if not dir_path in sys.path:
-        sys.path.append(dir_path)
-
-    dir_path = path.join(dir_path,"treewalker")
-    if not dir_path in sys.path:
-        sys.path.append(dir_path)
-
-    dir_path = path.join(base_path,"SimStackServer")
-    if not dir_path in sys.path:
-        sys.path.append(dir_path)
-
 import ctypes
 import signal
 import platform
@@ -64,7 +48,7 @@ def override_locale():
 
 
 
-if __name__ == '__main__':   
+def main():   
     signal.signal(signal.SIGINT, signal_handler)
 
     override_locale()

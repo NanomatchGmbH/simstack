@@ -1,0 +1,29 @@
+package:
+  name: simstack 
+  version: "1.0.2"
+about:
+  home: https://github.com/not_yet_existings
+  license: proprietary
+  summary: 
+build:
+  script: {{ PYTHON }} -m pip install --no-deps --ignore-installed -vv .
+source:
+  path: ../
+requirements:
+  build:
+    - {{ compiler('c') }}
+  host:
+    - meson
+    - ninja
+    - mesonpep517
+    - python {{ python }}
+    - cython =>0.29.1
+  run:
+    - python {{ python }}
+test:
+  source_files:
+    - tests
+  requires:
+    - pytest
+  commands:
+    - pytest

@@ -86,3 +86,5 @@ external/Qt.py
 #Contains embedded configs in case of an embedded client
 embedded*
 
+#Meson temporaries
+.mesonpy-native-file.ini

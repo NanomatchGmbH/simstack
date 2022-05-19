@@ -1,0 +1,29 @@
+[build-system]
+requires = ["mesonpep517"]
+build-backend = "mesonpep517.buildapi"
+
+[project]
+name = "SimStack"
+authors = [{name = "Timo Strunk", email = "timo.strunk@gmail.com"}]
+readme = "README.rst"
+version = "1.0.2"
+license = {file = "LICENSE"}
+classifiers = ["License :: Proprietary"]
+dynamic = []
+
+[tool.pytest.ini_options]
+minversion = "6.0"
+addopts = "-ra -q"
+testpaths = [
+    "tests",
+]
+[tool.mesonpep517.metadata]
+author="Timo Strunk"
+author-email="timo.strunk@gmail.com"
+summary="SimStack"
+meson-python-option-name="python3"
+
+[tool.mesonpep517.entry-points]
+console_scripts = [
+    'simstack = WaNo.SimStackEntryPoint:main',
+]
