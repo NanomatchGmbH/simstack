@@ -31,3 +31,4 @@ foreach compile_module : compile_modules
     )
 endforeach
 subdir('lib')
+subdir('view')
