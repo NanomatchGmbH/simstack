@@ -30,5 +30,8 @@ foreach compile_module : compile_modules
         install: true,
     )
 endforeach
+instdir = py.get_install_dir()
+install_subdir('ctrl_img', install_dir: instdir + 'WaNo/')
+install_subdir('Media', install_dir: instdir + 'WaNo/')
 subdir('lib')
 subdir('view')
