@@ -144,18 +144,28 @@ class SSHConnector(CallableQThread):
             raise NotImplementedError("V2 connection capability removed from SimStack client. Please upgrade to V4.")
         elif VDIR == "V3":
             raise NotImplementedError("V3 connection capability removed from SimStack client. Please upgrade to V4.")
-        elif VDIR != "V4":
+        elif VDIR == "V4":
+            pass
+        elif VDIR == "V6":
+            pass
+        else:
             print("Found a newer server installation than this client supports (Found: %s). Please upgrade your client. Trying to connect with V4."%VDIR)
-        VDIR = "V4"
-        software_dir += '/' + VDIR
-        myenv = "simstack_server"
+            VDIR="V4"
+
+        if VDIR != "V6":
+            software_dir += '/' + VDIR
+            myenv = "simstack_server"
+        else:
+            myenv = "simstack_server_v6"
+
         if registry.queueing_system == "AiiDA":
             myenv = "aiida"
 
 
         found_conda_shell = False
-        conda_sh_files = [f"{software_dir}/local_anaconda/etc/profile.d/conda.sh", f"{software_dir}/simstack_conda_userenv.sh"]
+        conda_sh_files = [f"{software_dir}/etc/profile.d/conda.sh", f"{software_dir}/local_anaconda/etc/profile.d/conda.sh", f"{software_dir}/simstack_conda_userenv.sh"]
         for conda_sh_file in conda_sh_files:
+            print(f"Checking for {conda_sh_file}")
             if cm.exists(conda_sh_file):
                 found_conda_shell = conda_sh_file
                 break
@@ -166,10 +176,14 @@ create "{software_dir}/simstack_conda_userenv.sh" to source your own environment
 """
             raise FileNotFoundError(errmsg)
 
-        execproc = f"source {found_conda_shell}; conda activate {myenv}; python"
-        serverproc = software_dir + '/SimStackServer/SimStackServer.py'
+        if VDIR == "V6":
+            execproc = f"source {found_conda_shell}; conda activate {myenv}; "
+            serverproc = "SimStackServer"
+        else:
+            execproc = f"source {found_conda_shell}; conda activate {myenv}; python"
+            serverproc = software_dir + '/SimStackServer/SimStackServer.py'
 
-        if not cm.exists(serverproc):
+        if VDIR != "V6" and not cm.exists(serverproc):
             raise FileNotFoundError("%s serverproc was not found. Please check, whether the software directory in Configuration->Servers is correct and the file exists" % serverproc)
 
         command = "%s %s"%(execproc, serverproc)
