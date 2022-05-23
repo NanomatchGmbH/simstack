@@ -6,7 +6,7 @@ build-backend = "mesonpep517.buildapi"
 name = "SimStack"
 authors = [{name = "Timo Strunk", email = "timo.strunk@gmail.com"}]
 readme = "README.rst"
-version = "1.0.4"
+version = "1.0.5"
 license = {file = "LICENSE"}
 classifiers = ["License :: Proprietary"]
 dynamic = []
