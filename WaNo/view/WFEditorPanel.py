@@ -1538,14 +1538,14 @@ class SubWorkflowView(QtWidgets.QFrame):
         self.adjustSize()
 
         dims = self.geometry()
-        ypos = self.elementSkip / 2
+        ypos = int(self.elementSkip // 2)
         for model in self.model.elements:
             e = model.view
             e.setParent(self)
 
 
             e.adjustSize()
-            xpos = (dims.width() - e.width()) / 2
+            xpos = int((dims.width() - e.width()) // 2)
             #xpos = dims.width()/2.0
             e.move(xpos, ypos)
             e.place_elements()
@@ -1727,12 +1727,12 @@ class WorkflowView(QtWidgets.QFrame):
         ypos = 0
         if not self.dont_place:
             self.dont_place = True
-            ypos = self.elementSkip / 2
+            ypos = int(self.elementSkip // 2)
             for model in self.model.elements:
                 e = model.view
                 e.setParent(self)
                 e.adjustSize()
-                xpos = (dims.width() - e.width()) / 2
+                xpos = int((dims.width() - e.width()) // 2)
                 #print("WIDTH ",e.width())
                 #print("HEIGHT ", e.height())
                 #print(xpos,ypos)
