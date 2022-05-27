@@ -1582,7 +1582,7 @@ class SubWorkflowView(QtWidgets.QFrame):
         #print(len(self.model.elements))
         if len(self.model.elements)>1:
             e = self.model.elements[0].view
-            sx = e.pos().x() + e.width()/2
+            sx = int(e.pos().x() + e.width()//2)
             sy = e.pos().y() + e.height()
         for model in self.model.elements[1:]:
             b = model.view
@@ -1767,7 +1767,7 @@ class WorkflowView(QtWidgets.QFrame):
         #print(len(self.model.elements))
         if len(self.model.elements)>1:
             e = self.model.elements[0].view
-            sx = e.pos().x() + e.width()/2
+            sx = int(e.pos().x() + e.width()//2)
             sy = e.pos().y() + e.height()
         for model in self.model.elements[1:]:
             b = model.view
