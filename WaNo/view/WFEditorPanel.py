@@ -1216,7 +1216,7 @@ class WFModel(object):
                     myvars.append(myvar)
         return myvars
 
-    def render_to_simple_wf(self, submitdir,jobdir):
+    def render_to_simple_wf(self, submitdir, jobdir):
         activities = []
         transitions = []
         swfs = []

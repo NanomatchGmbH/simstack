@@ -28,7 +28,7 @@ from Qt.QtWidgets import QMessageBox
 from SimStackServer.ClusterManager import ClusterManager
 from SimStackServer.MessageTypes import ErrorCodes
 from SimStackServer.Settings.ClusterSettingsProvider import ClusterSettingsProvider
-from SimStackServer.WorkflowModel import Resources
+from SimStackServer.WorkflowModel import Resources, Workflow
 from WaNo.SimStackPaths import SimStackPaths
 
 from SimStackServer.Util.FileUtilities import filewalker
@@ -281,6 +281,15 @@ class SSHConnector(CallableQThread):
             cm.mkdir_p(mydir)
             cm.put_file(filename,submitpath.replace('\\','/'))
 
+        # Here we append the actual connected server resources. The remaining replacements are actually
+        # only for legacy purposes
+        wf = Workflow()
+
+        wf.from_xml(xml)
+        wf_default_resources: Resources = self._registries[registry_name]
+        wf.set_default_wf_resources(wf_default_resources)
+        xml = etree.Element("Workflow")
+        wf.to_xml(xml)
         wf_yml_name = real_submitname + "/" + "rendered_workflow.xml"
         with cm.remote_open(wf_yml_name,'wt') as outfile:
             outfile.write(etree.tostring(xml, encoding = "utf8", pretty_print=True).decode()

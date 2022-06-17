@@ -22,7 +22,8 @@ class ResourcesView(QtWidgets.QWidget):
         "sw_dir_on_resource": "SW Directory on Resource",
         "extra_config": "Extra config",
         "basepath": "Calculation basepath",
-        "ssh_private_key": "SSH private Key"
+        "ssh_private_key": "SSH private Key",
+        "sge_pe": "SGE PE",
     }
     _field_name_to_intention = {
         "extra_config": "file",
@@ -38,7 +39,7 @@ class ResourcesView(QtWidgets.QWidget):
         "sw_dir_on_resource",
         "basepath",
         "queueing_system",
-        "extra_config"
+        "extra_config",
     }
     serverconfig_exclusion_items = {
         "resource_name"
@@ -79,7 +80,7 @@ class ResourcesView(QtWidgets.QWidget):
         qs.addItem("pbs")
         qs.addItem("slurm")
         qs.addItem("lsf")
-        qs.addItem("sge_smp")
+        qs.addItem("sge_multi")
         qs.addItem("AiiDA")
         qs.addItem("Internal")
         return qs
@@ -231,6 +232,8 @@ class ResourcesView(QtWidgets.QWidget):
             #    continue
             if this_key == "nodes" and headers:
                 current_flo.addRow(QtWidgets.QLabel("<b>Default Resources</b>"), QtWidgets.QWidget())
+            if this_key == "sge_pe" and headers:
+                current_flo.addRow(QtWidgets.QLabel("<b>SGE specific config</b>"), QtWidgets.QWidget())
             this_value = self._resources.get_field_value(this_key)
             intention = self.field_name_to_intention(this_key)
             myfunc = partial(self._fieldChanger, this_key, self._resources)
