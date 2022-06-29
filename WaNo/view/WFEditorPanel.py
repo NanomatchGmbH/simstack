@@ -34,7 +34,7 @@ from SimStackServer.WaNo.AbstractWaNoModel import WaNoInstantiationError
 from SimStackServer.WaNo.WaNoDelta import WaNoDelta
 from SimStackServer.WaNo.WaNoModels import WaNoModelRoot
 from SimStackServer.WorkflowModel import WorkflowExecModule, Workflow, DirectedGraph, WorkflowElementList, SubGraph, \
-    ForEachGraph, StringList, WFPass, IfGraph, WhileGraph, VariableElement
+    ForEachGraph, StringList, WFPass, IfGraph, WhileGraph, VariableElement, Resources
 from SimStackServer.WaNo.MiscWaNoTypes import WaNoListEntry, get_wano_xml_path
 from WaNo.SimStackPaths import SimStackPaths
 from WaNo.WaNoSettingsProvider import WaNoSettingsProvider
@@ -113,7 +113,7 @@ class WFWaNoWidget(QtWidgets.QToolButton,DragDropTargetTracker):
         self.logger.setLevel(logging.ERROR)
         self.is_wano = True
         self.logger.setLevel(lvl)
-        self.wf_model = parent.model.get_root()
+        self.wf_model : WFModel = parent.model.get_root()
         stylesheet ="""
         QToolButton
         {
@@ -262,6 +262,7 @@ class WFWaNoWidget(QtWidgets.QToolButton,DragDropTargetTracker):
         print("rendering wano with stageout_basedir %s" %stageout_basedir)
         jsdl, wem = self.wano_model.render_and_write_input_files_newmodel(basefolder,stageout_basedir=stageout_basedir)
         wem: WorkflowExecModule
+        wem.resources.overwrite_unset_fields_from_default_resources(self.wf_model.base_resource_during_render())
         wem.set_wano_xml(self.wano_model.name + ".xml")
         return jsdl, wem, path_list + [wem.name]
 
@@ -1149,6 +1150,7 @@ class WFModel(object):
         self.editor = kwargs['editor']
         self.view = kwargs["view"]
         self.elements = [] # List of Elements,Workflows, ControlElements
+        self._base_resource_during_render = None
         # Name of the saved folder
         self.elementnames = []
         self.foldername = None
@@ -1392,7 +1394,11 @@ class WFModel(object):
                 model.read_from_disk(full_foldername=foldername, xml_subelement=child)
         self.view.updateGeometry()
 
-    def render(self, given_name):
+    def base_resource_during_render(self):
+        return self._base_resource_during_render
+
+    def render(self, given_name, current_registry: Resources):
+        self._base_resource_during_render = current_registry
         assert (self.foldername is not None)
         now = datetime.datetime.now()
         nowstr = now.strftime("%Y-%m-%d-%Hh%Mm%Ss")
@@ -1418,6 +1424,7 @@ class WFModel(object):
             pass
 
         wf_xml = self.render_to_simple_wf(submitdir,jobdir)
+        self._base_resource_during_render = None
         return SubmitType.WORKFLOW,submitdir,wf_xml
 
     def move_element_to_position(self, element, new_position):
@@ -1914,7 +1921,7 @@ class WFTabsWidget(QtWidgets.QTabWidget):
     def markWFasChanged(self):
         print ("mark as changed")
 
-    def run(self):
+    def run(self, current_registry: Resources):
         name = self.tabText(self.currentIndex())
         if name == "Untitled":
             #FIXME this should be a custom exception. It should also be caught as Custom in WFEA
@@ -1923,7 +1930,7 @@ class WFTabsWidget(QtWidgets.QTabWidget):
         self.save()
         #name,jobtype,directory,wf_xml = editor.run()
 
-        jobtype,directory,workflow_xml = self.currentWidget().widget().model.render(given_name = name)
+        jobtype,directory,workflow_xml = self.currentWidget().widget().model.render(given_name = name, current_registry= current_registry)
         return name,jobtype,directory,workflow_xml
 
     def currentTabText(self):

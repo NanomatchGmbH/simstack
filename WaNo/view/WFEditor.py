@@ -236,8 +236,8 @@ class WFEditor(QWidget):
         self.workflowWidget.saveAs()
         self.workflowListWidget.update()
 
-    def run(self):
-        return self.workflowWidget.run()
+    def run(self, current_registry):
+        return self.workflowWidget.run(current_registry)
 
     def loadFile(self,fileName):
         self.workflowWidget.loadFile(fileName)

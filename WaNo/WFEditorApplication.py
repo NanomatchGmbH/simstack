@@ -492,7 +492,7 @@ class WFEditorApplication(CallableQThread):
         self._view_manager.show_status_message("Preparing data...")
 
         try:
-            name,jobtype,directory,wf_xml = editor.run()
+            name,jobtype,directory,wf_xml = editor.run(self._get_current_registry())
         except FileNotFoundErrorSimStack as e:
             self._view_manager.show_error("File not found during Workflow rendering. Error was: %s" % e)
             return
