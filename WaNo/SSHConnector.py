@@ -19,7 +19,7 @@ import paramiko
 from lxml import etree
 from paramiko import BadHostKeyException
 
-from zmq.error import Again
+from zmq.error import Again, ZMQError
 
 from Qt.QtCore import QThread, Qt
 from Qt.QtCore import Slot, Signal, QObject
@@ -110,7 +110,7 @@ def eagain_catcher(f):
     def wrapper(self, *args, **kwds):
         try:
             return f(self, *args, **kwds)
-        except Again as e:
+        except (Again, ZMQError) as e:
             from WaNo.view.WFViewManager import WFViewManager
             message = "Connection Error, please try reconnecting Client."
             WFViewManager.show_error(message)
