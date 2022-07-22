@@ -1,4 +1,4 @@
-project('simstack', 'cython', version: '1.0.5')
+project('simstack', 'cython', version: '1.2.0')
 
 py = import('python').find_installation()
 dep_py = py.dependency()
