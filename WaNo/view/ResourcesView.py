@@ -123,7 +123,7 @@ class ResourcesView(QtWidgets.QWidget):
                 this_i = QtWidgets.QSpinBox()
                 this_i.valueChanged.connect(myfunc)
                 this_i.setMinimum(0)
-                this_i.setMaximum(100000)
+                this_i.setMaximum(31536000)
                 this_i.setValue(this_value)
             elif intention =="file":
                 this_i = HorizontalTextEditWithFileImport()
