@@ -1,6 +1,6 @@
 package:
   name: simstack 
-  version: "1.2.0"
+  version: "1.2.2"
 about:
   home: https://github.com/not_yet_existings
   license: proprietary
