@@ -4,8 +4,8 @@ from Qt.QtGui import QCursor
 from Qt.QtCore import Signal, QModelIndex, Qt
 from enum import Enum
 
-from .WFEditorTreeModels import WFEUnicoreRemoteFileSystemModel as FSModel
-from .WFEditorTreeModels import WFEUnicoreFileSystemEntry
+from .WFEditorTreeModels import WFERemoteFileSystemModel as FSModel
+from .WFEditorTreeModels import WFERemoteFileSystemEntry
 
 
 import os
@@ -65,7 +65,7 @@ class WFRemoteFileSystem(QWidget):
                 print("i(id=%s): %s" % (i['id'] if 'id' in i else '', i))
                 #print(path,i['path'],i['name'])
 
-                entries = [WFEUnicoreFileSystemEntry.createData(
+                entries = [WFERemoteFileSystemEntry.createData(
                         i['id'] if 'id' in i else i['name'],
                         i['name'],
                         os.path.basename(

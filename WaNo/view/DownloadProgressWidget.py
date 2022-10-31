@@ -10,7 +10,7 @@ from Qt.QtCore import QSize, Qt
 from enum import Enum
 from os.path import basename
 
-from ..EditorState import UnicoreDataTransferStates
+from ..EditorState import DataTransferStates
 
 class Download(QWidget):
     DIRECTION = Enum("DLDirection",
@@ -156,14 +156,14 @@ class DownloadProgressWidget(QWidget):
     @staticmethod
     def _dl_active(dl):
         """ Returns True, if the transfer is active (state is running) """
-        return (dl['state'] == UnicoreDataTransferStates.RUNNING)
+        return (dl['state'] == DataTransferStates.RUNNING)
 
     @staticmethod
     def _dl_ended(dl):
         """ Returs True, if the transfer has ended (state is done, failed or
         canceled)."""
         return (not DownloadProgressWidget._dl_active(dl)
-                and dl['state'] != UnicoreDataTransferStates.PENDING)
+                and dl['state'] != DataTransferStates.PENDING)
 
     def update(self):
         active_total       = 0

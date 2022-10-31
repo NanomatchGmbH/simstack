@@ -32,7 +32,7 @@ from WaNo.lib.QtClusterSettingsProvider import QtClusterSettingsProvider
 from WaNo.view.WFViewManager import WFViewManager
 from WaNo.WaNoGitRevision import get_git_revision
 from WaNo.Constants import SETTING_KEYS
-from WaNo.EditorState import UnicoreStateFactory
+from WaNo.EditorState import StateFactory
 from WaNo.SSHConnector import SSHConnector
 from WaNo.SSHConnector import OPERATIONS as uops
 from WaNo.SSHConnector import ERROR as uerror
@@ -47,18 +47,18 @@ except:
 from collections import namedtuple
 
 class WFEditorApplication(CallableQThread):
-    exec_unicore_callback_operation = Signal(
-            object, dict, object, name="ExecuteUnicoreCallbackOperation")
-    exec_unicore_operation = Signal(object, dict, name="ExecuteUnicoreOperation")
+    exec_callback_operation = Signal(
+            object, dict, object, name="ExecuteCallbackOperation")
+    exec_operation = Signal(object, dict, name="ExecuteOperation")
 
     ############################################################################
     #                               Slots                                      #
     ############################################################################
-    def _on_unicore_connect_error(self, base_uri, error):
+    def _on_connect_error(self, base_uri, error):
         pass
-    def _on_unicore_disconnect_error(self, base_uri, error):
+    def _on_disconnect_error(self, base_uri, error):
         pass
-    def _on_unicore_run_single_job_error(self, base_uri, error):
+    def _on_run_single_job_error(self, base_uri, error):
         msg_title   = "Error during job submission:\n\n"
         msg         = ""
         if error == uerror.REGISTRY_NOT_CONNECTED:
@@ -67,7 +67,7 @@ class WFEditorApplication(CallableQThread):
             msg = "Unknown Error."
         self._view_manager.show_error("%s%s" % (msg_title, msg))
 
-    def _on_unicore_error(self, base_uri, operation, error, error_msg=None):
+    def _on_error(self, base_uri, operation, error, error_msg=None):
         func = None
         # Not connected error is always the same and trumps everything:
         if (error == uerror.REGISTRY_NOT_CONNECTED.value):
@@ -77,24 +77,24 @@ class WFEditorApplication(CallableQThread):
             return
 
         elif operation == uops.CONNECT_REGISTRY.value:
-            func = self._on_unicore_connect_error
+            func = self._on_connect_error
         elif operation == uops.DISCONNECT_REGISTRY.value:
-            func = self._on_unicore_connect_error
+            func = self._on_connect_error
         elif operation == uops.RUN_SINGLE_JOB.value:
-            func = self._on_unicore_run_single_job_error
+            func = self._on_run_single_job_error
         elif operation in [uops.UPDATE_WF_LIST.value,uops.UPDATE_WF_JOB_LIST.value,uops.UPDATE_DIR_LIST.value,uops.RUN_WORKFLOW_JOB.value]:
-             func = self._on_unicore_run_single_job_error
+             func = self._on_run_single_job_error
 
         if not func is None:
             func(base_uri, error)
         else:
             if error_msg is None or error_msg == "":
-                error_msg = "Unicore Error for '%s' in operation '%s': %s." % \
+                error_msg = " Error for '%s' in operation '%s': %s." % \
                         (base_uri, uops(operation), uerror(error))
 
-            self._view_manager.show_error("General Unicore Error.", error_msg)
+            self._view_manager.show_error("General Error.", error_msg)
 
-        self._logger.error("Unicore Error for '%s' in operation '%s': %s." % \
+        self._logger.error(" Error for '%s' in operation '%s': %s." % \
                 (base_uri, uops(operation), uerror(error)))
 
 
@@ -126,7 +126,7 @@ class WFEditorApplication(CallableQThread):
 
     def _on_fs_job_list_update_request(self):
         base_uri = self._get_current_base_uri()
-        self.exec_unicore_callback_operation.emit(
+        self.exec_callback_operation.emit(
                 uops.UPDATE_JOB_LIST,
                 SSHConnector.create_update_job_list_args(base_uri),
                 (self._on_fs_job_list_updated, (), {})
@@ -138,7 +138,7 @@ class WFEditorApplication(CallableQThread):
 
     def _on_resources_update_request(self):
         base_uri = self._get_current_base_uri()
-        self.exec_unicore_callback_operation.emit(
+        self.exec_callback_operation.emit(
                 uops.UPDATE_RESOURCES,
                 SSHConnector.create_update_resources_args(base_uri),
                 (self._on_resources_updated, (), {})
@@ -150,7 +150,7 @@ class WFEditorApplication(CallableQThread):
 
     def _on_fs_worflow_list_update_request(self):
         registry_name = self._get_current_registry_name()
-        self._unicore_connector.update_workflow_list(registry_name,  (self._on_workflow_list_updated, (), {}) )
+        self._connector.update_workflow_list(registry_name,  (self._on_workflow_list_updated, (), {}) )
 
     #@QThreadCallback.callback
     def _on_fs_list_updated(self, base_uri, path, files):
@@ -158,20 +158,20 @@ class WFEditorApplication(CallableQThread):
 
     def _on_fs_job_update_request(self, path):
         registry_name = self._get_current_registry_name()
-        self._unicore_connector.update_dir_list(registry_name,path,
+        self._connector.update_dir_list(registry_name,path,
                 (self._on_fs_list_updated, (), {})
         )
 
 
     def _on_fs_workflow_update_request(self, wfid):
-        self._logger.debug("Querying %s from Unicore Registry" % wfid)
+        self._logger.debug("Querying %s from Registry" % wfid)
         registry_name = self._get_current_registry_name()
-        self._unicore_connector.update_workflow_job_list(registry_name, wfid,
+        self._connector.update_workflow_job_list(registry_name, wfid,
                 (self._on_fs_list_updated, (), {})
         )
 
     def _on_fs_directory_update_request(self, path):
-        self._logger.debug("Querying %s from Unicore Registry" % path)
+        self._logger.debug("Querying %s from Registry" % path)
         # TODO
         self._on_fs_job_update_request(path)
 
@@ -192,7 +192,7 @@ class WFEditorApplication(CallableQThread):
 
     def _on_fs_download(self, from_path, to_path):
         registry_name = self._get_current_registry_name()
-        self._unicore_connector.download_file(registry_name,
+        self._connector.download_file(registry_name,
                                               from_path,
                                               to_path,
                                               callback=(self._view_manager.on_download_complete,
@@ -204,7 +204,7 @@ class WFEditorApplication(CallableQThread):
     def _on_fs_upload(self, local_files, dest_dir):
         registry_name = self._get_current_registry_name()
 
-        self._unicore_connector.upload_files(
+        self._connector.upload_files(
             registry_name,
             local_files,
             dest_dir,
@@ -232,7 +232,7 @@ class WFEditorApplication(CallableQThread):
 
     def _on_fs_delete_file(self, filename):
         registry_name = self._get_current_registry_name()
-        self._unicore_connector.delete_file(registry_name, filename, (self._on_file_deleted, (), { 'to_del': filename } ))
+        self._connector.delete_file(registry_name, filename, (self._on_file_deleted, (), { 'to_del': filename } ))
 
 
     #@QThreadCallback.callback
@@ -274,7 +274,7 @@ class WFEditorApplication(CallableQThread):
         print("here")
 
         """
-        if err == UnicoreErrorCodes.NO_ERROR:
+        if err == ErrorCodes.NO_ERROR:
             self._on_fs_worflow_list_update_request()
         else:
             self._view_manager.show_error(
@@ -286,7 +286,7 @@ class WFEditorApplication(CallableQThread):
 
     def _on_fs_delete_job(self, job):
         base_uri = self._get_current_base_uri()
-        self.exec_unicore_callback_operation.emit(
+        self.exec_callback_operation.emit(
                 uops.DELETE_JOB,
                 SSHConnector.create_delete_job_args(base_uri, job),
                 (self._on_job_deleted, (), { 'job': job})
@@ -294,7 +294,7 @@ class WFEditorApplication(CallableQThread):
 
     def _on_fs_abort_job(self, job):
         base_uri = self._get_current_base_uri()
-        self.exec_unicore_callback_operation.emit(
+        self.exec_callback_operation.emit(
                 uops.ABORT_JOB,
                 SSHConnector.create_abort_job_args(base_uri, job),
                 (self._on_job_aborted, (), { 'job': job})
@@ -303,7 +303,7 @@ class WFEditorApplication(CallableQThread):
     def _on_fs_browse_workflow(self, workflow):
         registry_name = self._get_current_registry_name()
         #print("Im workflow",workflow)
-        myurl = self._unicore_connector.get_workflow_url(registry_name, workflow)
+        myurl = self._connector.get_workflow_url(registry_name, workflow)
         print(myurl)
         binding = Qt.__binding__
         if binding == "PyQt5":
@@ -326,13 +326,13 @@ class WFEditorApplication(CallableQThread):
 
     def _on_fs_delete_workflow(self, workflow):
         registry_name = self._get_current_registry_name()
-        self._unicore_connector.delete_workflow(registry_name, workflow,
+        self._connector.delete_workflow(registry_name, workflow,
                 (self._on_workflow_deleted, (), { 'workflow': workflow})
         )
 
     def _on_fs_abort_workflow(self, workflow):
         registry_name = self._get_current_registry_name()
-        self._unicore_connector.abort_workflow(registry_name, workflow,
+        self._connector.abort_workflow(registry_name, workflow,
                 (self._on_workflow_aborted, (), { 'workflow': workflow})
         )
 
@@ -431,7 +431,7 @@ class WFEditorApplication(CallableQThread):
 
         if error == ErrorCodes.NO_ERROR:
             self._logger.info("Connected.")
-            self._set_unicore_connected()
+            self._set_connected()
         else:
             self._logger.error("Failed to connect to registry: %s, %s" % \
                         (str(status), str(error))
@@ -441,19 +441,19 @@ class WFEditorApplication(CallableQThread):
                     "Connection returned status: %s." % \
                     (registry_name, status)
                 )
-            self._set_unicore_disconnected()
+            self._set_disconnected()
 
 
     def _cb_disconnect(self, error, status, registry_name=None):
-        self._set_unicore_disconnected()
+        self._set_disconnected()
 
 
     def _disconnect_unicore(self, no_status_update=False):
         self._logger.info("Disconnecting from registry")
-        #self._set_unicore_disconnected()
+        #self._set_disconnected()
 
         registry_name = self._get_current_registry_name()
-        self._unicore_connector.disconnect_registry(
+        self._connector.disconnect_registry(
             registry_name,
             (self._cb_disconnect,(),{'registry_name': registry_name})
         )
@@ -464,7 +464,7 @@ class WFEditorApplication(CallableQThread):
             WFViewManager.show_error(message)
             return
         if not no_status_update:
-            self._set_unicore_connecting()
+            self._set_connecting()
 
         self._set_current_registry_name(registry_name)
 
@@ -473,7 +473,7 @@ class WFEditorApplication(CallableQThread):
                 registry_name
             )
 
-        self._unicore_connector.connect_registry(
+        self._connector.connect_registry(
             registry_name,
             (self._cb_connect,(),{'registry_name': registry_name})
         )
@@ -522,27 +522,27 @@ class WFEditorApplication(CallableQThread):
         nowstr = now.strftime("%Y-%m-%d-%Hh%Mm%Ss")
         submitname = "%s-%s" %(nowstr, name)
         to_upload = os.path.join(directory,"workflow_data")
-        self._unicore_connector.run_workflow_job(registry_name,submitname,to_upload,xml)
+        self._connector.run_workflow_job(registry_name,submitname,to_upload,xml)
 
 
     def _reconnect_unicore(self, registry_name):
-        self._logger.info("Reconnecting to Unicore Registry.")
-        self._set_unicore_connecting()
+        self._logger.info("Reconnecting to Registry.")
+        self._set_connecting()
         # quietly disconnect
         if self._get_current_registry_name():
             self._disconnect_unicore(no_status_update = True)
 
         success = self._connect_unicore(registry_name)
 
-    def _set_unicore_disconnected(self):
+    def _set_disconnected(self):
         self._view_manager.set_registry_connection_status(
                 self._view_manager.REGISTRY_CONNECTION_STATES.disconnected
             )
-    def _set_unicore_connected(self):
+    def _set_connected(self):
         self._view_manager.set_registry_connection_status(
                 self._view_manager.REGISTRY_CONNECTION_STATES.connected
             )
-    def _set_unicore_connecting(self):
+    def _set_connecting(self):
         self._view_manager.set_registry_connection_status(
                 self._view_manager.REGISTRY_CONNECTION_STATES.connecting
             )
@@ -612,7 +612,7 @@ class WFEditorApplication(CallableQThread):
     ############################################################################
     def exit(self):
         self._view_manager.exit()
-        self._unicore_connector.quit()
+        self._connector.quit()
 
     ############################################################################
     #                            init                                          #
@@ -647,7 +647,7 @@ class WFEditorApplication(CallableQThread):
 
         self._view_manager.exit_client.connect(self._client_about_to_exit)
 
-        self._unicore_connector.error.connect(self._on_unicore_error)
+        self._connector.error.connect(self._on_error)
 
     @staticmethod
     def exec_by_time(cutoff_time):
@@ -683,10 +683,10 @@ class WFEditorApplication(CallableQThread):
         ##### END TODO
 
 
-        self._unicore_connector = SSHConnector(self,
-                UnicoreStateFactory.get_writer())
+        self._connector = SSHConnector(self,
+                StateFactory.get_writer())
 
-        self._view_manager  = WFViewManager(UnicoreStateFactory.get_reader())
+        self._view_manager  = WFViewManager(StateFactory.get_reader())
 
         self._current_registry_name = None
         self._registries = QtClusterSettingsProvider.get_registries()

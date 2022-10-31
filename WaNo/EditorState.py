@@ -5,7 +5,7 @@ from enum import Enum
 from SimStackServer.MessageTypes import ConnectionState
 
 
-class UnicoreStateValues(object):
+class StateValues(object):
     CONNECTION      = "connection"
 
 
@@ -317,7 +317,7 @@ class ProtectedReaderWriterIndexedList(ReaderWriterInstance):
         self._writer = ProtectedReaderWriterIndexedList._Writer(self._list_instance)
         self._reader = ProtectedReaderWriterIndexedList._Reader(self._list_instance)
 
-UnicoreDataTransferStates = Enum(
+DataTransferStates = Enum(
         "DataTransferStates",
         """
         PENDING
@@ -328,7 +328,7 @@ UnicoreDataTransferStates = Enum(
         """
         )
 
-UnicoreDataTransferDirection = Enum(
+DataTransferDirection = Enum(
         "DataTransferDirection",
         """
         UPLOAD
@@ -336,10 +336,10 @@ UnicoreDataTransferDirection = Enum(
         """
         )
 
-class UnicoreStateFactory(object):
+class StateFactory(object):
     _instance = None
 
-    class __UnicoreState(object):
+    class __State(object):
         def add_registry(self, base_uri, username,
                 state=ConnectionState.DISCONNECTED):
             tmp = {
@@ -397,7 +397,7 @@ class UnicoreStateFactory(object):
 
 
         def add_data_transfer(self, base_uri, source, dest, storage, direction,
-                state=UnicoreDataTransferStates.PENDING, total=-1, progress=0):
+                state=DataTransferStates.PENDING, total=-1, progress=0):
             tmp = {
                     'source': source,
                     'dest': dest,
@@ -453,25 +453,25 @@ class UnicoreStateFactory(object):
             return self._state.get_registry_state(base_uri).get_writer_instance()
 
         def add_data_transfer(self, base_uri, source, dest, storage, direction,
-                state=UnicoreDataTransferStates.PENDING, total=-1, progress=0):
+                state=DataTransferStates.PENDING, total=-1, progress=0):
             return self._state.add_data_transfer(base_uri, source, dest, storage,
                 direction, state, total, progress)
 
         def __init__(self, state):
-            super(UnicoreStateFactory._Writer, self).__init__(state)
+            super(StateFactory._Writer, self).__init__(state)
 
     @classmethod
     def __get_instance(self):
         #TODO mutex lock this!
-        if UnicoreStateFactory._instance is None:
-                UnicoreStateFactory._instance = UnicoreStateFactory.__UnicoreState()
-        return UnicoreStateFactory._instance
+        if StateFactory._instance is None:
+                StateFactory._instance = StateFactory.__State()
+        return StateFactory._instance
 
     @classmethod
     def get_reader(self):
-        return UnicoreStateFactory._Reader(self.__get_instance())
+        return StateFactory._Reader(self.__get_instance())
 
     @classmethod
     def get_writer(self):
-        return UnicoreStateFactory._Writer(self.__get_instance())
+        return StateFactory._Writer(self.__get_instance())
 

@@ -359,9 +359,9 @@ class WFEFileSystemModel(DataTreeModel):
             childNode = self.getNodeByIndex(c)
             self.subelementsToText(c, newPrefix)
 
-class WFEUnicoreFileSystemEntry(WFEFileSystemEntry):
+class WFERemoteFileSystemEntry(WFEFileSystemEntry):
     def __init__(self, data, parent=None):
-        super(WFEUnicoreFileSystemEntry, self).__init__(data, parent)
+        super(WFERemoteFileSystemEntry, self).__init__(data, parent)
 
     def getName(self):
         return self._data['name'] if self._data['name'] != "" \
@@ -374,15 +374,15 @@ class WFEUnicoreFileSystemEntry(WFEFileSystemEntry):
         return self._data['status']
 
     def getIconType(self):
-        if self._data['data_type'] == WFEUnicoreRemoteFileSystemModel.DATA_TYPE_JOB:
+        if self._data['data_type'] == WFERemoteFileSystemModel.DATA_TYPE_JOB:
             if self._data['status'] != None:
                 return JOB_STATUS_TO_DATA_TYPE[self._data["status"]]
 
-        if self._data['data_type'] == WFEUnicoreRemoteFileSystemModel.DATA_TYPE_WORKFLOW:
+        if self._data['data_type'] == WFERemoteFileSystemModel.DATA_TYPE_WORKFLOW:
             if self._data['status'] != None:
                 return WF_STATUS_TO_DATA_TYPE[self._data["status"]]
 
-        return super(WFEUnicoreFileSystemEntry,self).getIconType()
+        return super(WFERemoteFileSystemEntry, self).getIconType()
 
     @staticmethod
     def createData(id, name, path, abspath, data_type=None, status = None):
@@ -396,7 +396,7 @@ class WFEUnicoreFileSystemEntry(WFEFileSystemEntry):
             }
 
 
-class WFEUnicoreRemoteFileSystemModel(WFEFileSystemModel):
+class WFERemoteFileSystemModel(WFEFileSystemModel):
     DATA_TYPE_FILE          = DATA_TYPE.FILE
     DATA_TYPE_DIRECTORY     = DATA_TYPE.DIRECTORY
     DATA_TYPE_UNKNOWN       = DATA_TYPE.UNKNOWN
@@ -466,15 +466,15 @@ class WFEUnicoreRemoteFileSystemModel(WFEFileSystemModel):
             DATA_TYPE.WF_ABORTED: self.colorize_icon(QFileIconProvider().icon(QFileIconProvider.Desktop), Qt.red),
         }
 
-        super(WFEUnicoreRemoteFileSystemModel, self).__init__(parent)
+        super(WFERemoteFileSystemModel, self).__init__(parent)
         self._add_headers()
 
     def createNode(self, data, parent=None):
-        return WFEUnicoreFileSystemEntry(data, parent)
+        return WFERemoteFileSystemEntry(data, parent)
 
 
     def _getDecorationIcon(self, index):
-        icon = super(WFEUnicoreRemoteFileSystemModel, self)._getDecorationIcon(index)
+        icon = super(WFERemoteFileSystemModel, self)._getDecorationIcon(index)
         if icon is None:
             node = self.getNodeByIndex(index)
             icon_type = node.getIconType()
@@ -555,7 +555,7 @@ class WFEUnicoreRemoteFileSystemModel(WFEFileSystemModel):
             )
 
     def clear(self):
-        super(WFEUnicoreRemoteFileSystemModel, self).clear()
+        super(WFERemoteFileSystemModel, self).clear()
         self._add_headers()
 
     def get_separator_indices(self):
@@ -572,7 +572,7 @@ class WFEUnicoreRemoteFileSystemModel(WFEFileSystemModel):
 
                 child = self.index(i, 0)
                 child_node = self.getNodeByIndex(child)
-                super(WFEUnicoreRemoteFileSystemModel, self).loading(
+                super(WFERemoteFileSystemModel, self).loading(
                         child, text="Loading")
         else:
             self.removeSubRows(index)
