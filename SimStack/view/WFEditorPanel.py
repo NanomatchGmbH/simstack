@@ -36,13 +36,13 @@ from SimStackServer.WaNo.WaNoModels import WaNoModelRoot
 from SimStackServer.WorkflowModel import WorkflowExecModule, Workflow, DirectedGraph, WorkflowElementList, SubGraph, \
     ForEachGraph, StringList, WFPass, IfGraph, WhileGraph, VariableElement, Resources
 from SimStackServer.WaNo.MiscWaNoTypes import WaNoListEntry, get_wano_xml_path
-from WaNo.SimStackPaths import SimStackPaths
-from WaNo.WaNoSettingsProvider import WaNoSettingsProvider
-from WaNo.Constants import SETTING_KEYS
+from SimStack.SimStackPaths import SimStackPaths
+from SimStack.WaNoSettingsProvider import WaNoSettingsProvider
+from SimStack.Constants import SETTING_KEYS
 
-from WaNo.view.RemoteImporterDialog import RemoteImporterDialog
+from SimStack.view.RemoteImporterDialog import RemoteImporterDialog
 
-from WaNo.view.WFEditorWidgets import WFEWaNoListWidget, WFEListWidget
+from SimStack.view.WFEditorWidgets import WFEWaNoListWidget, WFEListWidget
 from SimStackServer.Util.FileUtilities import copytree, copytree_pathlib
 
 #def mapClassToTag(name):
@@ -2299,7 +2299,7 @@ class ForEachView(WFControlWithTopMiddleAndBottom):
 
     def open_remote_importer_files(self):
         varpaths = self.model.wf_root.assemble_files("")
-        from WaNo.view.RemoteImporterDialog import RemoteImporterDialog
+        from SimStack.view.RemoteImporterDialog import RemoteImporterDialog
         mydialog = RemoteImporterDialog(varname ="Import file", importlist = varpaths, window_title="Workflow File Importer")
         mydialog.setModal(True)
         mydialog.exec_()

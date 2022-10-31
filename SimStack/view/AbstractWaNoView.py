@@ -8,7 +8,7 @@ from __future__ import absolute_import
 import abc
 
 
-from WaNo.view.RemoteImporterDialog import RemoteImporterDialog
+from SimStack.view.RemoteImporterDialog import RemoteImporterDialog
 
 class AbstractWanoView(object):
     def __init__(self, *args, **kwargs):

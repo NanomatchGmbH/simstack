@@ -23,21 +23,21 @@ from SimStackServer.Settings.ClusterSettingsProvider import ClusterSettingsProvi
 from SimStackServer.Util.FileUtilities import trace_to_logger
 from SimStackServer.WaNo.WaNoModels import FileNotFoundErrorSimStack
 from SimStackServer.WorkflowModel import Resources
-from WaNo.SimStackPaths import SimStackPaths
+from SimStack.SimStackPaths import SimStackPaths
 from SimStackServer.WaNo.WaNoExceptions import WorkflowSubmitError
 
 from SimStackServer.WaNo.MiscWaNoTypes import WaNoListEntry, get_wano_xml_path
-from WaNo.lib.QtClusterSettingsProvider import QtClusterSettingsProvider
+from SimStack.lib.QtClusterSettingsProvider import QtClusterSettingsProvider
 
-from WaNo.view.WFViewManager import WFViewManager
-from WaNo.WaNoGitRevision import get_git_revision
-from WaNo.Constants import SETTING_KEYS
-from WaNo.EditorState import StateFactory
-from WaNo.SSHConnector import SSHConnector
-from WaNo.SSHConnector import OPERATIONS as uops
-from WaNo.SSHConnector import ERROR as uerror
+from SimStack.view.WFViewManager import WFViewManager
+from SimStack.WaNoGitRevision import get_git_revision
+from SimStack.Constants import SETTING_KEYS
+from SimStack.EditorState import StateFactory
+from SimStack.SSHConnector import SSHConnector
+from SimStack.SSHConnector import OPERATIONS as uops
+from SimStack.SSHConnector import ERROR as uerror
 
-from WaNo.lib.CallableQThread import CallableQThread
+from SimStack.lib.CallableQThread import CallableQThread
 
 try:
     FileNotFoundError

@@ -6,7 +6,7 @@ from Qt.QtCore import Signal, Slot, QSize
 
 from enum import Enum
 
-from WaNo.lib.QtClusterSettingsProvider import QtClusterSettingsProvider
+from SimStack.lib.QtClusterSettingsProvider import QtClusterSettingsProvider
 
 
 class WaNoRegistrySelection(QWidget):

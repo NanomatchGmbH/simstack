@@ -273,7 +273,7 @@ class GlobalFileChooserDelegate(QtWidgets.QStyledItemDelegate):
         wf = self.parent().model().wano_parent.get_root().get_parent_wf()
 
         varpaths = wf.assemble_files("")
-        from WaNo.view.RemoteImporterDialog import RemoteImporterDialog
+        from SimStack.view.RemoteImporterDialog import RemoteImporterDialog
         mydialog = RemoteImporterDialog(varname ="Import file",
                                         importlist = varpaths,
                                         window_title="Workflow File Importer")
@@ -295,7 +295,7 @@ class GlobalFileChooserDelegate(QtWidgets.QStyledItemDelegate):
 
 
     def createEditor(self, parent, option, index):
-        from WaNo.view.MultiselectDropDownList import MultiselectDropDownList
+        from SimStack.view.MultiselectDropDownList import MultiselectDropDownList
 
         custom_widget = QtWidgets.QWidget(parent)
         hbl = QtWidgets.QHBoxLayout()

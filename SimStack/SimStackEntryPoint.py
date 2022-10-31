@@ -6,7 +6,7 @@ import sys
 
 from os.path import join
 
-from WaNo.SimStackPaths import SimStackPaths
+from SimStack.SimStackPaths import SimStackPaths
 
 import ctypes
 import signal
@@ -27,8 +27,8 @@ import traceback
 
 print("Using %s backend."%Qt.__binding__)
 
-from WaNo.WFEditorApplication import WFEditorApplication
-from WaNo.WaNoSettingsProvider import WaNoSettingsProvider
+from SimStack.WFEditorApplication import WFEditorApplication
+from SimStack.WaNoSettingsProvider import WaNoSettingsProvider
 
 
 

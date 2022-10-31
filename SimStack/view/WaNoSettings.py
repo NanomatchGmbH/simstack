@@ -10,8 +10,8 @@ import Qt.QtCore as QtCore
 
 from SimStackServer.Settings.ClusterSettingsProvider import ClusterSettingsProvider
 from SimStackServer.WorkflowModel import Resources
-from WaNo.lib.QtClusterSettingsProvider import QtClusterSettingsProvider
-from WaNo.view.ResourcesView import ResourcesView
+from SimStack.lib.QtClusterSettingsProvider import QtClusterSettingsProvider
+from SimStack.view.ResourcesView import ResourcesView
 
 
 class WaNoPathSettings(QDialog):
