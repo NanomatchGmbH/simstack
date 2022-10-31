@@ -1,27 +1,23 @@
 package:
   name: simstack 
-  version: "1.2.2"
+  version: "1.2.3"
 about:
   home: https://github.com/not_yet_existings
-  license: proprietary
+  license_family: proprietary
   summary: 
 build:
-  script: {{ PYTHON }} -m pip install --no-deps --ignore-installed -vv .
+  script: python -m pip install --no-deps --ignore-installed -vv .
+  noarch: python
+  number: 0
 source:
   path: ../
 requirements:
   build:
-    - {{ compiler('c') }}
-  host:
-    - meson
-    - ninja
-    - mesonpep517
-    - python {{ python }}
-    - cython =>0.29.1
+    - flit
   run:
-    - python {{ python }}
-    - pyqt >=5.15.3,<5.16
-    - pyqtwebengine >=5.15.3,<5.16
+    - python>=3.8
+    - pyqt>=5.15.4,<5.16
+    - pyqtwebengine >=5.15.4,<5.16
     - qt.py ==1.1.0
     - yaml >=0.2.5,<0.3.0
     - pyyaml >=6.0.0,<6.1.0
