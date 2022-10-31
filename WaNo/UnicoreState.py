@@ -60,11 +60,6 @@ class ProtectedRefCountedValue(ProtectedValue):
         self._ref_lock = QReadWriteLock(QReadWriteLock.NonRecursive)
         self._ref_count = 0
 
-#TODO class AutoProtectedValue:
-#    def __determine_required_protection(self, value):
-#        if type
-#    def __init__(self, value):
-#        self.
 
 class ProtectedList(object):
     def __create_list_item(self, item):
@@ -479,57 +474,4 @@ class UnicoreStateFactory(object):
     @classmethod
     def get_writer(self):
         return UnicoreStateFactory._Writer(self.__get_instance())
-
-
-
-
-if __name__ == "__main__":
-    from time import sleep
-    from concurrent.futures import ThreadPoolExecutor
-    def print2(s):
-        print("\t\t\t\t%s" % s)
-
-    def test_1_worker():
-        sleep(1)
-        print2("Locking for read")
-        for key in pdict.get_reader_instance():
-            print2("sleeping for 2 sec.")
-            sleep(2)
-            print2("Got key '%s'." % key)
-        print2("Unlocking")
-        return 0
-
-    def test_1_start():
-        print("## Test: concurrent read.")
-        w = executor.submit(test_1_worker)
-        print("Locking for read")
-        for key in pdict.get_reader_instance():
-            print("sleeping for 5 sec.")
-            sleep(5)
-            print("Got key '%s'." % key)
-        print("Unlocking")
-        print("Waiting for worker to terminate...")
-        w.result()
-
-    def test_2_start():
-        print("\n\n## Test: concurrent read and write")
-        w = executor.submit(test_1_worker)
-        print("Locking for read")
-        for i in range(0, 5):
-            print("trying to write...")
-            pdict.get_writer_instance().set_value('test_%d' % i, i)
-            print("writing done.")
-            sleep(1)
-        print("Waiting for worker to terminate...")
-        w.result()
-
-
-
-    executor = ThreadPoolExecutor(max_workers=1)
-    pindexed_list = ProtectedReaderWriterIndexedList( {'foo': 'bar'} )
-    plist = ProtectedList([1, 2, 3, 42])
-    pdict = ProtectedReaderWriterDict({'list1': pindexed_list, 'list2': plist})
-
-    test_1_start()
-    test_2_start()
 

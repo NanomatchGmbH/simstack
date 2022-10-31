@@ -12,7 +12,6 @@ compile_modules = [
    'SimStackPaths',
    'WFELicense',
    'WFEditorApplication',
-   'UnicoreHelpers',
 ]
 copy_src_files = [
    '__init__.py',
