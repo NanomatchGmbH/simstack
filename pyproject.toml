@@ -1,15 +1,14 @@
 [build-system]
-requires = ["mesonpep517"]
-build-backend = "mesonpep517.buildapi"
+requires = ["flit_core >=3.2,<4"]
+build-backend = "flit_core.buildapi"
 
 [project]
-name = "SimStack"
+name = "simstack"
 authors = [{name = "Timo Strunk", email = "timo.strunk@gmail.com"}]
 readme = "README.rst"
-version = "1.2.0"
 license = {file = "LICENSE"}
-classifiers = ["License :: Proprietary"]
-dynamic = []
+classifiers = ["License :: Other/Proprietary License"]
+dynamic = ["version", "description"]
 
 [tool.pytest.ini_options]
 minversion = "6.0"
@@ -17,6 +16,7 @@ addopts = "-ra -q"
 testpaths = [
     "tests",
 ]
+
 [tool.mesonpep517.metadata]
 author="Timo Strunk"
 author-email="timo.strunk@gmail.com"
@@ -25,5 +25,5 @@ meson-python-option-name="python3"
 
 [tool.mesonpep517.entry-points]
 console_scripts = [
-    'simstack = WaNo.SimStackEntryPoint:main',
+    'simstack = simstack.SimStackEntryPoint:main',
 ]
