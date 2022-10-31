@@ -10,7 +10,7 @@ from Qt.QtCore import QSize, Qt
 from enum import Enum
 from os.path import basename
 
-from ..UnicoreState import UnicoreDataTransferStates
+from ..EditorState import UnicoreDataTransferStates
 
 class Download(QWidget):
     DIRECTION = Enum("DLDirection",

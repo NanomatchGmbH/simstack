@@ -32,7 +32,7 @@ from WaNo.lib.QtClusterSettingsProvider import QtClusterSettingsProvider
 from WaNo.view.WFViewManager import WFViewManager
 from WaNo.WaNoGitRevision import get_git_revision
 from WaNo.Constants import SETTING_KEYS
-from WaNo.UnicoreState import UnicoreStateFactory
+from WaNo.EditorState import UnicoreStateFactory
 from WaNo.SSHConnector import SSHConnector
 from WaNo.SSHConnector import OPERATIONS as uops
 from WaNo.SSHConnector import ERROR as uerror
@@ -121,7 +121,6 @@ class WFEditorApplication(CallableQThread):
     def _on_registry_disconnect(self):
         self._disconnect_unicore()
 
-    #@QThreadCallback.callback
     def _on_fs_job_list_updated(self, base_uri, jobs):
         self._view_manager.update_job_list(jobs)
 
@@ -134,7 +133,6 @@ class WFEditorApplication(CallableQThread):
             )
 
 
-    #@QThreadCallback.callback
     def _on_resources_updated(self, base_uri, resources):
         print(resources.get_queues())
 
@@ -615,12 +613,6 @@ class WFEditorApplication(CallableQThread):
     def exit(self):
         self._view_manager.exit()
         self._unicore_connector.quit()
-        time.sleep(0.02)
-        if self._unicore_connector.isRunning() and not self._unicore_connector.isFinished():
-            time.sleep(0.2)
-            if self._unicore_connector.isRunning() and not self._unicore_connector.isFinished():
-                print("SSH Connector was still awake after 220ms. Terminating. This will lead to more errors.")
-                self._unicore_connector.terminate()
 
     ############################################################################
     #                            init                                          #
@@ -693,8 +685,6 @@ class WFEditorApplication(CallableQThread):
 
         self._unicore_connector = SSHConnector(self,
                 UnicoreStateFactory.get_writer())
-
-        self._unicore_connector.start()
 
         self._view_manager  = WFViewManager(UnicoreStateFactory.get_reader())
 

@@ -126,7 +126,7 @@ def eagain_catcher(f):
 
 
 
-class SSHConnector(CallableQThread):
+class SSHConnector(QObject):
     error = Signal(str, int, int, str, name="SSHError")
 
     def _emit_error(self, base_uri, operation, error, message=None):
@@ -406,7 +406,6 @@ class SSHConnector(CallableQThread):
 
     def quit(self):
         self.exit()
-        super().quit()
 
     def __init__(self, cbReceiver, unicore_state):
         super(SSHConnector, self).__init__()

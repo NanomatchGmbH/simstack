@@ -16,14 +16,6 @@ class QThreadCallback(QThread):
     def pseudo_slot(self, function, args, kwargs):
         function(*args, **kwargs)
 
-    @classmethod
-    def callback(cls, f):
-        @wraps(f)
-        def wrapper(self, *args, **kwargs):
-            args = (self, ) + args
-            self.pseudo_signal.emit(f, args, kwargs)
-        return wrapper
-
     def __init__(self):
         super(QThreadCallback, self).__init__()
         self.pseudo_signal.connect(self.pseudo_slot)
