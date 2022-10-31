@@ -235,8 +235,8 @@ class WFViewManager(QObject):
         except IndexError:
             pass
 
-    def _init_dl_progressbar(self, unicore_state):
-        self._dl_progress_widget = DownloadProgressWidget(self._mainwindow, unicore_state)
+    def _init_dl_progressbar(self, remote_state):
+        self._dl_progress_widget = DownloadProgressWidget(self._mainwindow, remote_state)
         self._dl_progress_bar    = DownloadProgressMenuButton(
                 self._mainwindow.statusBar(),
                 self._dl_progress_widget)
@@ -261,13 +261,13 @@ class WFViewManager(QObject):
     def add_webengine_view(self, wev):
         self._webengineviews.append(wev)
 
-    def __init__(self, unicore_state):
+    def __init__(self, remote_state):
         super(WFViewManager, self).__init__()
         self._editor        = WFEditor()
         self._webengineviews = []
 
         self._mainwindow    = WFEditorMainWindow(self._editor)
-        self._init_dl_progressbar(unicore_state)
+        self._init_dl_progressbar(remote_state)
         self._view_timer    = DynamicTimer()
         self._dl_update_interval =  200
         self._dl_callback_delete = { # used to schedule dl progress callbacks for deletion

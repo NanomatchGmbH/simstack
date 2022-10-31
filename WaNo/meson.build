@@ -5,7 +5,7 @@ dep_py = py.dependency()
 compile_modules = [
    'SimStackEntryPoint',
    'SSHConnector',
-   'UnicoreState',
+   'EditorState',
    'WaNoGitRevision',
    'WaNoSettingsProvider',
    'Constants',

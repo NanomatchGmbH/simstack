@@ -71,7 +71,7 @@ class WFEditorApplication(CallableQThread):
         func = None
         # Not connected error is always the same and trumps everything:
         if (error == uerror.REGISTRY_NOT_CONNECTED.value):
-            msg = "Registry not connected, please connect to a UNICORE server first."
+            msg = "Registry not connected, please connect to a SimStackServer first."
             self._view_manager.show_error("%s" % msg)
             #No logging required in this case
             return
@@ -113,13 +113,13 @@ class WFEditorApplication(CallableQThread):
         self._view_manager.open_dialog_path_settings(self.__settings.get_path_settings())
 
     def _on_registry_changed(self, registry_name: str):
-        self._reconnect_unicore(registry_name)
+        self._reconnect_remote(registry_name)
 
     def _on_registry_connect(self, registry_name):
-        self._connect_unicore(registry_name)
+        self._connect_remote(registry_name)
 
     def _on_registry_disconnect(self):
-        self._disconnect_unicore()
+        self._disconnect_remote()
 
     def _on_fs_job_list_updated(self, base_uri, jobs):
         self._view_manager.update_job_list(jobs)
@@ -448,7 +448,7 @@ class WFEditorApplication(CallableQThread):
         self._set_disconnected()
 
 
-    def _disconnect_unicore(self, no_status_update=False):
+    def _disconnect_remote(self, no_status_update=False):
         self._logger.info("Disconnecting from registry")
         #self._set_disconnected()
 
@@ -458,7 +458,7 @@ class WFEditorApplication(CallableQThread):
             (self._cb_disconnect,(),{'registry_name': registry_name})
         )
 
-    def _connect_unicore(self, registry_name, no_status_update=False):
+    def _connect_remote(self, registry_name, no_status_update=False):
         if registry_name == "":
             message = "No server definition selected. Please define a server in the Configuration -> Servers Dialog."
             WFViewManager.show_error(message)
@@ -525,14 +525,14 @@ class WFEditorApplication(CallableQThread):
         self._connector.run_workflow_job(registry_name,submitname,to_upload,xml)
 
 
-    def _reconnect_unicore(self, registry_name):
+    def _reconnect_remote(self, registry_name):
         self._logger.info("Reconnecting to Registry.")
         self._set_connecting()
         # quietly disconnect
         if self._get_current_registry_name():
-            self._disconnect_unicore(no_status_update = True)
+            self._disconnect_remote(no_status_update = True)
 
-        success = self._connect_unicore(registry_name)
+        success = self._connect_remote(registry_name)
 
     def _set_disconnected(self):
         self._view_manager.set_registry_connection_status(

@@ -407,7 +407,7 @@ class SSHConnector(QObject):
     def quit(self):
         self.exit()
 
-    def __init__(self, cbReceiver, unicore_state):
+    def __init__(self, cbReceiver, remote_state):
         super(SSHConnector, self).__init__()
         self.logger         = logging.getLogger("SSHConnection")
         self.cbReceiver     = cbReceiver
