@@ -23,7 +23,5 @@ author-email="timo.strunk@gmail.com"
 summary="SimStack"
 meson-python-option-name="python3"
 
-[tool.mesonpep517.entry-points]
-console_scripts = [
-    'simstack = simstack.SimStackEntryPoint:main',
-]
+[project.scripts]
+"simstack" = "simstack.SimStackEntryPoint:main"
