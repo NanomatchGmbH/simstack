@@ -6,10 +6,10 @@ from SimStackServer.WorkflowModel import Resources
 from functools import partial
 import numpy as np
 
-from SimStack.lib.QtClusterSettingsProvider import QtClusterSettingsProvider
-from SimStack.view.HorizontalTextEditWithFileImport import HorizontalTextEditWithFileImport
-from SimStack.view.QHVLine import QHLine
-from SimStack.view.WaNoRegistrySelection import WaNoRegistrySelection
+from simstack.lib.QtClusterSettingsProvider import QtClusterSettingsProvider
+from simstack.view.HorizontalTextEditWithFileImport import HorizontalTextEditWithFileImport
+from simstack.view.QHVLine import QHLine
+from simstack.view.WaNoRegistrySelection import WaNoRegistrySelection
 
 
 class ResourcesView(QtWidgets.QWidget):

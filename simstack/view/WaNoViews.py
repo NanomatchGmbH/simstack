@@ -5,12 +5,12 @@ from __future__ import print_function
 from __future__ import unicode_literals
 from __future__ import absolute_import
 
-from SimStack.view.MultiselectDropDownList import MultiselectDropDownList
-from SimStack.view.AbstractWaNoView import AbstractWanoQTView, AbstractWanoView
+from simstack.view.MultiselectDropDownList import MultiselectDropDownList
+from simstack.view.AbstractWaNoView import AbstractWanoQTView, AbstractWanoView
 from Qt import QtGui, QtCore, QtWidgets
 import os
 
-from SimStack.view.ResourcesView import ResourcesView
+from simstack.view.ResourcesView import ResourcesView
 
 
 class GroupBoxWithButton(QtWidgets.QGroupBox):
@@ -534,14 +534,14 @@ class WanoQtViewRoot(AbstractWanoQTView):
 
     def get_import_widget(self):
         model = self.model.get_import_model()
-        from SimStack.view.PropertyListView import ImportView
+        from simstack.view.PropertyListView import ImportView
         self.importview = ImportView()
         self.importview.setModel(model)
         return self.importview
 
     def get_export_widget(self):
         model = self.model.get_export_model()
-        from SimStack.view.PropertyListView import ExportView
+        from simstack.view.PropertyListView import ExportView
         self.exportview = ExportView()
         self.exportview.setModel(model)
         return self.exportview
@@ -550,7 +550,7 @@ class WanoQtViewRoot(AbstractWanoQTView):
         while self.vbox.count() > 0:
             self.vbox.removeItem(self.vbox.takeAt(0))
 
-        from SimStack.view.WaNoViews import WaNoTabView
+        from simstack.view.WaNoViews import WaNoTabView
         for key, model in self.model.wano_dict.items():
             if isinstance(model.view,WaNoTabView):
                 self.init_without_scroller()
@@ -602,7 +602,7 @@ class WaNoItemFileView(AbstractWanoQTView):
 
     def open_remote_importer_files(self):
         varpaths = self.model.get_root().get_parent_wf().assemble_files("")
-        from SimStack.view.RemoteImporterDialog import RemoteImporterDialog
+        from simstack.view.RemoteImporterDialog import RemoteImporterDialog
         mydialog = RemoteImporterDialog(varname ="Import file \"%s\" from:" % self.model.name,
                                         importlist = varpaths,
                                         window_title="Workflow File Importer")

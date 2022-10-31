@@ -16,7 +16,7 @@ if __name__ == '__main__':
         sys.path.append(dir_path)
 
 from Qt import QtGui, QtCore, QtWidgets
-from WaNo.model.TestWaNo import TestWaNo
+from simstack.model.TestWaNo import TestWaNo
 
 def main():
     app = QtWidgets.QApplication(sys.argv)

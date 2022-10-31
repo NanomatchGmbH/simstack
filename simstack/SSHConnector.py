@@ -29,14 +29,14 @@ from SimStackServer.ClusterManager import ClusterManager
 from SimStackServer.MessageTypes import ErrorCodes
 from SimStackServer.Settings.ClusterSettingsProvider import ClusterSettingsProvider
 from SimStackServer.WorkflowModel import Resources, Workflow
-from SimStack.SimStackPaths import SimStackPaths
+from simstack.SimStackPaths import SimStackPaths
 
 from SimStackServer.Util.FileUtilities import filewalker
-from SimStack.lib.CallableQThread import CallableQThread
+from simstack.lib.CallableQThread import CallableQThread
 
 from functools import wraps
 
-from SimStack.lib.QtClusterSettingsProvider import QtClusterSettingsProvider
+from simstack.lib.QtClusterSettingsProvider import QtClusterSettingsProvider
 
 """ Number of data transfer workers per regisrtry. """
 MAX_DT_WORKERS_PER_REGISTRY = 3
@@ -110,15 +110,15 @@ def eagain_catcher(f):
         try:
             return f(self, *args, **kwds)
         except (Again, ZMQError) as e:
-            from SimStack.view.WFViewManager import WFViewManager
+            from simstack.view.WFViewManager import WFViewManager
             message = "Connection Error, please try reconnecting Client."
             WFViewManager.show_error(message)
         except socket.timeout as e:
-            from SimStack.view.WFViewManager import WFViewManager
+            from simstack.view.WFViewManager import WFViewManager
             message = "Caught connection exception %s: SSH socket timed out. Please try reconnecting Client." % (e)
             WFViewManager.show_error(message)
         except OSError as e:
-            from SimStack.view.WFViewManager import WFViewManager
+            from simstack.view.WFViewManager import WFViewManager
             #print(type(e))
             message = "Caught connection exception %s: %s. Try reconnecting Client."%(type(e),e)
             WFViewManager.show_error(message)
