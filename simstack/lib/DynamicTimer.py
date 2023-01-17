@@ -1,4 +1,3 @@
-from __future__ import division
 from Qt.QtCore import QObject, QTimer, QThread, Signal
 from Qt.QtCore import QMutex
 try:

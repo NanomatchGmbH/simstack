@@ -1,4 +1,3 @@
-from __future__ import division
 from Qt.QtCore import QObject, QTimer
 from Qt.QtCore import QMutex
 import time

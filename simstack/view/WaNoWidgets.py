@@ -1,10 +1,6 @@
 #
 #  Supply the memberfunctions making the widgets 
 #
-from __future__ import division
-from __future__ import print_function
-from __future__ import unicode_literals
-
 import Qt.QtCore as QtCore
 import Qt.QtGui  as QtGui
 
