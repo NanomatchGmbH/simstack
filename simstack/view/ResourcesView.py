@@ -24,6 +24,7 @@ class ResourcesView(QtWidgets.QWidget):
         "basepath": "Calculation basepath",
         "ssh_private_key": "SSH private Key",
         "sge_pe": "SGE PE",
+        "reuse_results": "Reuse existing results"
     }
     _field_name_to_intention = {
         "extra_config": "file",
@@ -69,6 +70,8 @@ class ResourcesView(QtWidgets.QWidget):
             return "int"
         elif mytype == str:
             return "str"
+        elif mytype == bool:
+            return "bool"
 
     def blockSignals(self, do_block):
         super().blockSignals(do_block)
@@ -149,6 +152,8 @@ class ResourcesView(QtWidgets.QWidget):
                 widget.line_edit.setText(this_value)
             elif intention =="str":
                 widget.setText(this_value)
+            elif intention == "bool":
+                widget.setChecked(this_value)
             elif intention == "queueing_system":
                 widget.setCurrentText(this_value)
             elif intention == "resource_chooser":
@@ -251,6 +256,10 @@ class ResourcesView(QtWidgets.QWidget):
                 this_i = QtWidgets.QLineEdit()
                 this_i.setText(this_value)
                 this_i.textChanged.connect(myfunc)
+            elif intention == "bool":
+                this_i = QtWidgets.QCheckBox()
+                this_i.setChecked(this_value)
+                this_i.toggled.connect(myfunc)
             elif intention == "queueing_system":
                 this_i = self._get_queue_dropdown_widget()
                 this_i.setCurrentText(this_value)
