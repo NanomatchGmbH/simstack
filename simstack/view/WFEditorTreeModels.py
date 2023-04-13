@@ -35,13 +35,14 @@ class DATA_TYPE(Enum):
     JOB_FAILED  = 11
     JOB_SUCCESSFUL = 12
     JOB_ABORTED    = 13
-    WF_QUEUED = 14
-    WF_RUNNING = 15
-    WF_READY = 16
-    WF_FAILED = 17
-    WF_SUCCESSFUL = 18
-    WF_ABORTED = 19
-    UNDELETEABLE_DIRECTORY = 20
+    JOB_REUSED_RESULT = 14
+    WF_QUEUED = 15
+    WF_RUNNING = 16
+    WF_READY = 17
+    WF_FAILED = 18
+    WF_SUCCESSFUL = 19
+    WF_ABORTED = 20
+    UNDELETEABLE_DIRECTORY = 21
 
 JOB_STATUS_TO_DATA_TYPE = {
     JobStatus.READY : DATA_TYPE.JOB_READY,
@@ -376,7 +377,10 @@ class WFERemoteFileSystemEntry(WFEFileSystemEntry):
     def getIconType(self):
         if self._data['data_type'] == WFERemoteFileSystemModel.DATA_TYPE_JOB:
             if self._data['status'] != None:
-                return JOB_STATUS_TO_DATA_TYPE[self._data["status"]]
+                if self._data["status"] == JobStatus.SUCCESSFUL and self._data['original_result_directory'] is not None:
+                    return  DATA_TYPE.JOB_REUSED_RESULT
+                else:
+                    return JOB_STATUS_TO_DATA_TYPE[self._data["status"]]
 
         if self._data['data_type'] == WFERemoteFileSystemModel.DATA_TYPE_WORKFLOW:
             if self._data['status'] != None:
@@ -385,14 +389,15 @@ class WFERemoteFileSystemEntry(WFEFileSystemEntry):
         return super(WFERemoteFileSystemEntry, self).getIconType()
 
     @staticmethod
-    def createData(id, name, path, abspath, data_type=None, status = None):
+    def createData(id, name, path, abspath, data_type=None, status = None, original_result_directory = None):
         return {
                 'id'        : id,
                 'name'      : name,
                 'abspath'   : abspath,
                 'path'      : path,
                 'data_type' : data_type,
-                'status'    : status
+                'status'    : status,
+                'original_result_directory': original_result_directory
             }
 
 
@@ -455,7 +460,8 @@ class WFERemoteFileSystemModel(WFEFileSystemModel):
             DATA_TYPE.JOB_FAILED: self.colorize_icon(QFileIconProvider().icon(QFileIconProvider.Computer), Qt.red),
             DATA_TYPE.JOB_SUCCESSFUL: self.colorize_icon(QFileIconProvider().icon(QFileIconProvider.Computer),Qt.green),
             DATA_TYPE.JOB_ABORTED: self.colorize_icon(QFileIconProvider().icon(QFileIconProvider.Computer), Qt.red),
-            
+            DATA_TYPE.JOB_REUSED_RESULT: self.colorize_icon(QFileIconProvider().icon(QFileIconProvider.Computer), Qt.blue),
+
             #DATA_TYPE.WF_QUEUED: self.colorize_icon(QFileIconProvider().icon(QFileIconProvider.Desktop),Qt.darkYellow),
             DATA_TYPE.WF_QUEUED: QFileIconProvider().icon(QFileIconProvider.Desktop),
             DATA_TYPE.WF_RUNNING: self.colorize_icon(QFileIconProvider().icon(QFileIconProvider.Desktop), Qt.yellow),

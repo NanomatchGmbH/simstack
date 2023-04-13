@@ -79,7 +79,8 @@ class WFRemoteFileSystem(QWidget):
                                 else FSModel.DATA_TYPE_JOB if i['type'] == 'j' \
                                 else FSModel.DATA_TYPE_WORKFLOW if i['type'] == 'w' \
                                 else FSModel.DATA_TYPE_UNKNOWN,
-                        status = i['status'] if 'status' in i else None
+                        status = i['status'] if 'status' in i else None,
+                        original_result_directory = i['original_result_directory'] if 'original_result_directory' in i else None
                         ) for i in subelements]
 
                 self.__fs_model.insertDataRows(0, entries, index)
