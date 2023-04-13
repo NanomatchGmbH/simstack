@@ -1,6 +1,10 @@
 # Changelog
 
-## 1.2.4 2023-06-02
+## 1.2.5 2023-04-13
+### Added
+- Added support for serverside reuse feature
+
+## 1.2.4 2023-02-06
 ### Changed
 - First release of the non-compiled simtack
 
