@@ -14,7 +14,7 @@ from TreeWalker.TreeWalker import TreeWalker
 from SimStackServer.WaNo.WaNoFactory import wano_constructor_helper, wano_without_view_constructor_helper
 from SimStackServer.WaNo.WaNoModels import WaNoItemFloatModel, WaNoModelRoot
 from SimStackServer.WaNo.WaNoTreeWalker import ViewCollector, PathCollector, subdict_skiplevel
-from WaNo.view.WaNoViews import WanoQtViewRoot
+from simstack.view.WaNoViews import WanoQtViewRoot
 
 
 def subdict_view(subdict,

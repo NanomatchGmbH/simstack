@@ -1,7 +1,6 @@
 name: simstack_pyside2
 channels:
   - conda-forge
-  - defaults
 dependencies:
   - jinja2>=3.0.1
   - nomkl
