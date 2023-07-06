@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.2.6 2023-07-06
+### Fixed
+- Windows entry point was incorrectly generated
+
 ## 1.2.5 2023-04-13
 ### Added
 - Added support for serverside reuse feature
