@@ -1,6 +1,0 @@
-[submodule "SimStackServer"]
-	path = SimStackServer
-	url = ../simstackserver.git
-[submodule "external/treewalker"]
-	path = external/treewalker
-	url = ssh://git@gitlab.nanobuild.de:2222/nanomatch/treewalker.git
