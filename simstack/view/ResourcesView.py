@@ -86,6 +86,7 @@ class ResourcesView(QtWidgets.QWidget):
         qs.addItem("sge_multi")
         qs.addItem("AiiDA")
         qs.addItem("Internal")
+        qs.addItem("Filegenerator")
         return qs
 
     def _update_cluster_dropdown(self):

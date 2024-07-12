@@ -21,6 +21,7 @@ from Qt.QtCore import Slot, Signal, QObject
 from Qt.QtWidgets import QMessageBox
 
 from SimStackServer.ClusterManager import ClusterManager
+from SimStackServer.FilegeneratorClusterManager import FilegeneratorClusterManager
 from SimStackServer.MessageTypes import ErrorCodes
 from SimStackServer.Settings.ClusterSettingsProvider import ClusterSettingsProvider
 from SimStackServer.WorkflowModel import Resources, Workflow
@@ -166,11 +167,18 @@ class SSHConnector(QObject):
             else:
                 raise FileNotFoundError("Could not find private key at path <%s>"%pkfile)
         extra_config = registry.extra_config
-        cm = ClusterManager(url=registry.base_URI, port=registry.port,
-                            calculation_basepath=registry.basepath, user=registry.username,
-                            sshprivatekey=private_key,
-                            extra_config=extra_config,
-                            queueing_system=registry.queueing_system, default_queue=registry.queue)
+        if registry.queueing_system == "Filegenerator":
+            cm = FilegeneratorClusterManager(url=registry.base_URI, port=registry.port,
+                                calculation_basepath=registry.basepath, user=registry.username,
+                                sshprivatekey=private_key,
+                                extra_config=extra_config,
+                                queueing_system=registry.queueing_system, default_queue=registry.queue)
+        else:
+            cm = ClusterManager(url=registry.base_URI, port=registry.port,
+                                calculation_basepath=registry.basepath, user=registry.username,
+                                sshprivatekey=private_key,
+                                extra_config=extra_config,
+                                queueing_system=registry.queueing_system, default_queue=registry.queue)
         self._clustermanagers[name] = cm
 
         if not cm.is_connected():
