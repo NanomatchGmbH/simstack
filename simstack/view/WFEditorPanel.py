@@ -257,12 +257,13 @@ class WFWaNoWidget(QtWidgets.QToolButton,DragDropTargetTracker):
         print("rendering wano with stageout_basedir %s" %stageout_basedir)
         jsdl, wem = self.wano_model.render_and_write_input_files_newmodel(basefolder,stageout_basedir=stageout_basedir)
         wem: WorkflowExecModule
-        wem.resources.overwrite_unset_fields_from_default_resources(self.wf_model.base_resource_during_render())
-        wem.set_wano_xml(self.wano_model.name + ".xml")
-        return jsdl, wem, path_list + [wem.name]
+        mywem = copy.deepcopy(wem)
+        mywem.resources.overwrite_unset_fields_from_default_resources(self.wf_model.base_resource_during_render())
+        mywem.set_wano_xml(self.wano_model.name + ".xml")
+        return jsdl, mywem, path_list + [wem.name]
 
     def clear(self):
-        pass 
+        pass
 
     def construct_wano(self):
         if not self.constructed:
@@ -1124,7 +1125,7 @@ def merge_path(path, name, var):
     return newpath
 
 
-class WFModel(object):
+class WFModel:
     def __init__(self, *args, **kwargs):
         """
          Workflow:
