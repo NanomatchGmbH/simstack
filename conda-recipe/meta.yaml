@@ -19,7 +19,6 @@ requirements:
   run:
     - python>=3.8
     - pyqt>=5.15.4,<5.16
-    - pyqtwebengine >=5.15.4,<5.16
     - qt.py ==1.1.0
     - yaml >=0.2.5,<0.3.0
     - pyyaml >=6.0.0,<6.1.0

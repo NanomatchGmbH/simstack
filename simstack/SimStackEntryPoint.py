@@ -16,11 +16,7 @@ import uuid
 
 import yaml
 import Qt
-if Qt.__binding__ == "PyQt5":
-    import PyQt5.QtWebEngineWidgets
-else:
-    assert Qt.__binding__ == "PySide2"
-    import PySide2.QtWebEngineWidgets
+
 from Qt.QtWidgets import QApplication, QStyleFactory
 from Qt.QtCore import QTimer, QLocale
 import traceback
