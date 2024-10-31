@@ -1,34 +1,32 @@
 import logging
 import socket
-import threading
-import shlex
+
 import os
 from io import StringIO
 import traceback
 from enum import Enum
-from os.path import dirname, join
-from pprint import pprint
+from os.path import dirname
+
 
 import paramiko
 
 from lxml import etree
-from paramiko import BadHostKeyException
+
 
 from zmq.error import Again, ZMQError
 
-from Qt.QtCore import QThread, Qt
-from Qt.QtCore import Slot, Signal, QObject
-from Qt.QtWidgets import QMessageBox
+from PySide6.QtCore import Slot, Signal, QObject
+from PySide6.QtWidgets import QMessageBox
 
 from SimStackServer.ClusterManager import ClusterManager
 from SimStackServer.FilegeneratorClusterManager import FilegeneratorClusterManager
 from SimStackServer.MessageTypes import ErrorCodes
-from SimStackServer.Settings.ClusterSettingsProvider import ClusterSettingsProvider
-from SimStackServer.WorkflowModel import Resources, Workflow
+
+from SimStackServer.WorkflowModel import Resources
 from simstack.SimStackPaths import SimStackPaths
 
 from SimStackServer.Util.FileUtilities import filewalker
-from simstack.lib.CallableQThread import CallableQThread
+
 
 from functools import wraps
 

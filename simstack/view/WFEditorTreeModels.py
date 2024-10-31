@@ -1,16 +1,12 @@
-from Qt.QtCore import QAbstractItemModel, QModelIndex
-from enum import Enum
+
 from abc import abstractmethod
 
 
-# imports for tests only.
-# TODO remove when done.
-from Qt.QtCore import QAbstractItemModel, QModelIndex, QFileInfo, Qt, QSize
-from Qt.QtWidgets import QFileIconProvider, QTreeView
-from Qt.QtGui import QIcon, QPainter, QColor, qGray, QPixmap
-#import Qt.QtCore
-import abc
-import os, sys, time
+
+from PySide6.QtCore import QAbstractItemModel, QModelIndex, QFileInfo, Qt, QSize
+from PySide6.QtWidgets import QFileIconProvider, QTreeView
+from PySide6.QtGui import QIcon, QPainter, QColor, qGray, QPixmap
+
 from enum import Enum
 
 
@@ -431,8 +427,8 @@ class WFERemoteFileSystemModel(WFEFileSystemModel):
             pixmap = self.pixmap_to_grayscale(pixmap)          
             painter = QPainter()
             painter.begin(pixmap)
-            painter.setCompositionMode(painter.CompositionMode_Screen)
-            painter.fillRect(pixmap.rect(),color)            
+            painter.setCompositionMode(QPainter.CompositionMode.CompositionMode_Screen)
+            painter.fillRect(pixmap.rect(), color)
             painter.end()
             return QIcon(pixmap)
 

@@ -1,6 +1,8 @@
 import os
 from os.path import join
 
+from PySide6.QtCore import QDir, QStandardPaths
+
 
 class SimStackPaths:
     _SETTINGS_DIR = "NanoMatch"
@@ -34,31 +36,18 @@ class SimStackPaths:
 
     @classmethod
     def get_temp_folder(cls):
-        import Qt
-
-        if Qt.IsPySide:
-            from PySide.QtGui import QDesktopServices
-            return QDesktopServices.storageLocation(QDesktopServices.TempLocation)
-
-        import importlib
-        qc = importlib.import_module("%s.QtCore" % Qt.__binding__)
-        rtp = qc.QStandardPaths.standardLocations(qc.QStandardPaths.TempLocation)
+        rtp = QStandardPaths.standardLocations(QStandardPaths.StandardLocation.TempLocation)
         if isinstance(rtp, list):
             rtp = rtp[0]
+
         return rtp
 
     @classmethod
     def get_settings_folder(cls):
-        import Qt
         if os.path.isdir(os.path.join("config", cls._SETTINGS_DIR)):
             return "config"
-        if Qt.IsPySide:
-            from PySide.QtGui import QDesktopServices
-            return QDesktopServices.storageLocation(QDesktopServices.DataLocation)
 
-        import importlib
-        qc = importlib.import_module("%s.QtCore" % Qt.__binding__)
-        rtp = qc.QStandardPaths.standardLocations(qc.QStandardPaths.DataLocation)
+        rtp = QStandardPaths.standardLocations(QStandardPaths.StandardLocation.AppDataLocation)
         if isinstance(rtp, list):
             rtp = rtp[0]
 

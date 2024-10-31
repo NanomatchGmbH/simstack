@@ -1,16 +1,16 @@
 import time
 import os
 
-import Qt.QtGui  as QtGui
-import Qt.QtWidgets  as QtWidgets
+import PySide6.QtGui  as QtGui
+import PySide6.QtWidgets  as QtWidgets
 
-from Qt.QtCore import Signal
+from PySide6.QtCore import Signal
 
 from .WaNoSettings import WaNoPathSettings, SimStackClusterSettingsView
 from .ViewTimer import ViewTimer
 
-from Qt.QtCore import QMutex
-from Qt.QtWidgets import QMessageBox
+from PySide6.QtCore import QMutex
+from PySide6.QtWidgets import QMessageBox
 
 class StatusMessageManager(object):
     def __sort(self):
@@ -65,7 +65,7 @@ class StatusMessageManager(object):
 
     def __init__(self, callback):
         self._list = []
-        self._list_lock = QMutex(QMutex.NonRecursive)
+        self._list_lock = QMutex()
         self._callback = callback
         self._timer = ViewTimer(self.update)
         self._stringlist = []
@@ -194,45 +194,45 @@ class WFEditorMainWindow(QtWidgets.QMainWindow):
         self.run.emit()
 
     def _createActions(self):
-        self.newAct = QtWidgets.QAction("&New", self,
+        self.newAct = QtGui.QAction("&New", self,
                 shortcut=QtGui.QKeySequence.New,
                 statusTip="Create a new file", triggered=self.action_newFile)
 
-        self.openAct = QtWidgets.QAction("&Open...", self,
+        self.openAct = QtGui.QAction("&Open...", self,
                 shortcut=QtGui.QKeySequence.Open,
                 statusTip="Open an existing file", triggered=self.action_open)
 
-        self.saveAct = QtWidgets.QAction("&Save", self,
+        self.saveAct = QtGui.QAction("&Save", self,
                 shortcut=QtGui.QKeySequence.Save,
                 statusTip="Save the document to file", triggered=self.action_save)
         
-        self.saveAsAct = QtWidgets.QAction("Save &As", self,
+        self.saveAsAct = QtGui.QAction("Save &As", self,
                                shortcut=QtGui.QKeySequence.SaveAs,
                 statusTip="Save the document to new file", triggered=self.action_saveAs)
 
-        self.printAct = QtWidgets.QAction("&Print...", self,
+        self.printAct = QtGui.QAction("&Print...", self,
                 shortcut=QtGui.QKeySequence.Print,
                 statusTip="Print the document", triggered=self.action_print_)
 
-        self.exitAct = QtWidgets.QAction("E&xit", self, shortcut="Ctrl+Q",
+        self.exitAct = QtGui.QAction("E&xit", self, shortcut="Ctrl+Q",
                 statusTip="Exit the application", triggered=self.action_close)
 
-        self.runAct = QtWidgets.QAction("R&un", self, shortcut="Ctrl+R",
+        self.runAct = QtGui.QAction("R&un", self, shortcut="Ctrl+R",
                 statusTip="Run the currently active Workflow", triggered=self.action_run)
 
-        self.aboutAct = QtWidgets.QAction("&Help", self,
+        self.aboutAct = QtGui.QAction("&Help", self,
                 statusTip="Show the application's Help box",
                 triggered=self.action_about)
 
-        self.aboutWFEAct = QtWidgets.QAction("About SimS&tack", self,
+        self.aboutWFEAct = QtGui.QAction("About SimS&tack", self,
                 statusTip="About the Nanomatch SimStack Client",
                 triggered=self.action_aboutWFE)
 
-        self.configServAct = QtWidgets.QAction("&Servers", self,
+        self.configServAct = QtGui.QAction("&Servers", self,
                 statusTip="Configure Servers",
                 triggered=self.action_openSettingsDialog)
 
-        self.configPathSettingsAct = QtWidgets.QAction("&Paths", self,
+        self.configPathSettingsAct = QtGui.QAction("&Paths", self,
                statusTip="Configure Paths",
                triggered=self.action_openPathSettingsDialog)
 

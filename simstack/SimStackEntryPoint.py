@@ -15,13 +15,14 @@ import logging
 import uuid
 
 import yaml
-import Qt
 
-from Qt.QtWidgets import QApplication, QStyleFactory
-from Qt.QtCore import QTimer, QLocale
+
+from PySide6.QtWidgets import QApplication, QStyleFactory
+from PySide6.QtCore import QTimer, QLocale
+import PySide6.QtCore as QtCore
 import traceback
 
-print("Using %s backend."%Qt.__binding__)
+
 
 from simstack.WFEditorApplication import WFEditorApplication
 from simstack.WaNoSettingsProvider import WaNoSettingsProvider
@@ -53,7 +54,6 @@ def main():
     if platform.system() == 'Windows':
         ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(myappid)
 
-    import Qt.QtCore as QtCore
     QtCore.QCoreApplication.setAttribute(QtCore.Qt.AA_ShareOpenGLContexts)
 
     app = QApplication(sys.argv)

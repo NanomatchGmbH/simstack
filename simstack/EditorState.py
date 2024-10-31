@@ -1,4 +1,4 @@
-from Qt.QtCore import QReadWriteLock, QMutex
+from PySide6.QtCore import QReadWriteLock
 import copy # for ProtectedDict and ProtectedList
 from enum import Enum
 
@@ -27,7 +27,7 @@ class ProtectedValue(object):
         self._lock.unlock()
 
     def __init__(self, value):
-        self._lock = QReadWriteLock(QReadWriteLock.NonRecursive)
+        self._lock = QReadWriteLock(QReadWriteLock.RecursionMode.NonRecursive)
         self._value = value
 
 class ProtectedRefCountedValue(ProtectedValue):
@@ -57,7 +57,7 @@ class ProtectedRefCountedValue(ProtectedValue):
 
     def __init__(self, value):
         super(ProtectedRefCountedValue, self).__init__(value)
-        self._ref_lock = QReadWriteLock(QReadWriteLock.NonRecursive)
+        self._ref_lock = QReadWriteLock(QReadWriteLock.RecursionMode.NonRecursive)
         self._ref_count = 0
 
 
@@ -110,7 +110,7 @@ class ProtectedList(object):
         This will prevent unsave changes.
         """
         self._list = copy.deepcopy(initial_list)
-        self._lock = QReadWriteLock(QReadWriteLock.NonRecursive)
+        self._lock = QReadWriteLock(QReadWriteLock.RecursionMode.NonRecursive)
 
 class ProtectedDict(object):
 
@@ -185,7 +185,7 @@ class ProtectedDict(object):
         This will prevent unsave changes.
         """
         self._values = copy.deepcopy(initial_dict)
-        self._lock = QReadWriteLock(QReadWriteLock.NonRecursive)
+        self._lock = QReadWriteLock(QReadWriteLock.RecursionMode.NonRecursive)
 
 class ProtectedIndexedList(ProtectedDict):
     """ Implements a list with persistent indices that would not change, even

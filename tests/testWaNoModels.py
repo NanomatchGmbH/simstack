@@ -3,12 +3,12 @@ import sys
 import unittest
 from pathlib import Path
 
-from Qt import QtWidgets
-from Qt import QtCore
+from PySide6 import QtWidgets
+from PySide6 import QtCore
 
 from os import path
 
-from PyQt5.QtWidgets import QApplication
+from PySide6.QtWidgets import QApplication
 from lxml import etree
 from TreeWalker.TreeWalker import TreeWalker
 from SimStackServer.WaNo.WaNoFactory import wano_constructor_helper, wano_without_view_constructor_helper

@@ -5,9 +5,9 @@ import zipfile
 from os.path import join
 from pathlib import Path
 
-from Qt.QtCore import Signal
+from PySide6.QtCore import Signal
 
-from Qt import QtCore, QtGui, QtWidgets, Qt
+from PySide6 import QtCore, QtGui, QtWidgets
 
 import sys
 import time

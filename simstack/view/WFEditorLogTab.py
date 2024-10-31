@@ -1,4 +1,4 @@
-from Qt.QtWidgets import QPlainTextEdit
+from PySide6.QtWidgets import QPlainTextEdit
 import logging
 
 class LogTab(QPlainTextEdit):

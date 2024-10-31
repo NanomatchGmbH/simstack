@@ -1,5 +1,5 @@
-from Qt.QtCore import QThread, QObject
-from Qt.QtCore import Slot, Signal
+from PySide6.QtCore import QThread, QObject
+from PySide6.QtCore import Slot, Signal
 
 from functools import wraps
 import sys

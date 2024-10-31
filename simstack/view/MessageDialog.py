@@ -1,4 +1,4 @@
-from Qt.QtWidgets import QMessageBox
+from PySide6.QtWidgets import QMessageBox
 from enum import Enum
 
 class MessageDialog(QMessageBox):
@@ -26,7 +26,7 @@ class MessageDialog(QMessageBox):
             self.exec_()
 
 if __name__ == "__main__":
-    from PySide.QtGui import QApplication
+    from PySide6.QtGui import QApplication
     import sys
     qapp = QApplication(sys.argv)
 

@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
-from simstack.view.MultiselectDropDownList import MultiselectDropDownList
 from simstack.view.AbstractWaNoView import AbstractWanoQTView, AbstractWanoView
-from Qt import QtGui, QtCore, QtWidgets
+from PySide6 import QtGui, QtCore, QtWidgets
 import os
 
 from simstack.view.ResourcesView import ResourcesView
@@ -853,7 +852,7 @@ class WaNoChoiceView(AbstractWanoQTView):
         }
         """)
         self.buttons = []
-        self.bg.buttonClicked[int].connect(self.onButtonClicked)
+        self.bg.idClicked.connect(self.onButtonClicked)
         ##self.actual_widget.setSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
         """" Widget code end """
 

@@ -1,14 +1,12 @@
 from os.path import join
 
-from Qt.QtWidgets import QDialog, QLabel, QGridLayout, QLineEdit, QPushButton, \
+from PySide6.QtWidgets import QDialog, QLabel, QGridLayout, QLineEdit, QPushButton, \
         QTabWidget, QWidget, QVBoxLayout, QHBoxLayout, QCheckBox, QTabBar, \
         QToolButton, QFileIconProvider, QFileDialog, QComboBox
-import Qt.QtWidgets as QtWidgets
-from Qt.QtGui import QIntValidator
-from Qt.QtCore import Signal, QSignalMapper, QDir
-import Qt.QtCore as QtCore
+import PySide6.QtWidgets as QtWidgets
+from PySide6.QtCore import Signal, QSignalMapper, QDir
+import PySide6.QtCore as QtCore
 
-from SimStackServer.Settings.ClusterSettingsProvider import ClusterSettingsProvider
 from SimStackServer.WorkflowModel import Resources
 from simstack.lib.QtClusterSettingsProvider import QtClusterSettingsProvider
 from simstack.view.ResourcesView import ResourcesView

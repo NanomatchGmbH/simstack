@@ -1,8 +1,8 @@
 import logging
 import os
-from Qt.QtWidgets import QWidget, QSizePolicy, QLabel, QSplitter, QHBoxLayout, \
+from PySide6.QtWidgets import QWidget, QSizePolicy, QLabel, QSplitter, QHBoxLayout, \
             QTabWidget, QTreeView
-from Qt.QtCore import Qt, Signal
+from PySide6.QtCore import Qt, Signal
 
 from .WaNoEditorWidget import WaNoEditor
 from .WFEditorPanel import WFTabsWidget
@@ -230,11 +230,9 @@ class WFEditor(QWidget):
         
     def save(self):
         self.workflowWidget.save()
-        self.workflowListWidget.update()
         
     def saveAs(self):
         self.workflowWidget.saveAs()
-        self.workflowListWidget.update()
 
     def run(self, current_registry):
         return self.workflowWidget.run(current_registry)

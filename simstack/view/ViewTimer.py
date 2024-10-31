@@ -1,5 +1,5 @@
-from Qt.QtCore import QObject, QTimer
-from Qt.QtCore import QMutex
+from PySide6.QtCore import QObject, QTimer
+from PySide6.QtCore import QMutex
 import time
 
 class ViewTimer(QObject):
@@ -66,7 +66,7 @@ class ViewTimer(QObject):
         self._remaining_due_times = []
         self._due_time = -1
         self._last_timeout = -1
-        self._lock = QMutex(QMutex.NonRecursive)
+        self._lock = QMutex()
 
         self._timer.timeout.connect(self.__timeout)
 
