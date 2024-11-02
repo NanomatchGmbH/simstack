@@ -1,3 +1,4 @@
+import getpass
 import logging
 import socket
 
@@ -20,6 +21,7 @@ from PySide6.QtWidgets import QMessageBox
 
 from SimStackServer.ClusterManager import ClusterManager
 from SimStackServer.FilegeneratorClusterManager import FilegeneratorClusterManager
+from SimStackServer.LocalClusterManager import LocalClusterManager
 from SimStackServer.MessageTypes import ErrorCodes
 
 from SimStackServer.WorkflowModel import Resources
@@ -165,8 +167,19 @@ class SSHConnector(QObject):
             else:
                 raise FileNotFoundError("Could not find private key at path <%s>"%pkfile)
         extra_config = registry.extra_config
+
+        def connection_is_localhost_and_same_user(url, user) -> bool:
+            return url == "localhost" and getpass.getuser() == user
+
+
         if registry.queueing_system == "Filegenerator":
             cm = FilegeneratorClusterManager(url=registry.base_URI, port=registry.port,
+                                calculation_basepath=registry.basepath, user=registry.username,
+                                sshprivatekey=private_key,
+                                extra_config=extra_config,
+                                queueing_system=registry.queueing_system, default_queue=registry.queue)
+        elif connection_is_localhost_and_same_user(registry.base_URI, user=registry.username):
+            cm = LocalClusterManager(url=registry.base_URI, port=registry.port,
                                 calculation_basepath=registry.basepath, user=registry.username,
                                 sshprivatekey=private_key,
                                 extra_config=extra_config,
@@ -178,7 +191,6 @@ class SSHConnector(QObject):
                                 extra_config=extra_config,
                                 queueing_system=registry.queueing_system, default_queue=registry.queue)
         self._clustermanagers[name] = cm
-
         if not cm.is_connected():
             try:
                 local_hostkey_file = SimStackPaths.get_local_hostfile()
