@@ -1,12 +1,13 @@
 import logging
 import os
+import webbrowser
 import zipfile
 from os.path import join
 from pathlib import Path
 
-from Qt.QtCore import Signal
+from PySide6.QtCore import Signal
 
-from Qt import QtCore, QtGui, QtWidgets, Qt
+from PySide6 import QtCore, QtGui, QtWidgets
 
 import sys
 import time
@@ -298,25 +299,7 @@ class WFEditorApplication(CallableQThread):
         registry_name = self._get_current_registry_name()
         #print("Im workflow",workflow)
         myurl = self._connector.get_workflow_url(registry_name, workflow)
-        print(myurl)
-        binding = Qt.__binding__
-        if binding == "PyQt5":
-            from PyQt5.QtWebEngineWidgets import QWebEngineView
-        elif binding == "PySide2":
-            from PySide2.QtWebEngineWidgets import QWebEngineView
-        else:
-            raise NotImplementedError("Only backends for PyQt5 and PySide2 are implemented currently.")
-
-        from Qt.QtCore import QUrl
-        import Qt.QtCore as QtCore
-
-        web = QWebEngineView(parent=self._view_manager.get_editor())
-        self._view_manager.add_webengine_view(web)
-
-        web.setWindowFlags(web.windowFlags() | QtCore.Qt.Window)
-        web.load(QUrl(myurl))
-        web.window().resize(800,600)
-        web.show()
+        webbrowser.open_new_tab(myurl)
 
     def _on_fs_delete_workflow(self, workflow):
         registry_name = self._get_current_registry_name()

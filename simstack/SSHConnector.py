@@ -1,34 +1,34 @@
+import getpass
 import logging
 import socket
-import threading
-import shlex
+
 import os
 from io import StringIO
 import traceback
 from enum import Enum
-from os.path import dirname, join
-from pprint import pprint
+from os.path import dirname
+
 
 import paramiko
 
 from lxml import etree
-from paramiko import BadHostKeyException
+
 
 from zmq.error import Again, ZMQError
 
-from Qt.QtCore import QThread, Qt
-from Qt.QtCore import Slot, Signal, QObject
-from Qt.QtWidgets import QMessageBox
+from PySide6.QtCore import Slot, Signal, QObject
+from PySide6.QtWidgets import QMessageBox
 
 from SimStackServer.ClusterManager import ClusterManager
 from SimStackServer.FilegeneratorClusterManager import FilegeneratorClusterManager
+from SimStackServer.LocalClusterManager import LocalClusterManager
 from SimStackServer.MessageTypes import ErrorCodes
-from SimStackServer.Settings.ClusterSettingsProvider import ClusterSettingsProvider
-from SimStackServer.WorkflowModel import Resources, Workflow
+
+from SimStackServer.WorkflowModel import Resources
 from simstack.SimStackPaths import SimStackPaths
 
 from SimStackServer.Util.FileUtilities import filewalker
-from simstack.lib.CallableQThread import CallableQThread
+
 
 from functools import wraps
 
@@ -167,8 +167,19 @@ class SSHConnector(QObject):
             else:
                 raise FileNotFoundError("Could not find private key at path <%s>"%pkfile)
         extra_config = registry.extra_config
+
+        def connection_is_localhost_and_same_user(url, user) -> bool:
+            return url == "localhost" and getpass.getuser() == user
+
+
         if registry.queueing_system == "Filegenerator":
             cm = FilegeneratorClusterManager(url=registry.base_URI, port=registry.port,
+                                calculation_basepath=registry.basepath, user=registry.username,
+                                sshprivatekey=private_key,
+                                extra_config=extra_config,
+                                queueing_system=registry.queueing_system, default_queue=registry.queue)
+        elif connection_is_localhost_and_same_user(registry.base_URI, user=registry.username):
+            cm = LocalClusterManager(url=registry.base_URI, port=registry.port,
                                 calculation_basepath=registry.basepath, user=registry.username,
                                 sshprivatekey=private_key,
                                 extra_config=extra_config,
@@ -180,7 +191,6 @@ class SSHConnector(QObject):
                                 extra_config=extra_config,
                                 queueing_system=registry.queueing_system, default_queue=registry.queue)
         self._clustermanagers[name] = cm
-
         if not cm.is_connected():
             try:
                 local_hostkey_file = SimStackPaths.get_local_hostfile()

@@ -1,6 +1,4 @@
-import copy
-import sys
-from Qt import QtGui, QtWidgets, QtCore
+from PySide6 import QtGui, QtWidgets, QtCore
 
 from SimStackServer.WorkflowModel import Resources
 from functools import partial

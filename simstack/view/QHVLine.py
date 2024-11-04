@@ -1,4 +1,4 @@
-from Qt.QtWidgets import QFrame
+from PySide6.QtWidgets import QFrame
 
 class QHLine(QFrame):
     def __init__(self):

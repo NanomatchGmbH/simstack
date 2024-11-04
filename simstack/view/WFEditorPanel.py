@@ -19,10 +19,10 @@ from pathlib import Path
 
 from   lxml import etree
 
-import Qt.QtCore as QtCore
-import Qt.QtGui  as QtGui
-import Qt.QtWidgets  as QtWidgets
-from Qt.QtCore import Signal
+import PySide6.QtCore as QtCore
+import PySide6.QtGui  as QtGui
+import PySide6.QtWidgets  as QtWidgets
+from PySide6.QtCore import Signal
 
 import SimStackServer.WaNo.WaNoFactory as WaNoFactory
 from SimStackServer.WaNo.AbstractWaNoModel import WaNoInstantiationError

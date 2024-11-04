@@ -1,8 +1,8 @@
 import logging
 
-import Qt.QtCore as QtCore
-import Qt.QtGui  as QtGui
-import Qt.QtWidgets  as QtWidgets
+import PySide6.QtCore as QtCore
+import PySide6.QtGui  as QtGui
+import PySide6.QtWidgets  as QtWidgets
 
 from SimStackServer.WaNo.MiscWaNoTypes import WaNoListEntry
 

@@ -1,4 +1,4 @@
-from Qt import QtGui, QtWidgets, QtCore
+from PySide6 import QtGui, QtWidgets, QtCore
 
 class HorizontalTextEditWithFileImport(QtWidgets.QWidget):
     def __init__(self):

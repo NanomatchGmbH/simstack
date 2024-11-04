@@ -2,7 +2,7 @@ import os
 
 from .lib.AbstractSettings import AbstractSettings
 from .Constants import SETTING_KEYS
-import Qt.QtCore as QtCore
+
 
 def _path(name):
     return os.path.join(os.path.dirname(os.path.realpath(__file__)), name)

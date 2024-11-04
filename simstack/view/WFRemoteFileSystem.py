@@ -1,7 +1,7 @@
-from Qt.QtWidgets import QWidget, QTreeView, QVBoxLayout, QPushButton, \
+from PySide6.QtWidgets import QWidget, QTreeView, QVBoxLayout, QPushButton, \
         QAbstractItemView, QMenu, QApplication
-from Qt.QtGui import QCursor
-from Qt.QtCore import Signal, QModelIndex, Qt
+from PySide6.QtGui import QCursor
+from PySide6.QtCore import Signal, QModelIndex, Qt
 from enum import Enum
 
 from .WFEditorTreeModels import WFERemoteFileSystemModel as FSModel

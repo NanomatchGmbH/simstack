@@ -1,4 +1,4 @@
-from Qt.QtWidgets import QWidget, QHBoxLayout, QPushButton, QProgressBar
+from PySide6.QtWidgets import QWidget, QHBoxLayout, QPushButton, QProgressBar
 
 try:
     from .DropDownWidgetButton import DropDownWidgetPushButton

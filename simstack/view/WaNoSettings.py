@@ -1,14 +1,16 @@
+import getpass
+import os
 from os.path import join
+from pathlib import Path
 
-from Qt.QtWidgets import QDialog, QLabel, QGridLayout, QLineEdit, QPushButton, \
+import psutil
+from PySide6.QtWidgets import QDialog, QLabel, QGridLayout, QLineEdit, QPushButton, \
         QTabWidget, QWidget, QVBoxLayout, QHBoxLayout, QCheckBox, QTabBar, \
         QToolButton, QFileIconProvider, QFileDialog, QComboBox
-import Qt.QtWidgets as QtWidgets
-from Qt.QtGui import QIntValidator
-from Qt.QtCore import Signal, QSignalMapper, QDir
-import Qt.QtCore as QtCore
+import PySide6.QtWidgets as QtWidgets
+from PySide6.QtCore import Signal, QSignalMapper, QDir
+import PySide6.QtCore as QtCore
 
-from SimStackServer.Settings.ClusterSettingsProvider import ClusterSettingsProvider
 from SimStackServer.WorkflowModel import Resources
 from simstack.lib.QtClusterSettingsProvider import QtClusterSettingsProvider
 from simstack.view.ResourcesView import ResourcesView
@@ -174,7 +176,12 @@ class SimStackClusterSettingsView(QDialog):
                 return
             csp = QtClusterSettingsProvider.get_instance()
             new_resource = csp.add_resource(resource_name=clustername)
-            print(new_resource.resource_name)
+            new_resource.set_field_value("queueing_system", "Internal")
+            new_resource.set_field_value("username", getpass.getuser())
+            new_resource.set_field_value("base_URI", "localhost")
+            new_resource.set_field_value("sw_dir_on_resource", os.environ.get("MAMBA_ROOT_PREFIX",Path.home()/"micromamba"))
+            new_resource.set_field_value("cpus_per_node", psutil.cpu_count(logical=False))
+            new_resource.set_field_value("memory", psutil.virtual_memory().total/1024/1024)
             self.__add_tab(clustername, self.__tabs.count() - 1, resource=new_resource)
             self.__tabs.setCurrentIndex(self.__tabs.count() - 1)
 

@@ -1,5 +1,5 @@
 from SimStackServer.Settings.ClusterSettingsProvider import ClusterSettingsProvider
-from Qt.QtCore import QObject, Signal
+from PySide6.QtCore import QObject, Signal
 
 from SimStackServer.WorkflowModel import Resources
 

@@ -1,7 +1,6 @@
-from Qt.QtWidgets import QToolButton, QListWidgetItem, QMenu, \
+from PySide6.QtWidgets import QToolButton, QListWidgetItem, QMenu, \
         QListWidget, QAbstractItemView, QWidgetAction, QPushButton
-from Qt.QtGui import QFontMetrics
-from Qt.QtCore import Qt, Signal
+
 
 
 class _DropDownWidget(object):
@@ -57,7 +56,7 @@ class DropDownWidgetPushButton(QPushButton, _DropDownWidget):
 
 if __name__ == '__main__':
     import sys
-    from Qt.QtWidgets import QLabel, QWidget, QHBoxLayout, QApplication, QFileIconProvider
+    from PySide6.QtWidgets import QLabel, QWidget, QHBoxLayout, QApplication, QFileIconProvider
     app = QApplication(sys.argv)
     window = QWidget()
     label1 = QLabel("Test Label")

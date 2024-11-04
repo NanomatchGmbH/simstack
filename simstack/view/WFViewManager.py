@@ -3,9 +3,8 @@ from os import path
 from .WFEditorMainWindow import WFEditorMainWindow
 from .WFEditor import WFEditor
 
-import Qt
-from Qt.QtCore import Signal, QObject, QMutex, QFileInfo
-from Qt.QtWidgets import QMessageBox, QFileDialog
+from PySide6.QtCore import Signal, QObject, QMutex, QFileInfo, QStandardPaths
+from PySide6.QtWidgets import QMessageBox, QFileDialog
 
 from .MessageDialog import MessageDialog
 from .DownloadProgressWidget import DownloadProgressWidget
@@ -246,15 +245,10 @@ class WFViewManager(QObject):
 
     @staticmethod
     def get_homedir():
-        if Qt.IsPySide:
-            from PySide.QtGui import QDesktopServices
-            return QDesktopServices.storageLocation(QDesktopServices.HomeLocation)
-
-        import importlib
-        qc = importlib.import_module("%s.QtCore" % Qt.__binding__)
-        rtp = qc.QStandardPaths.standardLocations(qc.QStandardPaths.HomeLocation)
+        rtp = QStandardPaths.standardLocations(QStandardPaths.StandardLocation.HomeLocation)
         if isinstance(rtp, list):
             rtp = rtp[0]
+
         return rtp
 
 

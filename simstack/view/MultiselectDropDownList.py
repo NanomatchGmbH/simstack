@@ -1,7 +1,7 @@
-from Qt.QtWidgets import QToolButton, QListWidgetItem, QMenu, \
+from PySide6.QtWidgets import QToolButton, QListWidgetItem, QMenu, \
         QListWidget, QAbstractItemView, QWidgetAction, QFileIconProvider
-from Qt.QtGui import QFontMetrics
-from Qt.QtCore import Qt, Signal
+from PySide6.QtGui import QFontMetrics
+from PySide6.QtCore import Qt, Signal
 
 
 try:
@@ -9,10 +9,7 @@ try:
 except:
     from DropDownWidgetButton import DropDownWidgetPushButton
 
-try:
-    basestring
-except NameError:
-    basestring = str
+
 
 
 class MultiselectDropDownList(DropDownWidgetPushButton):
@@ -71,7 +68,7 @@ class MultiselectDropDownList(DropDownWidgetPushButton):
                 lwi = QListWidgetItem(item[0])
                 lwi.setData(Qt.ItemDataRole.DecorationRole, item[1])
                 self._list.addItem(lwi)
-            elif isinstance(item,basestring):
+            elif isinstance(item,str):
                 self._list.addItem(item)
             else:
                 raise TypeError("Item must be either tuple of string and \
@@ -106,7 +103,7 @@ class MultiselectDropDownList(DropDownWidgetPushButton):
 
 if __name__ == '__main__':
     import sys
-    from Qt.QtWidgets import QWidget, QHBoxLayout, QApplication, QLabel, \
+    from PySide6.QtWidgets import QWidget, QHBoxLayout, QApplication, QLabel, \
             QFileIconProvider
     app = QApplication(sys.argv)
     window = QWidget()

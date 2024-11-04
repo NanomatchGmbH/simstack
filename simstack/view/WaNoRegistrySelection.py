@@ -1,8 +1,8 @@
 import os
-from Qt.QtWidgets import QWidget, QComboBox, QPushButton, QHBoxLayout, QSizePolicy
-from Qt.QtGui import QPixmap, QIcon
+from PySide6.QtWidgets import QWidget, QComboBox, QPushButton, QHBoxLayout, QSizePolicy
+from PySide6.QtGui import QPixmap, QIcon
 
-from Qt.QtCore import Signal, Slot, QSize
+from PySide6.QtCore import Signal, Slot, QSize
 
 from enum import Enum
 

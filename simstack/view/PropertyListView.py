@@ -1,18 +1,15 @@
 # -*- coding: utf-8 -*-
 import abc
 from enum import IntEnum
-from functools import partial
 
-from Qt import QtGui, QtCore, QtWidgets
+
+from PySide6 import QtGui, QtCore, QtWidgets
 
 import yaml
 import operator
 import os
 
-import Qt
-#if Qt.__binding__ == "PyQt5":
-from SimStackServer.Util.ClientResourceModelToServerResourceModel import ClientResourceModelToServerResourceModel, \
-    get_default_resource_list, load_resource_list
+
 
 if False:
     # The handling of intflags differs between implementations. Currently we get a warning for pyqt5, but it will be fixed in a future pyqt5 release, therefore we take it.

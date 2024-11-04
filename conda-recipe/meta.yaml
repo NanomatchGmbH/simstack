@@ -1,6 +1,6 @@
 package:
   name: simstack 
-  version: "1.2.8"
+  version: "1.5.0"
 about:
   home: https://github.com/not_yet_existings
   license_family: proprietary
@@ -17,13 +17,11 @@ requirements:
   build:
     - flit
   run:
-    - python>=3.8
-    - pyqt>=5.15.4,<5.16
-    - pyqtwebengine >=5.15.4,<5.16
-    - qt.py ==1.1.0
+    - python>=3.10
+    - pyside6>=6.8
     - yaml >=0.2.5,<0.3.0
     - pyyaml >=6.0.0,<6.1.0
-    - simstackserver >=1.4.0,<1.5.0
+    - simstackserver >=1.5.0,<1.6.0
 test:
   source_files:
     - tests

@@ -1,5 +1,5 @@
-from Qt.QtCore import QObject, QTimer, QThread, Signal
-from Qt.QtCore import QMutex
+from PySide6.QtCore import QObject, QTimer, QThread, Signal
+from PySide6.QtCore import QMutex
 try:
     from .CallableQThread import CallableQThread
 except:
@@ -277,9 +277,9 @@ class DynamicTimer(QObject):
         self._interval_list = {}
         self._recalc        = False
         self._base_tick     = None
-        self._lock          = QMutex(QMutex.NonRecursive)
+        self._lock          = QMutex()
         self._delete_list   = {}
-        self._delete_list_lock = QMutex(QMutex.NonRecursive)
+        self._delete_list_lock = QMutex()
         self._timer_thread  = DynamicTimer.TimerThread(self.__timeout)
 
         self._timer_command.connect(self._timer_thread.timer_command)
@@ -292,7 +292,7 @@ class DynamicTimer(QObject):
         self._logger.addHandler(ch)
 
 if __name__ == "__main__":
-    from Qt.QtCore import QCoreApplication, QThread
+    from PySide6.QtCore import QCoreApplication, QThread
     import ctypes
     ptime = 0
     count = 0

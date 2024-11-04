@@ -1,8 +1,8 @@
 #
 #  Supply the memberfunctions making the widgets 
 #
-import Qt.QtCore as QtCore
-import Qt.QtGui  as QtGui
+import PySide6.QtCore as QtCore
+import PySide6.QtGui  as QtGui
 
 import logging
 
