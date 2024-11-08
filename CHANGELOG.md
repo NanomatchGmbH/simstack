@@ -4,6 +4,10 @@
 ### Changed
 - Do not require ssh config anymore for localhost connections to same user
 
+## 1.5.0 2024-11-06
+### Changed
+- Moved to QT6, should be python 3.13 compatible
+
 ## 1.2.6 2023-07-06
 ### Fixed
 - Windows entry point was incorrectly generated
