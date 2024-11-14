@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.5.1 2024-11-14
+### Changed
+- Do not require ssh config anymore for localhost connections to same user
+
 ## 1.2.6 2023-07-06
 ### Fixed
 - Windows entry point was incorrectly generated

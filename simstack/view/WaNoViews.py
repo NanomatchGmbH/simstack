@@ -596,7 +596,7 @@ class WaNoItemFileView(AbstractWanoQTView):
     def open_remote_importer_files(self):
         varpaths = self.model.get_root().get_parent_wf().assemble_files("")
         from simstack.view.RemoteImporterDialog import RemoteImporterDialog
-        mydialog = RemoteImporterDialog(varname ="Import file \"%s\" from:" % self.model.name,
+        mydialog = RemoteImporterDialog(varname =f"Import file '{self.model.name}' from previous WaNo\n\nStart typing for suggestions.",
                                         importlist = varpaths,
                                         window_title="Workflow File Importer")
         mydialog.setModal(True)
