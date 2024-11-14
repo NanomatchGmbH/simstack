@@ -47,7 +47,7 @@ class WFRemoteFileSystem(QWidget):
         self.update_file_tree_node(self._WF_PATH, wfs)
 
     def update_file_tree_node(self, path, subelements):
-        print("new file tree nodes for path: %s:\n%s" % (path, subelements))
+        #print("new file tree nodes for path: %s:\n%s" % (path, subelements))
         filePath = path if not path == '' else 'none'
 
         if filePath in self.__current_requests:
@@ -62,7 +62,7 @@ class WFRemoteFileSystem(QWidget):
                 else:
                     subelements.sort(key=lambda k: k['name'])
                 i=subelements[0]
-                print("i(id=%s): %s" % (i['id'] if 'id' in i else '', i))
+                #print("i(id=%s): %s" % (i['id'] if 'id' in i else '', i))
                 #print(path,i['path'],i['name'])
 
                 entries = [WFERemoteFileSystemEntry.createData(
@@ -129,9 +129,9 @@ class WFRemoteFileSystem(QWidget):
 
     def __request_header_entry_update(self, index, path, index_type):
         self.__current_requests.update( {path: index} )
-        print("current_requests: %s" % self.__current_requests)
+        #print("current_requests: %s" % self.__current_requests)
 
-        print("Emitting request for %s." % path)
+        #print("Emitting request for %s." % path)
         if index_type == FSModel.HEADER_TYPE_JOB:
             self.request_job_list_update.emit()
         elif index_type == FSModel.HEADER_TYPE_WORKFLOW:
@@ -155,9 +155,9 @@ class WFRemoteFileSystem(QWidget):
             abspath = self.__fs_model.get_id(index)
 
         self.__current_requests.update({abspath: index})
-        print("current_requests: %s" % self.__current_requests)
+        #print("current_requests: %s" % self.__current_requests)
 
-        print("Emitting request for %s." % abspath)
+        #print("Emitting request for %s." % abspath)
         if index_type == FSModel.DATA_TYPE_JOB:
             self.request_job_update.emit(abspath)
         elif index_type == FSModel.DATA_TYPE_WORKFLOW:
@@ -213,7 +213,7 @@ class WFRemoteFileSystem(QWidget):
         index = self.__fileTree.selectedIndexes()[0]
         if not index is None \
                 and self.__fs_model.get_type(index) == FSModel.DATA_TYPE_JOB:
-            print("got id: %s" % self.__fs_model.get_id(index))
+            #print("got id: %s" % self.__fs_model.get_id(index))
             job = self.__fs_model.get_id(index)
             self.delete_job.emit(job)
 
@@ -222,21 +222,18 @@ class WFRemoteFileSystem(QWidget):
         index = self.__fileTree.selectedIndexes()[0]
         if not index is None \
                 and self.__fs_model.get_type(index) == FSModel.DATA_TYPE_JOB:
-            print("got id: %s" % self.__fs_model.get_id(index))
             job = self.__fs_model.get_id(index)
             cb = QApplication.clipboard()
             cb.clear(mode=cb.Clipboard )
             cb.clear(mode=cb.Selection )
             cb.setText("%s"%job, mode=cb.Clipboard)
             cb.setText("%s"%job, mode=cb.Selection)
-            print(job)
 
     def __on_cm_abort_job(self):
         #TODO modify to handle all selected.
         index = self.__fileTree.selectedIndexes()[0]
         if not index is None \
                 and self.__fs_model.get_type(index) == FSModel.DATA_TYPE_JOB:
-            print("got id: %s" % self.__fs_model.get_id(index))
             job = self.__fs_model.get_id(index)
             self.abort_job.emit(job)
 
@@ -244,11 +241,9 @@ class WFRemoteFileSystem(QWidget):
         index = self.__fileTree.selectedIndexes()[0]
         if not index is None and self.__fs_model.get_type(index) == FSModel.DATA_TYPE_WORKFLOW or self.__fs_model.get_type(index) == FSModel.DATA_TYPE_DIRECTORY:
             #Workflow and directory treatment is equivalent
-            print("got id: %s" % self.__fs_model.get_id(index))
             workflow = self.__fs_model.get_id(index)
             self.browse.emit(workflow, "")
         elif not index is None and self.__fs_model.get_type(index) == FSModel.DATA_TYPE_JOB:
-            print("got job id: %s" % self.__fs_model.get_id(index))
             wfindex = self.__fs_model.get_parent_workflow(index)
             workflow = self.__fs_model.getNodeByIndex(wfindex)
             job = self.__fs_model.get_id(index)
@@ -267,7 +262,7 @@ class WFRemoteFileSystem(QWidget):
         index = self.__fileTree.selectedIndexes()[0]
         if not index is None \
                 and self.__fs_model.get_type(index) == FSModel.DATA_TYPE_WORKFLOW:
-            print("got id: %s" % self.__fs_model.get_id(index))
+            #print("got id: %s" % self.__fs_model.get_id(index))
             workflow = self.__fs_model.get_id(index)
             self.delete_workflow.emit(workflow)
 
@@ -345,8 +340,6 @@ class WFRemoteFileSystem(QWidget):
         else:
             #TODO, also include number of selected indices.
             pass
-
-        print(QCursor.pos())
         menu.exec_(QCursor.pos())
 
 

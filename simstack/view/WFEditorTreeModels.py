@@ -150,11 +150,11 @@ class DataTreeModel(QAbstractItemModel):
             childLength = len(child)
             if len(child) > 0:
                 childIndex = self.index(row, count, parentIndex)
-                print("removing %d subchildren of %s" % (childLength, child._data))
+                #print("removing %d subchildren of %s" % (childLength, child._data))
                 self.beginRemoveRows(parentIndex, 0, childLength)
                 self._removeRows(0, childLength, childIndex, emitSignals)
                 self.endRemoveRows()
-            print("\tremoving: %s with %d children\n" % (child._data, childLength))
+            #print("\tremoving: %s with %d children\n" % (child._data, childLength))
             parentNode.removeChild(i)
         return True
 
@@ -350,7 +350,7 @@ class WFEFileSystemModel(DataTreeModel):
 
     def subelementsToText(self, parent=QModelIndex(), prefix=""):
         node = self.getNodeByIndex(parent)
-        print("%s%s (%d)" % (prefix, node._data, len(node)))
+        # print("%s%s (%d)" % (prefix, node._data, len(node)))
         newPrefix = "\t%s" % prefix
         for c in [self.index(r, 0, parent) for r in range(0, len(node))]:
             childNode = self.getNodeByIndex(c)
@@ -436,9 +436,6 @@ class WFERemoteFileSystemModel(WFEFileSystemModel):
         if itype in self._icons.keys():
             return self._icons[itype]
         else:
-            print("--!!!!--")
-            print(itype,self._icons)
-            print("--!!!!--")
             icon = QFileIconProvider().icon(QFileIconProvider.Computer)
             return icon
 

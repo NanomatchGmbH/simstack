@@ -159,14 +159,14 @@ class WFEditorApplication(CallableQThread):
 
 
     def _on_fs_workflow_update_request(self, wfid):
-        self._logger.debug("Querying %s from Registry" % wfid)
+        #self._logger.debug("Querying %s from Registry" % wfid)
         registry_name = self._get_current_registry_name()
         self._connector.update_workflow_job_list(registry_name, wfid,
                 (self._on_fs_list_updated, (), {})
         )
 
     def _on_fs_directory_update_request(self, path):
-        self._logger.debug("Querying %s from Registry" % path)
+        #self._logger.debug("Querying %s from Registry" % path)
         # TODO
         self._on_fs_job_update_request(path)
 
@@ -266,7 +266,8 @@ class WFEditorApplication(CallableQThread):
 
     #@QThreadCallback.callback
     def _on_workflow_aborted(self, base_uri, status, err, workflow=""):
-        print("here")
+        pass
+        #print("here")
 
         """
         if err == ErrorCodes.NO_ERROR:

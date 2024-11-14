@@ -108,7 +108,6 @@ class TestWaNoModels(unittest.TestCase):
                   data_visitor_function=None)
         wanopaths = wmr.get_all_variable_paths()
         self.assertListEqual(pc.paths, wanopaths)
-        print("here")
 
     def test_dep_nogui(self):
         self._construct_wano_nogui(self.depxml)

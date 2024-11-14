@@ -226,7 +226,6 @@ class WFWaNoWidget(QtWidgets.QToolButton,DragDropTargetTracker):
             # In case we did not create the folder, the wano might already be there and we need
             # to check whether the same WaNo is in the folder. Otherwise problems might occur.
             if folder_exists and not folder_empty:
-                print(folder_empty, outfolder)
                 newfolderwle = copy.copy(self.wano)
                 newfolderwle.folder = outfolder
                 if self._compare_wano_equality(newfolderwle, self.wano):
