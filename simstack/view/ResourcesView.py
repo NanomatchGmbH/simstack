@@ -6,7 +6,6 @@ import numpy as np
 
 from simstack.lib.QtClusterSettingsProvider import QtClusterSettingsProvider
 from simstack.view.HorizontalTextEditWithFileImport import HorizontalTextEditWithFileImport
-from simstack.view.QHVLine import QHLine
 from simstack.view.WaNoRegistrySelection import WaNoRegistrySelection
 
 

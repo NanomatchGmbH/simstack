@@ -25,9 +25,7 @@ from SimStackServer.WaNo.MiscWaNoTypes import WaNoListEntry, get_wano_xml_path
 from simstack.lib.QtClusterSettingsProvider import QtClusterSettingsProvider
 
 from simstack.view.WFViewManager import WFViewManager
-from simstack.WaNoGitRevision import get_git_revision
 from simstack.Constants import SETTING_KEYS
-from simstack.EditorState import StateFactory
 from simstack.SSHConnector import SSHConnector
 from simstack.SSHConnector import OPERATIONS as uops
 from simstack.SSHConnector import ERROR as uerror
@@ -627,18 +625,6 @@ class WFEditorApplication(CallableQThread):
 
         self._connector.error.connect(self._on_error)
 
-    @staticmethod
-    def exec_by_time(cutoff_time):
-        timestamp = int(time.time())
-        if timestamp > cutoff_time:
-            print("License time expired, please renew, Exiting.")
-            sys.exit(45)
-
-    @classmethod
-    def license_check(cls):
-        until = datetime.datetime(year=2020, month=4, day=8)
-        #cls.exec_by_time(until.timestamp())
-        pass
 
     def _client_about_to_exit(self):
         print("Exiting.")
@@ -646,7 +632,6 @@ class WFEditorApplication(CallableQThread):
 
     def __init__(self, settings):
         super(WFEditorApplication, self).__init__()
-        self.license_check()
 
         self.__settings     = settings
 
@@ -661,10 +646,8 @@ class WFEditorApplication(CallableQThread):
         ##### END TODO
 
 
-        self._connector = SSHConnector(self,
-                StateFactory.get_writer())
-
-        self._view_manager  = WFViewManager(StateFactory.get_reader())
+        self._connector = SSHConnector()
+        self._view_manager  = WFViewManager()
 
         self._current_registry_name = None
         self._registries = QtClusterSettingsProvider.get_registries()
@@ -673,7 +656,6 @@ class WFEditorApplication(CallableQThread):
         self._connect_signals()
 
         self.__start()
-        self._logger.info("Logging Tab Enabled Version: " + get_git_revision())
 
 
 
