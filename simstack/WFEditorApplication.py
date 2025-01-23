@@ -30,7 +30,7 @@ from simstack.SSHConnector import SSHConnector
 from simstack.SSHConnector import OPERATIONS as uops
 from simstack.SSHConnector import ERROR as uerror
 
-from simstack.lib.CallableQThread import CallableQThread
+from PySide6.QtCore import QThread
 
 try:
     FileNotFoundError
@@ -39,7 +39,7 @@ except:
 
 from collections import namedtuple
 
-class WFEditorApplication(CallableQThread):
+class WFEditorApplication(QThread):
     exec_callback_operation = Signal(
             object, dict, object, name="ExecuteCallbackOperation")
     exec_operation = Signal(object, dict, name="ExecuteOperation")
@@ -631,7 +631,7 @@ class WFEditorApplication(CallableQThread):
         self.exit()
 
     def __init__(self, settings):
-        super(WFEditorApplication, self).__init__()
+        super().__init__()
 
         self.__settings     = settings
 
