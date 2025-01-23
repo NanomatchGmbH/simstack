@@ -12,7 +12,7 @@ from .ViewTimer import ViewTimer
 from PySide6.QtCore import QMutex
 from PySide6.QtWidgets import QMessageBox
 
-class StatusMessageManager(object):
+class StatusMessageManager:
     def __sort(self):
         """ Sorts by time of arrival, newest first.
 
