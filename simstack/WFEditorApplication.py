@@ -30,7 +30,6 @@ from simstack.SSHConnector import SSHConnector
 from simstack.SSHConnector import OPERATIONS as uops
 from simstack.SSHConnector import ERROR as uerror
 
-from PySide6.QtCore import QThread
 
 try:
     FileNotFoundError
@@ -39,7 +38,7 @@ except:
 
 from collections import namedtuple
 
-class WFEditorApplication(QThread):
+class WFEditorApplication:
     exec_callback_operation = Signal(
             object, dict, object, name="ExecuteCallbackOperation")
     exec_operation = Signal(object, dict, name="ExecuteOperation")
@@ -457,10 +456,6 @@ class WFEditorApplication(QThread):
 
     @trace_to_logger
     def _run(self):
-        name        = None
-        jobtype     = None
-        directory   = None
-        wf_xml      = None
         editor      = self._view_manager.get_editor()
 
         self._view_manager.show_status_message("Preparing data...")
