@@ -11,14 +11,6 @@ import os
 
 
 
-if False:
-    # The handling of intflags differs between implementations. Currently we get a warning for pyqt5, but it will be fixed in a future pyqt5 release, therefore we take it.
-    def pyside_int_workaround(val):
-        return int(val)
-else:
-    def pyside_int_workaround(val):
-        return val
-
 
 class ResourceTableBase(QtCore.QAbstractTableModel):
     def save(self,filename):
@@ -34,7 +26,7 @@ class ResourceTableBase(QtCore.QAbstractTableModel):
             self.mylist = yaml.safe_load(infile)
 
     def __init__(self, parent, *args,**kwargs):
-        super(ResourceTableBase, self).__init__(parent, *args)
+        super().__init__(parent, *args)
         if "wano_parent" in kwargs:
             self.wano_parent = kwargs["wano_parent"]
         self.mylist = [[]]
@@ -95,7 +87,7 @@ class ExportTableModel(ResourceTableBase):
 
     def flags(self, index):
         defaultflags = QtCore.Qt.ItemFlags()
-        return pyside_int_workaround(QtCore.Qt.ItemIsEditable | QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsSelectable | defaultflags)
+        return QtCore.Qt.ItemIsEditable | QtCore.Qt.ItemIsEnabled | QtCore.Qt.ItemIsSelectable | defaultflags
 
     def rowCount(self, parent=QtCore.QModelIndex()):
         return len(self.mylist) + 1
@@ -146,7 +138,7 @@ class ExportTableModel(ResourceTableBase):
         self.mylist = [
         ]
         self.header = ["Filename"]
-        self.alignments = [pyside_int_workaround(QtCore.Qt.AlignCenter)]
+        self.alignments = [QtCore.Qt.AlignCenter]
 
 
 class ImportTableModel(ResourceTableBase):
@@ -175,8 +167,8 @@ class ImportTableModel(ResourceTableBase):
         self.endRemoveRows()
 
     def flags(self, index):
-        defaultflags = pyside_int_workaround(QtCore.Qt.ItemFlags() | QtCore.Qt.ItemIsSelectable)
-        return pyside_int_workaround(QtCore.Qt.ItemIsEditable | QtCore.Qt.ItemIsEnabled | defaultflags)
+        defaultflags = QtCore.Qt.ItemFlags() | QtCore.Qt.ItemIsSelectable
+        return QtCore.Qt.ItemIsEditable | QtCore.Qt.ItemIsEnabled | defaultflags
 
 
     def rowCount(self, parent=QtCore.QModelIndex()):
@@ -246,8 +238,8 @@ class ImportTableModel(ResourceTableBase):
         self.mylist = [
         ]
         self.header = ["Name", "ImportFrom", "Target Filename"]
-        self.alignments = [pyside_int_workaround(QtCore.Qt.AlignCenter), pyside_int_workaround(QtCore.Qt.AlignLeft | QtCore.Qt.AlignVCenter),
-                           pyside_int_workaround(QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter),pyside_int_workaround(QtCore.Qt.AlignCenter)]
+        self.alignments = [QtCore.Qt.AlignCenter, QtCore.Qt.AlignLeft | QtCore.Qt.AlignVCenter,
+                           QtCore.Qt.AlignRight | QtCore.Qt.AlignVCenter,QtCore.Qt.AlignCenter]
 
 
 

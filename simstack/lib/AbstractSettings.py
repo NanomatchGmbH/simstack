@@ -85,56 +85,6 @@ class AbstractSettings(object):
             current_dict = current_dict[self._cast_string_to_correct_type(key)]
         return current_dict[self._cast_string_to_correct_type(splitname[-1])]
 
-    """ This method deletes the value of key and sets it to None.
-
-    The key itself will not be deleted. If you want to remove the key itself,
-    call :func:`delete_key()`.
-
-    .. note:: In case the value identified by key was set to contain
-    subsequent dicts or lists, they will be cleared but not deleted.
-    For example::
-        settings.set_value('foo.0', 'bar')
-        settings.set_value('foo.1', 'abc')
-        settings.get_value('foo')
-          ['bar', 'abc']
-        settings.get_value('foo')
-          []
-
-    """
-    def delete_value(self, key):
-        values = self.get_value(key)
-        if not values is None:
-            if isinstance(values, list):
-                del values[:]
-            elif isinstance(values, dict):
-                values.clear()
-            else:
-                self.set_value(key, None)
-
-    def py2unicodetostring(self,mystr):
-        if sys.version_info[0] < 3:
-            if isinstance(mystr,unicode):
-                return str(mystr)
-            return mystr
-        else:
-            return mystr
-
-
-    """ Deletes a given key and all subsequent values from the settings dict.
-    """
-    def delete_key(self, keystring):
-        splitname = [x for x in \
-                map(self._cast_string_to_correct_type, keystring.split("."))]
-        current_dict = self.settings_container
-        for key in splitname[:-1]:
-            if (isinstance(current_dict, dict) and key in current_dict) \
-                or (isinstance(current_dict, list) and key >= 0 \
-                        and key < len(current_dict)\
-                ):
-                current_dict = current_dict[key]
-            else:
-                raise KeyError("Key '%s' not found in settings." % key)
-        del(current_dict[splitname[-1]])
 
     """ Clears all settings.
     """
@@ -177,16 +127,12 @@ class AbstractSettings(object):
 
         current_dict = self.settings_container
         for key, nextkey in zip(splitname[:-1], splitname[1:]):
-            key = self.py2unicodetostring(key)
-
             if isinstance(key, str) and not key in current_dict:
-                nextkey = self.py2unicodetostring(nextkey)
                 if isinstance(nextkey, str):
                     current_dict[key] = {}
                 elif isinstance(nextkey, int):
                     current_dict[key] = []
             elif isinstance(key, int) and key == len(current_dict):
-                nextkey = self.py2unicodetostring(nextkey)
                 if isinstance(nextkey, str):
                     current_dict.append({})
                 elif isinstance(nextkey, int):

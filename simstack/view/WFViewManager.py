@@ -7,12 +7,8 @@ from PySide6.QtCore import Signal, QObject, QMutex, QFileInfo, QStandardPaths
 from PySide6.QtWidgets import QMessageBox, QFileDialog
 
 from .MessageDialog import MessageDialog
-from .DownloadProgressWidget import DownloadProgressWidget
-from .DownloadProgressMenuButton import DownloadProgressMenuButton
-from ..lib.DynamicTimer import DynamicTimer
 
-# TODO Debug only
-import ctypes
+
 
 class WFViewManager(QObject):
     REGISTRY_CONNECTION_STATES = WFEditor.REGISTRY_CONNECTION_STATES
@@ -154,9 +150,6 @@ class WFViewManager(QObject):
 
     def _release_dl_progress_callbacks(self):
         """ .. note:: self._dl_callback_delete["lock"] must be held. """
-        for i in range(0, self._dl_callback_delete["to_delete"]):
-            self._view_timer.remove_callback(self._update_timeout.emit,
-                    self._dl_update_interval)
         self._dl_callback_delete["to_delete"] = 0
 
     def _on_view_update(self):
@@ -234,14 +227,6 @@ class WFViewManager(QObject):
         except IndexError:
             pass
 
-    def _init_dl_progressbar(self, remote_state):
-        self._dl_progress_widget = DownloadProgressWidget(self._mainwindow, remote_state)
-        self._dl_progress_bar    = DownloadProgressMenuButton(
-                self._mainwindow.statusBar(),
-                self._dl_progress_widget)
-        self._dl_progress_bar.setMaximumWidth(150)
-        self._dl_progress_bar.setMinimumWidth(75)
-        self._mainwindow.statusBar().addPermanentWidget(self._dl_progress_bar)
 
     @staticmethod
     def get_homedir():
@@ -255,19 +240,13 @@ class WFViewManager(QObject):
     def add_webengine_view(self, wev):
         self._webengineviews.append(wev)
 
-    def __init__(self, remote_state):
+    def __init__(self):
         super(WFViewManager, self).__init__()
         self._editor        = WFEditor()
         self._webengineviews = []
 
         self._mainwindow    = WFEditorMainWindow(self._editor)
-        self._init_dl_progressbar(remote_state)
-        self._view_timer    = DynamicTimer()
-        self._dl_update_interval =  200
-        self._dl_callback_delete = { # used to schedule dl progress callbacks for deletion
-                "lock": QMutex(),
-                "to_delete": 0
-            }
+
         self.last_used_path = self.get_homedir()
 
         self._connect_signals()

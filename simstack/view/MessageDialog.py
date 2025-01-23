@@ -24,12 +24,3 @@ class MessageDialog(QMessageBox):
 
         if direct_show:
             self.exec_()
-
-if __name__ == "__main__":
-    from PySide6.QtGui import QApplication
-    import sys
-    qapp = QApplication(sys.argv)
-
-    MessageDialog(MessageDialog.MESSAGE_TYPES.warning, "Ich bin ein Text", True)
-
-    sys.exit(qapp.exec_())
