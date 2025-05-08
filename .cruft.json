@@ -1,0 +1,19 @@
+{
+  "template": "https://github.com/NanomatchGmbH/python-pixi-cruft.git",
+  "commit": "0f30d06b4aa86bf4c444ac4062b096304fa40262",
+  "checkout": null,
+  "context": {
+    "cookiecutter": {
+      "author_name": "Nanomatch GmbH",
+      "email": "info@nanomatch.com",
+      "github_username": "NanomatchGmbH",
+      "project_name": "simstack",
+      "project_slug": "simstack",
+      "project_short_description": "A short description of the project",
+      "github_url": "https://github.com/NanomatchGmbH/simstack",
+      "conda_publish_url": "https://prefix.dev/api/v1/upload/your_channel",
+      "_template": "https://github.com/NanomatchGmbH/python-pixi-cruft.git"
+    }
+  },
+  "directory": null
+}
