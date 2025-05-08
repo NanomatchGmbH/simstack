@@ -204,7 +204,7 @@ class WFEditor(QWidget):
         self.registrySelection.setStatus(status)
 
     def deactivateWidget(self):
-        if self.lastActive != None:
+        if self.lastActive is not None:
             self.lastActive.setColor(Qt.lightGray)
             self.lastActive = None
 

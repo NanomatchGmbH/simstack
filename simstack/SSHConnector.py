@@ -255,7 +255,7 @@ class SSHConnector(QObject):
                         raise e from e
                 error = ErrorCodes.NO_ERROR
                 statusmessage = "Connected."
-                returncode_serverstart = self.start_server(registry_name)
+                self.start_server(registry_name)
             except paramiko.ssh_exception.SSHException as e:
                 statusmessage = str(e)
                 traceback.print_exc()

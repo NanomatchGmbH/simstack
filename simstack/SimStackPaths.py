@@ -23,7 +23,7 @@ class SimStackPaths:
     def gen_empty_local_hostfile_if_not_present(cls):
         lhosts = cls.get_local_hostfile()
         if not os.path.exists(lhosts):
-            with open(lhosts, "wt") as outfile:
+            with open(lhosts, "wt"):
                 pass
         return lhosts
 

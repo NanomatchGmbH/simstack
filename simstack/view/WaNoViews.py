@@ -627,8 +627,7 @@ class WaNoItemFileView(AbstractWanoQTView):
         )
         mydialog.setModal(True)
         mydialog.exec_()
-        result = mydialog.result()
-        if mydialog.result() == True:
+        if mydialog.result() is True:
             choice = mydialog.getchoice()
             self.set_file_import(choice)
             self.set_disable(True)
@@ -667,7 +666,7 @@ class WaNoItemFileView(AbstractWanoQTView):
         self.lineedit.setDisabled(true_or_false)
 
     def set_file_import(self, filename):
-        if filename == None:
+        if filename is None:
             self.model.set_local(True)
             self.lineedit.setText("")
             self.line_edited()

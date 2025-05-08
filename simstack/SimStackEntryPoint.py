@@ -57,7 +57,6 @@ def main():
         app.setStyle(QStyleFactory.create("Fusion"))
     tempfile = join(SimStackPaths.get_temp_folder(), "%s-wfeditor.log" % uuid.uuid4())
     logging.basicConfig(filename=tempfile, filemode="w", level=logging.INFO)
-    logger = logging.getLogger("WFELOG")
 
     SETTINGS_FOLDER = SimStackPaths.get_settings_folder_nanomatch()
 
@@ -76,6 +75,7 @@ def main():
         # Default settings are already loaded, lets save them to file
         settings.dump_to_file(SETTINGS_FILE)
 
+    global editor
     editor = WFEditorApplication(settings)
 
     # This timer is required to let the python interpreter handle terminal

@@ -27,7 +27,6 @@ class StatusMessageManager:
         self._list_lock.lock()
         tmplist = []
         stringlist = []
-        string = ""
         for e in self._list:
             time_left = e[2] - elapsed_time
             if time_left > 0:

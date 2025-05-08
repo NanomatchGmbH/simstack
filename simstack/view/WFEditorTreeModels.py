@@ -68,7 +68,7 @@ class DataNode(object):
         self.setParent(parent)
 
     def setParent(self, parent):
-        if parent != None:
+        if parent is not None:
             self._parent = parent
             self._parent.appendChild(self)
         else:
@@ -343,7 +343,6 @@ class WFEFileSystemModel(DataTreeModel):
         # print("%s%s (%d)" % (prefix, node._data, len(node)))
         newPrefix = "\t%s" % prefix
         for c in [self.index(r, 0, parent) for r in range(0, len(node))]:
-            childNode = self.getNodeByIndex(c)
             self.subelementsToText(c, newPrefix)
 
 
@@ -362,7 +361,7 @@ class WFERemoteFileSystemEntry(WFEFileSystemEntry):
 
     def getIconType(self):
         if self._data["data_type"] == WFERemoteFileSystemModel.DATA_TYPE_JOB:
-            if self._data["status"] != None:
+            if self._data["status"] is not None:
                 if (
                     self._data["status"] == JobStatus.SUCCESSFUL
                     and self._data["original_result_directory"] is not None
@@ -372,7 +371,7 @@ class WFERemoteFileSystemEntry(WFEFileSystemEntry):
                     return JOB_STATUS_TO_DATA_TYPE[self._data["status"]]
 
         if self._data["data_type"] == WFERemoteFileSystemModel.DATA_TYPE_WORKFLOW:
-            if self._data["status"] != None:
+            if self._data["status"] is not None:
                 return WF_STATUS_TO_DATA_TYPE[self._data["status"]]
 
         return super(WFERemoteFileSystemEntry, self).getIconType()
@@ -559,7 +558,7 @@ class WFERemoteFileSystemModel(WFEFileSystemModel):
             ),
             WFEFileSystemEntry.createData("Home", ".", self.HEADER_TYPE_DIRECTORY),
         ]
-        rv = self.insertDataRows(
+        self.insertDataRows(
             0,
             new,
             QModelIndex(),  # insert at highest level
@@ -581,7 +580,6 @@ class WFERemoteFileSystemModel(WFEFileSystemModel):
             self.clear()
             for i in range(0, len(self._root)):
                 child = self.index(i, 0)
-                child_node = self.getNodeByIndex(child)
                 super(WFERemoteFileSystemModel, self).loading(child, text="Loading")
         else:
             self.removeSubRows(index)

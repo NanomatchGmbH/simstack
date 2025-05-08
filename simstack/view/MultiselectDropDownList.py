@@ -8,10 +8,7 @@ from PySide6.QtGui import QFontMetrics
 from PySide6.QtCore import Qt, Signal
 
 
-try:
-    from .DropDownWidgetButton import DropDownWidgetPushButton
-except:
-    from DropDownWidgetButton import DropDownWidgetPushButton
+from .DropDownWidgetButton import DropDownWidgetPushButton
 
 
 class MultiselectDropDownList(DropDownWidgetPushButton):
@@ -24,7 +21,6 @@ class MultiselectDropDownList(DropDownWidgetPushButton):
             selected.sort()
             text = ", ".join(selected)
             fm = QFontMetrics(self.font())
-            width = fm.width(text)
             shortened = fm.elidedText(
                 text, Qt.ElideRight, self.width() - 15
             )  # -15 for width of the arrow
@@ -115,7 +111,6 @@ if __name__ == "__main__":
         QHBoxLayout,
         QApplication,
         QLabel,
-        QFileIconProvider,
     )
 
     app = QApplication(sys.argv)

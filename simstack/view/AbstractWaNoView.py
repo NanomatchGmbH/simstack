@@ -61,8 +61,7 @@ class AbstractWanoQTView(AbstractWanoView):
         )
         mydialog.setModal(True)
         mydialog.exec_()
-        result = mydialog.result()
-        if mydialog.result() == True:
+        if mydialog.result():
             choice = mydialog.getchoice()
             self.model.set_import(choice)
             self.set_disable(True)
@@ -79,7 +78,7 @@ class AbstractWanoQTView(AbstractWanoView):
 
     def decommission(self):
         widget = self.get_widget()
-        if widget != None:
+        if widget is not None:
             widget.deleteLater()
 
     def init_from_model(self):

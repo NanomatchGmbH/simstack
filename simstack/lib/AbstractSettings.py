@@ -282,7 +282,7 @@ class TestSettings(AbstractSettings):
 
 if __name__ == "__main__":
     # Small unit test.
-    import os, sys
+    import os
 
     myset = TestSettings()
     myset.parse_eq_args(sys.argv)

@@ -67,7 +67,6 @@ class WFRemoteFileSystem(QWidget):
                     subelements.sort(key=lambda k: k["name"], reverse=True)
                 else:
                     subelements.sort(key=lambda k: k["name"])
-                i = subelements[0]
                 # print("i(id=%s): %s" % (i['id'] if 'id' in i else '', i))
                 # print(path,i['path'],i['name'])
 
@@ -125,10 +124,6 @@ class WFRemoteFileSystem(QWidget):
         elif model_index is not None and model_index.isValid():
             index_type = self.__fs_model.get_type(model_index)
 
-            if index_type == FSModel.HEADER_TYPE_JOB:
-                abspath = self.__fs_model.get_abspath(model_index)
-                # print("JP,abs", self._JOB_PATH, abspath)
-                # exit(0)
             update_list = [
                 (
                     model_index,
@@ -292,7 +287,6 @@ class WFRemoteFileSystem(QWidget):
         ):
             wfindex = self.__fs_model.get_parent_workflow(index)
             workflow = self.__fs_model.getNodeByIndex(wfindex)
-            job = self.__fs_model.get_id(index)
             jobnode = self.__fs_model.getNodeByIndex(index)
             self.browse.emit(jobnode.getAbsolutePath(), "")
 
@@ -370,7 +364,6 @@ class WFRemoteFileSystem(QWidget):
             return
 
         item = index.internalPointer()
-        name = item.getText()  # The text of the node.
 
         menu = QMenu()
         # action=menu.addAction("Menu")

@@ -28,11 +28,6 @@ from simstack.SSHConnector import OPERATIONS as uops
 from simstack.SSHConnector import ERROR as uerror
 
 
-try:
-    FileNotFoundError
-except:
-    FileNotFoundError = EnvironmentError
-
 from collections import namedtuple
 
 
@@ -353,7 +348,6 @@ class WFEditorApplication:
                         continue
 
                     iconname = "%s.png" % name
-                    xmlname = "%s.xml" % name
                     xmlpath = get_wano_xml_path(myfolder)
 
                     iconpath = myfolder / iconname
@@ -455,7 +449,7 @@ class WFEditorApplication:
 
         self._set_current_registry_name(registry_name)
 
-        registry = self._get_current_registry()
+        self._get_current_registry()
         self._logger.info("Connecting to registry '%s'." % registry_name)
 
         self._connector.connect_registry(
@@ -520,7 +514,7 @@ class WFEditorApplication:
         if self._get_current_registry_name():
             self._disconnect_remote(no_status_update=True)
 
-        success = self._connect_remote(registry_name)
+        self._connect_remote(registry_name)
 
     def _set_disconnected(self):
         self._view_manager.set_registry_connection_status(

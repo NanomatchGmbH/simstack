@@ -98,7 +98,7 @@ class DragDropTargetTracker(object):
         # self.move(e.globalPos())
         self.drag.targetChanged.connect(self._target_tracker)
         self._newparent = self.parent()
-        dropAction = self.drag.exec_(QtCore.Qt.MoveAction)
+        self.drag.exec_(QtCore.Qt.MoveAction)
 
         # In case the target of the drop changed we are outside the workflow editor
         # In that case we would like to remove ourselves
@@ -393,8 +393,7 @@ class WFItemModel:
         pass
 
     def render_to_simple_wf(self, path_list, output_path_list, submitdir, jobdir):
-        activities = []
-        transitions = []
+        pass
         # wf = WFtoXML.xml_subworkflow(Transition=transitions,Activity=activities)
 
     # this function assembles all files relative to the workflow root
@@ -443,7 +442,6 @@ class SubWFModel(WFItemModel, WFItemListInterface):
 
         activities = []
         transitions = []
-        my_jobdir = jobdir
         basepath = path
         for myid, (ele, elename) in enumerate(zip(self.elements, self.elementnames)):
             toids = []
@@ -703,10 +701,8 @@ class WhileModel(WFItemModel):
     def assemble_variables(self, path):
         if path == "":
             mypath = "While.${%s_ITER}" % self.itername
-            myvalue = "While.${%s}" % self.itername
         else:
             mypath = "%s.While.${%s_ITER}" % (path, self.itername)
-            myvalue = "%s.While.${%s}" % (path, self.itername)
         myvars = self._subwf_model.assemble_variables(mypath)
         my_iterator = "${%s}" % self.itername
         myvars.append(my_iterator)
@@ -741,7 +737,6 @@ class WhileModel(WFItemModel):
             if child.attrib["type"] != "SubWorkflow":
                 continue
             name = child.attrib["name"]
-            type = child.attrib["type"]
 
             self._subwf_view.setText(name)
             self._subwf_model.read_from_disk(
@@ -800,7 +795,6 @@ class IfModel(WFItemModel):
     def render_to_simple_wf(
         self, path_list, output_path_list, submitdir, jobdir, path, parent_ids
     ):
-        filesets = []
         transitions = []
 
         if jobdir == "":
@@ -1057,7 +1051,6 @@ class ParallelModel(WFItemModel):
     def save_to_disk(self, foldername):
         attributes = {"name": self.name, "type": "Parallel"}
         root = etree.Element("WFControl", attrib=attributes)
-        my_foldername = foldername
         # TODO revert changes in filesystem in case instantiate_in_folder fails
         # root.append(self.subwfmodel.save_to_disk(my_foldername))
         for swf in self.subwf_models:
@@ -1288,7 +1281,6 @@ class ForEachModel(WFItemModel):
                 continue
             # self.subwfmodel,self.subwfview = ControlFactory.construct("SubWorkflow", qt_parent=self.view, logical_parent=self.view,editor=self.editor,wf_root = self.wf_root)
             name = child.attrib["name"]
-            type = child.attrib["type"]
 
             self.subwfview.setText(name)
             self.subwfmodel.read_from_disk(
@@ -1426,7 +1418,6 @@ class WFModel:
     def render_to_simple_wf(self, submitdir, jobdir):
         activities = []
         transitions = []
-        swfs = []
         # start = WFtoXML.xml_start()
         # parent_xml = etree.Element()
 
@@ -2329,7 +2320,7 @@ class WFTabsWidget(QtWidgets.QTabWidget):
 
     def closeTab(self, e):
         # this works recursively
-        if self.parent().lastActive != None:
+        if self.parent().lastActive is not None:
             # close wano editor
             self.parent().wanoEditor.deleteClose()
         self.removeTab(e)
@@ -2496,8 +2487,7 @@ class AdvancedForEachView(WFControlWithTopMiddleAndBottom):
         )
         mydialog.setModal(True)
         mydialog.exec()
-        result = mydialog.result()
-        if mydialog.result() == True:
+        if mydialog.result() is True:
             cursor_now = self.list_of_variables.cursorPosition()
             choice = mydialog.getchoice()
             previous_text = self.list_of_variables.text()
@@ -2586,8 +2576,7 @@ class ForEachView(WFControlWithTopMiddleAndBottom):
         )
         mydialog.setModal(True)
         mydialog.exec()
-        result = mydialog.result()
-        if mydialog.result() == True:
+        if mydialog.result() is True:
             choice = mydialog.getchoice()
             self.model.set_filelist(choice)
             self.list_of_variables.setText(choice)
@@ -2606,8 +2595,7 @@ class ForEachView(WFControlWithTopMiddleAndBottom):
         )
         mydialog.setModal(True)
         mydialog.exec_()
-        result = mydialog.result()
-        if mydialog.result() == True:
+        if mydialog.result() is True:
             choice = mydialog.getchoice()
             self.model.set_filelist(choice)
             self.list_of_variables.setText(choice)
@@ -2777,8 +2765,7 @@ class IfView(WFControlWithTopMiddleAndBottom):
         )
         mydialog.setModal(True)
         mydialog.exec()
-        result = mydialog.result()
-        if mydialog.result() == True:
+        if mydialog.result() is True:
             choice = mydialog.getchoice()
             self.model.set_condition(choice)
             self.list_of_variables.setText(choice)
@@ -2850,10 +2837,12 @@ class VariableView(WFControlWithTopMiddleAndBottom):
         self._varequation_widget.editingFinished.connect(self._on_varequation_line_edit)
 
         # We define two functors to only have a single open_remote_importer callback function.
-        open_remote_importer_func_varname = lambda: self.open_remote_importer(
-            target_function_view=self._varname_widget.setText,
-            target_function_model=self.model.set_varname,
-        )
+        def open_remote_importer_func_varname():
+            return self.open_remote_importer(
+                target_function_view=self._varname_widget.setText,
+                target_function_model=self.model.set_varname,
+            )
+
         self._varname_import_button = QtWidgets.QPushButton(
             QtGui.QIcon.fromTheme("insert-object"), ""
         )
@@ -2861,10 +2850,12 @@ class VariableView(WFControlWithTopMiddleAndBottom):
         self.topLineLayout.addWidget(self._varname_widget)
         self.topLineLayout.addWidget(self._varname_import_button)
 
-        open_remote_importer_func_varequation = lambda: self.open_remote_importer(
-            target_function_view=self._varequation_widget.setText,
-            target_function_model=self.model.set_varequation,
-        )
+        def open_remote_importer_func_varequation():
+            return self.open_remote_importer(
+                target_function_view=self._varequation_widget.setText,
+                target_function_model=self.model.set_varequation,
+            )
+
         self.topLineLayout.addWidget(self._varequation_widget)
         self._global_import_button = QtWidgets.QPushButton(
             QtGui.QIcon.fromTheme("insert-object"), ""
@@ -3039,8 +3030,7 @@ class WhileView(WFControlWithTopMiddleAndBottom):
         )
         mydialog.setModal(True)
         mydialog.exec()
-        result = mydialog.result()
-        if mydialog.result() == True:
+        if mydialog.result() is True:
             choice = mydialog.getchoice()
             self.model.set_condition(choice)
             self.list_of_variables.setText(choice)

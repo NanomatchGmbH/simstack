@@ -120,7 +120,6 @@ class ExportTableModel(ResourceTableBase):
 
     def setData(self, index, value, role=QtCore.Qt.EditRole):
         row = index.row()
-        col = index.column()
         # print("Setting %d %d"%(col,row))
         if role == QtCore.Qt.EditRole:
             if value.strip() == "":
@@ -266,8 +265,7 @@ class GlobalFileChooserDelegate(QtWidgets.QStyledItemDelegate):
         )
         mydialog.setModal(True)
         mydialog.exec_()
-        result = mydialog.result()
-        if mydialog.result() == True:
+        if mydialog.result() is True:
             choice = mydialog.getchoice()
             # self.change_wf_file(choice)
             label.setText(choice)
@@ -291,14 +289,17 @@ class GlobalFileChooserDelegate(QtWidgets.QStyledItemDelegate):
         openwfbutton = QtWidgets.QPushButton(QtGui.QIcon.fromTheme("insert-object"), "")
         # MultiselectDropDownList(self, autoset_text=False)
         openwfbutton.setFixedSize(28, 28)
+
         # openwfbutton.setIcon(QtWidgets.QFileIconProvider().icon(QtWidgets.QFileIconProvider.Network))
         # openwfbutton.itemSelectionChanged.connect(self.on_wf_file_change)
         # openwfbutton.connect_workaround(self.load_wf_files)
         # openwfbutton.external_label = label
         # openwfbutton.editor = custom_widget
-        myopenreport = lambda: self.open_remote_importer_files(
-            label=label, custom_widget=custom_widget
-        )
+        def myopenreport():
+            return self.open_remote_importer_files(
+                label=label, custom_widget=custom_widget
+            )
+
         openwfbutton.clicked.connect(myopenreport)
         hbl.addWidget(openwfbutton)
 

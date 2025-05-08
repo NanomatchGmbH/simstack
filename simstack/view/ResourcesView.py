@@ -109,14 +109,12 @@ class ResourcesView(QtWidgets.QWidget):
             return
         default_resources = Resources()
         regs = QtClusterSettingsProvider.get_registries()
-        settings = regs[mychoice]
 
         for this_key in self._resources.render_order():
             this_value = self._resources.get_field_value(this_key)
             default_value = default_resources.get_field_value(this_key)
             intention = self._field_name_to_intention[this_key]
             if this_value != default_value:
-                default_case = False
                 # In this case we can assume this value was set by the user
                 return
 
