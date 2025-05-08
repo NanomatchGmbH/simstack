@@ -1,4 +1,5 @@
-from PySide6 import QtGui, QtWidgets, QtCore
+from PySide6 import QtWidgets, QtCore
+
 
 class HorizontalTextEditWithFileImport(QtWidgets.QWidget):
     def __init__(self):
@@ -11,10 +12,12 @@ class HorizontalTextEditWithFileImport(QtWidgets.QWidget):
         self._layout = QtWidgets.QHBoxLayout()
         self._textedit = QtWidgets.QLineEdit()
         self._openfilebrowser_button = QtWidgets.QPushButton("")
-        self._openfilebrowser_button.setIcon(QtWidgets.QFileIconProvider().icon(QtWidgets.QFileIconProvider.File))
+        self._openfilebrowser_button.setIcon(
+            QtWidgets.QFileIconProvider().icon(QtWidgets.QFileIconProvider.File)
+        )
         self._layout.addWidget(self._textedit)
         self._layout.addWidget(self._openfilebrowser_button)
-        self._layout.setContentsMargins(0,0,0,0)
+        self._layout.setContentsMargins(0, 0, 0, 0)
         self.setLayout(self._layout)
 
     def _connect_signals(self):
@@ -29,7 +32,9 @@ class HorizontalTextEditWithFileImport(QtWidgets.QWidget):
         return self._openfilebrowser_button
 
     def show_file_dialog(self):
-        fname, _ = QtWidgets.QFileDialog.getOpenFileName(self, 'Open file', self._last_opened_dir)
+        fname, _ = QtWidgets.QFileDialog.getOpenFileName(
+            self, "Open file", self._last_opened_dir
+        )
         if fname:
             fname = QtCore.QDir.toNativeSeparators(fname)
             self._textedit.setText(fname)

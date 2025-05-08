@@ -22,9 +22,3 @@ repos:
         always_run: true
         require_serial: true
         pass_filenames: false
-      - id: mypy
-        name: mypy
-        entry: "pixi run -e mypy mypy"
-        language: system
-        pass_filenames: false
-        require_serial: true

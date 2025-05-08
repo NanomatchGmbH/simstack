@@ -1,14 +1,25 @@
 import getpass
 import os
-from os.path import join
 from pathlib import Path
 
 import psutil
-from PySide6.QtWidgets import QDialog, QLabel, QGridLayout, QLineEdit, QPushButton, \
-        QTabWidget, QWidget, QVBoxLayout, QHBoxLayout, QCheckBox, QTabBar, \
-        QToolButton, QFileIconProvider, QFileDialog, QComboBox
+from PySide6.QtWidgets import (
+    QDialog,
+    QLabel,
+    QGridLayout,
+    QLineEdit,
+    QPushButton,
+    QTabWidget,
+    QWidget,
+    QVBoxLayout,
+    QHBoxLayout,
+    QTabBar,
+    QToolButton,
+    QFileIconProvider,
+    QFileDialog,
+)
 import PySide6.QtWidgets as QtWidgets
-from PySide6.QtCore import Signal, QSignalMapper, QDir
+from PySide6.QtCore import Signal, QDir
 import PySide6.QtCore as QtCore
 
 from SimStackServer.WorkflowModel import Resources
@@ -17,9 +28,9 @@ from simstack.view.ResourcesView import ResourcesView
 
 
 class WaNoPathSettings(QDialog):
-    def __init__(self,pathsettings,parent):
+    def __init__(self, pathsettings, parent):
         self.pathsettings = pathsettings
-        super(WaNoPathSettings,self).__init__(parent=parent)
+        super(WaNoPathSettings, self).__init__(parent=parent)
         self.__init_ui()
 
     def __showLocalDialogWaNo(self):
@@ -29,26 +40,29 @@ class WaNoPathSettings(QDialog):
         self.__showLocalDialogHelper(self.workflowpath)
 
     def __showLocalDialogHelper(self, qlineedit):
-        dirname = QFileDialog.getExistingDirectory(self, 'Choose Directory', QDir.homePath())
+        dirname = QFileDialog.getExistingDirectory(
+            self, "Choose Directory", QDir.homePath()
+        )
         if dirname:
             dirname = QDir.toNativeSeparators(dirname)
             qlineedit.setText(dirname)
 
     def get_settings(self):
-        rdict = {"wanoRepo" : self.wanopath.text(),
-                 "workflows": self.workflowpath.text()
-                 }
+        rdict = {
+            "wanoRepo": self.wanopath.text(),
+            "workflows": self.workflowpath.text(),
+        }
         return rdict
 
     def __init_ui(self):
         self.setWindowTitle("Select Paths")
         layout = QVBoxLayout()
-        upper = QWidget(parent = self)
+        upper = QWidget(parent=self)
         lower = QWidget(parent=self)
 
         upperlayout = QGridLayout(self)
 
-        upperlayout.addWidget(QLabel("Workflow Workspace"),0, 0)
+        upperlayout.addWidget(QLabel("Workflow Workspace"), 0, 0)
         upperlayout.addWidget(QLabel("WaNo Repository"), 1, 0)
         self.workflowpath = QLineEdit("Workflow Path")
         self.workflowpath.setText(self.pathsettings["workflows"])
@@ -92,9 +106,10 @@ class WaNoPathSettings(QDialog):
     def _on_cancel(self):
         self.reject()
 
+
 class WaNoTabButtonsWidget(QWidget):
-    addClicked      = Signal(name='onAddClicked')
-    removeClicked   = Signal(name='onRemoveClicked')
+    addClicked = Signal(name="onAddClicked")
+    removeClicked = Signal(name="onRemoveClicked")
 
     def __connect_signals(self):
         self.__btn_addRegistry.clicked.connect(self.addClicked)
@@ -109,8 +124,8 @@ class WaNoTabButtonsWidget(QWidget):
     def __init_ui(self):
         layout = QHBoxLayout(self)
 
-        self.__btn_addRegistry          = QToolButton(self)
-        self.__btn_removeRegistry       = QToolButton(self)
+        self.__btn_addRegistry = QToolButton(self)
+        self.__btn_removeRegistry = QToolButton(self)
 
         self.__btn_addRegistry.setText("+")
         self.__btn_removeRegistry.setText("-")
@@ -132,12 +147,13 @@ class WaNoTabButtonsWidget(QWidget):
         self.__init_ui()
         self.__connect_signals()
 
+
 class SimStackClusterSettingsView(QDialog):
     DEFAULT_NAME = "[Unnamed Registry]"
 
     def __init__(self):
         super().__init__()
-        self.__tabs     = None
+        self.__tabs = None
         self._registries = QtClusterSettingsProvider.get_registries()
         self.__init_ui()
         self._init_tabs()
@@ -152,36 +168,50 @@ class SimStackClusterSettingsView(QDialog):
 
     def _init_tabs(self):
         for tab_id, (registry_name, resource) in enumerate(self._registries.items()):
-            self.__add_tab(registry_name, self.__tabs.count() -1, resource)
+            self.__add_tab(registry_name, self.__tabs.count() - 1, resource)
             if tab_id == 0:
                 self.__tabs.setCurrentIndex(self.__tabs.count() - 1)
 
-    def __add_tab(self, name, index, resource = None):
+    def __add_tab(self, name, index, resource=None):
         if resource is None:
-            resource = Resources(resource_name = name)
+            resource = Resources(resource_name=name)
         tabWidget = ResourcesView(resource, render_type="clustersettings")
         self.__tabs.addTab(tabWidget, name)
         return tabWidget
 
-
     def __on_add_registry(self):
-        clustername,ok = QtWidgets.QInputDialog.getText(self, self.tr("Specify Cluster Name"),
-                                     self.tr("Name"), QtWidgets.QLineEdit.Normal,
-                                     "Cluster Name")
+        clustername, ok = QtWidgets.QInputDialog.getText(
+            self,
+            self.tr("Specify Cluster Name"),
+            self.tr("Name"),
+            QtWidgets.QLineEdit.Normal,
+            "Cluster Name",
+        )
         if ok:
             if clustername in self._registries:
                 # warn and return
-                message = f"Clustername {clustername} already exists. Please remove first."
-                QtWidgets.QMessageBox.critical(None, "Clustername already exists.", message)
+                message = (
+                    f"Clustername {clustername} already exists. Please remove first."
+                )
+                QtWidgets.QMessageBox.critical(
+                    None, "Clustername already exists.", message
+                )
                 return
             csp = QtClusterSettingsProvider.get_instance()
             new_resource = csp.add_resource(resource_name=clustername)
             new_resource.set_field_value("queueing_system", "Internal")
             new_resource.set_field_value("username", getpass.getuser())
             new_resource.set_field_value("base_URI", "localhost")
-            new_resource.set_field_value("sw_dir_on_resource", os.environ.get("MAMBA_ROOT_PREFIX",Path.home()/"micromamba"))
-            new_resource.set_field_value("cpus_per_node", psutil.cpu_count(logical=False))
-            new_resource.set_field_value("memory", psutil.virtual_memory().total/1024/1024)
+            new_resource.set_field_value(
+                "sw_dir_on_resource",
+                os.environ.get("MAMBA_ROOT_PREFIX", Path.home() / "micromamba"),
+            )
+            new_resource.set_field_value(
+                "cpus_per_node", psutil.cpu_count(logical=False)
+            )
+            new_resource.set_field_value(
+                "memory", psutil.virtual_memory().total / 1024 / 1024
+            )
             self.__add_tab(clustername, self.__tabs.count() - 1, resource=new_resource)
             self.__tabs.setCurrentIndex(self.__tabs.count() - 1)
 
@@ -194,18 +224,18 @@ class SimStackClusterSettingsView(QDialog):
     def __on_remove_registry(self):
         # -1 for tab buttons
         index = self.__tabs.currentIndex()
-        if (index > 0):
+        if index > 0:
             registry_name = self.__tabs.tabText(index)
             csp = QtClusterSettingsProvider.get_instance()
             csp.remove_resource(registry_name)
             self.__tabs.removeTab(index)
 
-        if (self.__tabs.count() == 1):
+        if self.__tabs.count() == 1:
             self.__tab_buttons.disable_remove()
 
     def __title_edited(self, index):
         tabWidget = self.__tabs.widget(index)
-        if (not tabWidget is None):
+        if tabWidget is not None:
             text = tabWidget.get_name()
             self.__tabs.setTabText(index, text if text != "" else self.DEFAULT_NAME)
 
@@ -219,9 +249,9 @@ class SimStackClusterSettingsView(QDialog):
 
         self.__btn_save.setText("Save")
         self.__btn_cancel.setText("Cancel")
-        default_label = QLabel('Add Registry by clicking \"+\"')
+        default_label = QLabel('Add Registry by clicking "+"')
         default_label.setAlignment(QtCore.Qt.AlignCenter)
-        self.__tabs.addTab(default_label, '')
+        self.__tabs.addTab(default_label, "")
         self.__tabs.setTabEnabled(0, False)
         self.__tabs.setUsesScrollButtons(True)
         self.__tabs.tabBar().setTabButton(0, QTabBar.RightSide, self.__tab_buttons)

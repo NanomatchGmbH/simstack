@@ -1,5 +1,5 @@
 package:
-  name: simstack 
+  name: simstack
   version: "1.5.1"
 about:
   home: https://github.com/NanomatchGmbH/simstack

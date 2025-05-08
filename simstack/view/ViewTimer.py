@@ -2,6 +2,7 @@ from PySide6.QtCore import QObject, QTimer
 from PySide6.QtCore import QMutex
 import time
 
+
 class ViewTimer(QObject):
     def _unlock_list(self):
         self._lock.unlock()
@@ -69,4 +70,3 @@ class ViewTimer(QObject):
         self._lock = QMutex()
 
         self._timer.timeout.connect(self.__timeout)
-

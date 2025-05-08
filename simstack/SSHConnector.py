@@ -16,7 +16,7 @@ from lxml import etree
 
 from zmq.error import Again, ZMQError
 
-from PySide6.QtCore import Slot, Signal, QObject
+from PySide6.QtCore import Signal, QObject
 from PySide6.QtWidgets import QMessageBox
 
 from SimStackServer.ClusterManager import ClusterManager
@@ -36,14 +36,16 @@ from simstack.lib.QtClusterSettingsProvider import QtClusterSettingsProvider
 """ Number of data transfer workers per regisrtry. """
 MAX_DT_WORKERS_PER_REGISTRY = 3
 
-_AUTH_TYPES = Enum("AUTH_TYPES",
+_AUTH_TYPES = Enum(
+    "AUTH_TYPES",
     """
     HTTP
     """,
-    module=__name__
+    module=__name__,
 )
 
-OPERATIONS = Enum("OPERATIONS",
+OPERATIONS = Enum(
+    "OPERATIONS",
     """
     CONNECT_REGISTRY
     DISCONNECT_REGISTRY
@@ -60,9 +62,9 @@ OPERATIONS = Enum("OPERATIONS",
     ABORT_WORKFLOW
     DOWNLOAD_FILE
     UPLOAD_FILE
-    UPDATE_RESOURCES 
+    UPDATE_RESOURCES
     """,
-    module=__name__
+    module=__name__,
 )
 
 """
@@ -87,16 +89,17 @@ SSHConnector error codes.
 * FILE_DELETE_FAILED
     The deletion of a file has failed.
 """
-ERROR = Enum("ERROR",
-    [e.name for e in ErrorCodes] + [
-            "AUTH_SETUP_FAILED",
-            "REGISTRY_NOT_CONNECTED",
-            "JOB_DELETE_FAILED",
-            "FILE_DELETE_FAILED",
-        ],
-    module=__name__
+ERROR = Enum(
+    "ERROR",
+    [e.name for e in ErrorCodes]
+    + [
+        "AUTH_SETUP_FAILED",
+        "REGISTRY_NOT_CONNECTED",
+        "JOB_DELETE_FAILED",
+        "FILE_DELETE_FAILED",
+    ],
+    module=__name__,
 )
-
 
 
 def eagain_catcher(f):
@@ -104,21 +107,30 @@ def eagain_catcher(f):
     def wrapper(self, *args, **kwds):
         try:
             return f(self, *args, **kwds)
-        except (Again, ZMQError) as e:
+        except (Again, ZMQError):
             from simstack.view.WFViewManager import WFViewManager
+
             message = "Connection Error, please try reconnecting Client."
             WFViewManager.show_error(message)
         except socket.timeout as e:
             from simstack.view.WFViewManager import WFViewManager
-            message = "Caught connection exception %s: SSH socket timed out. Please try reconnecting Client." % (e)
+
+            message = (
+                "Caught connection exception %s: SSH socket timed out. Please try reconnecting Client."
+                % (e)
+            )
             WFViewManager.show_error(message)
         except OSError as e:
             from simstack.view.WFViewManager import WFViewManager
-            #print(type(e))
-            message = "Caught connection exception %s: %s. Try reconnecting Client."%(type(e),e)
-            WFViewManager.show_error(message)
-    return wrapper
 
+            # print(type(e))
+            message = "Caught connection exception %s: %s. Try reconnecting Client." % (
+                type(e),
+                e,
+            )
+            WFViewManager.show_error(message)
+
+    return wrapper
 
 
 class SSHConnector(QObject):
@@ -129,10 +141,10 @@ class SSHConnector(QObject):
             message = ""
         self.error.emit(base_uri, operation.value, error.value, message)
 
-    def start_server(self, registry_name :str, callback=(None, (), {})):
+    def start_server(self, registry_name: str, callback=(None, (), {})):
         cm = self._get_cm(registry_name)
         cm: ClusterManager
-        registry : Resources= self._registries[registry_name]
+        registry: Resources = self._registries[registry_name]
         software_dir = registry.sw_dir_on_resource
         command = cm.get_server_command_from_software_directory(software_dir)
         cm.connect_zmq_tunnel(command)
@@ -140,6 +152,7 @@ class SSHConnector(QObject):
 
     def _get_main_par_dir(self):
         import __main__
+
         maindir = os.path.dirname(os.path.realpath(__main__.__file__))
         return maindir
 
@@ -155,7 +168,7 @@ class SSHConnector(QObject):
                 cm = self._clustermanagers[name]
                 if cm.is_connected():
                     cm.disconnect()
-        except ConnectionError as e:
+        except ConnectionError:
             pass
 
         private_key = registry.ssh_private_key
@@ -164,33 +177,51 @@ class SSHConnector(QObject):
             if os.path.isfile(pkfile):
                 private_key = pkfile
             else:
-                raise FileNotFoundError("Could not find private key at path <%s>"%pkfile)
+                raise FileNotFoundError(
+                    "Could not find private key at path <%s>" % pkfile
+                )
         extra_config = registry.extra_config
 
         def connection_is_localhost_and_same_user(url, user) -> bool:
             return url == "localhost" and getpass.getuser() == user
 
-
         if registry.queueing_system == "Filegenerator":
-            cm = LocalClusterManager(url=registry.base_URI, port=registry.port,
-                                calculation_basepath=registry.basepath, user=registry.username,
-                                sshprivatekey=private_key,
-                                extra_config=extra_config,
-                                queueing_system=registry.queueing_system, default_queue=registry.queue,
-                                filegen_mode = True)
-        elif connection_is_localhost_and_same_user(registry.base_URI, user=registry.username):
-            cm = LocalClusterManager(url=registry.base_URI, port=registry.port,
-                                calculation_basepath=registry.basepath, user=registry.username,
-                                sshprivatekey=private_key,
-                                extra_config=extra_config,
-                                queueing_system=registry.queueing_system, default_queue=registry.queue,
-                                filegen_mode = False)
+            cm = LocalClusterManager(
+                url=registry.base_URI,
+                port=registry.port,
+                calculation_basepath=registry.basepath,
+                user=registry.username,
+                sshprivatekey=private_key,
+                extra_config=extra_config,
+                queueing_system=registry.queueing_system,
+                default_queue=registry.queue,
+                filegen_mode=True,
+            )
+        elif connection_is_localhost_and_same_user(
+            registry.base_URI, user=registry.username
+        ):
+            cm = LocalClusterManager(
+                url=registry.base_URI,
+                port=registry.port,
+                calculation_basepath=registry.basepath,
+                user=registry.username,
+                sshprivatekey=private_key,
+                extra_config=extra_config,
+                queueing_system=registry.queueing_system,
+                default_queue=registry.queue,
+                filegen_mode=False,
+            )
         else:
-            cm = ClusterManager(url=registry.base_URI, port=registry.port,
-                                calculation_basepath=registry.basepath, user=registry.username,
-                                sshprivatekey=private_key,
-                                extra_config=extra_config,
-                                queueing_system=registry.queueing_system, default_queue=registry.queue)
+            cm = ClusterManager(
+                url=registry.base_URI,
+                port=registry.port,
+                calculation_basepath=registry.basepath,
+                user=registry.username,
+                sshprivatekey=private_key,
+                extra_config=extra_config,
+                queueing_system=registry.queueing_system,
+                default_queue=registry.queue,
+            )
         self._clustermanagers[name] = cm
         if not cm.is_connected():
             try:
@@ -202,12 +233,17 @@ class SSHConnector(QObject):
                 except paramiko.ssh_exception.SSHException as e:
                     exstr = str(e)
                     if exstr.endswith("not found in known_hosts"):
-                        reply = QMessageBox.question(None, 'SSH HostKey unknown',
-
-                            'An unknown hostkey was encountered, when connecting to %s. If this is your first time connecting, this is expected. Add the Host to your local hostkeys?'%name, QMessageBox.Yes, QMessageBox.No)
+                        reply = QMessageBox.question(
+                            None,
+                            "SSH HostKey unknown",
+                            "An unknown hostkey was encountered, when connecting to %s. If this is your first time connecting, this is expected. Add the Host to your local hostkeys?"
+                            % name,
+                            QMessageBox.Yes,
+                            QMessageBox.No,
+                        )
                         if reply == QMessageBox.Yes:
                             if hasattr(cm, "set_connect_to_unknown_hosts"):
-                                #This is backwards compatibility for horeka
+                                # This is backwards compatibility for horeka
                                 cm.set_connect_to_unknown_hosts(True)
                                 cm.connect()
                             else:
@@ -225,23 +261,32 @@ class SSHConnector(QObject):
                 traceback.print_exc()
                 error = ErrorCodes.CONN_ERROR
                 del self._clustermanagers[name]
-            except Again as e:
+            except Again:
                 statusmessage = "Connection Error, please try reconnecting Client."
                 error = ErrorCodes.CONN_ERROR
                 del self._clustermanagers[name]
             except socket.timeout as e:
-                statusmessage = "Caught connection exception %s: SSH socket timed out. Please try reconnecting Client." % (e)
+                statusmessage = (
+                    "Caught connection exception %s: SSH socket timed out. Please try reconnecting Client."
+                    % (e)
+                )
                 error = ErrorCodes.CONN_ERROR
                 del self._clustermanagers[name]
             except FileNotFoundError as e:
                 traceback_out = StringIO()
                 traceback.print_exc(file=traceback_out)
-                statusmessage = "Did not find file, Exception was:\n%s  \nException occured in relation to File <%s>\n\n ----- Traceback -----\n %s" % (e, e.filename, traceback_out.getvalue())
+                statusmessage = (
+                    "Did not find file, Exception was:\n%s  \nException occured in relation to File <%s>\n\n ----- Traceback -----\n %s"
+                    % (e, e.filename, traceback_out.getvalue())
+                )
 
                 error = ErrorCodes.CONN_ERROR
                 del self._clustermanagers[name]
             except OSError as e:
-                statusmessage = "Caught generic exception %s. Please reconnect and try again and if it reappears report to Nanomatch" % (e)
+                statusmessage = (
+                    "Caught generic exception %s. Please reconnect and try again and if it reappears report to Nanomatch"
+                    % (e)
+                )
                 error = ErrorCodes.CONN_ERROR
                 del self._clustermanagers[name]
         else:
@@ -251,12 +296,11 @@ class SSHConnector(QObject):
     def _get_error_or_fail(self, base_uri):
         worker = None
         if base_uri in self.workers:
-            worker = self.workers[base_uri]['worker']
+            worker = self.workers[base_uri]["worker"]
         else:
             self._emit_error(
-                    base_uri,
-                    OPERATIONS.RUN_SINGLE_JOB,
-                    ERROR.REGISTRY_NOT_CONNECTED)
+                base_uri, OPERATIONS.RUN_SINGLE_JOB, ERROR.REGISTRY_NOT_CONNECTED
+            )
         return worker
 
     def disconnect_registry(self, registry_name, callback):
@@ -269,53 +313,68 @@ class SSHConnector(QObject):
         self._exec_callback(callback, error, statusmessage)
 
     @eagain_catcher
-    def run_workflow_job(self, registry_name, submitname, dir_to_upload, xml, progress_callback = None, callback = None):
-
+    def run_workflow_job(
+        self,
+        registry_name,
+        submitname,
+        dir_to_upload,
+        xml,
+        progress_callback=None,
+        callback=None,
+    ):
         cm = self._get_cm(registry_name)
         counter = 0
 
-
         real_submitname = submitname
         while cm.exists(real_submitname):
-            counter+=1
-            print("File %s already exists. This is unlikely but possible, when submitting lots of workflows. Trying a different filename." % (real_submitname))
-            real_submitname = submitname + "_Nr_%d"%counter
+            counter += 1
+            print(
+                "File %s already exists. This is unlikely but possible, when submitting lots of workflows. Trying a different filename."
+                % (real_submitname)
+            )
+            real_submitname = submitname + "_Nr_%d" % counter
 
             if counter == 15:
-                raise FileExistsError("File %s already exists. Stopping to find a new file. This is highly unlikely. Please report to Nanomatch."%(real_submitname))
+                raise FileExistsError(
+                    "File %s already exists. Stopping to find a new file. This is highly unlikely. Please report to Nanomatch."
+                    % (real_submitname)
+                )
 
         submitname = real_submitname
 
         for filename in filewalker(dir_to_upload):
             cp = os.path.commonprefix([dir_to_upload, filename])
             relpath = os.path.relpath(filename, cp)
-            submitpath = submitname + '/' + "workflow_data" + '/'+ relpath
-            print("Uploading '%s' to '%s'" %(filename, submitpath))
-            mydir = dirname(submitpath).replace('\\','/')
+            submitpath = submitname + "/" + "workflow_data" + "/" + relpath
+            print("Uploading '%s' to '%s'" % (filename, submitpath))
+            mydir = dirname(submitpath).replace("\\", "/")
             cm.mkdir_p(mydir)
-            cm.put_file(filename,submitpath.replace('\\','/'))
+            cm.put_file(filename, submitpath.replace("\\", "/"))
 
         wf_yml_name = real_submitname + "/" + "rendered_workflow.xml"
-        with cm.remote_open(wf_yml_name,'wt') as outfile:
-            outfile.write(etree.tostring(xml, encoding = "utf8", pretty_print=True).decode()
-                          .replace("c9m:","")
-                          .replace("${STORAGE}/","")
-                          .replace("${SUBMIT_NAME}",real_submitname)
-                          .replace("${BASEFOLDER}",cm.get_calculation_basepath() + '/' + submitname)
-                          .replace("${QUEUE}", cm.get_queueing_system())
-                          .replace("${QUEUE_NAME}",cm.get_default_queue())
-                          )
+        with cm.remote_open(wf_yml_name, "wt") as outfile:
+            outfile.write(
+                etree.tostring(xml, encoding="utf8", pretty_print=True)
+                .decode()
+                .replace("c9m:", "")
+                .replace("${STORAGE}/", "")
+                .replace("${SUBMIT_NAME}", real_submitname)
+                .replace(
+                    "${BASEFOLDER}", cm.get_calculation_basepath() + "/" + submitname
+                )
+                .replace("${QUEUE}", cm.get_queueing_system())
+                .replace("${QUEUE_NAME}", cm.get_default_queue())
+            )
         cm.submit_wf(wf_yml_name)
-
 
     def update_job_list(self, base_uri, callback=(None, (), {})):
         worker = self._get_error_or_fail(base_uri)
-        if not worker is None:
+        if worker is not None:
             worker.update_job_list(callback, base_uri)
 
     def update_resources(self, base_uri, callback=(None, (), {})):
         worker = self._get_error_or_fail(base_uri)
-        if not worker is None:
+        if worker is not None:
             worker.update_resources(callback, base_uri)
 
     @eagain_catcher
@@ -351,12 +410,12 @@ class SSHConnector(QObject):
 
     def delete_job(self, base_uri, job, callback=(None, (), {})):
         worker = self._get_error_or_fail(base_uri)
-        if not worker is None:
+        if worker is not None:
             worker.delete_job(callback, base_uri, job)
 
     def abort_job(self, base_uri, job, callback=(None, (), {})):
         worker = self._get_error_or_fail(base_uri)
-        if not worker is None:
+        if worker is not None:
             worker.abort_job(callback, base_uri, job)
 
     def get_workflow_url(self, registry_name, workflow):
@@ -364,18 +423,31 @@ class SSHConnector(QObject):
         return cm.get_url_for_workflow(workflow)
 
     @eagain_catcher
-    def delete_workflow(self, registry_name, workflow_submitname, callback=(None, (), {})):
+    def delete_workflow(
+        self, registry_name, workflow_submitname, callback=(None, (), {})
+    ):
         cm = self._get_cm(registry_name)
         cm.delete_wf(workflow_submitname)
 
     @eagain_catcher
-    def abort_workflow(self, registry_name, workflow_submitname, callback=(None, (), {})):
+    def abort_workflow(
+        self, registry_name, workflow_submitname, callback=(None, (), {})
+    ):
         cm = self._get_cm(registry_name)
         cm.abort_wf(workflow_submitname)
-        self.logger.debug("Sending Workflow Abort message for workflows %s"%workflow_submitname)
+        self.logger.debug(
+            "Sending Workflow Abort message for workflows %s" % workflow_submitname
+        )
 
     @eagain_catcher
-    def download_file(self, registry_name, download_files, local_dest, progress_callback = None, callback=(None, (), {})):
+    def download_file(
+        self,
+        registry_name,
+        download_files,
+        local_dest,
+        progress_callback=None,
+        callback=(None, (), {}),
+    ):
         cm = self._get_cm(registry_name)
         todl = download_files
         if isinstance(download_files, str):
@@ -386,12 +458,19 @@ class SSHConnector(QObject):
 
     def _get_cm(self, registry_name) -> ClusterManager:
         name = registry_name
-        if not name in self._clustermanagers:
-            raise ConnectionError("Clustermanager %s was not connected."%name)
+        if name not in self._clustermanagers:
+            raise ConnectionError("Clustermanager %s was not connected." % name)
         return self._clustermanagers[name]
 
     @eagain_catcher
-    def upload_files(self, registry_name, upload_files, destination, progress_callback = None, callback=(None, (), {})):
+    def upload_files(
+        self,
+        registry_name,
+        upload_files,
+        destination,
+        progress_callback=None,
+        callback=(None, (), {}),
+    ):
         cm = self._get_cm(registry_name)
         toupload = upload_files
         if isinstance(upload_files, str):
@@ -400,10 +479,8 @@ class SSHConnector(QObject):
         for local_file in toupload:
             cm.put_file(local_file, destination)
 
-
     def run(self):
         self.exec_()
-
 
     def _exec_callback(self, callback, *args, **kwargs):
         cb_function = callback
@@ -423,16 +500,16 @@ class SSHConnector(QObject):
 
     def __init__(self):
         super(SSHConnector, self).__init__()
-        self.logger         = logging.getLogger("SSHConnection")
+        self.logger = logging.getLogger("SSHConnection")
         self._registries = QtClusterSettingsProvider.get_registries()
         self._clustermanagers = {}
 
-        self.workers        = {}
+        self.workers = {}
 
         import sys
+
         loglevel = logging.DEBUG
         self.logger.setLevel(loglevel)
         ch = logging.StreamHandler(sys.stdout)
         ch.setLevel(loglevel)
         self.logger.addHandler(ch)
-
