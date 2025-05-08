@@ -352,12 +352,6 @@ class FileChooserDelegate(QtWidgets.QItemDelegate):
         if option.state & QtWidgets.QStyle.State_Selected:
             painter.fillRect(option.rect, option.palette.highlight())
         return
-        if index.column() == IMAGE:
-            painter.drawPixmap(
-                option.rect, QPixmap(index.model().data(index).toString())
-            )
-
-        # QItemDelegate.paint(self, painter, option, index)
 
     def createEditor(self, parent, option, index):
         custom_widget = QtWidgets.QWidget(parent)

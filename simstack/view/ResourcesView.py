@@ -104,38 +104,8 @@ class ResourcesView(QtWidgets.QWidget):
         :param mychoice:
         :return:
         """
+        # Function not used anymore
         return
-        if self._cluster_dropdown.currentText() != self._connected_server_text:
-            return
-        default_resources = Resources()
-        regs = QtClusterSettingsProvider.get_registries()
-
-        for this_key in self._resources.render_order():
-            this_value = self._resources.get_field_value(this_key)
-            default_value = default_resources.get_field_value(this_key)
-            intention = self._field_name_to_intention[this_key]
-            if this_value != default_value:
-                # In this case we can assume this value was set by the user
-                return
-
-            if intention == "int":
-                this_i = QtWidgets.QSpinBox()
-                this_i.valueChanged.connect(myfunc)
-                this_i.setMinimum(0)
-                this_i.setMaximum(100000)
-                this_i.setValue(this_value)
-            elif intention == "file":
-                this_i = HorizontalTextEditWithFileImport()
-                this_i.line_edit.setText(this_value)
-                this_i.line_edit.textChanged.connect(myfunc)
-            elif intention == "str":
-                this_i = QtWidgets.QLineEdit()
-                this_i.setText(this_value)
-                this_i.textChanged.connect(myfunc)
-            else:  # intention == "queueing_system":
-                this_i = self._get_queue_dropdown_widget()
-                this_i.setCurrentText(this_value)
-                this_i.currentTextChanged.connect(myfunc)
 
     def _reinit_values_from_resource(self):
         for key, widget in self._widgets.items():

@@ -1,4 +1,5 @@
 import datetime
+import copy
 import hashlib
 import pathlib
 import shutil
@@ -66,9 +67,6 @@ widgetColors = {
 # Blue Theme
 # widgetColors = {'MainEditor' : '#D5E9FF' , 'Control': '#D5E9FF' , 'Base': '#AABBCC' ,
 #               'WaNo' : '#AABBCC', 'ButtonColor':'#88C2FF' }
-
-
-import copy
 
 
 def linuxjoin(*args, **kwargs):

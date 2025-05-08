@@ -363,7 +363,7 @@ class WFRemoteFileSystem(QWidget):
         if not index.isValid():
             return
 
-        item = index.internalPointer()
+        index.internalPointer()
 
         menu = QMenu()
         # action=menu.addAction("Menu")
