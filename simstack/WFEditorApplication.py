@@ -204,7 +204,6 @@ class WFEditorApplication:
                 registry_name, local_files, dest_dir), {})
         )
 
-    #@QThreadCallback.callback
     def _on_file_deleted(self, base_uri, status, err, to_del=""):
         to_update = os.path.dirname(to_del)
         if err != ErrorCodes.NO_ERROR:
@@ -227,7 +226,6 @@ class WFEditorApplication:
         self._connector.delete_file(registry_name, filename, (self._on_file_deleted, (), { 'to_del': filename } ))
 
 
-    #@QThreadCallback.callback
     def _on_job_deleted(self, base_uri, status, err, job=""):
         if err == ErrorCodes.NO_ERROR:
             self._on_fs_job_list_update_request()
@@ -239,7 +237,6 @@ class WFEditorApplication:
                 )
 
 
-    #@QThreadCallback.callback
     def _on_job_aborted(self, base_uri, status, err, job=""):
         if err == ErrorCodes.NO_ERROR:
             self._on_fs_job_list_update_request()
@@ -250,7 +247,6 @@ class WFEditorApplication:
                     (job, str(status.name))
                 )
 
-    #@QThreadCallback.callback
     def _on_workflow_deleted(self, base_uri, status, err, workflow=""):
         if err == ErrorCodes.NO_ERROR:
             self._on_fs_worflow_list_update_request()
@@ -261,7 +257,6 @@ class WFEditorApplication:
                 (workflow, str(status.name))
             )
 
-    #@QThreadCallback.callback
     def _on_workflow_aborted(self, base_uri, status, err, workflow=""):
         pass
         #print("here")

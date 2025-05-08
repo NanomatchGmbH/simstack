@@ -20,7 +20,6 @@ from PySide6.QtCore import Slot, Signal, QObject
 from PySide6.QtWidgets import QMessageBox
 
 from SimStackServer.ClusterManager import ClusterManager
-from SimStackServer.FilegeneratorClusterManager import FilegeneratorClusterManager
 from SimStackServer.LocalClusterManager import LocalClusterManager
 from SimStackServer.MessageTypes import ErrorCodes
 
@@ -173,17 +172,19 @@ class SSHConnector(QObject):
 
 
         if registry.queueing_system == "Filegenerator":
-            cm = FilegeneratorClusterManager(url=registry.base_URI, port=registry.port,
+            cm = LocalClusterManager(url=registry.base_URI, port=registry.port,
                                 calculation_basepath=registry.basepath, user=registry.username,
                                 sshprivatekey=private_key,
                                 extra_config=extra_config,
-                                queueing_system=registry.queueing_system, default_queue=registry.queue)
+                                queueing_system=registry.queueing_system, default_queue=registry.queue,
+                                filegen_mode = True)
         elif connection_is_localhost_and_same_user(registry.base_URI, user=registry.username):
             cm = LocalClusterManager(url=registry.base_URI, port=registry.port,
                                 calculation_basepath=registry.basepath, user=registry.username,
                                 sshprivatekey=private_key,
                                 extra_config=extra_config,
-                                queueing_system=registry.queueing_system, default_queue=registry.queue)
+                                queueing_system=registry.queueing_system, default_queue=registry.queue,
+                                filegen_mode = False)
         else:
             cm = ClusterManager(url=registry.base_URI, port=registry.port,
                                 calculation_basepath=registry.basepath, user=registry.username,
