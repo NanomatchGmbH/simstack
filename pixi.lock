@@ -736,6 +736,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/linux-64/pyside6-6.9.0-py313h5f61773_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/pytest-7.4.4-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/pytest-cov-6.1.1-pyhd8ed1ab_0.conda
+      - conda: https://conda.anaconda.org/conda-forge/noarch/pytest-qt-4.4.0-pyhdecd6ff_1.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/python-3.13.3-hf636f53_101_cp313.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/python-build-1.2.2.post1-pyhff2d567_1.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/python-daemon-3.1.2-pyhff2d567_0.conda
@@ -3327,6 +3328,19 @@ packages:
   - pkg:pypi/pytest-cov?source=hash-mapping
   size: 27565
   timestamp: 1743886993683
+- conda: https://conda.anaconda.org/conda-forge/noarch/pytest-qt-4.4.0-pyhdecd6ff_1.conda
+  sha256: 9eb5361ba410d01978d42f64edb28b77f0b9599a7c4b6f24eddd6e6b66c48584
+  md5: 8b0a729b629dd6281e964810758664c2
+  depends:
+  - pluggy >=1.1
+  - pytest
+  - python >=3.9
+  license: MIT
+  license_family: MIT
+  purls:
+  - pkg:pypi/pytest-qt?source=hash-mapping
+  size: 37628
+  timestamp: 1734663339850
 - conda: https://conda.anaconda.org/conda-forge/linux-64/python-3.12.10-h9e4cc4f_0_cpython.conda
   sha256: 4dc1da115805bd353bded6ab20ff642b6a15fcc72ac2f3de0e1d014ff3612221
   md5: a41d26cd4d47092d683915d058380dec
@@ -3811,7 +3825,7 @@ packages:
 - pypi: .
   name: simstack
   version: 0.1.0
-  sha256: c67682923596a63cfa9fb56a11111754b24594d05e256a6accfc9d1ca6db0cf1
+  sha256: c56a391ad246067b35fdb22db0906ee92b6679fc115260a554831836a1766758
   requires_python: '>=3.11'
   editable: true
 - conda: https://repo.prefix.dev/simstack/noarch/simstackserver-1.5.4-py_0.tar.bz2
