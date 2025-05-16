@@ -1,6 +1,4 @@
-from PySide6.QtWidgets import QToolButton, QListWidgetItem, QMenu, \
-        QListWidget, QAbstractItemView, QWidgetAction, QPushButton
-
+from PySide6.QtWidgets import QToolButton, QMenu, QWidgetAction, QPushButton
 
 
 class _DropDownWidget(object):
@@ -14,8 +12,9 @@ class _DropDownWidget(object):
     Args:
         widget: the widget to be displayed in this DropDownWidgetToolButton.
     """
+
     def set_widget(self, widget):
-        if self._widget is None and not widget is None:
+        if self._widget is None and widget is not None:
             self._widget = widget
             self._set_widget()
 
@@ -44,19 +43,23 @@ class DropDownWidgetToolButton(QToolButton, _DropDownWidget):
         widget: the widget to be displayed in this DropDownWidgetToolButton.
         text: the text displayed in the Button.
     """
+
     def __init__(self, parent, widget=None, text=""):
         super(DropDownWidgetToolButton, self).__init__()
         self.setPopupMode(QToolButton.MenuButtonPopup)
         self._init(widget, text)
+
 
 class DropDownWidgetPushButton(QPushButton, _DropDownWidget):
     def __init__(self, parent, widget=None, text=""):
         super(DropDownWidgetPushButton, self).__init__()
         self._init(widget, text)
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     import sys
-    from PySide6.QtWidgets import QLabel, QWidget, QHBoxLayout, QApplication, QFileIconProvider
+    from PySide6.QtWidgets import QLabel, QWidget, QHBoxLayout, QApplication
+
     app = QApplication(sys.argv)
     window = QWidget()
     label1 = QLabel("Test Label")

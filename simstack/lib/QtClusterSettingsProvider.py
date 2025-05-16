@@ -3,10 +3,13 @@ from PySide6.QtCore import QObject, Signal
 
 from SimStackServer.WorkflowModel import Resources
 
+
 class QtSettingsChangedWorkaround(QObject):
     settings_changed = Signal(name="SettingsChanged")
+
     def __init__(self):
         super().__init__()
+
 
 class QtClusterSettingsProvider(ClusterSettingsProvider, QtSettingsChangedWorkaround):
     def __init__(self):

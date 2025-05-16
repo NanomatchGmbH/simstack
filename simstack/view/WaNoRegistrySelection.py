@@ -2,7 +2,7 @@ import os
 from PySide6.QtWidgets import QWidget, QComboBox, QPushButton, QHBoxLayout, QSizePolicy
 from PySide6.QtGui import QPixmap, QIcon
 
-from PySide6.QtCore import Signal, Slot, QSize
+from PySide6.QtCore import Signal, QSize
 
 from enum import Enum
 
@@ -11,25 +11,26 @@ from simstack.lib.QtClusterSettingsProvider import QtClusterSettingsProvider
 
 class WaNoRegistrySelection(QWidget):
     instance = None
+
     class CONNECTION_STATES(Enum):
         connected = 0
         connecting = 1
         disconnected = 2
 
     __text = [
-            "Disconnect",
-            "[Connecting]",
-            "Connect",
-        ]
+        "Disconnect",
+        "[Connecting]",
+        "Connect",
+    ]
     __icons = [
-            'cs-xlet-running.svg',
-            'cs-xlet-update.svg',
-            'cs-xlet-error.svg',
-        ]
+        "cs-xlet-running.svg",
+        "cs-xlet-update.svg",
+        "cs-xlet-error.svg",
+    ]
 
-    registrySelectionChanged    = Signal(str, name='registrySelectionChanged')
-    disconnect_registry          = Signal(name='disconnectRegistry')
-    connect_registry             = Signal(str, name='connectRegistry')
+    registrySelectionChanged = Signal(str, name="registrySelectionChanged")
+    disconnect_registry = Signal(name="disconnectRegistry")
+    connect_registry = Signal(str, name="connectRegistry")
 
     def select_registry(self, index):
         self.registryComboBox.setCurrentIndex(index)
@@ -56,9 +57,9 @@ class WaNoRegistrySelection(QWidget):
     def get_instance(cls):
         return cls.instance
 
-    def get_iconpath(self,icon):
+    def get_iconpath(self, icon):
         script_path = os.path.dirname(os.path.realpath(__file__))
-        media_path = os.path.join(script_path, "..", "Media","icons")
+        media_path = os.path.join(script_path, "..", "Media", "icons")
         imagepath = os.path.join(media_path, icon)
         return imagepath
 
@@ -74,9 +75,9 @@ class WaNoRegistrySelection(QWidget):
 
     def __init_ui(self, parent):
         button_height = 20
-        self.registryComboBox   = QComboBox(self)
-        self.isConnectedIcon    = QPushButton(self)
-        #self.isConnectedIcon.resize(self.isConnectedIcon.sizeHint())
+        self.registryComboBox = QComboBox(self)
+        self.isConnectedIcon = QPushButton(self)
+        # self.isConnectedIcon.resize(self.isConnectedIcon.sizeHint())
 
         self.isConnectedIcon.setFixedSize(100, button_height)
         self.isConnectedIcon.setIconSize(QSize(button_height, button_height))
@@ -85,7 +86,7 @@ class WaNoRegistrySelection(QWidget):
         layout.addWidget(self.registryComboBox)
         layout.addWidget(self.isConnectedIcon)
         self.setLayout(layout)
-        #self.resize(self.sizeHint())
+        # self.resize(self.sizeHint())
 
     def __on_selection_changed(self, registry_name):
         if self.__emit_signal:
@@ -100,13 +101,15 @@ class WaNoRegistrySelection(QWidget):
     def __connect_signals(self):
         self.isConnectedIcon.clicked.connect(self.__on_button_clicked)
         self.registryComboBox.currentTextChanged.connect(self.__on_selection_changed)
-        QtClusterSettingsProvider.get_instance().settings_changed.connect(self._new_update_registries)
+        QtClusterSettingsProvider.get_instance().settings_changed.connect(
+            self._new_update_registries
+        )
 
     def __init__(self, parent):
         super(WaNoRegistrySelection, self).__init__(parent)
         WaNoRegistrySelection.instance = self
 
-        self.setSizePolicy(QSizePolicy.Minimum,QSizePolicy.Minimum)
+        self.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Minimum)
         self.__init_ui(parent)
         self.setStatus(WaNoRegistrySelection.CONNECTION_STATES.disconnected)
         self.__emit_signal = True

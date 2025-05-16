@@ -1,14 +1,11 @@
-
 from abc import abstractmethod
 
 
-
-from PySide6.QtCore import QAbstractItemModel, QModelIndex, QFileInfo, Qt, QSize
-from PySide6.QtWidgets import QFileIconProvider, QTreeView
+from PySide6.QtCore import QAbstractItemModel, QModelIndex, Qt, QSize
+from PySide6.QtWidgets import QFileIconProvider
 from PySide6.QtGui import QIcon, QPainter, QColor, qGray, QPixmap
 
 from enum import Enum
-
 
 
 ########################
@@ -16,21 +13,21 @@ from SimStackServer.MessageTypes import JobStatus
 
 
 class DATA_TYPE(Enum):
-    FILE        = 0
-    DIRECTORY   = 1
-    UNKNOWN     = 2
-    LOADING     = 3
-    SEPARATOR1  = 4
-    SEPARATOR2  = 5
-    SEPARATOR3  = 6
-    SEPARATOR4  = 7
+    FILE = 0
+    DIRECTORY = 1
+    UNKNOWN = 2
+    LOADING = 3
+    SEPARATOR1 = 4
+    SEPARATOR2 = 5
+    SEPARATOR3 = 6
+    SEPARATOR4 = 7
     ###These are basically exclusive to icon types
-    JOB_QUEUED  = 8
+    JOB_QUEUED = 8
     JOB_RUNNING = 9
-    JOB_READY   = 10
-    JOB_FAILED  = 11
+    JOB_READY = 10
+    JOB_FAILED = 11
     JOB_SUCCESSFUL = 12
-    JOB_ABORTED    = 13
+    JOB_ABORTED = 13
     JOB_REUSED_RESULT = 14
     WF_QUEUED = 15
     WF_RUNNING = 16
@@ -40,50 +37,50 @@ class DATA_TYPE(Enum):
     WF_ABORTED = 20
     UNDELETEABLE_DIRECTORY = 21
 
+
 JOB_STATUS_TO_DATA_TYPE = {
-    JobStatus.READY : DATA_TYPE.JOB_READY,
-    JobStatus.FAILED : DATA_TYPE.JOB_FAILED,
+    JobStatus.READY: DATA_TYPE.JOB_READY,
+    JobStatus.FAILED: DATA_TYPE.JOB_FAILED,
     JobStatus.ABORTED: DATA_TYPE.JOB_ABORTED,
     JobStatus.SUCCESSFUL: DATA_TYPE.JOB_SUCCESSFUL,
-    JobStatus.QUEUED: DATA_TYPE.JOB_QUEUED, 
-    JobStatus.RUNNING : DATA_TYPE.JOB_RUNNING
+    JobStatus.QUEUED: DATA_TYPE.JOB_QUEUED,
+    JobStatus.RUNNING: DATA_TYPE.JOB_RUNNING,
 }
 
 WF_STATUS_TO_DATA_TYPE = {
-    JobStatus.READY : DATA_TYPE.WF_READY,
-    JobStatus.FAILED : DATA_TYPE.WF_FAILED,
+    JobStatus.READY: DATA_TYPE.WF_READY,
+    JobStatus.FAILED: DATA_TYPE.WF_FAILED,
     JobStatus.ABORTED: DATA_TYPE.WF_ABORTED,
     JobStatus.SUCCESSFUL: DATA_TYPE.WF_SUCCESSFUL,
-    JobStatus.QUEUED: DATA_TYPE.WF_QUEUED, 
-    JobStatus.RUNNING : DATA_TYPE.WF_RUNNING,
-    JobStatus.MARKED_FOR_DELETION : DATA_TYPE.WF_FAILED
+    JobStatus.QUEUED: DATA_TYPE.WF_QUEUED,
+    JobStatus.RUNNING: DATA_TYPE.WF_RUNNING,
+    JobStatus.MARKED_FOR_DELETION: DATA_TYPE.WF_FAILED,
 }
 
 
 class DataNode(object):
     def __init__(self, data, parent=None):
         self._data = data
-       
+
         self._parent = parent
         self._children = []
-       
+
         self.setParent(parent)
-       
+
     def setParent(self, parent):
-        if parent != None:
+        if parent is not None:
             self._parent = parent
             self._parent.appendChild(self)
         else:
             self._parent = None
-           
+
     def appendChild(self, child):
         self._children.append(child)
-       
+
     def childAtRow(self, row):
-        return self._children[row] if row >= 0 and row < len(self._children) \
-                else None
-   
-    def rowOfChild(self, child):       
+        return self._children[row] if row >= 0 and row < len(self._children) else None
+
+    def rowOfChild(self, child):
         for i, item in enumerate(self._children):
             if item == child:
                 return i
@@ -94,7 +91,7 @@ class DataNode(object):
         self._children.remove(value)
 
         return True
-       
+
     def __len__(self):
         return len(self._children)
 
@@ -111,13 +108,11 @@ class DataNode(object):
     def getParent(self):
         return self._parent
 
-       
 
 class DataTreeModel(QAbstractItemModel):
-   
     def __init__(self, parent=None):
         super(DataTreeModel, self).__init__(parent)
-        self._root = DataNode('root node')
+        self._root = DataNode("root node")
         self._columns = 1
         self._items = []
         self.junk = []
@@ -128,7 +123,7 @@ class DataTreeModel(QAbstractItemModel):
     def insertDataRows(self, row, data_rows, parent):
         parentNode = self.getNodeByIndex(parent)
         added = False
-        if not parentNode is None:
+        if parentNode is not None:
             self.beginInsertRows(parent, row, row + len(data_rows))
             for data_row in data_rows:
                 self.addNode(data_row, parentNode)
@@ -150,11 +145,11 @@ class DataTreeModel(QAbstractItemModel):
             childLength = len(child)
             if len(child) > 0:
                 childIndex = self.index(row, count, parentIndex)
-                #print("removing %d subchildren of %s" % (childLength, child._data))
+                # print("removing %d subchildren of %s" % (childLength, child._data))
                 self.beginRemoveRows(parentIndex, 0, childLength)
                 self._removeRows(0, childLength, childIndex, emitSignals)
                 self.endRemoveRows()
-            #print("\tremoving: %s with %d children\n" % (child._data, childLength))
+            # print("\tremoving: %s with %d children\n" % (child._data, childLength))
             parentNode.removeChild(i)
         return True
 
@@ -173,12 +168,10 @@ class DataTreeModel(QAbstractItemModel):
 
     def clear(self):
         rootIndex = QModelIndex()
-        
+
         self.beginResetModel()
         self._removeRows(0, len(self._root), rootIndex, emitSignals=False)
         self.endResetModel()
-
-
 
     def index(self, row, column, parent=QModelIndex()):
         childAtPosition = None
@@ -188,7 +181,7 @@ class DataTreeModel(QAbstractItemModel):
 
         if row < len(node) and row >= 0:
             child = node.childAtRow(row)
-            if not child is None:
+            if child is not None:
                 childAtPosition = self.createIndex(row, column, child)
         else:
             # return invalid index
@@ -203,12 +196,12 @@ class DataTreeModel(QAbstractItemModel):
         if index.column() == 0:
             if role == Qt.DecorationRole:
                 rv = self._getDecorationIcon(index)
-                #print("decoration: %s" % rv)
+                # print("decoration: %s" % rv)
             elif role == Qt.TextAlignmentRole:
-                #print("text align")
+                # print("text align")
                 rv = Qt.AlignTop | Qt.AlignLeft
             elif role == Qt.DisplayRole:
-                #print("text")
+                # print("text")
                 node = self.getNodeByIndex(index)
                 rv = node.getText() if node != self._root else ""
         return rv
@@ -216,25 +209,24 @@ class DataTreeModel(QAbstractItemModel):
     def columnCount(self, parent):
         return self._columns
 
-
     def rowCount(self, parent):
         node = self.getNodeByIndex(parent)
-        return len(node) if not node is None else 0
+        return len(node) if node is not None else 0
 
     def parent(self, child):
         if not child.isValid():
             return QModelIndex()
 
         node = self.getNodeByIndex(child)
-       
+
         if node is None:
             return QModelIndex()
 
         parent = node.getParent()
-           
+
         if parent is None:
             return QModelIndex()
-       
+
         grandparent = parent.getParent()
         if grandparent is None:
             return QModelIndex()
@@ -242,18 +234,17 @@ class DataTreeModel(QAbstractItemModel):
         if row < 0:
             print("Impossible condition in DataTreeModel, please debug")
             return QModelIndex()
-        assert row != - 1
+        assert row != -1
         return self.createIndex(row, 0, parent)
-
 
     @abstractmethod
     def createNode(self, data, parent=None):
-        #return DataNode(name, self._root if parent is None else parent)
+        # return DataNode(name, self._root if parent is None else parent)
         raise NotImplementedError()
 
     def addNode(self, data, parent=None):
         temp = self.createNode(data, self._root if parent is None else parent)
-        #This is a huge memory leak. Currently it's the only way and I have to talk about it with Flo when he's back
+        # This is a huge memory leak. Currently it's the only way and I have to talk about it with Flo when he's back
 
         self.junk.append(temp)
         return temp
@@ -264,19 +255,19 @@ class WFEFileSystemEntry(DataNode):
         super(WFEFileSystemEntry, self).__init__(data, parent)
 
     def getAbsolutePath(self):
-        return self._data['abspath']
+        return self._data["abspath"]
 
     def getPath(self):
-        return self._data['path']
+        return self._data["path"]
 
     def getText(self):
         return self.getPath()
 
     def getDataType(self):
-        rv = self._data['data_type'] 
+        rv = self._data["data_type"]
         if rv is None:
             rv = DATA_TYPE.DIRECTORY if len(self) > 0 else DATA_TYPE.FILE
-            self._data['data_type'] = rv
+            self._data["data_type"] = rv
         return rv
 
     def getIconType(self):
@@ -284,11 +275,8 @@ class WFEFileSystemEntry(DataNode):
 
     @staticmethod
     def createData(path, abspath, data_type=None):
-        return {
-                'abspath'   : abspath,
-                'path'      : path,
-                'data_type' : data_type
-            }
+        return {"abspath": abspath, "path": path, "data_type": data_type}
+
 
 class WFEFileSystemModel(DataTreeModel):
     def __init__(self, parent=None):
@@ -297,14 +285,17 @@ class WFEFileSystemModel(DataTreeModel):
 
     def print_rowsInserted(self, index, fromIndex, toIndex):
         return
-        print("\n\nInsertedSignal for child %s of %s, %d, %d" % \
-                ("(invalid)" if not index.isValid() \
-                        else index.internalPointer().getText(),
-                    index.parent(),
-                    fromIndex,
-                    toIndex
-                )
+        print(
+            "\n\nInsertedSignal for child %s of %s, %d, %d"
+            % (
+                "(invalid)"
+                if not index.isValid()
+                else index.internalPointer().getText(),
+                index.parent(),
+                fromIndex,
+                toIndex,
             )
+        )
 
     def _getDecorationIcon(self, index):
         node = self.getNodeByIndex(index)
@@ -312,7 +303,10 @@ class WFEFileSystemModel(DataTreeModel):
         icon = None
         if icon_type == DATA_TYPE.FILE:
             icon = QFileIconProvider().icon(QFileIconProvider.File)
-        elif icon_type == DATA_TYPE.DIRECTORY or icon_type == DATA_TYPE.UNDELETEABLE_DIRECTORY:
+        elif (
+            icon_type == DATA_TYPE.DIRECTORY
+            or icon_type == DATA_TYPE.UNDELETEABLE_DIRECTORY
+        ):
             icon = QFileIconProvider().icon(QFileIconProvider.Folder)
         elif icon_type == DATA_TYPE.LOADING:
             icon = QFileIconProvider().icon(QFileIconProvider.File)
@@ -330,101 +324,108 @@ class WFEFileSystemModel(DataTreeModel):
 
     def loading(self, index, text="Loading"):
         self.removeSubRows(index)
-        #new = [WFEFileSystemEntry.createData(text, 'abs', DATA_TYPE.LOADING) for i in range(1, 5)]
-        new = [WFEFileSystemEntry.createData(text, 'abs', DATA_TYPE.LOADING)]
-        rv = self.insertDataRows(
-                0,
-                new,
-                index
-            )
+        # new = [WFEFileSystemEntry.createData(text, 'abs', DATA_TYPE.LOADING) for i in range(1, 5)]
+        new = [WFEFileSystemEntry.createData(text, "abs", DATA_TYPE.LOADING)]
+        rv = self.insertDataRows(0, new, index)
 
         print("insertDataRows: %s" % rv)
 
-###############################################################################
-###############################################################################
-###############################################################################
-#                           Test Code
-###############################################################################
-###############################################################################
-###############################################################################
+    ###############################################################################
+    ###############################################################################
+    ###############################################################################
+    #                           Test Code
+    ###############################################################################
+    ###############################################################################
+    ###############################################################################
 
     def subelementsToText(self, parent=QModelIndex(), prefix=""):
         node = self.getNodeByIndex(parent)
         # print("%s%s (%d)" % (prefix, node._data, len(node)))
         newPrefix = "\t%s" % prefix
         for c in [self.index(r, 0, parent) for r in range(0, len(node))]:
-            childNode = self.getNodeByIndex(c)
             self.subelementsToText(c, newPrefix)
+
 
 class WFERemoteFileSystemEntry(WFEFileSystemEntry):
     def __init__(self, data, parent=None):
         super(WFERemoteFileSystemEntry, self).__init__(data, parent)
 
     def getName(self):
-        return self._data['name'] if self._data['name'] != "" \
-                else self._data['id']
+        return self._data["name"] if self._data["name"] != "" else self._data["id"]
 
     def getID(self):
-        return self._data['id']
+        return self._data["id"]
 
     def getStatus(self):
-        return self._data['status']
+        return self._data["status"]
 
     def getIconType(self):
-        if self._data['data_type'] == WFERemoteFileSystemModel.DATA_TYPE_JOB:
-            if self._data['status'] != None:
-                if self._data["status"] == JobStatus.SUCCESSFUL and self._data['original_result_directory'] is not None:
-                    return  DATA_TYPE.JOB_REUSED_RESULT
+        if self._data["data_type"] == WFERemoteFileSystemModel.DATA_TYPE_JOB:
+            if self._data["status"] is not None:
+                if (
+                    self._data["status"] == JobStatus.SUCCESSFUL
+                    and self._data["original_result_directory"] is not None
+                ):
+                    return DATA_TYPE.JOB_REUSED_RESULT
                 else:
                     return JOB_STATUS_TO_DATA_TYPE[self._data["status"]]
 
-        if self._data['data_type'] == WFERemoteFileSystemModel.DATA_TYPE_WORKFLOW:
-            if self._data['status'] != None:
+        if self._data["data_type"] == WFERemoteFileSystemModel.DATA_TYPE_WORKFLOW:
+            if self._data["status"] is not None:
                 return WF_STATUS_TO_DATA_TYPE[self._data["status"]]
 
         return super(WFERemoteFileSystemEntry, self).getIconType()
 
     @staticmethod
-    def createData(id, name, path, abspath, data_type=None, status = None, original_result_directory = None):
+    def createData(
+        id,
+        name,
+        path,
+        abspath,
+        data_type=None,
+        status=None,
+        original_result_directory=None,
+    ):
         return {
-                'id'        : id,
-                'name'      : name,
-                'abspath'   : abspath,
-                'path'      : path,
-                'data_type' : data_type,
-                'status'    : status,
-                'original_result_directory': original_result_directory
-            }
+            "id": id,
+            "name": name,
+            "abspath": abspath,
+            "path": path,
+            "data_type": data_type,
+            "status": status,
+            "original_result_directory": original_result_directory,
+        }
 
 
 class WFERemoteFileSystemModel(WFEFileSystemModel):
-    DATA_TYPE_FILE          = DATA_TYPE.FILE
-    DATA_TYPE_DIRECTORY     = DATA_TYPE.DIRECTORY
-    DATA_TYPE_UNKNOWN       = DATA_TYPE.UNKNOWN
-    DATA_TYPE_LOADING       = DATA_TYPE.LOADING
-    DATA_TYPE_JOB           = DATA_TYPE.SEPARATOR1
-    DATA_TYPE_WORKFLOW      = DATA_TYPE.SEPARATOR2
-    HEADER_TYPE_JOB         = DATA_TYPE.SEPARATOR3
-    HEADER_TYPE_WORKFLOW    = DATA_TYPE.SEPARATOR4
-    HEADER_TYPE_DIRECTORY   = DATA_TYPE.UNDELETEABLE_DIRECTORY
+    DATA_TYPE_FILE = DATA_TYPE.FILE
+    DATA_TYPE_DIRECTORY = DATA_TYPE.DIRECTORY
+    DATA_TYPE_UNKNOWN = DATA_TYPE.UNKNOWN
+    DATA_TYPE_LOADING = DATA_TYPE.LOADING
+    DATA_TYPE_JOB = DATA_TYPE.SEPARATOR1
+    DATA_TYPE_WORKFLOW = DATA_TYPE.SEPARATOR2
+    HEADER_TYPE_JOB = DATA_TYPE.SEPARATOR3
+    HEADER_TYPE_WORKFLOW = DATA_TYPE.SEPARATOR4
+    HEADER_TYPE_DIRECTORY = DATA_TYPE.UNDELETEABLE_DIRECTORY
 
-    def pixmap_to_grayscale(self,pixmap):
+    def pixmap_to_grayscale(self, pixmap):
         image = pixmap.toImage()
-        #data = image.bits()
-        #data.setsize(image.byteCount())
-        for i in range(0,image.width()):
+        # data = image.bits()
+        # data.setsize(image.byteCount())
+        for i in range(0, image.width()):
             for j in range(0, image.height()):
-                pixel = image.pixel(i,j)
+                pixel = image.pixel(i, j)
                 gray_value = qGray(pixel)
                 gray_value = 255 - gray_value
-                image.setPixel(i,j,QColor(gray_value,gray_value,gray_value, 255).rgba())
+                image.setPixel(
+                    i, j, QColor(gray_value, gray_value, gray_value, 255).rgba()
+                )
         return QPixmap.fromImage(image)
-            
-    
-    def colorize_icon(self,icon,color):
-        if isinstance(icon,QIcon):
-            pixmap = icon.pixmap(QSize(16,16))
-            pixmap = self.pixmap_to_grayscale(pixmap)          
+
+    def colorize_icon(self, icon, color):
+        if isinstance(icon, QIcon):
+            pixmap = icon.pixmap(QSize(16, 16))
+            pixmap = self.pixmap_to_grayscale(pixmap)
             painter = QPainter()
             painter.begin(pixmap)
             painter.setCompositionMode(QPainter.CompositionMode.CompositionMode_Screen)
@@ -432,7 +433,7 @@ class WFERemoteFileSystemModel(WFEFileSystemModel):
             painter.end()
             return QIcon(pixmap)
 
-    def icons(self,itype):
+    def icons(self, itype):
         if itype in self._icons.keys():
             return self._icons[itype]
         else:
@@ -440,29 +441,44 @@ class WFERemoteFileSystemModel(WFEFileSystemModel):
             return icon
 
     def __init__(self, parent=None):
-        
         self._icons = {
             DATA_TYPE.SEPARATOR1: QFileIconProvider().icon(QFileIconProvider.Computer),
             DATA_TYPE.SEPARATOR2: QFileIconProvider().icon(QFileIconProvider.Desktop),
             DATA_TYPE.SEPARATOR3: QFileIconProvider().icon(QFileIconProvider.Trashcan),
             DATA_TYPE.SEPARATOR4: QFileIconProvider().icon(QFileIconProvider.Drive),
             DATA_TYPE.JOB_QUEUED: QFileIconProvider().icon(QFileIconProvider.Computer),
-            #DATA_TYPE.JOB_QUEUED: self.colorize_icon(QFileIconProvider().icon(QFileIconProvider.Computer),Qt.darkYellow),
-            DATA_TYPE.JOB_RUNNING: self.colorize_icon(QFileIconProvider().icon(QFileIconProvider.Computer),Qt.yellow),
+            # DATA_TYPE.JOB_QUEUED: self.colorize_icon(QFileIconProvider().icon(QFileIconProvider.Computer),Qt.darkYellow),
+            DATA_TYPE.JOB_RUNNING: self.colorize_icon(
+                QFileIconProvider().icon(QFileIconProvider.Computer), Qt.yellow
+            ),
             DATA_TYPE.JOB_READY: QFileIconProvider().icon(QFileIconProvider.Computer),
-            DATA_TYPE.JOB_FAILED: self.colorize_icon(QFileIconProvider().icon(QFileIconProvider.Computer), Qt.red),
-            DATA_TYPE.JOB_SUCCESSFUL: self.colorize_icon(QFileIconProvider().icon(QFileIconProvider.Computer),Qt.green),
-            DATA_TYPE.JOB_ABORTED: self.colorize_icon(QFileIconProvider().icon(QFileIconProvider.Computer), Qt.red),
-            DATA_TYPE.JOB_REUSED_RESULT: self.colorize_icon(QFileIconProvider().icon(QFileIconProvider.Computer), Qt.blue),
-
-            #DATA_TYPE.WF_QUEUED: self.colorize_icon(QFileIconProvider().icon(QFileIconProvider.Desktop),Qt.darkYellow),
+            DATA_TYPE.JOB_FAILED: self.colorize_icon(
+                QFileIconProvider().icon(QFileIconProvider.Computer), Qt.red
+            ),
+            DATA_TYPE.JOB_SUCCESSFUL: self.colorize_icon(
+                QFileIconProvider().icon(QFileIconProvider.Computer), Qt.green
+            ),
+            DATA_TYPE.JOB_ABORTED: self.colorize_icon(
+                QFileIconProvider().icon(QFileIconProvider.Computer), Qt.red
+            ),
+            DATA_TYPE.JOB_REUSED_RESULT: self.colorize_icon(
+                QFileIconProvider().icon(QFileIconProvider.Computer), Qt.blue
+            ),
+            # DATA_TYPE.WF_QUEUED: self.colorize_icon(QFileIconProvider().icon(QFileIconProvider.Desktop),Qt.darkYellow),
             DATA_TYPE.WF_QUEUED: QFileIconProvider().icon(QFileIconProvider.Desktop),
-            DATA_TYPE.WF_RUNNING: self.colorize_icon(QFileIconProvider().icon(QFileIconProvider.Desktop), Qt.yellow),
+            DATA_TYPE.WF_RUNNING: self.colorize_icon(
+                QFileIconProvider().icon(QFileIconProvider.Desktop), Qt.yellow
+            ),
             DATA_TYPE.WF_READY: QFileIconProvider().icon(QFileIconProvider.Desktop),
-            DATA_TYPE.WF_FAILED: self.colorize_icon(QFileIconProvider().icon(QFileIconProvider.Desktop), Qt.red),
-            DATA_TYPE.WF_SUCCESSFUL: self.colorize_icon(QFileIconProvider().icon(QFileIconProvider.Desktop),
-                                                         Qt.green),
-            DATA_TYPE.WF_ABORTED: self.colorize_icon(QFileIconProvider().icon(QFileIconProvider.Desktop), Qt.red),
+            DATA_TYPE.WF_FAILED: self.colorize_icon(
+                QFileIconProvider().icon(QFileIconProvider.Desktop), Qt.red
+            ),
+            DATA_TYPE.WF_SUCCESSFUL: self.colorize_icon(
+                QFileIconProvider().icon(QFileIconProvider.Desktop), Qt.green
+            ),
+            DATA_TYPE.WF_ABORTED: self.colorize_icon(
+                QFileIconProvider().icon(QFileIconProvider.Desktop), Qt.red
+            ),
         }
 
         super(WFERemoteFileSystemModel, self).__init__(parent)
@@ -470,7 +486,6 @@ class WFERemoteFileSystemModel(WFEFileSystemModel):
 
     def createNode(self, data, parent=None):
         return WFERemoteFileSystemEntry(data, parent)
-
 
     def _getDecorationIcon(self, index):
         icon = super(WFERemoteFileSystemModel, self)._getDecorationIcon(index)
@@ -481,11 +496,11 @@ class WFERemoteFileSystemModel(WFEFileSystemModel):
         return icon
 
     def _recursive_find_parent(self, index, parent_types):
-        rv      = None
+        rv = None
         has_parent_type = False
-        if not index is None and index.isValid():
-            parent  = index.parent()
-            node    = self.getNodeByIndex(index)
+        if index is not None and index.isValid():
+            parent = index.parent()
+            node = self.getNodeByIndex(index)
 
             for t in parent_types:
                 if t == node.getDataType():
@@ -502,32 +517,33 @@ class WFERemoteFileSystemModel(WFEFileSystemModel):
     def get_id(self, index):
         node = self.getNodeByIndex(index)
         t = None
-        if not node is None:
+        if node is not None:
             t = node.getID()
         return t
 
     def get_type(self, index):
         node = self.getNodeByIndex(index)
         t = None
-        if not node is None:
+        if node is not None:
             t = node.getDataType()
         return t
 
     def get_abspath(self, index):
         node = self.getNodeByIndex(index)
         abspath = None
-        if not node is None:
+        if node is not None:
             abspath = node.getAbsolutePath()
         return abspath
 
-
     def get_headers(self, index):
         return self._recursive_find_parent(
-                index, [self.HEADER_TYPE_WORKFLOW, self.HEADER_TYPE_JOB])
+            index, [self.HEADER_TYPE_WORKFLOW, self.HEADER_TYPE_JOB]
+        )
 
     def get_category_parent(self, index):
         return self._recursive_find_parent(
-                index, [self.DATA_TYPE_WORKFLOW, self.DATA_TYPE_JOB])
+            index, [self.DATA_TYPE_WORKFLOW, self.DATA_TYPE_JOB]
+        )
 
     def get_parent_job(self, index):
         return self._recursive_find_parent(index, [self.DATA_TYPE_JOB])
@@ -537,21 +553,16 @@ class WFERemoteFileSystemModel(WFEFileSystemModel):
 
     def _add_headers(self):
         new = [
-                WFEFileSystemEntry.createData(
-                        "Workflows",
-                        'abs',
-                        self.HEADER_TYPE_WORKFLOW),
-                WFEFileSystemEntry.createData(
-                        "Home",
-                        '.',
-                        self.HEADER_TYPE_DIRECTORY)
-
-            ]
-        rv = self.insertDataRows(
-                0,
-                new,
-                QModelIndex()       # insert at highest level
-            )
+            WFEFileSystemEntry.createData(
+                "Workflows", "abs", self.HEADER_TYPE_WORKFLOW
+            ),
+            WFEFileSystemEntry.createData("Home", ".", self.HEADER_TYPE_DIRECTORY),
+        ]
+        self.insertDataRows(
+            0,
+            new,
+            QModelIndex(),  # insert at highest level
+        )
 
     def clear(self):
         super(WFERemoteFileSystemModel, self).clear()
@@ -568,24 +579,19 @@ class WFERemoteFileSystemModel(WFEFileSystemModel):
             print("not index.isValid()")
             self.clear()
             for i in range(0, len(self._root)):
-
                 child = self.index(i, 0)
-                child_node = self.getNodeByIndex(child)
-                super(WFERemoteFileSystemModel, self).loading(
-                        child, text="Loading")
+                super(WFERemoteFileSystemModel, self).loading(child, text="Loading")
         else:
             self.removeSubRows(index)
-        
 
 
-
-#app = QApplication(sys.argv)
-#model = WFEFileSystemModel()
-#node = model.addNode(WFEFileSystemEntry.createData("test", "full/test", DATA_TYPE.DIRECTORY))
-#node = model.addNode(WFEFileSystemEntry.createData("file", "full/test/file", DATA_TYPE.FILE), node)
-#view = QTreeView()
+# app = QApplication(sys.argv)
+# model = WFEFileSystemModel()
+# node = model.addNode(WFEFileSystemEntry.createData("test", "full/test", DATA_TYPE.DIRECTORY))
+# node = model.addNode(WFEFileSystemEntry.createData("file", "full/test/file", DATA_TYPE.FILE), node)
+# view = QTreeView()
 #
-#def delete():
+# def delete():
 #    index = model.findIndex([2])
 #    node = index.internalPointer()
 #    print("before delete: %s\n\n\n" % model.subelementsToText())
@@ -593,19 +599,19 @@ class WFERemoteFileSystemModel(WFEFileSystemModel):
 #    model.removeRow(index.row(), index.parent())
 #    print("after delete: %s\n\n\n" % model.subelementsToText())
 #
-#def test():
+# def test():
 #    delete()
 #
-#def on_expand(index):
+# def on_expand(index):
 #    print("Expanded: \n\tindex: %s\n\tnode: %s" % (index, index.internalPointer().getText()))
 #
-#def on_item_delete(indexes):
+# def on_item_delete(indexes):
 #    for index in indexes:
 #        node = index.internalPointer()
 #        print("deleting node %s" % node.getText())
 #        model.removeRows([index.row()], 1, index.parent())
 #
-#def on_add_sibling(indexes):
+# def on_add_sibling(indexes):
 #    for index in indexes:
 #        node = index.internalPointer()
 #        print("adding sibling to node %s" % node.getText())
@@ -613,9 +619,9 @@ class WFERemoteFileSystemModel(WFEFileSystemModel):
 #        model.insertDataRows(len(node),
 #                [WFEFileSystemEntry.createData("sibling_%s" % len(node), "")],
 #                index.parent())
-#        
 #
-#def on_add_subnode(indexes):
+#
+# def on_add_subnode(indexes):
 #    for index in indexes:
 #        node = index.internalPointer()
 #        print("adding subnode to node %s" % node.getText())
@@ -628,31 +634,31 @@ class WFERemoteFileSystemModel(WFEFileSystemModel):
 #        #newindex = model.index(len(node), 0, index)
 #        #model.setData(newindex, newnode)
 #
-#def delete_item():
+# def delete_item():
 #    #TODO signal
 #    on_item_delete(view.selectedIndexes())
 #
-#def add_subnode():
+# def add_subnode():
 #    on_add_subnode(view.selectedIndexes())
 #
-#def add_sibling():
+# def add_sibling():
 #    on_add_sibling(view.selectedIndexes())
 #
-#def print_rowsRemoved(index, fromIndex, toIndex):
+# def print_rowsRemoved(index, fromIndex, toIndex):
 #    print("\n\nRemovedSignal for child %s of %s, %d, %d" % \
 #            ("(invalid)" if not index.isValid() else "", index.parent(), fromIndex, toIndex))
 #
-#def print_modelReset():
+# def print_modelReset():
 #    print("\n\nModel Reset")
 #
-#def print_rowsInserted(index, fromIndex, toIndex):
+# def print_rowsInserted(index, fromIndex, toIndex):
 #    print("\n\nInsertedSignal for child %s of %s, %d, %d" % \
 #            ("(invalid)" if not index.isValid() else index.internalPointer().getText(), index.parent(), fromIndex, toIndex))
 #
-#def print_layoutChanged():
+# def print_layoutChanged():
 #    print("\n\nLayoutChanged.\n\n")
 #
-#def print_subnodes(nodes, prefix):
+# def print_subnodes(nodes, prefix):
 #    if len(nodes) > 0:
 #        for s in nodes:
 #            print("%s%s" % (prefix, s._data))
@@ -660,11 +666,11 @@ class WFERemoteFileSystemModel(WFEFileSystemModel):
 #    else:
 #        print("%s[]" % prefix)
 #
-#def print_tree_subnodes():
+# def print_tree_subnodes():
 #    print("_subnodes")
 #    print_subnodes(model._nodes, "\t")
 #
-#def print_ref2node(node, prefix):
+# def print_ref2node(node, prefix):
 #    if len(node._ref2node) > 0:
 #        for s in node._ref2node:
 #            print("%s%s" % (prefix, node._ref2node[s].getText()))
@@ -672,12 +678,12 @@ class WFERemoteFileSystemModel(WFEFileSystemModel):
 #    else:
 #        print("%s[]" % prefix)
 #
-#def print_tree_ref2node():
+# def print_tree_ref2node():
 #    print("_ref2node")
 #    print_ref2node(model, "\t")
 #
 #
-#def contextMenu(point):
+# def contextMenu(point):
 ## Infos about the node selected.
 #     index = view.indexAt(point)
 #
@@ -702,16 +708,16 @@ class WFERemoteFileSystemModel(WFEFileSystemModel):
 #     print(QCursor.pos())
 #     menu.exec_(QCursor.pos())
 #
-#def refreshData():
+# def refreshData():
 #    modelreshData(model)
 #
-#def clear_all():
+# def clear_all():
 #    print("before clear: %s\n\n\n" % model.subelementsToText())
 #    model.clear()
 #    print("after clear: %s\n\n\n" % model.subelementsToText())
 #
 #
-#if __name__ == '__main__':
+# if __name__ == '__main__':
 #    import sys, os, pprint, time
 #    from PySide.QtCore import *
 #    from PySide.QtGui import *

@@ -3,40 +3,39 @@ from os import path
 from .WFEditorMainWindow import WFEditorMainWindow
 from .WFEditor import WFEditor
 
-from PySide6.QtCore import Signal, QObject, QMutex, QFileInfo, QStandardPaths
-from PySide6.QtWidgets import QMessageBox, QFileDialog
+from PySide6.QtCore import Signal, QObject, QFileInfo, QStandardPaths
+from PySide6.QtWidgets import QFileDialog
 
 from .MessageDialog import MessageDialog
 
 
-
 class WFViewManager(QObject):
     REGISTRY_CONNECTION_STATES = WFEditor.REGISTRY_CONNECTION_STATES
-    save_registries         = Signal(list, name="SaveRegistries")
-    save_paths = Signal(dict,name="SavePaths")
-    open_registry_settings  = Signal(name="OpenRegistrySettings")
+    save_registries = Signal(list, name="SaveRegistries")
+    save_paths = Signal(dict, name="SavePaths")
+    open_registry_settings = Signal(name="OpenRegistrySettings")
     open_path_settings = Signal(name="OpenPathSettings")
-    registry_changed        = Signal(str, name="RegistryChanged")
-    disconnect_registry     = Signal(name='disconnectRegistry')
-    connect_registry        = Signal(str, name='connectRegistry')
-    run_clicked             = Signal(name='runClicked')
-    exit_client             = Signal(name='exitClient')
-    request_job_list_update     = Signal(name="requestJobListUpdate")
+    registry_changed = Signal(str, name="RegistryChanged")
+    disconnect_registry = Signal(name="disconnectRegistry")
+    connect_registry = Signal(str, name="connectRegistry")
+    run_clicked = Signal(name="runClicked")
+    exit_client = Signal(name="exitClient")
+    request_job_list_update = Signal(name="requestJobListUpdate")
     request_worflow_list_update = Signal(name="requestWorkflowListUpdate")
-    request_job_update          = Signal(str, name="requestJobUpdate")
-    request_worflow_update      = Signal(str, name="requestWorkflowUpdate")
-    request_directory_update    = Signal(str, name="requestDirectoryUpdate")
+    request_job_update = Signal(str, name="requestJobUpdate")
+    request_worflow_update = Signal(str, name="requestWorkflowUpdate")
+    request_directory_update = Signal(str, name="requestDirectoryUpdate")
     request_saved_workflows_update = Signal(str, name="requestSavedWorkflowsUpdate")
-    download_file_to            = Signal(str, str, name="downloadFileTo")
-    upload_file                 = Signal(str, str, name="uploadFile")
-    delete_file                 = Signal(str, name="deleteFile")
-    delete_job                  = Signal(str, name="deleteJob")
-    abort_job                   = Signal(str, name="abortJob")
-    browse_workflow             = Signal(str, name="browseWorkflow")
-    delete_workflow             = Signal(str, name="deleteWorkflow")
-    abort_workflow              = Signal(str, name="abortWorkflow")
+    download_file_to = Signal(str, str, name="downloadFileTo")
+    upload_file = Signal(str, str, name="uploadFile")
+    delete_file = Signal(str, name="deleteFile")
+    delete_job = Signal(str, name="deleteJob")
+    abort_job = Signal(str, name="abortJob")
+    browse_workflow = Signal(str, name="browseWorkflow")
+    delete_workflow = Signal(str, name="deleteWorkflow")
+    abort_workflow = Signal(str, name="abortWorkflow")
     # for internal use only
-    _update_timeout             = Signal(name="updateTimeout")
+    _update_timeout = Signal(name="updateTimeout")
 
     @classmethod
     def show_message(cls, msg_type, msg, details=None):
@@ -70,20 +69,20 @@ class WFViewManager(QObject):
 
     def open_dialog_open_workflow(self):
         self._editor.open()
-        #TODO result must be passed to controller (via signals)
+        # TODO result must be passed to controller (via signals)
 
     def open_dialog_save_workflow(self):
         self._editor.save()
-        #TODO result must be passed to controller (via signals)
+        # TODO result must be passed to controller (via signals)
 
     def open_dialog_save_workflow_as(self):
         self._editor.saveAs()
-        #TODO result must be passed to controller (via signals)
+        # TODO result must be passed to controller (via signals)
 
     def open_dialog_registry_settings(self, current_registries):
         self._mainwindow.open_dialog_registry_settings(current_registries)
 
-    def open_dialog_path_settings(self,pathsettings):
+    def open_dialog_path_settings(self, pathsettings):
         self._mainwindow.open_dialog_path_settings(pathsettings)
 
     def update_wano_list(self, wanos):
@@ -96,7 +95,7 @@ class WFViewManager(QObject):
         self._editor.set_registry_connection_status(status)
 
     def open_new_workflow(self):
-        #TODO
+        # TODO
         pass
 
     def update_registries(self, registries, selected):
@@ -117,29 +116,23 @@ class WFViewManager(QObject):
 
     def _on_file_download(self, filepath):
         mybase = path.basename(filepath)
-        #print(filepath)
+        # print(filepath)
         save_to = QFileDialog.getSaveFileName(
-                self._editor,
-                'Download File',
-                path.join(self.last_used_path,mybase)
-                )
+            self._editor, "Download File", path.join(self.last_used_path, mybase)
+        )
         if save_to[0]:
             self.last_used_path = QFileInfo(filepath).path()
-            #print("Save file to: %s." % save_to[0])
+            # print("Save file to: %s." % save_to[0])
             self.download_file_to.emit(filepath, save_to[0])
-            #self._view_timer.add_callback(self._update_timeout.emit,
+            # self._view_timer.add_callback(self._update_timeout.emit,
             #        self._dl_update_interval)
 
     def _on_file_upload(self, dirpath):
-        upload = QFileDialog.getOpenFileName(
-                self._editor,
-                'Select file for upload',
-                ''
-                )
+        upload = QFileDialog.getOpenFileName(self._editor, "Select file for upload", "")
         if upload[0]:
             print("Going to upload: %s" % str(upload))
             self.upload_file.emit(upload[0], dirpath)
-            #self._view_timer.add_callback(self._update_timeout.emit,
+            # self._view_timer.add_callback(self._update_timeout.emit,
             #        self._dl_update_interval)
 
     def _on_workflow_saved(self, success, folder):
@@ -149,15 +142,15 @@ class WFViewManager(QObject):
             self.request_saved_workflows_update.emit(folder)
 
     def _release_dl_progress_callbacks(self):
-        """ .. note:: self._dl_callback_delete["lock"] must be held. """
+        """.. note:: self._dl_callback_delete["lock"] must be held."""
         self._dl_callback_delete["to_delete"] = 0
 
     def _on_view_update(self):
-        #TODO might take too long for a DynamicTimer callback
-        #self._dl_progress_widget.update()
+        # TODO might take too long for a DynamicTimer callback
+        # self._dl_progress_widget.update()
         self._dl_progress_bar.update()
 
-        #print("WFViewManager -> update: %d" % (ctypes.CDLL('libc.so.6').syscall(186)))
+        # print("WFViewManager -> update: %d" % (ctypes.CDLL('libc.so.6').syscall(186)))
 
         # Note: This is required to have at least one additional view update
         # after a transfer has completed.
@@ -167,7 +160,6 @@ class WFViewManager(QObject):
         self._dl_callback_delete["lock"].unlock()
 
         print("######################### view update")
-
 
     def _remove_dl_progress_callback(self):
         self._dl_callback_delete["lock"].lock()
@@ -179,7 +171,7 @@ class WFViewManager(QObject):
 
     def on_upload_complete(self, base_uri, from_path, to_path):
         self._remove_dl_progress_callback()
- 
+
     def _connect_signals(self):
         self._mainwindow.open_file.connect(self.open_dialog_open_workflow)
         self._mainwindow.save.connect(self.open_dialog_save_workflow)
@@ -198,7 +190,9 @@ class WFViewManager(QObject):
         self._editor.disconnect_registry.connect(self.disconnect_registry)
 
         self._editor.request_job_list_update.connect(self.request_job_list_update)
-        self._editor.request_worflow_list_update.connect(self.request_worflow_list_update)
+        self._editor.request_worflow_list_update.connect(
+            self.request_worflow_list_update
+        )
         self._editor.request_job_update.connect(self.request_job_update)
         self._editor.request_worflow_update.connect(self.request_worflow_update)
         self._editor.request_directory_update.connect(self.request_directory_update)
@@ -218,34 +212,34 @@ class WFViewManager(QObject):
         return self._editor
 
     def exit(self):
-        #Placeholder for ViewManager teardowns
-        #Due to bug https://bugreports.qt.io/browse/QTBUG-57228 we have to teardown all webengineviews explicitly:
+        # Placeholder for ViewManager teardowns
+        # Due to bug https://bugreports.qt.io/browse/QTBUG-57228 we have to teardown all webengineviews explicitly:
         try:
-            while(True):
+            while True:
                 wev = self._webengineviews.pop()
                 del wev
         except IndexError:
             pass
 
-
     @staticmethod
     def get_homedir():
-        rtp = QStandardPaths.standardLocations(QStandardPaths.StandardLocation.HomeLocation)
+        rtp = QStandardPaths.standardLocations(
+            QStandardPaths.StandardLocation.HomeLocation
+        )
         if isinstance(rtp, list):
             rtp = rtp[0]
 
         return rtp
-
 
     def add_webengine_view(self, wev):
         self._webengineviews.append(wev)
 
     def __init__(self):
         super(WFViewManager, self).__init__()
-        self._editor        = WFEditor()
+        self._editor = WFEditor()
         self._webengineviews = []
 
-        self._mainwindow    = WFEditorMainWindow(self._editor)
+        self._mainwindow = WFEditorMainWindow(self._editor)
 
         self.last_used_path = self.get_homedir()
 

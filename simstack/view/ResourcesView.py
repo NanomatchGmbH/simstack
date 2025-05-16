@@ -1,11 +1,13 @@
-from PySide6 import QtGui, QtWidgets, QtCore
+from PySide6 import QtWidgets, QtCore
 
 from SimStackServer.WorkflowModel import Resources
 from functools import partial
 import numpy as np
 
 from simstack.lib.QtClusterSettingsProvider import QtClusterSettingsProvider
-from simstack.view.HorizontalTextEditWithFileImport import HorizontalTextEditWithFileImport
+from simstack.view.HorizontalTextEditWithFileImport import (
+    HorizontalTextEditWithFileImport,
+)
 from simstack.view.WaNoRegistrySelection import WaNoRegistrySelection
 
 
@@ -21,13 +23,13 @@ class ResourcesView(QtWidgets.QWidget):
         "basepath": "Calculation basepath",
         "ssh_private_key": "SSH private Key",
         "sge_pe": "SGE PE",
-        "reuse_results": "Reuse existing results"
+        "reuse_results": "Reuse existing results",
     }
     _field_name_to_intention = {
         "extra_config": "file",
-        "ssh_private_key" : "file",
+        "ssh_private_key": "file",
         "queueing_system": "queueing_system",
-        "resource_name": "resource_chooser"
+        "resource_name": "resource_chooser",
     }
     wano_exclusion_items = {
         "base_URI",
@@ -39,10 +41,9 @@ class ResourcesView(QtWidgets.QWidget):
         "queueing_system",
         "extra_config",
     }
-    serverconfig_exclusion_items = {
-        "resource_name"
-    }
+    serverconfig_exclusion_items = {"resource_name"}
     _connected_server_text = "<Connected Server>"
+
     def __init__(self, resources, render_type: str):
         super().__init__()
         self._widgets = {}
@@ -53,10 +54,9 @@ class ResourcesView(QtWidgets.QWidget):
         self.initUI()
         self._init_done = True
 
-
     @classmethod
     def field_name_to_display_name(cls, field_name: str) -> str:
-        return cls._field_name_to_display_name.get(field_name,field_name)
+        return cls._field_name_to_display_name.get(field_name, field_name)
 
     def field_name_to_intention(self, field_name: str) -> str:
         if field_name in self._field_name_to_intention:
@@ -104,41 +104,8 @@ class ResourcesView(QtWidgets.QWidget):
         :param mychoice:
         :return:
         """
+        # Function not used anymore
         return
-        if self._cluster_dropdown.currentText() != self._connected_server_text:
-            return
-        default_resources = Resources()
-        regs = QtClusterSettingsProvider.get_registries()
-        settings = regs[mychoice]
-
-        for this_key in self._resources.render_order():
-            this_value = self._resources.get_field_value(this_key)
-            default_value = default_resources.get_field_value(this_key)
-            intention = self._field_name_to_intention[this_key]
-            if this_value != default_value:
-                default_case = False
-                # In this case we can assume this value was set by the user
-                return
-
-            if intention == "int":
-                this_i = QtWidgets.QSpinBox()
-                this_i.valueChanged.connect(myfunc)
-                this_i.setMinimum(0)
-                this_i.setMaximum(100000)
-                this_i.setValue(this_value)
-            elif intention =="file":
-                this_i = HorizontalTextEditWithFileImport()
-                this_i.line_edit.setText(this_value)
-                this_i.line_edit.textChanged.connect(myfunc)
-            elif intention =="str":
-                this_i = QtWidgets.QLineEdit()
-                this_i.setText(this_value)
-                this_i.textChanged.connect(myfunc)
-            else: # intention == "queueing_system":
-                this_i = self._get_queue_dropdown_widget()
-                this_i.setCurrentText(this_value)
-                this_i.currentTextChanged.connect(myfunc)
-
 
     def _reinit_values_from_resource(self):
         for key, widget in self._widgets.items():
@@ -146,9 +113,9 @@ class ResourcesView(QtWidgets.QWidget):
             this_value = self._resources.get_field_value(key)
             if intention == "int":
                 widget.setValue(this_value)
-            elif intention =="file":
+            elif intention == "file":
                 widget.line_edit.setText(this_value)
-            elif intention =="str":
+            elif intention == "str":
                 widget.setText(this_value)
             elif intention == "bool":
                 widget.setChecked(this_value)
@@ -165,7 +132,9 @@ class ResourcesView(QtWidgets.QWidget):
             settings = Resources()
             for field in self.wano_exclusion_items:
                 self._resources.set_field_value(field, settings.get_field_value(field))
-            self._resources.set_field_value("resource_name", self._connected_server_text)
+            self._resources.set_field_value(
+                "resource_name", self._connected_server_text
+            )
             self._reinit_values_from_resource()
             return
 
@@ -185,18 +154,19 @@ class ResourcesView(QtWidgets.QWidget):
         self._cluster_dropdown.setEditable(True)
         self._cluster_dropdown.lineEdit().setAlignment(QtCore.Qt.AlignCenter)
         self._cluster_dropdown.lineEdit().setReadOnly(True)
-        self._cluster_dropdown.currentTextChanged.connect(self._on_cluster_dropdown_change)
+        self._cluster_dropdown.currentTextChanged.connect(
+            self._on_cluster_dropdown_change
+        )
         csp = QtClusterSettingsProvider.get_instance()
         csp.settings_changed.connect(self._update_cluster_dropdown)
-        wrs :WaNoRegistrySelection = WaNoRegistrySelection.get_instance()
+        wrs: WaNoRegistrySelection = WaNoRegistrySelection.get_instance()
         wrs.registrySelectionChanged.connect(self._update_default_choices)
         self._update_cluster_dropdown()
 
         return self._cluster_dropdown
 
-
     def initUI(self):
-        self.setWindowTitle('Resource view')
+        self.setWindowTitle("Resource view")
         if self._render_type == "wano":
             self.render_wano_resource_config()
         else:
@@ -214,7 +184,7 @@ class ResourcesView(QtWidgets.QWidget):
         # adapt value below
         model.set_field_value(fieldname, newvalue)
 
-    def _get_formlayout(self, exclude_items = None, headers = True):
+    def _get_formlayout(self, exclude_items=None, headers=True):
         """
         Shows only job specific resouces -> things like sw dir not to be modified
         :return:
@@ -225,18 +195,24 @@ class ResourcesView(QtWidgets.QWidget):
         minHeight = 20
         current_flo = QtWidgets.QFormLayout()
         if headers:
-            current_flo.addRow(QtWidgets.QLabel("<b>Host Settings</b>"), QtWidgets.QWidget())
+            current_flo.addRow(
+                QtWidgets.QLabel("<b>Host Settings</b>"), QtWidgets.QWidget()
+            )
 
         for this_key in self._resources.render_order():
             if this_key in exclude_items:
                 continue
             field_name = self.field_name_to_display_name(this_key)
-            #if not this_key in ["walltime", "cpu_per_node", "nodes", "queue", "memory", "custom_requests"]:
+            # if not this_key in ["walltime", "cpu_per_node", "nodes", "queue", "memory", "custom_requests"]:
             #    continue
             if this_key == "nodes" and headers:
-                current_flo.addRow(QtWidgets.QLabel("<b>Default Resources</b>"), QtWidgets.QWidget())
+                current_flo.addRow(
+                    QtWidgets.QLabel("<b>Default Resources</b>"), QtWidgets.QWidget()
+                )
             if this_key == "sge_pe" and headers:
-                current_flo.addRow(QtWidgets.QLabel("<b>SGE specific config</b>"), QtWidgets.QWidget())
+                current_flo.addRow(
+                    QtWidgets.QLabel("<b>SGE specific config</b>"), QtWidgets.QWidget()
+                )
             this_value = self._resources.get_field_value(this_key)
             intention = self.field_name_to_intention(this_key)
             myfunc = partial(self._fieldChanger, this_key, self._resources)
@@ -246,11 +222,11 @@ class ResourcesView(QtWidgets.QWidget):
                 this_i.setMinimum(0)
                 this_i.setMaximum(31536000)
                 this_i.setValue(this_value)
-            elif intention =="file":
+            elif intention == "file":
                 this_i = HorizontalTextEditWithFileImport()
                 this_i.line_edit.setText(this_value)
                 this_i.line_edit.textChanged.connect(myfunc)
-            elif intention =="str":
+            elif intention == "str":
                 this_i = QtWidgets.QLineEdit()
                 this_i.setText(this_value)
                 this_i.textChanged.connect(myfunc)
@@ -267,7 +243,9 @@ class ResourcesView(QtWidgets.QWidget):
                 this_i.setCurrentText(this_value)
                 this_i.currentTextChanged.connect(myfunc)
             else:
-                raise NotImplementedError(f"Intention {intention} not implemented in ResourcesView.")
+                raise NotImplementedError(
+                    f"Intention {intention} not implemented in ResourcesView."
+                )
             current_flo.addRow(field_name, this_i)
             self._widgets[this_key] = this_i
         for i in range(0, current_flo.rowCount()):
@@ -277,9 +255,13 @@ class ResourcesView(QtWidgets.QWidget):
         return current_flo
 
     def render_wano_resource_config(self):
-        current_flo = self._get_formlayout(exclude_items=self.wano_exclusion_items, headers=False)
+        current_flo = self._get_formlayout(
+            exclude_items=self.wano_exclusion_items, headers=False
+        )
         self.setLayout(current_flo)
 
     def render_server_config(self):
-        current_flo = self._get_formlayout(exclude_items=self.serverconfig_exclusion_items, headers = True)
+        current_flo = self._get_formlayout(
+            exclude_items=self.serverconfig_exclusion_items, headers=True
+        )
         self.setLayout(current_flo)
