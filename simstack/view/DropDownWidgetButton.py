@@ -54,29 +54,3 @@ class DropDownWidgetPushButton(QPushButton, _DropDownWidget):
     def __init__(self, parent, widget=None, text=""):
         super(DropDownWidgetPushButton, self).__init__()
         self._init(widget, text)
-
-
-if __name__ == "__main__":
-    import sys
-    from PySide6.QtWidgets import QLabel, QWidget, QHBoxLayout, QApplication
-
-    app = QApplication(sys.argv)
-    window = QWidget()
-    label1 = QLabel("Test Label")
-    label2 = QLabel("Test Label")
-
-    layout = QHBoxLayout(window)
-
-    mdl = DropDownWidgetToolButton(window, text="QToolButton")
-    mdl.set_widget(label1)
-
-    pdd = DropDownWidgetPushButton(window)
-    pdd.set_widget(label2)
-    pdd.setText("QPushButton")
-
-    layout.addWidget(mdl)
-    layout.addWidget(pdd)
-
-    window.resize(100, 60)
-    window.show()
-    sys.exit(app.exec_())

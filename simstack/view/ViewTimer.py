@@ -39,7 +39,7 @@ class ViewTimer(QObject):
         self._last_timeout = -1
 
     def update_interval(self, interval):
-        print("######################################## timer update start.")
+        # Removed debug print statements that were causing tests to hang
         t = int(time.time())
         self._lock_list()
         if self._timer.isActive():
@@ -58,7 +58,6 @@ class ViewTimer(QObject):
         if self._last_timeout < 0:
             self._last_timeout = t
         self._unlock_list()
-        print("######################################## timer update finished.")
 
     def __init__(self, callback):
         super(ViewTimer, self).__init__()

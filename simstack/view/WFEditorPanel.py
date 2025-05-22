@@ -52,10 +52,6 @@ from simstack.view.RemoteImporterDialog import RemoteImporterDialog
 from simstack.view.WFEditorWidgets import WFEWaNoListWidget, WFEListWidget
 from SimStackServer.Util.FileUtilities import copytree_pathlib
 
-# def mapClassToTag(name):
-#    xx = name.replace('Widget','')
-#    return xx[2:]
-
 widgetColors = {
     "MainEditor": "#F5FFF5",
     "Control": "#EBFFD6",
@@ -63,10 +59,6 @@ widgetColors = {
     "WaNo": "#FF00FF",
     "ButtonColor": "#D4FF7F",
 }
-
-# Blue Theme
-# widgetColors = {'MainEditor' : '#D5E9FF' , 'Control': '#D5E9FF' , 'Base': '#AABBCC' ,
-#               'WaNo' : '#AABBCC', 'ButtonColor':'#88C2FF' }
 
 
 def linuxjoin(*args, **kwargs):
@@ -258,7 +250,6 @@ class WFWaNoWidget(QtWidgets.QToolButton, DragDropTargetTracker):
 
             except Exception as e:
                 self.logger.error("Failed to copy tree: %s." % str(e))
-                import traceback
 
                 traceback.print_exc()
                 return False
