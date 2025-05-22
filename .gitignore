@@ -145,3 +145,5 @@ cython_debug/
 # pixi environments
 .pixi
 *.egg-info
+
+**/.claude/settings.local.json
