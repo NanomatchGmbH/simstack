@@ -473,9 +473,3 @@ class TestWFEditorMainWindow:
         
         # Verify signal was emitted
         main_window.run.emit.assert_called_once()
-
-    @pytest.mark.skip(reason="This method requires QApplication.aboutQt which is difficult to mock")
-    def test_action_about_wfe(self, main_window):
-        """Test action_aboutWFE method."""
-        # This method calls QApplication.instance().aboutQt which is difficult to mock
-        pass

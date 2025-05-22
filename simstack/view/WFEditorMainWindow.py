@@ -107,10 +107,6 @@ class WFEditorMainWindow(QtWidgets.QMainWindow):
         self.settingsMenu.addAction(self.configServAct)
         self.settingsMenu.addAction(self.configPathSettingsAct)
 
-        self.helpMenu = self.menuBar().addMenu("&Help")
-        # self.helpMenu.addAction(self.aboutAct)
-        self.helpMenu.addAction(self.aboutWFEAct)
-
         message = "Welcome to the SimStack Framework"
         self.statusBar().showMessage(message)
         self._status_manager = StatusMessageManager(self.statusBar().showMessage)
@@ -258,20 +254,6 @@ class WFEditorMainWindow(QtWidgets.QMainWindow):
             triggered=self.action_run,
         )
 
-        self.aboutAct = QtGui.QAction(
-            "&Help",
-            self,
-            statusTip="Show the application's Help box",
-            triggered=self.action_about,
-        )
-
-        self.aboutWFEAct = QtGui.QAction(
-            "About SimS&tack",
-            self,
-            statusTip="About the Nanomatch SimStack Client",
-            triggered=self.action_aboutWFE,
-        )
-
         self.configServAct = QtGui.QAction(
             "&Servers",
             self,
@@ -286,4 +268,3 @@ class WFEditorMainWindow(QtWidgets.QMainWindow):
             triggered=self.action_openPathSettingsDialog,
         )
 
-        self.aboutWFEAct.triggered.connect(QtWidgets.QApplication.instance().aboutQt)
