@@ -1,4 +1,3 @@
-import pytest
 from simstack.Constants import SETTING_KEYS
 
 
@@ -26,15 +25,15 @@ def test_setting_keys_values():
         "wanoRepo",
         "workflows",
     ]
-    
+
     # Check that all expected keys are in SETTING_KEYS
     for key in expected_keys:
         assert key in SETTING_KEYS
-    
+
     # Check that all keys in SETTING_KEYS are in expected_keys
     for key in SETTING_KEYS:
         assert key in expected_keys
-    
+
     # Check specific values
     assert SETTING_KEYS["registries"] == "registries"
     assert SETTING_KEYS["registry.name"] == "name"

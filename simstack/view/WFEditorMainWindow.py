@@ -267,4 +267,3 @@ class WFEditorMainWindow(QtWidgets.QMainWindow):
             statusTip="Configure Paths",
             triggered=self.action_openPathSettingsDialog,
         )
-
