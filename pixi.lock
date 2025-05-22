@@ -3920,7 +3920,7 @@ packages:
 - pypi: .
   name: simstack
   version: 0.1.0
-  sha256: bec0bfc848e650da5a6ac24db39f522cd5569022cac9fa99ff5e46bedaa1e210
+  sha256: 15ebf5e9fa7e70c2dc951c8b1ea259a9c88fc8e1a5a13d1b9938d214d7505429
   requires_python: '>=3.11'
   editable: true
 - conda: https://repo.prefix.dev/simstack/noarch/simstackserver-1.5.4-py_0.tar.bz2
