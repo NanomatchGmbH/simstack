@@ -1,11 +1,7 @@
 import pytest
 from unittest.mock import patch, MagicMock
-from pathlib import Path
-import uuid
 from PySide6.QtWidgets import QWidget
-from PySide6.QtCore import Qt
 import PySide6.QtCore as QtCore
-from PySide6.QtGui import QPalette
 
 from simstack.view.WFEditorPanel import (
     DragDropTargetTracker,
@@ -131,8 +127,6 @@ class TestDragDropTargetTracker:
             mock_drag.setHotSpot.assert_called_once()
             mock_drag.targetChanged.connect.assert_called_once()
             mock_drag.exec_.assert_called_once_with(QtCore.Qt.MoveAction)
-
-
 
 
 class TestSubmitType:
@@ -625,5 +619,3 @@ class TestIfModel:
         assert result == [mock_wano1, mock_wano2, mock_wano3]
         mock_true_model.collect_wano_widgets.assert_called_once()
         mock_false_model.collect_wano_widgets.assert_called_once()
-
-

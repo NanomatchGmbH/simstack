@@ -1,5 +1,4 @@
 import pytest
-from unittest.mock import MagicMock, patch
 
 from PySide6 import QtWidgets, QtGui
 from PySide6.QtWidgets import QListWidget, QAbstractItemView
@@ -180,5 +179,3 @@ def test_select_items_nonexistent(qtbot):
     # Verify no items are selected
     selection = mdl.get_selection()
     assert selection == []
-
-

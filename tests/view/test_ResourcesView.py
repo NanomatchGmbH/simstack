@@ -252,7 +252,6 @@ class TestResourcesView:
             mock_resources.get_field_value("resource_name")
         )
 
-
     @patch("simstack.view.ResourcesView.QtClusterSettingsProvider")
     def test_on_cluster_dropdown_change_connected_server(
         self, mock_csp, resources_view_wano, mock_resources

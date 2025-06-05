@@ -340,7 +340,6 @@ class TestWFEditorApplication:
         # Verify logger was called
         app._logger.debug.assert_called_once()
 
-
     def test_on_job_deleted_success(self, app):
         """Test _on_job_deleted method with success."""
         # Mock _on_fs_job_list_update_request
@@ -354,7 +353,6 @@ class TestWFEditorApplication:
 
         # Verify _on_fs_job_list_update_request was called
         app._on_fs_job_list_update_request.assert_called_once()
-
 
     @patch("simstack.WFEditorApplication.SSHConnector")
     def test_on_fs_delete_job(self, mock_ssh_connector, app):

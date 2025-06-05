@@ -1,12 +1,11 @@
 import pytest
 from unittest.mock import patch, MagicMock
-from PySide6.QtWidgets import QPushButton, QToolButton, QTabWidget
+from PySide6.QtWidgets import QPushButton, QToolButton
 from PySide6.QtCore import Qt
 
 from simstack.view.WaNoSettings import (
     WaNoPathSettings,
     WaNoTabButtonsWidget,
-    SimStackClusterSettingsView,
 )
 
 
@@ -215,5 +214,3 @@ class TestWaNoTabButtonsWidget:
 
         # Verify remove signal was emitted
         assert remove_spy.signal_triggered
-
-

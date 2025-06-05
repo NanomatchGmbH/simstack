@@ -42,7 +42,9 @@ class TestWaNoRegistrySelection:
         return parent
 
     @pytest.fixture
-    def registry_selection(self, qtbot, parent_widget, mock_qt_cluster_settings_provider):
+    def registry_selection(
+        self, qtbot, parent_widget, mock_qt_cluster_settings_provider
+    ):
         """Create a WaNoRegistrySelection instance for testing."""
         widget = WaNoRegistrySelection(parent_widget)
         qtbot.addWidget(widget)
@@ -125,11 +127,15 @@ class TestWaNoRegistrySelection:
 
     def test_update_status_connected(self, registry_selection):
         """Test __update_status method with connected status."""
-        with patch.object(registry_selection.isConnectedIcon, 'setIcon') as mock_set_icon, \
-             patch.object(registry_selection.isConnectedIcon, 'setText') as mock_set_text, \
-             patch("simstack.view.WaNoRegistrySelection.QPixmap") as mock_qpixmap, \
-             patch("simstack.view.WaNoRegistrySelection.QIcon") as mock_qicon:
-            
+        with patch.object(
+            registry_selection.isConnectedIcon, "setIcon"
+        ) as mock_set_icon, patch.object(
+            registry_selection.isConnectedIcon, "setText"
+        ) as mock_set_text, patch(
+            "simstack.view.WaNoRegistrySelection.QPixmap"
+        ) as mock_qpixmap, patch(
+            "simstack.view.WaNoRegistrySelection.QIcon"
+        ) as mock_qicon:
             mock_pixmap_instance = MagicMock()
             mock_qpixmap.return_value = mock_pixmap_instance
             mock_icon_instance = MagicMock()
@@ -151,11 +157,13 @@ class TestWaNoRegistrySelection:
 
     def test_update_status_connecting(self, registry_selection):
         """Test __update_status method with connecting status."""
-        with patch.object(registry_selection.isConnectedIcon, 'setIcon') as mock_set_icon, \
-             patch.object(registry_selection.isConnectedIcon, 'setText') as mock_set_text, \
-             patch("simstack.view.WaNoRegistrySelection.QPixmap") as mock_qpixmap, \
-             patch("simstack.view.WaNoRegistrySelection.QIcon") as mock_qicon:
-            
+        with patch.object(registry_selection.isConnectedIcon, "setIcon"), patch.object(
+            registry_selection.isConnectedIcon, "setText"
+        ) as mock_set_text, patch(
+            "simstack.view.WaNoRegistrySelection.QPixmap"
+        ) as mock_qpixmap, patch(
+            "simstack.view.WaNoRegistrySelection.QIcon"
+        ) as mock_qicon:
             mock_pixmap_instance = MagicMock()
             mock_qpixmap.return_value = mock_pixmap_instance
             mock_icon_instance = MagicMock()
@@ -172,11 +180,13 @@ class TestWaNoRegistrySelection:
 
     def test_update_status_disconnected(self, registry_selection):
         """Test __update_status method with disconnected status."""
-        with patch.object(registry_selection.isConnectedIcon, 'setIcon') as mock_set_icon, \
-             patch.object(registry_selection.isConnectedIcon, 'setText') as mock_set_text, \
-             patch("simstack.view.WaNoRegistrySelection.QPixmap") as mock_qpixmap, \
-             patch("simstack.view.WaNoRegistrySelection.QIcon") as mock_qicon:
-            
+        with patch.object(registry_selection.isConnectedIcon, "setIcon"), patch.object(
+            registry_selection.isConnectedIcon, "setText"
+        ) as mock_set_text, patch(
+            "simstack.view.WaNoRegistrySelection.QPixmap"
+        ) as mock_qpixmap, patch(
+            "simstack.view.WaNoRegistrySelection.QIcon"
+        ) as mock_qicon:
             mock_pixmap_instance = MagicMock()
             mock_qpixmap.return_value = mock_pixmap_instance
             mock_icon_instance = MagicMock()
@@ -211,7 +221,7 @@ class TestWaNoRegistrySelection:
         registry_selection.registryComboBox.addItem("item0")
         registry_selection.registryComboBox.addItem("item1")
         registry_selection.registryComboBox.addItem("item2")
-        
+
         registry_selection.select_registry(2)
         assert registry_selection.registryComboBox.currentIndex() == 2
 
@@ -290,7 +300,9 @@ class TestWaNoRegistrySelection:
     def test_on_button_clicked_connected_state(self, registry_selection):
         """Test __on_button_clicked behavior when in connected state."""
         signal_emitted = []
-        registry_selection.disconnect_registry.connect(lambda: signal_emitted.append(True))
+        registry_selection.disconnect_registry.connect(
+            lambda: signal_emitted.append(True)
+        )
 
         registry_selection._WaNoRegistrySelection__status = (
             WaNoRegistrySelection.CONNECTION_STATES.connected
@@ -321,7 +333,9 @@ class TestWaNoRegistrySelection:
         connect_signals = []
         disconnect_signals = []
         registry_selection.connect_registry.connect(connect_signals.append)
-        registry_selection.disconnect_registry.connect(lambda: disconnect_signals.append(True))
+        registry_selection.disconnect_registry.connect(
+            lambda: disconnect_signals.append(True)
+        )
 
         registry_selection._WaNoRegistrySelection__status = (
             WaNoRegistrySelection.CONNECTION_STATES.connecting
@@ -335,7 +349,9 @@ class TestWaNoRegistrySelection:
     def test_connect_signals_connects_button_click(self, registry_selection):
         """Test that button click signal connection works."""
         signal_emitted = []
-        registry_selection.disconnect_registry.connect(lambda: signal_emitted.append(True))
+        registry_selection.disconnect_registry.connect(
+            lambda: signal_emitted.append(True)
+        )
 
         registry_selection._WaNoRegistrySelection__status = (
             WaNoRegistrySelection.CONNECTION_STATES.connected
@@ -429,7 +445,9 @@ class TestWaNoRegistrySelection:
         """Test __on_selection_changed method coverage."""
         # Use a counter to track signals
         signal_count = []
-        registry_selection.registrySelectionChanged.connect(lambda x: signal_count.append(x))
+        registry_selection.registrySelectionChanged.connect(
+            lambda x: signal_count.append(x)
+        )
 
         # Test lines 92-93: when emit_signal is True
         registry_selection._WaNoRegistrySelection__emit_signal = True
@@ -448,7 +466,9 @@ class TestWaNoRegistrySelection:
         connect_signals = []
         disconnect_signals = []
         registry_selection.connect_registry.connect(connect_signals.append)
-        registry_selection.disconnect_registry.connect(lambda: disconnect_signals.append(True))
+        registry_selection.disconnect_registry.connect(
+            lambda: disconnect_signals.append(True)
+        )
 
         # Set up combo box
         registry_selection.registryComboBox.addItem("test_registry")

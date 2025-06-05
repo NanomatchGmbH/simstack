@@ -254,7 +254,6 @@ class TestWFRemoteFileSystem:
                 "Path 'nonexistent_path' not in current_requests."
             )
 
-
     def test_request_header_entry_update_job(self, remote_file_system):
         """Test __request_header_entry_update method with job list."""
         fs = remote_file_system
@@ -300,7 +299,6 @@ class TestWFRemoteFileSystem:
 
             # Verify signal was emitted
             mock_emit.assert_called_once()
-
 
     def test_download_file(self, remote_file_system, mock_fs_model):
         """Test __download_file method."""

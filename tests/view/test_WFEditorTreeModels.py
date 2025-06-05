@@ -1,7 +1,5 @@
 import pytest
-from unittest.mock import patch, MagicMock
-from PySide6.QtCore import Qt
-from PySide6.QtGui import QIcon, QColor, QPixmap
+from unittest.mock import patch
 
 from simstack.view.WFEditorTreeModels import (
     DATA_TYPE,
@@ -155,8 +153,6 @@ class TestDataNode:
         assert data_node.getParent() is parent_node
 
 
-
-
 class TestWFEFileSystemEntry:
     """Tests for the WFEFileSystemEntry class."""
 
@@ -235,8 +231,6 @@ class TestWFEFileSystemEntry:
         # Test without data_type
         data = WFEFileSystemEntry.createData("path", "abspath")
         assert data == {"path": "path", "abspath": "abspath", "data_type": None}
-
-
 
 
 class TestWFERemoteFileSystemEntry:
