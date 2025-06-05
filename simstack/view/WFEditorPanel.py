@@ -8,7 +8,7 @@ from .wf_editor_base import (
     DragDropTargetTracker,
 )
 
-# Import all widget components  
+# Import all widget components
 from .wf_editor_widgets import (
     SubmitType,
     WFWaNoWidget,
@@ -50,40 +50,36 @@ from .wf_editor_factory import ControlFactory
 # Re-export all classes to maintain backwards compatibility
 __all__ = [
     # Base utilities
-    'widgetColors',
-    'linuxjoin',
-    'DragDropTargetTracker',
-    
+    "widgetColors",
+    "linuxjoin",
+    "DragDropTargetTracker",
     # Widget components
-    'SubmitType',
-    'WFWaNoWidget',
-    'WFItemListInterface',
-    
+    "SubmitType",
+    "WFWaNoWidget",
+    "WFItemListInterface",
     # Model components
-    'WFItemModel',
-    'SubWFModel',
-    'WhileModel',
-    'IfModel',
-    'ParallelModel',
-    'ForEachModel',
-    'AdvancedForEachModel',
-    'WFModel',
-    'VariableModel',
-    'merge_path',
-    
+    "WFItemModel",
+    "SubWFModel",
+    "WhileModel",
+    "IfModel",
+    "ParallelModel",
+    "ForEachModel",
+    "AdvancedForEachModel",
+    "WFModel",
+    "VariableModel",
+    "merge_path",
     # View components
-    'SubWorkflowView',
-    'WorkflowView',
-    'WFTabsWidget',
-    'WFFileName',
-    'WFControlWithTopMiddleAndBottom',
-    'AdvancedForEachView',
-    'ForEachView',
-    'ParallelView',
-    'IfView',
-    'VariableView',
-    'WhileView',
-    
+    "SubWorkflowView",
+    "WorkflowView",
+    "WFTabsWidget",
+    "WFFileName",
+    "WFControlWithTopMiddleAndBottom",
+    "AdvancedForEachView",
+    "ForEachView",
+    "ParallelView",
+    "IfView",
+    "VariableView",
+    "WhileView",
     # Factory
-    'ControlFactory',
+    "ControlFactory",
 ]
