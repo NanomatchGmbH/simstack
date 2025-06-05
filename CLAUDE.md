@@ -7,8 +7,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ### Testing
 - Run all tests: `pixi run tests`
 - Single test file: `pixi run tests tests/path/to/test_file.py`
-- With coverage: `pytest --cov=simstack tests/`
-- Test specific function: `pytest tests/test_file.py::test_function_name`
+- With coverage: `pixi run tests --cov=simstack tests/`
+- Coverage for specific module: `pixi run tests --cov=simstack.module.name --cov-report=term-missing tests/path/to/test_file.py`
+- Test specific function: `pixi run tests tests/test_file.py::test_function_name`
 
 ### Linting and Code Quality
 - Run linting: `pixi run lint`
