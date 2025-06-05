@@ -45,12 +45,12 @@ class DropDownWidgetToolButton(QToolButton, _DropDownWidget):
     """
 
     def __init__(self, parent, widget=None, text=""):
-        super(DropDownWidgetToolButton, self).__init__()
+        super().__init__()
         self.setPopupMode(QToolButton.MenuButtonPopup)
         self._init(widget, text)
 
 
 class DropDownWidgetPushButton(QPushButton, _DropDownWidget):
     def __init__(self, parent, widget=None, text=""):
-        super(DropDownWidgetPushButton, self).__init__()
+        super().__init__()
         self._init(widget, text)

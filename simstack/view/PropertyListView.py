@@ -77,7 +77,7 @@ class ExportTableModel(ResourceTableBase):
         filename = 1
 
     def __init__(self, parent, *args, **kwargs):
-        super(ExportTableModel, self).__init__(parent, *args, **kwargs)
+        super().__init__(parent, *args, **kwargs)
 
     def get_contents(self):
         return self.mylist
@@ -128,11 +128,11 @@ class ExportTableModel(ResourceTableBase):
         if row == len(self.mylist):
             self.beginInsertRows(QtCore.QModelIndex(), self.rowCount(), self.rowCount())
             self.add_entry()
-            returnval = super(ExportTableModel, self).setData(index, value, role)
+            returnval = super().setData(index, value, role)
             self.endInsertRows()
             return returnval
 
-        returnval = super(ExportTableModel, self).setData(index, value, role)
+        returnval = super().setData(index, value, role)
         return returnval
 
     def make_default_list(self):
@@ -148,7 +148,7 @@ class ImportTableModel(ResourceTableBase):
         ImportTo = 3
 
     def __init__(self, parent, *args, **kwargs):
-        super(ImportTableModel, self).__init__(parent, *args, **kwargs)
+        super().__init__(parent, *args, **kwargs)
         # self.dataChanged.connect(self.changeValuesAfterImport)
         # self.
 
@@ -200,7 +200,7 @@ class ImportTableModel(ResourceTableBase):
         if row == len(self.mylist):
             self.beginInsertRows(QtCore.QModelIndex(), self.rowCount(), self.rowCount())
             self.add_entry()
-            returnval = super(ImportTableModel, self).setData(index, value, role)
+            returnval = super().setData(index, value, role)
             self.endInsertRows()
             if col == 1:
                 valsplit = value.split()
@@ -216,7 +216,7 @@ class ImportTableModel(ResourceTableBase):
                 self.dataChanged.emit(newindex, newindex)
             return returnval
 
-        returnval = super(ImportTableModel, self).setData(index, value, role)
+        returnval = super().setData(index, value, role)
         if col == 1:
             valsplit = value.split()
             basepath = os.path.basename(valsplit[0])
@@ -417,7 +417,7 @@ class CheckBoxDelegate(QtWidgets.QStyledItemDelegate):
     """
 
     def __init__(self, parent):
-        super(CheckBoxDelegate, self).__init__(parent)
+        super().__init__(parent)
         # QtWidgets.QItemDelegate.__init__(self, parent)
 
     def createEditor(self, parent, option, index):
@@ -578,7 +578,7 @@ class ResourceView(QtWidgets.QTableView):
         # self.setItemDelegateForColumn(2, GlobalFileChooserDelegate(self))
 
     def setModel(self, model):
-        super(ResourceView, self).setModel(model)
+        super().setModel(model)
         for row in range(0, model.rowCount()):
             self.openPersistentEditor(model.index(row, 0))
 
@@ -610,10 +610,10 @@ class ImportView(QtWidgets.QTableView):
                 # print (rowm.row())
             # In delete condition. We tell the model our selectionindex and delete
             return
-        super(ImportView, self).keyPressEvent(event)
+        super().keyPressEvent(event)
 
     def setModel(self, model):
-        super(ImportView, self).setModel(model)
+        super().setModel(model)
         for row in range(0, model.rowCount()):
             self.openPersistentEditor(model.index(row, 1))
         model.rowsInserted.connect(self.openpersistentslot)
@@ -641,4 +641,4 @@ class ExportView(QtWidgets.QTableView):
                 # print (rowm.row())
             # In delete condition. We tell the model our selectionindex and delete
             return
-        super(ExportView, self).keyPressEvent(event)
+        super().keyPressEvent(event)

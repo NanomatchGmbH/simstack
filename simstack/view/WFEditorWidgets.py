@@ -9,7 +9,7 @@ from SimStackServer.WaNo.MiscWaNoTypes import WaNoListEntry
 
 class WFEListWidget(QtWidgets.QListWidget):
     def __init__(self, parent=None, controls=[]):
-        super(WFEListWidget, self).__init__(parent)
+        super().__init__(parent)
         self.setDragEnabled(True)
         self.update_list(controls)
 
@@ -27,7 +27,7 @@ class WFEListWidget(QtWidgets.QListWidget):
 
 class WFEWaNoListWidget(QtWidgets.QListWidget):
     def __init__(self, parent=None):
-        super(WFEWaNoListWidget, self).__init__(parent)
+        super().__init__(parent)
         self.setDragEnabled(True)
         self.myHeight = 10
 
@@ -49,7 +49,7 @@ class WFEWaNoListWidget(QtWidgets.QListWidget):
 
 class WFEWorkflowistWidget(QtWidgets.QListWidget):
     def __init__(self, parent=None):
-        super(WFEWorkflowistWidget, self).__init__(parent)
+        super().__init__(parent)
         self.logger = logging.getLogger("WFEOG")
         self.setDragEnabled(True)
         self.myHeight = 10

@@ -88,7 +88,7 @@ class MultiselectDropDownList(DropDownWidgetPushButton):
     """
 
     def __init__(self, parent, text="", autoset_text=False):
-        super(MultiselectDropDownList, self).__init__(parent, text=text)
+        super().__init__(parent, text=text)
         self.text = text
 
         self._list = QListWidget(self)

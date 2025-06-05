@@ -106,7 +106,7 @@ class WaNoRegistrySelection(QWidget):
         )
 
     def __init__(self, parent):
-        super(WaNoRegistrySelection, self).__init__(parent)
+        super().__init__(parent)
         WaNoRegistrySelection.instance = self
 
         self.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Minimum)

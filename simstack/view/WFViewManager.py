@@ -235,7 +235,7 @@ class WFViewManager(QObject):
         self._webengineviews.append(wev)
 
     def __init__(self):
-        super(WFViewManager, self).__init__()
+        super().__init__()
         self._editor = WFEditor()
         self._webengineviews = []
 

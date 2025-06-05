@@ -253,7 +253,7 @@ class AbstractSettings(object):
 
 class TestSettings(AbstractSettings):
     def __init__(self):
-        super(TestSettings, self).__init__("TestSettings")
+        super().__init__("TestSettings")
         print("loading...")
         with open("/tmp/settings", "r") as infile:
             self.load_from_dict(yaml.load(infile))

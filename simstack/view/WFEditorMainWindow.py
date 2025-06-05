@@ -114,7 +114,7 @@ class WFEditorMainWindow(QtWidgets.QMainWindow):
         self.setWindowTitle("SimStack")
 
     def __init__(self, editor, parent=None):
-        super(WFEditorMainWindow, self).__init__(parent)
+        super().__init__(parent)
         self.wfEditor = editor
         self.__init_ui()
 

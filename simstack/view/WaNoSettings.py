@@ -30,7 +30,7 @@ from simstack.view.ResourcesView import ResourcesView
 class WaNoPathSettings(QDialog):
     def __init__(self, pathsettings, parent):
         self.pathsettings = pathsettings
-        super(WaNoPathSettings, self).__init__(parent=parent)
+        super().__init__(parent=parent)
         self.__init_ui()
 
     def __showLocalDialogWaNo(self):
@@ -143,7 +143,7 @@ class WaNoTabButtonsWidget(QWidget):
         self.resize(self.sizeHint())
 
     def __init__(self, config):
-        super(WaNoTabButtonsWidget, self).__init__()
+        super().__init__()
         self.__init_ui()
         self.__connect_signals()
 
