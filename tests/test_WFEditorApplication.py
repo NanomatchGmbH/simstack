@@ -340,13 +340,6 @@ class TestWFEditorApplication:
         # Verify logger was called
         app._logger.debug.assert_called_once()
 
-    @pytest.mark.skip(reason="Requires more extensive mocking of WFEditorApplication")
-    def test_on_file_deleted_error(self, app):
-        """Test _on_file_deleted method with error."""
-        # Create test file
-
-        # Skip actual test since it requires more extensive mocking
-        pass
 
     def test_on_job_deleted_success(self, app):
         """Test _on_job_deleted method with success."""
@@ -362,13 +355,6 @@ class TestWFEditorApplication:
         # Verify _on_fs_job_list_update_request was called
         app._on_fs_job_list_update_request.assert_called_once()
 
-    @pytest.mark.skip(reason="Requires more extensive mocking of WFEditorApplication")
-    def test_on_job_deleted_error(self, app):
-        """Test _on_job_deleted method with error."""
-        # Create test job
-
-        # Skip actual test since it requires more extensive mocking
-        pass
 
     @patch("simstack.WFEditorApplication.SSHConnector")
     def test_on_fs_delete_job(self, mock_ssh_connector, app):

@@ -155,14 +155,6 @@ class TestDataNode:
         assert data_node.getParent() is parent_node
 
 
-@pytest.mark.skip(reason="DataTreeModel is abstract and requires extensive mocking")
-class TestDataTreeModel:
-    """Tests for the DataTreeModel class."""
-
-    # These tests are skipped because DataTreeModel is an abstract class
-    # and requires extensive mocking to test properly.
-    # Functionality is tested in derived classes.
-    pass
 
 
 class TestWFEFileSystemEntry:
@@ -245,14 +237,6 @@ class TestWFEFileSystemEntry:
         assert data == {"path": "path", "abspath": "abspath", "data_type": None}
 
 
-@pytest.mark.skip(reason="WFEFileSystemModel requires extensive mocking")
-class TestWFEFileSystemModel:
-    """Tests for the WFEFileSystemModel class."""
-
-    # These tests are skipped because WFEFileSystemModel
-    # requires extensive mocking to test properly.
-    # Key functionality is tested in WFERemoteFileSystemModel.
-    pass
 
 
 class TestWFERemoteFileSystemEntry:
@@ -351,86 +335,3 @@ class TestWFERemoteFileSystemEntry:
         )
         assert data["status"] is None
         assert data["original_result_directory"] is None
-
-
-@pytest.mark.skip(
-    reason="WFERemoteFileSystemModel requires extensive mocking of Qt components"
-)
-class TestWFERemoteFileSystemModel:
-    """Tests for the WFERemoteFileSystemModel class."""
-
-    # Most of these tests are skipped because WFERemoteFileSystemModel
-    # requires extensive mocking of Qt components.
-    # We'll test a few basic methods.
-
-    def test_data_type_constants(self):
-        """Test DATA_TYPE constants in WFERemoteFileSystemModel."""
-        assert WFERemoteFileSystemModel.DATA_TYPE_FILE == DATA_TYPE.FILE
-        assert WFERemoteFileSystemModel.DATA_TYPE_DIRECTORY == DATA_TYPE.DIRECTORY
-        assert WFERemoteFileSystemModel.DATA_TYPE_UNKNOWN == DATA_TYPE.UNKNOWN
-        assert WFERemoteFileSystemModel.DATA_TYPE_JOB == DATA_TYPE.SEPARATOR1
-        assert WFERemoteFileSystemModel.DATA_TYPE_WORKFLOW == DATA_TYPE.SEPARATOR2
-        assert WFERemoteFileSystemModel.HEADER_TYPE_JOB == DATA_TYPE.SEPARATOR3
-        assert WFERemoteFileSystemModel.HEADER_TYPE_WORKFLOW == DATA_TYPE.SEPARATOR4
-
-    @pytest.fixture
-    def mock_model(self):
-        """Create a mocked WFERemoteFileSystemModel."""
-        with patch("simstack.view.WFEditorTreeModels.WFEFileSystemModel"):
-            model = WFERemoteFileSystemModel()
-
-            # Mock the _icons dictionary
-            model._icons = {data_type: MagicMock(spec=QIcon) for data_type in DATA_TYPE}
-
-            return model
-
-    def test_pixmap_to_grayscale(self, mock_model):
-        """Test pixmap_to_grayscale method."""
-        # Create a mock pixmap
-        mock_pixmap = MagicMock(spec=QPixmap)
-        mock_image = MagicMock()
-        mock_pixmap.toImage.return_value = mock_image
-
-        # Mock image methods and properties
-        mock_image.width.return_value = 2
-        mock_image.height.return_value = 2
-        mock_image.pixel.return_value = QColor(100, 100, 100).rgba()
-
-        # Call the method
-        with patch(
-            "simstack.view.WFEditorTreeModels.QPixmap.fromImage"
-        ) as mock_from_image:
-            mock_model.pixmap_to_grayscale(mock_pixmap)
-
-            # Verify image processing
-            assert mock_image.pixel.call_count == 4  # 2x2 pixels
-            assert mock_image.setPixel.call_count == 4  # 2x2 pixels
-            mock_from_image.assert_called_once()
-
-    def test_colorize_icon(self, mock_model):
-        """Test colorize_icon method."""
-        # Create a mock icon
-        mock_icon = MagicMock(spec=QIcon)
-        mock_pixmap = MagicMock(spec=QPixmap)
-        mock_icon.pixmap.return_value = mock_pixmap
-
-        # Mock the pixmap_to_grayscale method
-        mock_model.pixmap_to_grayscale = MagicMock(return_value=mock_pixmap)
-
-        # Mock the QPainter class
-        with patch("simstack.view.WFEditorTreeModels.QPainter") as MockPainter:
-            mock_painter = MagicMock()
-            MockPainter.return_value = mock_painter
-
-            # Call the method
-            result = mock_model.colorize_icon(mock_icon, Qt.red)
-
-            # Verify painter operations
-            MockPainter.assert_called_once()
-            mock_painter.begin.assert_called_once_with(mock_pixmap)
-            mock_painter.setCompositionMode.assert_called_once()
-            mock_painter.fillRect.assert_called_once()
-            mock_painter.end.assert_called_once()
-
-            # Verify result
-            assert isinstance(result, QIcon)

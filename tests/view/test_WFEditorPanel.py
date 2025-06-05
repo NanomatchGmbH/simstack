@@ -133,64 +133,6 @@ class TestDragDropTargetTracker:
             mock_drag.exec_.assert_called_once_with(QtCore.Qt.MoveAction)
 
 
-@pytest.mark.skip(reason="WFWaNoWidget requires extensive mocking")
-class TestWFWaNoWidget:
-    """Tests for the WFWaNoWidget class."""
-
-    # Most tests for WFWaNoWidget are skipped because it requires extensive
-    # mocking of Qt components and external dependencies.
-    # We'll test a few basic methods.
-
-    @pytest.fixture
-    def mock_wano_list_entry(self):
-        """Create a mock WaNoListEntry."""
-        wano = MagicMock()
-        wano.name = "TestWaNo"
-        wano.folder = Path("/path/to/wano")
-        wano.icon = "path/to/icon.png"
-        return wano
-
-    @pytest.fixture
-    def parent_widget(self, qtbot):
-        """Create a parent widget with model."""
-        widget = MagicMock()
-        widget.model = MagicMock()
-        widget.model.get_root.return_value = MagicMock()
-        return widget
-
-    def test_set_color(self):
-        """Test setColor method."""
-        # Create mock widget
-        widget = MagicMock(spec=WFWaNoWidget)
-
-        # Call method
-        color = Qt.green
-        WFWaNoWidget.setColor(widget, color)
-
-        # Verify palette was set with the right color
-        widget.setPalette.assert_called_once()
-        palette = widget.setPalette.call_args[0][0]
-        assert isinstance(palette, QPalette)
-
-    def test_get_xml(self):
-        """Test get_xml method."""
-        # Create mock widget
-        widget = MagicMock(spec=WFWaNoWidget)
-        widget.wano = MagicMock()
-        widget.wano.name = "TestWaNo"
-        widget.uuid = str(uuid.uuid4())
-
-        # Call method
-        with patch("simstack.view.WFEditorPanel.etree") as mock_etree:
-            mock_element = MagicMock()
-            mock_etree.Element.return_value = mock_element
-            result = WFWaNoWidget.get_xml(widget)
-
-            # Verify element was created with right attributes
-            mock_etree.Element.assert_called_once_with("WaNo")
-            assert mock_element.attrib["type"] == widget.wano.name
-            assert mock_element.attrib["uuid"] == widget.uuid
-            assert result is mock_element
 
 
 class TestSubmitType:
@@ -685,10 +627,3 @@ class TestIfModel:
         mock_false_model.collect_wano_widgets.assert_called_once()
 
 
-@pytest.mark.skip(reason="SubWFModel requires extensive mocking")
-class TestSubWFModel:
-    """Tests for the SubWFModel class."""
-
-    # These tests are skipped because SubWFModel requires extensive
-    # mocking of etree and WFWaNoWidget instantiation.
-    pass

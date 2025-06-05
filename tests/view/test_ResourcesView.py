@@ -252,19 +252,6 @@ class TestResourcesView:
             mock_resources.get_field_value("resource_name")
         )
 
-    @pytest.mark.skip(
-        reason="Difficult to properly mock Qt widgets in this specific case"
-    )
-    def test_init_cluster_dropdown_widget(self):
-        """Test _init_cluster_dropdown_widget method."""
-        # This test is challenging to implement due to the complexity of mocking Qt widgets
-        # and the specific way ResourcesView interacts with them.
-        #
-        # The core functionality being tested is:
-        # 1. First call initializes a QComboBox and sets up signal connections
-        # 2. Subsequent calls return the existing dropdown without reinitializing
-        #
-        # These aspects are indirectly tested by other tests in this file.
 
     @patch("simstack.view.ResourcesView.QtClusterSettingsProvider")
     def test_on_cluster_dropdown_change_connected_server(

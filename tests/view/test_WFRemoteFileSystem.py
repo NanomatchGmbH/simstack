@@ -254,14 +254,6 @@ class TestWFRemoteFileSystem:
                 "Path 'nonexistent_path' not in current_requests."
             )
 
-    @pytest.mark.skip(
-        reason="__got_request is complex and requires more extensive mocking"
-    )
-    def test_got_request(self, remote_file_system, mock_fs_model):
-        """Test __got_request method."""
-        # This test is skipped because __got_request is complex and requires more mocking
-        # than is practical. The functionality is indirectly tested through other tests.
-        pass
 
     def test_request_header_entry_update_job(self, remote_file_system):
         """Test __request_header_entry_update method with job list."""
@@ -309,114 +301,6 @@ class TestWFRemoteFileSystem:
             # Verify signal was emitted
             mock_emit.assert_called_once()
 
-    @pytest.mark.skip(
-        reason="Private method implementation is complex and varies across test runs"
-    )
-    def test_request_tree_entry_update_job(self, remote_file_system, mock_fs_model):
-        """Test __request_tree_entry_update method with job."""
-        fs = remote_file_system
-
-        # Setup mock index and parameters
-        mock_index = MagicMock(spec=QModelIndex)
-        mock_fs_model.get_abspath.return_value = "job_path"
-        mock_fs_model.get_id.return_value = "job_id"
-        index_type = FSModel.DATA_TYPE_JOB
-        path = "test_path"
-
-        # Set up signal spy
-        with patch.object(fs.request_job_update, "emit"):
-            # Call the method
-            fs._WFRemoteFileSystem__request_tree_entry_update(
-                mock_index, path, index_type
-            )
-
-            # These assertions are skipped as they depend on internal implementation
-            # that is difficult to mock consistently
-            # assert "job_path" in fs._WFRemoteFileSystem__current_requests
-            # assert fs._WFRemoteFileSystem__current_requests["job_path"] is mock_index
-            # mock_emit.assert_called_once_with("job_path")
-
-    @pytest.mark.skip(
-        reason="Private method implementation is complex and varies across test runs"
-    )
-    def test_request_tree_entry_update_workflow(
-        self, remote_file_system, mock_fs_model
-    ):
-        """Test __request_tree_entry_update method with workflow."""
-        fs = remote_file_system
-
-        # Setup mock index and parameters
-        mock_index = MagicMock(spec=QModelIndex)
-        mock_fs_model.get_abspath.return_value = "workflow_path"
-        mock_fs_model.get_id.return_value = "workflow_id"
-        index_type = FSModel.DATA_TYPE_WORKFLOW
-        path = "test_path"
-
-        # Set up signal spy
-        with patch.object(fs.request_worflow_update, "emit"):
-            # Call the method
-            fs._WFRemoteFileSystem__request_tree_entry_update(
-                mock_index, path, index_type
-            )
-
-            # These assertions are skipped as they depend on internal implementation
-            # that is difficult to mock consistently
-            # assert "workflow_path" in fs._WFRemoteFileSystem__current_requests
-            # assert fs._WFRemoteFileSystem__current_requests["workflow_path"] is mock_index
-            # mock_emit.assert_called_once_with("workflow_id")
-
-    @pytest.mark.skip(
-        reason="Private method implementation is complex and varies across test runs"
-    )
-    def test_request_tree_entry_update_directory(
-        self, remote_file_system, mock_fs_model
-    ):
-        """Test __request_tree_entry_update method with directory."""
-        fs = remote_file_system
-
-        # Setup mock index and parameters
-        mock_index = MagicMock(spec=QModelIndex)
-        mock_fs_model.get_abspath.return_value = "dir_path"
-        index_type = FSModel.DATA_TYPE_DIRECTORY
-        path = "test_path"
-
-        # Set up signal spy
-        with patch.object(fs.request_directory_update, "emit"):
-            # Call the method
-            fs._WFRemoteFileSystem__request_tree_entry_update(
-                mock_index, path, index_type
-            )
-
-            # These assertions are skipped as they depend on internal implementation
-            # that is difficult to mock consistently
-            # assert "dir_path" in fs._WFRemoteFileSystem__current_requests
-            # assert fs._WFRemoteFileSystem__current_requests["dir_path"] is mock_index
-            # mock_emit.assert_called_once_with("dir_path")
-
-    @pytest.mark.skip(
-        reason="Private method implementation is complex and varies across test runs"
-    )
-    def test_request_tree_entry_update_file(self, remote_file_system, mock_fs_model):
-        """Test __request_tree_entry_update method with file."""
-        fs = remote_file_system
-
-        # Setup mock index and parameters
-        mock_index = MagicMock(spec=QModelIndex)
-        mock_fs_model.get_abspath.return_value = "file_path"
-        index_type = FSModel.DATA_TYPE_FILE
-        path = "test_path"
-
-        # Set up signal spy for download_file
-        with patch.object(fs, "_WFRemoteFileSystem__download_file"):
-            # Call the method
-            fs._WFRemoteFileSystem__request_tree_entry_update(
-                mock_index, path, index_type
-            )
-
-            # These assertions are skipped as they depend on internal implementation
-            # that is difficult to mock consistently
-            # mock_download.assert_called_once_with(mock_index)
-            # assert "file_path" not in fs._WFRemoteFileSystem__current_requests
 
     def test_download_file(self, remote_file_system, mock_fs_model):
         """Test __download_file method."""
@@ -657,16 +541,6 @@ class TestWFRemoteFileSystem:
 
             # Verify signal was emitted with correct ID
             mock_emit.assert_called_once_with("workflow_id")
-
-    @pytest.mark.skip(
-        reason="Context menu creation is complex and requires more extensive mocking"
-    )
-    def test_context_menu(self):
-        """Test __context_menu method."""
-        # This test is skipped because __context_menu is complex and requires more extensive mocking
-        # of Qt components than is practical. The functionality is indirectly tested through
-        # the tests of the individual context menu actions.
-        pass
 
     def test_reload(self, remote_file_system):
         """Test __reload method."""
