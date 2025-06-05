@@ -60,7 +60,7 @@ class ViewTimer(QObject):
         self._unlock_list()
 
     def __init__(self, callback):
-        super(ViewTimer, self).__init__()
+        super().__init__()
         self._timer = QTimer(self)
         self._callback = callback
         self._remaining_due_times = []

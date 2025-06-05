@@ -4,7 +4,7 @@ import logging
 
 class LogTab(QPlainTextEdit):
     def __init__(self, parent=None):
-        super(LogTab, self).__init__(parent)
+        super().__init__(parent)
         self.parent = parent
         self.logger = logging.getLogger("WFELOG")
         handler = logging.StreamHandler(self)

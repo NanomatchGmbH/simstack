@@ -111,7 +111,7 @@ class DataNode(object):
 
 class DataTreeModel(QAbstractItemModel):
     def __init__(self, parent=None):
-        super(DataTreeModel, self).__init__(parent)
+        super().__init__(parent)
         self._root = DataNode("root node")
         self._columns = 1
         self._items = []
@@ -252,7 +252,7 @@ class DataTreeModel(QAbstractItemModel):
 
 class WFEFileSystemEntry(DataNode):
     def __init__(self, data, parent=None):
-        super(WFEFileSystemEntry, self).__init__(data, parent)
+        super().__init__(data, parent)
 
     def getAbsolutePath(self):
         return self._data["abspath"]
@@ -280,7 +280,7 @@ class WFEFileSystemEntry(DataNode):
 
 class WFEFileSystemModel(DataTreeModel):
     def __init__(self, parent=None):
-        super(WFEFileSystemModel, self).__init__(parent)
+        super().__init__(parent)
         self.rowsInserted.connect(self.print_rowsInserted)
 
     def print_rowsInserted(self, index, fromIndex, toIndex):
@@ -348,7 +348,7 @@ class WFEFileSystemModel(DataTreeModel):
 
 class WFERemoteFileSystemEntry(WFEFileSystemEntry):
     def __init__(self, data, parent=None):
-        super(WFERemoteFileSystemEntry, self).__init__(data, parent)
+        super().__init__(data, parent)
 
     def getName(self):
         return self._data["name"] if self._data["name"] != "" else self._data["id"]
@@ -374,7 +374,7 @@ class WFERemoteFileSystemEntry(WFEFileSystemEntry):
             if self._data["status"] is not None:
                 return WF_STATUS_TO_DATA_TYPE[self._data["status"]]
 
-        return super(WFERemoteFileSystemEntry, self).getIconType()
+        return super().getIconType()
 
     @staticmethod
     def createData(
@@ -481,14 +481,14 @@ class WFERemoteFileSystemModel(WFEFileSystemModel):
             ),
         }
 
-        super(WFERemoteFileSystemModel, self).__init__(parent)
+        super().__init__(parent)
         self._add_headers()
 
     def createNode(self, data, parent=None):
         return WFERemoteFileSystemEntry(data, parent)
 
     def _getDecorationIcon(self, index):
-        icon = super(WFERemoteFileSystemModel, self)._getDecorationIcon(index)
+        icon = super()._getDecorationIcon(index)
         if icon is None:
             node = self.getNodeByIndex(index)
             icon_type = node.getIconType()
@@ -565,7 +565,7 @@ class WFERemoteFileSystemModel(WFEFileSystemModel):
         )
 
     def clear(self):
-        super(WFERemoteFileSystemModel, self).clear()
+        super().clear()
         self._add_headers()
 
     def get_separator_indices(self):
@@ -580,7 +580,7 @@ class WFERemoteFileSystemModel(WFEFileSystemModel):
             self.clear()
             for i in range(0, len(self._root)):
                 child = self.index(i, 0)
-                super(WFERemoteFileSystemModel, self).loading(child, text="Loading")
+                super().loading(child, text="Loading")
         else:
             self.removeSubRows(index)
 

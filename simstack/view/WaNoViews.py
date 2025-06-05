@@ -8,7 +8,7 @@ from simstack.view.ResourcesView import ResourcesView
 
 class GroupBoxWithButton(QtWidgets.QGroupBox):
     def __init__(self, *args, **kwargs):
-        super(GroupBoxWithButton, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         script_path = os.path.dirname(os.path.realpath(__file__))
         media_path = os.path.join(script_path, "..", "Media")
         listaddpath = os.path.join(media_path, "list-add.png")
@@ -30,7 +30,7 @@ class GroupBoxWithButton(QtWidgets.QGroupBox):
         self.remove_button.move(width - self.remove_button.size().width() - 10, 0)
 
     def resizeEvent(self, event):
-        returnval = super(GroupBoxWithButton, self).resizeEvent(event)
+        returnval = super().resizeEvent(event)
         self.init_button()
         return returnval
 
@@ -40,7 +40,7 @@ class GroupBoxWithButton(QtWidgets.QGroupBox):
 
 class MultipleOfView(AbstractWanoQTView):
     def __init__(self, *args, **kwargs):
-        super(MultipleOfView, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.actual_widget = GroupBoxWithButton(None)
         self.actual_widget.setStyleSheet(
             """
@@ -116,12 +116,12 @@ class MultipleOfView(AbstractWanoQTView):
 
 class EmptyView(AbstractWanoView):
     def __init__(self, *args, **kwargs):
-        super(EmptyView, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
 
 class WaNoGroupView(AbstractWanoQTView):
     def __init__(self, *args, **kwargs):
-        super(WaNoGroupView, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.actual_widget = QtWidgets.QWidget(None)
         self.vbox = QtWidgets.QVBoxLayout()
         self.actual_widget.setLayout(self.vbox)
@@ -142,7 +142,7 @@ class WaNoGroupView(AbstractWanoQTView):
 
 class WaNoSwitchView(AbstractWanoQTView):
     def __init__(self, *args, **kwargs):
-        super(WaNoSwitchView, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.actual_widget = QtWidgets.QWidget(parent=None)
         self.vbox = QtWidgets.QVBoxLayout()
         self.actual_widget.setLayout(self.vbox)
@@ -181,7 +181,7 @@ class WaNoSwitchView(AbstractWanoQTView):
 
 class WaNoConditionalView(AbstractWanoQTView):
     def __init__(self, *args, **kwargs):
-        super(WaNoConditionalView, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         # self.actual_widget = QtWidgets.QWidget(self._qt_parent)
         self.actual_widget = QtWidgets.QWidget(parent=self._qt_parent)
         # self.actual_widget = GroupBoxWithButton(self._qt_parent)
@@ -200,7 +200,7 @@ class WaNoConditionalView(AbstractWanoQTView):
 
 class WaNoBoxView(AbstractWanoQTView):
     def __init__(self, *args, **kwargs):
-        super(WaNoBoxView, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.actual_widget = QtWidgets.QGroupBox(parent=None)
         self.actual_widget.setStyleSheet(
             """
@@ -237,7 +237,7 @@ class WaNoBoxView(AbstractWanoQTView):
 
 class WaNoNone(AbstractWanoQTView):
     def __init__(self, *args, **kwargs):
-        super(WaNoNone, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.actual_widget = QtWidgets.QFrame(parent=None)
         self.vbox = QtWidgets.QVBoxLayout()
         self.actual_widget.setLayout(self.vbox)
@@ -257,7 +257,7 @@ class WaNoNone(AbstractWanoQTView):
 
 class WaNoInvisibleBoxView(AbstractWanoQTView):
     def __init__(self, *args, **kwargs):
-        super(WaNoInvisibleBoxView, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.actual_widget = QtWidgets.QFrame(parent=None)
 
         self.vbox = QtWidgets.QVBoxLayout()
@@ -279,7 +279,7 @@ class WaNoInvisibleBoxView(AbstractWanoQTView):
 
 class WaNoItemIntView(AbstractWanoQTView):
     def __init__(self, *args, **kwargs):
-        super(WaNoItemIntView, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         """ Widget code here """
         self.actual_widget = QtWidgets.QWidget(None)
         hbox = QtWidgets.QHBoxLayout()
@@ -329,7 +329,7 @@ class WaNoItemIntView(AbstractWanoQTView):
 
 class WaNoItemFloatView(AbstractWanoQTView):
     def __init__(self, *args, **kwargs):
-        super(WaNoItemFloatView, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         """ Widget code here """
         self.actual_widget = QtWidgets.QWidget(None)
         hbox = QtWidgets.QHBoxLayout()
@@ -390,7 +390,7 @@ class WaNoItemFloatView(AbstractWanoQTView):
 
 class WaNoItemBoolView(AbstractWanoQTView):
     def __init__(self, *args, **kwargs):
-        super(WaNoItemBoolView, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         """ Widget code here """
         self.actual_widget = QtWidgets.QWidget(None)
         hbox = QtWidgets.QHBoxLayout()
@@ -460,7 +460,7 @@ class WaNoScriptView(AbstractWanoQTView):
 
 class WaNoItemStringView(AbstractWanoQTView):
     def __init__(self, *args, **kwargs):
-        super(WaNoItemStringView, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         """ Widget code here """
         self.actual_widget = QtWidgets.QWidget(None)
         vbox = QtWidgets.QHBoxLayout()
@@ -506,7 +506,7 @@ class WaNoItemStringView(AbstractWanoQTView):
 
 class WanoQtViewRoot(AbstractWanoQTView):
     def __init__(self, *args, **kwargs):
-        super(WanoQtViewRoot, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
 
     def set_parent(self, parent_view):
         if isinstance(parent_view, QtCore.QObject):
@@ -575,7 +575,7 @@ class WanoQtViewRoot(AbstractWanoQTView):
 
 class WaNoItemFileView(AbstractWanoQTView):
     def __init__(self, *args, **kwargs):
-        super(WaNoItemFileView, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         """ Widget code here """
         self.actual_widget = QtWidgets.QWidget(None)
         hbox = QtWidgets.QHBoxLayout()
@@ -712,7 +712,7 @@ class OnlyFloatDelegate(QtWidgets.QItemDelegate):
 
 class WaNoMatrixFloatView(AbstractWanoQTView):
     def __init__(self, *args, **kwargs):
-        super(WaNoMatrixFloatView, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.has_col_header = False
         self.has_row_header = False
         """ Widget code here """
@@ -824,7 +824,7 @@ class WaNoMatrixStringView(WaNoMatrixFloatView):
 
 class WaNoDropDownView(AbstractWanoQTView):
     def __init__(self, *args, **kwargs):
-        super(WaNoDropDownView, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         """ Widget code here """
         self.actual_widget = QtWidgets.QWidget(None)
 
@@ -869,7 +869,7 @@ class WaNoDropDownView(AbstractWanoQTView):
 
 class WaNoChoiceView(AbstractWanoQTView):
     def __init__(self, *args, **kwargs):
-        super(WaNoChoiceView, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         """ Widget code here """
         self.actual_widget = QtWidgets.QGroupBox(None)
         self.bg = QtWidgets.QButtonGroup(None)
@@ -922,7 +922,7 @@ class WaNoChoiceView(AbstractWanoQTView):
 
 class WaNoTabView(AbstractWanoQTView):
     def __init__(self, *args, **kwargs):
-        super(WaNoTabView, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         """ Widget code here """
         self.actual_widget = QtWidgets.QTabWidget(None)
         """" Widget code end """

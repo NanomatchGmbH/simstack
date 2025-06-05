@@ -16,7 +16,7 @@ class WaNoSettingsProvider(AbstractSettings):
     instance = None
 
     def __init__(self, settings_file):
-        super(WaNoSettingsProvider, self).__init__(
+        super().__init__(
             "WaNoSettingsProvider", settings_file=settings_file
         )
 

@@ -9,7 +9,7 @@ class WaNoEditor(QtWidgets.QTabWidget):
     changedFlag = False
 
     def __init__(self, editor, parent=None):
-        super(WaNoEditor, self).__init__(parent)
+        super().__init__(parent)
         self.logger = logging.getLogger("WFELOG")
         self.setMinimumWidth(400)
         self.setMinimumHeight(300)
@@ -29,7 +29,7 @@ class WaNoEditor(QtWidgets.QTabWidget):
         self.removeTab(myid)
 
     def paintEvent(self, event):
-        super(WaNoEditor, self).paintEvent(event)
+        super().paintEvent(event)
         if self.count() == 0:
             painter = QtGui.QPainter()
             painter.begin(self)

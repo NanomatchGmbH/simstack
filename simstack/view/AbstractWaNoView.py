@@ -28,7 +28,7 @@ class AbstractWanoView(object):
 
 class AbstractWanoQTView(AbstractWanoView):
     def __init__(self, *args, **kwargs):
-        super(AbstractWanoQTView, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.actual_widget = None
 
     def set_visible(self, truefalse):
@@ -74,7 +74,7 @@ class AbstractWanoQTView(AbstractWanoView):
         return None
 
     def set_model(self, model):
-        super(AbstractWanoQTView, self).set_model(model)
+        super().set_model(model)
 
     def decommission(self):
         widget = self.get_widget()

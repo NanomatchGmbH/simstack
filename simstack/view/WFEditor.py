@@ -172,7 +172,7 @@ class WFEditor(QWidget):
         self.workflowWidget.relayout()
 
     def __init__(self, parent=None):
-        super(WFEditor, self).__init__(parent)
+        super().__init__(parent)
         self._convert_ctrl_icon_paths_to_absolute()
         self.logger = logging.getLogger("WFELOG")
         self.__init_ui()

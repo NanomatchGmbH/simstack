@@ -106,7 +106,7 @@ class DragDropTargetTracker(object):
 
 class WFWaNoWidget(QtWidgets.QToolButton, DragDropTargetTracker):
     def __init__(self, text, wano: WaNoListEntry, parent):
-        super(WFWaNoWidget, self).__init__(parent)
+        super().__init__(parent)
         self.manual_init()
         self.logger = logging.getLogger("WFELOG")
         self.moved = False
@@ -192,7 +192,7 @@ class WFWaNoWidget(QtWidgets.QToolButton, DragDropTargetTracker):
 
     def setText(self, *args, **kwargs):
         self.name = args[0]
-        super(WFWaNoWidget, self).setText(*args, **kwargs)
+        super().setText(*args, **kwargs)
 
     def mouseMoveEvent(self, e):
         self.mouseMoveEvent_feature(e)
@@ -592,8 +592,8 @@ class SubWFModel(WFItemModel, WFItemListInterface):
 
 class WhileModel(WFItemModel):
     def __init__(self, *args, **kwargs):
-        # super(ForEachModel,self).__init__(*args,**kwargs)
-        super(WhileModel, self).__init__(*args, **kwargs)
+        # super().__init__(*args,**kwargs)
+        super().__init__(*args, **kwargs)
         self.wf_root = kwargs["wf_root"]
         self.is_wano = False
         self.editor = kwargs["editor"]
@@ -735,7 +735,7 @@ class WhileModel(WFItemModel):
 
 class IfModel(WFItemModel):
     def __init__(self, *args, **kwargs):
-        super(IfModel, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.wf_root = kwargs["wf_root"]
 
         self.is_wano = False
@@ -935,7 +935,7 @@ class IfModel(WFItemModel):
 
 class ParallelModel(WFItemModel):
     def __init__(self, *args, **kwargs):
-        super(ParallelModel, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.wf_root = kwargs["wf_root"]
 
         self.is_wano = False
@@ -1077,7 +1077,7 @@ class ParallelModel(WFItemModel):
 
 class ForEachModel(WFItemModel):
     def __init__(self, *args, **kwargs):
-        super(ForEachModel, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.wf_root = kwargs["wf_root"]
 
         self.is_wano = False
@@ -1684,7 +1684,7 @@ class SubWorkflowView(QtWidgets.QFrame):
         self.is_wano = False
         self.logical_parent = kwargs["logical_parent"]
         parent = kwargs["qt_parent"]
-        super(SubWorkflowView, self).__init__(parent)
+        super().__init__(parent)
         self.setFrameStyle(QtWidgets.QFrame.Panel)
         self.setStyleSheet(
             """
@@ -1788,7 +1788,7 @@ class SubWorkflowView(QtWidgets.QFrame):
 
     # Manually paint the lines:
     def paintEvent(self, event):
-        super(SubWorkflowView, self).paintEvent(event)
+        super().paintEvent(event)
 
         painter = QtGui.QPainter(self)
         painter.setBrush(QtGui.QBrush(QtCore.Qt.blue))
@@ -1894,7 +1894,7 @@ class SubWorkflowView(QtWidgets.QFrame):
 class WorkflowView(QtWidgets.QFrame):
     def __init__(self, *args, **kwargs):
         parent = kwargs["qt_parent"]
-        super(WorkflowView, self).__init__(parent)
+        super().__init__(parent)
 
         self.setStyleSheet("background: " + widgetColors["Base"])
         self.logger = logging.getLogger("WFELOG")
@@ -1992,7 +1992,7 @@ class WorkflowView(QtWidgets.QFrame):
 
     # Manually paint the lines:
     def paintEvent(self, event):
-        super(WorkflowView, self).paintEvent(event)
+        super().paintEvent(event)
         painter = QtGui.QPainter(self)
         painter.setBrush(QtGui.QBrush(QtCore.Qt.blue))
         sy = self.elementSkip
@@ -2100,7 +2100,7 @@ class WFTabsWidget(QtWidgets.QTabWidget):
     changedFlag = False
 
     def __init__(self, parent):
-        super(WFTabsWidget, self).__init__(parent)
+        super().__init__(parent)
 
         self.logger = logging.getLogger("WFELOG")
 
@@ -2322,7 +2322,7 @@ class WFTabsWidget(QtWidgets.QTabWidget):
     # Executed everytime the widget is shown / hidden, etc.
     # Required to have correct initial layout
     def showEvent(self, event):
-        super(WFTabsWidget, self).showEvent(event)
+        super().showEvent(event)
         self.relayout()
 
     def saveFile(self, folder):
@@ -2354,7 +2354,7 @@ class WFControlWithTopMiddleAndBottom(QtWidgets.QFrame, DragDropTargetTracker):
     def __init__(self, *args, **kwargs):
         parent = kwargs["qt_parent"]
         self.logical_parent = kwargs["logical_parent"]
-        super(WFControlWithTopMiddleAndBottom, self).__init__(parent)
+        super().__init__(parent)
         self.manual_init()
         # self.editor = kwargs["editor"]
         self.set_style()
@@ -2444,7 +2444,7 @@ class WFControlWithTopMiddleAndBottom(QtWidgets.QFrame, DragDropTargetTracker):
 
 class AdvancedForEachView(WFControlWithTopMiddleAndBottom):
     def __init__(self, *args, **kwargs):
-        super(AdvancedForEachView, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.dontplace = False
         self.is_wano = False
 
@@ -2489,7 +2489,7 @@ class AdvancedForEachView(WFControlWithTopMiddleAndBottom):
             pass
 
     def init_from_model(self):
-        super(AdvancedForEachView, self).init_from_model()
+        super().init_from_model()
         self.list_of_variables.setText(self.model.fileliststring)
         self.itername_widget.setText(self.model.itername)
 
@@ -2527,7 +2527,7 @@ class AdvancedForEachView(WFControlWithTopMiddleAndBottom):
 
 class ForEachView(WFControlWithTopMiddleAndBottom):
     def __init__(self, *args, **kwargs):
-        super(ForEachView, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.dontplace = False
         self.is_wano = False
 
@@ -2593,7 +2593,7 @@ class ForEachView(WFControlWithTopMiddleAndBottom):
             pass
 
     def init_from_model(self):
-        super(ForEachView, self).init_from_model()
+        super().init_from_model()
         self.list_of_variables.setText(self.model.fileliststring)
         self.itername_widget.setText(self.model.itername)
 
@@ -2639,7 +2639,7 @@ class ForEachView(WFControlWithTopMiddleAndBottom):
 
 class ParallelView(WFControlWithTopMiddleAndBottom):
     def __init__(self, *args, **kwargs):
-        super(ParallelView, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.dontplace = False
         self.splitter = QtWidgets.QSplitter(QtCore.Qt.Horizontal)
         self.is_wano = False
@@ -2668,7 +2668,7 @@ class ParallelView(WFControlWithTopMiddleAndBottom):
         return tw
 
     def init_from_model(self):
-        super(ParallelView, self).init_from_model()
+        super().init_from_model()
         for view in self.model.subwf_views:
             self.splitter.addWidget(view)
 
@@ -2709,7 +2709,7 @@ class ParallelView(WFControlWithTopMiddleAndBottom):
 
 class IfView(WFControlWithTopMiddleAndBottom):
     def __init__(self, *args, **kwargs):
-        super(IfView, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.dontplace = False
         self.splitter = QtWidgets.QSplitter(QtCore.Qt.Horizontal)
         self.is_wano = False
@@ -2762,7 +2762,7 @@ class IfView(WFControlWithTopMiddleAndBottom):
             pass
 
     def init_from_model(self):
-        super(IfView, self).init_from_model()
+        super().init_from_model()
         for view in self.model.subwf_views:
             self.splitter.addWidget(view)
         self.list_of_variables.setText(self.model._condition)
@@ -2970,7 +2970,7 @@ class VariableModel(WFItemModel):
 
 class WhileView(WFControlWithTopMiddleAndBottom):
     def __init__(self, *args, **kwargs):
-        super(WhileView, self).__init__(*args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.dontplace = False
         self.splitter = QtWidgets.QSplitter(QtCore.Qt.Horizontal)
         self.is_wano = False
@@ -3027,7 +3027,7 @@ class WhileView(WFControlWithTopMiddleAndBottom):
             pass
 
     def init_from_model(self):
-        super(WhileView, self).init_from_model()
+        super().init_from_model()
         for view in self.model.subwf_views:
             self.splitter.addWidget(view)
         self.list_of_variables.setText(self.model.get_condition())

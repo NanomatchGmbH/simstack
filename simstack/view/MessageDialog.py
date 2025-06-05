@@ -18,7 +18,7 @@ class MessageDialog(QMessageBox):
     ]
 
     def __init__(self, msg_type, msg, direct_show=True, parent=None, details=None):
-        super(MessageDialog, self).__init__(parent)
+        super().__init__(parent)
 
         self.setWindowTitle(self._window_titles[msg_type.value])
         self.setText(msg)

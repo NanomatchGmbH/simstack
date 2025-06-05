@@ -400,7 +400,7 @@ class WFRemoteFileSystem(QWidget):
         self.__btn_reload.clicked.connect(self.__reload)
 
     def __init__(self, parent=None):
-        super(WFRemoteFileSystem, self).__init__(parent)
+        super().__init__(parent)
         self.__fs_model = FSModel(self)
         self.__fileTree = QTreeView(self)
         self.__btn_reload = QPushButton()

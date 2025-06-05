@@ -499,7 +499,7 @@ class SSHConnector(QObject):
         self.exit()
 
     def __init__(self):
-        super(SSHConnector, self).__init__()
+        super().__init__()
         self.logger = logging.getLogger("SSHConnection")
         self._registries = QtClusterSettingsProvider.get_registries()
         self._clustermanagers = {}
