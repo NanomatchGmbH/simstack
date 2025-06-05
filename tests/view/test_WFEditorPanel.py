@@ -94,7 +94,7 @@ class TestDragDropTargetTracker:
         # Create mock event with right button
         mock_event = MagicMock()
         mock_event.buttons.return_value = QtCore.Qt.RightButton
-        
+
         # Should return early without doing anything
         result = tracker_widget.mouseMoveEvent_feature(mock_event)
         assert result is None
@@ -106,24 +106,24 @@ class TestDragDropTargetTracker:
         mock_event.buttons.return_value = QtCore.Qt.LeftButton
         mock_event.pos.return_value = MagicMock()
         mock_event.globalPos.return_value = MagicMock()
-        
+
         # Mock the rect and other necessary methods
         tracker_widget.rect = MagicMock()
         tracker_widget.rect.return_value.topLeft.return_value = MagicMock()
-        
+
         # Mock parent method calls
         mock_parent = MagicMock()
         tracker_widget.parent = MagicMock(return_value=mock_parent)
-        
-        with patch("PySide6.QtCore.QMimeData") as mock_mime, \
-             patch("PySide6.QtGui.QDrag") as mock_drag_class:
-            
+
+        with patch("PySide6.QtCore.QMimeData") as mock_mime, patch(
+            "PySide6.QtGui.QDrag"
+        ) as mock_drag_class:
             mock_drag = MagicMock()
             mock_drag_class.return_value = mock_drag
-            
+
             # Call the method
             tracker_widget.mouseMoveEvent_feature(mock_event)
-            
+
             # Verify drag was created and configured
             mock_mime.assert_called_once()
             mock_drag_class.assert_called_once_with(tracker_widget)
@@ -372,7 +372,7 @@ class TestWFItemListInterface:
         mock_widget = MagicMock()
         item_list.elements = []
         item_list.elementnames = []
-        
+
         # This will raise ValueError since element is not in list
         with pytest.raises(ValueError):
             item_list.element_to_name(mock_widget)
@@ -382,7 +382,7 @@ class TestWFItemListInterface:
         mock_widget = MagicMock()
         item_list.elements = []
         item_list.elementnames = []
-        
+
         # This will raise ValueError since element is not in list
         with pytest.raises(ValueError):
             item_list.remove_element(mock_widget)
@@ -439,7 +439,9 @@ class TestWFItemModel:
 
     def test_model_property(self, item_model):
         """Test that model property returns self."""
-        assert hasattr(item_model, 'model') is False  # WFItemModel doesn't have model property
+        assert (
+            hasattr(item_model, "model") is False
+        )  # WFItemModel doesn't have model property
 
     def test_has_name_attribute(self, item_model):
         """Test that WFItemModel can have name attribute set."""
@@ -481,26 +483,24 @@ class TestWhileModel:
         view = MagicMock()
         view.logical_parent = MagicMock()
         wf_root = MagicMock()
-        
+
         # Mock ControlFactory
         mock_subwf_model = MagicMock()
         mock_subwf_view = MagicMock()
-        
-        with patch("simstack.view.WFEditorPanel.ControlFactory.construct") as mock_construct:
+
+        with patch(
+            "simstack.view.WFEditorPanel.ControlFactory.construct"
+        ) as mock_construct:
             mock_construct.return_value = (mock_subwf_model, mock_subwf_view)
-            
-            while_model = WhileModel(
-                editor=editor,
-                view=view,
-                wf_root=wf_root
-            )
-            
+
+            while_model = WhileModel(editor=editor, view=view, wf_root=wf_root)
+
         return while_model, mock_subwf_model, mock_subwf_view
 
     def test_init(self, mock_dependencies):
         """Test initialization of WhileModel."""
         while_model, mock_subwf_model, mock_subwf_view = mock_dependencies
-        
+
         assert while_model.is_wano is False
         assert while_model.name == "While"
         assert while_model.itername == "While_iterator"
@@ -511,7 +511,7 @@ class TestWhileModel:
     def test_condition_methods(self, mock_dependencies):
         """Test condition getter and setter methods."""
         while_model, _, _ = mock_dependencies
-        
+
         # Test setter and getter
         while_model.set_condition("x > 0")
         assert while_model.get_condition() == "x > 0"
@@ -519,7 +519,7 @@ class TestWhileModel:
     def test_itername_methods(self, mock_dependencies):
         """Test itername getter and setter methods."""
         while_model, _, _ = mock_dependencies
-        
+
         # Test setter and getter
         while_model.set_itername("custom_iterator")
         assert while_model.get_itername() == "custom_iterator"
@@ -527,12 +527,12 @@ class TestWhileModel:
     def test_collect_wano_widgets(self, mock_dependencies):
         """Test collect_wano_widgets method."""
         while_model, mock_subwf_model, _ = mock_dependencies
-        
+
         # Mock the subwf_model's collect_wano_widgets method
         mock_wano1 = MagicMock()
         mock_wano2 = MagicMock()
         mock_subwf_model.collect_wano_widgets.return_value = [mock_wano1, mock_wano2]
-        
+
         result = while_model.collect_wano_widgets()
         assert result == [mock_wano1, mock_wano2]
         mock_subwf_model.collect_wano_widgets.assert_called_once()
@@ -547,12 +547,8 @@ class TestVariableModel:
         editor = MagicMock()
         view = MagicMock()
         wf_root = MagicMock()
-        
-        return VariableModel(
-            editor=editor,
-            view=view,
-            wf_root=wf_root
-        )
+
+        return VariableModel(editor=editor, view=view, wf_root=wf_root)
 
     def test_init(self, variable_model):
         """Test initialization of VariableModel."""
@@ -577,31 +573,32 @@ class TestVariableModel:
 
     def test_render_to_simple_wf(self, variable_model):
         """Test render_to_simple_wf method."""
-        with patch("simstack.view.wf_editor_models.VariableElement") as mock_var_element:
+        with patch(
+            "simstack.view.wf_editor_models.VariableElement"
+        ) as mock_var_element:
             mock_element_instance = MagicMock()
             mock_element_instance.uid = "test_uid"
             mock_var_element.return_value = mock_element_instance
-            
+
             variable_model.set_varname("test_var")
             variable_model.set_varequation("x * 2")
-            
+
             path_list = ["path1"]
             output_path_list = ["output1"]
             submitdir = "submit"
             jobdir = "job"
             path = "test_path"
             parent_ids = ["parent1", "parent2"]
-            
+
             elements, transitions, result_ids = variable_model.render_to_simple_wf(
                 path_list, output_path_list, submitdir, jobdir, path, parent_ids
             )
-            
+
             # Verify VariableElement was created with correct parameters
             mock_var_element.assert_called_once_with(
-                variable_name="test_var",
-                equation="x * 2"
+                variable_name="test_var", equation="x * 2"
             )
-            
+
             # Verify return values
             assert elements == [("VariableElement", mock_element_instance)]
             assert transitions == [("parent1", "test_uid"), ("parent2", "test_uid")]
@@ -618,31 +615,41 @@ class TestIfModel:
         view = MagicMock()
         view.logical_parent = MagicMock()
         wf_root = MagicMock()
-        
+
         # Mock ControlFactory to return two different subworkflow models/views
         mock_true_model = MagicMock()
         mock_true_view = MagicMock()
         mock_false_model = MagicMock()
         mock_false_view = MagicMock()
-        
-        with patch("simstack.view.WFEditorPanel.ControlFactory.construct") as mock_construct:
+
+        with patch(
+            "simstack.view.WFEditorPanel.ControlFactory.construct"
+        ) as mock_construct:
             mock_construct.side_effect = [
                 (mock_true_model, mock_true_view),
-                (mock_false_model, mock_false_view)
+                (mock_false_model, mock_false_view),
             ]
-            
-            if_model = IfModel(
-                editor=editor,
-                view=view,
-                wf_root=wf_root
-            )
-            
-        return if_model, mock_true_model, mock_true_view, mock_false_model, mock_false_view
+
+            if_model = IfModel(editor=editor, view=view, wf_root=wf_root)
+
+        return (
+            if_model,
+            mock_true_model,
+            mock_true_view,
+            mock_false_model,
+            mock_false_view,
+        )
 
     def test_init(self, mock_dependencies):
         """Test initialization of IfModel."""
-        if_model, mock_true_model, mock_true_view, mock_false_model, mock_false_view = mock_dependencies
-        
+        (
+            if_model,
+            mock_true_model,
+            mock_true_view,
+            mock_false_model,
+            mock_false_view,
+        ) = mock_dependencies
+
         assert if_model.is_wano is False
         assert if_model.name == "Branch"
         assert if_model._condition == ""
@@ -656,7 +663,7 @@ class TestIfModel:
     def test_condition_methods(self, mock_dependencies):
         """Test condition getter and setter methods."""
         if_model, _, _, _, _ = mock_dependencies
-        
+
         # Test setter and getter
         if_model.set_condition("x == 1")
         assert if_model.get_condition() == "x == 1"
@@ -664,14 +671,14 @@ class TestIfModel:
     def test_collect_wano_widgets(self, mock_dependencies):
         """Test collect_wano_widgets method."""
         if_model, mock_true_model, _, mock_false_model, _ = mock_dependencies
-        
+
         # Mock the subwf_models' collect_wano_widgets methods
         mock_wano1 = MagicMock()
         mock_wano2 = MagicMock()
         mock_wano3 = MagicMock()
         mock_true_model.collect_wano_widgets.return_value = [mock_wano1, mock_wano2]
         mock_false_model.collect_wano_widgets.return_value = [mock_wano3]
-        
+
         result = if_model.collect_wano_widgets()
         assert result == [mock_wano1, mock_wano2, mock_wano3]
         mock_true_model.collect_wano_widgets.assert_called_once()
