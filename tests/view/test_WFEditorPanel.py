@@ -577,7 +577,7 @@ class TestVariableModel:
 
     def test_render_to_simple_wf(self, variable_model):
         """Test render_to_simple_wf method."""
-        with patch("simstack.view.WFEditorPanel.VariableElement") as mock_var_element:
+        with patch("simstack.view.wf_editor_models.VariableElement") as mock_var_element:
             mock_element_instance = MagicMock()
             mock_element_instance.uid = "test_uid"
             mock_var_element.return_value = mock_element_instance
