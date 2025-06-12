@@ -575,20 +575,22 @@ class TestSubWFModel:
 
     def test_remove_element_with_wano_cleanup(self, sub_wf_model):
         """Test remove_element with WaNo cleanup."""
-        with patch("simstack.view.wf_editor_models.WFWaNoWidget") as mock_wfwanowidget:
-            mock_element = MagicMock()
-            mock_element.__class__ = mock_wfwanowidget
-            mock_element.wano.name = "TestWaNo"
+        from simstack.view.wf_editor_models import WFWaNoWidget
+        
+        # Create a mock element that is instance of WFWaNoWidget
+        mock_element = MagicMock()
+        mock_element.__class__ = WFWaNoWidget
+        mock_element.wano.name = "TestWaNo"
 
-            sub_wf_model.elements = [mock_element]
-            sub_wf_model.elementnames = ["TestElement"]
+        sub_wf_model.elements = [mock_element]
+        sub_wf_model.elementnames = ["TestElement"]
 
-            # Mock get_root and get_wano_names
-            mock_root = MagicMock()
-            mock_root.get_wano_names.return_value = []  # WaNo not in use elsewhere
-            mock_root.wano_folder_remove = MagicMock()
-            sub_wf_model.get_root.return_value = mock_root
-
+        # Mock get_root and get_wano_names
+        mock_root = MagicMock()
+        mock_root.get_wano_names.return_value = []  # WaNo not in use elsewhere
+        mock_root.wano_folder_remove = MagicMock()
+        
+        with patch.object(sub_wf_model, 'get_root', return_value=mock_root):
             sub_wf_model.remove_element(mock_element)
 
             # Verify element was removed
@@ -2216,20 +2218,21 @@ class TestWFModel:
 
     def test_collect_wano_widgets_with_mixed_elements(self, wf_model):
         """Test collect_wano_widgets with mixed element types."""
-        with patch("simstack.view.wf_editor_models.WFWaNoWidget") as mock_wfwanowidget:
-            mock_wano1 = MagicMock()
-            mock_wano1.__class__ = mock_wfwanowidget
-            mock_wano2 = MagicMock()
-            mock_control = MagicMock()
-            mock_control.collect_wano_widgets.return_value = [mock_wano2]
+        from simstack.view.wf_editor_models import WFWaNoWidget
+        
+        # Create mock WaNo widgets that properly inherit from the base class
+        mock_wano1 = MagicMock(spec=WFWaNoWidget)
+        mock_wano2 = MagicMock(spec=WFWaNoWidget)
+        mock_control = MagicMock()
+        mock_control.collect_wano_widgets.return_value = [mock_wano2]
 
-            wf_model.elements = [mock_wano1, mock_control]
+        wf_model.elements = [mock_wano1, mock_control]
 
-            result = wf_model.collect_wano_widgets()
-            # Should get direct WaNo + nested WaNos from control
-            assert len(result) == 2
-            assert mock_wano1 in result
-            assert mock_wano2 in result
+        result = wf_model.collect_wano_widgets()
+        # Should get direct WaNo + nested WaNos from control
+        assert len(result) == 2
+        assert mock_wano1 in result
+        assert mock_wano2 in result
 
     def test_assemble_variables_with_elements(self, wf_model):
         """Test assemble_variables with WaNo and control elements."""
@@ -2340,16 +2343,19 @@ class TestWFModel:
             test_folder = os.path.join(temp_dir, "TestWorkflow")
 
             # Mock WaNo element
+            from lxml import etree
             mock_wano = MagicMock()
             mock_wano.is_wano = True
-            mock_wano.get_xml.return_value = MagicMock()
+            mock_xml_element = etree.Element("test_wano")
+            mock_wano.get_xml.return_value = mock_xml_element
             mock_wano.instantiate_in_folder.return_value = True
             mock_wano.save_delta = MagicMock()
 
             # Mock control element
             mock_control = MagicMock()
             mock_control.is_wano = False
-            mock_control.save_to_disk.return_value = MagicMock()
+            mock_control_xml = etree.Element("test_control")
+            mock_control.save_to_disk.return_value = mock_control_xml
 
             wf_model.elements = [mock_wano, mock_control]
             wf_model.elementnames = ["WaNo1", "Control1"]
@@ -2361,7 +2367,9 @@ class TestWFModel:
             ), patch(
                 "simstack.view.wf_editor_models.SETTING_KEYS",
                 {"workflows": "workflows"},
-            ), patch("os.makedirs"), patch("builtins.open", mock_open()):
+            ), patch("os.makedirs"), patch("builtins.open", mock_open()), patch(
+                "simstack.view.wf_editor_models.etree.tostring", return_value="<xml/>"
+            ):
                 mock_settings = MagicMock()
                 mock_settings.get_value.return_value = temp_dir
                 mock_settings_provider.get_instance.return_value = mock_settings
@@ -2385,9 +2393,11 @@ class TestWFModel:
             test_folder = os.path.join(temp_dir, "TestWorkflow")
 
             # Mock WaNo element that fails
+            from lxml import etree
             mock_wano = MagicMock()
             mock_wano.is_wano = True
-            mock_wano.get_xml.return_value = MagicMock()
+            mock_xml_element = etree.Element("test_wano")
+            mock_wano.get_xml.return_value = mock_xml_element
             mock_wano.instantiate_in_folder.return_value = False  # Failure
 
             wf_model.elements = [mock_wano]
@@ -2879,8 +2889,12 @@ class TestDragDropTargetTracker:
             mock_event.buttons.return_value = mock_qt.LeftButton
             mock_event.pos.return_value = MagicMock()
 
-            # Setup for removal case
-            drag_drop_tracker._newparent = None
+            # Setup so that after drag completes, _newparent is None
+            def simulate_drag_completion(*args, **kwargs):
+                drag_drop_tracker._newparent = None
+                return 0  # Return a Qt.DropAction value
+            
+            mock_drag.exec_.side_effect = simulate_drag_completion
 
             drag_drop_tracker.mouseMoveEvent_feature(mock_event)
 
