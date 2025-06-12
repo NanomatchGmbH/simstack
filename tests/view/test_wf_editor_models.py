@@ -576,7 +576,7 @@ class TestSubWFModel:
     def test_remove_element_with_wano_cleanup(self, sub_wf_model):
         """Test remove_element with WaNo cleanup."""
         from simstack.view.wf_editor_models import WFWaNoWidget
-        
+
         # Create a mock element that is instance of WFWaNoWidget
         mock_element = MagicMock()
         mock_element.__class__ = WFWaNoWidget
@@ -589,8 +589,8 @@ class TestSubWFModel:
         mock_root = MagicMock()
         mock_root.get_wano_names.return_value = []  # WaNo not in use elsewhere
         mock_root.wano_folder_remove = MagicMock()
-        
-        with patch.object(sub_wf_model, 'get_root', return_value=mock_root):
+
+        with patch.object(sub_wf_model, "get_root", return_value=mock_root):
             sub_wf_model.remove_element(mock_element)
 
             # Verify element was removed
@@ -2219,7 +2219,7 @@ class TestWFModel:
     def test_collect_wano_widgets_with_mixed_elements(self, wf_model):
         """Test collect_wano_widgets with mixed element types."""
         from simstack.view.wf_editor_models import WFWaNoWidget
-        
+
         # Create mock WaNo widgets that properly inherit from the base class
         mock_wano1 = MagicMock(spec=WFWaNoWidget)
         mock_wano2 = MagicMock(spec=WFWaNoWidget)
@@ -2344,6 +2344,7 @@ class TestWFModel:
 
             # Mock WaNo element
             from lxml import etree
+
             mock_wano = MagicMock()
             mock_wano.is_wano = True
             mock_xml_element = etree.Element("test_wano")
@@ -2394,6 +2395,7 @@ class TestWFModel:
 
             # Mock WaNo element that fails
             from lxml import etree
+
             mock_wano = MagicMock()
             mock_wano.is_wano = True
             mock_xml_element = etree.Element("test_wano")
@@ -2893,7 +2895,7 @@ class TestDragDropTargetTracker:
             def simulate_drag_completion(*args, **kwargs):
                 drag_drop_tracker._newparent = None
                 return 0  # Return a Qt.DropAction value
-            
+
             mock_drag.exec_.side_effect = simulate_drag_completion
 
             drag_drop_tracker.mouseMoveEvent_feature(mock_event)
