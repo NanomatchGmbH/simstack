@@ -586,7 +586,7 @@ class TestWanoQtViewRoot:
 
     def test_get_import_widget(self, qtbot):
         """Test get_import_widget method."""
-        with patch("simstack.view.PropertyListView.ImportView") as mock_import_view:
+        with patch("simstack.view.PropertyListView.ImportView"):
             view = WanoQtViewRoot()
             model = MagicMock()
             import_model = MagicMock()
@@ -600,7 +600,7 @@ class TestWanoQtViewRoot:
 
     def test_get_export_widget(self, qtbot):
         """Test get_export_widget method."""
-        with patch("simstack.view.PropertyListView.ExportView") as mock_export_view:
+        with patch("simstack.view.PropertyListView.ExportView"):
             view = WanoQtViewRoot()
             model = MagicMock()
             export_model = MagicMock()

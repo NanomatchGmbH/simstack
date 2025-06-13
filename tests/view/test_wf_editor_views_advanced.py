@@ -283,7 +283,7 @@ class TestWorkflowViewAdvanced:
         mock_model.elements = []
         view.model = mock_model
 
-        result = view.place_elements()
+        view.place_elements()
         view.enable_background.assert_called_with(True)
 
         # Test with elements and background_drawn=True - should disable background

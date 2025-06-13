@@ -259,7 +259,7 @@ class TestWorkflowViewExtended:
         # Mock enable_background to avoid complex setup
         view.enable_background = MagicMock()
 
-        result = view.place_elements()
+        view.place_elements()
         view.enable_background.assert_called_once_with(True)
 
     @patch(
@@ -319,10 +319,6 @@ class TestWFTabsWidgetBasic:
         assert WFTabsWidget.changedFlag is False
 
     def test_illegal_chars_constant(self):
-        """Test illegal_chars constant."""
-        # Create a minimal mock parent to avoid full Qt setup
-        mock_parent = MagicMock()
-
         # We can't easily instantiate WFTabsWidget without complex setup,
         # but we can test the class-level illegal_chars attribute
         assert hasattr(WFTabsWidget, "illegal_chars")
