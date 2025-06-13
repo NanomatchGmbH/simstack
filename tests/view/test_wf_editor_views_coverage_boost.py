@@ -58,6 +58,10 @@ class TestPlaceElementsMethods:
         mock_element_view.place_elements.assert_called()
         
         assert isinstance(result, int)
+        
+        qtbot._widgets_to_keep = getattr(qtbot, '_widgets_to_keep', [])
+        qtbot._widgets_to_keep.append(view)
+        qtbot._widgets_to_keep.append(parent)
 
     @patch('simstack.view.wf_editor_views.widgetColors', {'Base': '#F5FFEB', 'MainEditor': '#F5FFF5'})
     def test_workflow_place_elements_background_control(self, qtbot):
@@ -97,6 +101,10 @@ class TestPlaceElementsMethods:
         
         view.place_elements()
         view.enable_background.assert_called_with(False)
+        
+        qtbot._widgets_to_keep = getattr(qtbot, '_widgets_to_keep', [])
+        qtbot._widgets_to_keep.append(view)
+        qtbot._widgets_to_keep.append(parent)
 
     @patch('simstack.view.wf_editor_views.widgetColors', {'ButtonColor': '#D4FF7F', 'Control': '#EBFFD6'})
     def test_foreach_place_elements(self, qtbot):
@@ -122,6 +130,10 @@ class TestPlaceElementsMethods:
         
         view.init_from_model.assert_called_once()
         mock_subwf.place_elements.assert_called_once()
+        
+        qtbot._widgets_to_keep = getattr(qtbot, '_widgets_to_keep', [])
+        qtbot._widgets_to_keep.append(view)
+        qtbot._widgets_to_keep.append(parent)
 
     @patch('simstack.view.wf_editor_views.widgetColors', {'ButtonColor': '#D4FF7F', 'Control': '#EBFFD6'})
     def test_advanced_foreach_place_elements(self, qtbot):
@@ -147,6 +159,10 @@ class TestPlaceElementsMethods:
         
         view.init_from_model.assert_called_once()
         mock_subwf.place_elements.assert_called_once()
+        
+        qtbot._widgets_to_keep = getattr(qtbot, '_widgets_to_keep', [])
+        qtbot._widgets_to_keep.append(view)
+        qtbot._widgets_to_keep.append(parent)
 
     @patch('simstack.view.wf_editor_views.widgetColors', {'ButtonColor': '#D4FF7F', 'Control': '#EBFFD6'})
     def test_parallel_place_elements(self, qtbot):
@@ -172,6 +188,10 @@ class TestPlaceElementsMethods:
         view.init_from_model.assert_called_once()
         mock_view1.place_elements.assert_called_once()
         mock_view2.place_elements.assert_called_once()
+        
+        qtbot._widgets_to_keep = getattr(qtbot, '_widgets_to_keep', [])
+        qtbot._widgets_to_keep.append(view)
+        qtbot._widgets_to_keep.append(parent)
 
 
 class TestSizeHintMethods:
@@ -201,6 +221,10 @@ class TestSizeHintMethods:
         # Width = sum, height = max + padding
         assert size_hint.width() == 550  # 200 + 300 + 50
         assert size_hint.height() == 275  # 200 + 75
+        
+        qtbot._widgets_to_keep = getattr(qtbot, '_widgets_to_keep', [])
+        qtbot._widgets_to_keep.append(view)
+        qtbot._widgets_to_keep.append(parent)
 
     @patch('simstack.view.wf_editor_views.widgetColors', {'ButtonColor': '#D4FF7F', 'Control': '#EBFFD6'})
     def test_if_size_hint_complex(self, qtbot):
@@ -225,6 +249,10 @@ class TestSizeHintMethods:
         
         assert size_hint.width() == 450  # 180 + 220 + 50
         assert size_hint.height() == 235  # 160 + 75
+        
+        qtbot._widgets_to_keep = getattr(qtbot, '_widgets_to_keep', [])
+        qtbot._widgets_to_keep.append(view)
+        qtbot._widgets_to_keep.append(parent)
 
     @patch('simstack.view.wf_editor_views.widgetColors', {'ButtonColor': '#D4FF7F', 'Control': '#EBFFD6'})
     def test_while_size_hint_complex(self, qtbot):
@@ -249,6 +277,10 @@ class TestSizeHintMethods:
         
         assert size_hint.width() == 500  # 250 + 200 + 50
         assert size_hint.height() == 255  # 180 + 75
+        
+        qtbot._widgets_to_keep = getattr(qtbot, '_widgets_to_keep', [])
+        qtbot._widgets_to_keep.append(view)
+        qtbot._widgets_to_keep.append(parent)
 
     @patch('simstack.view.wf_editor_views.widgetColors', {'ButtonColor': '#D4FF7F', 'Control': '#EBFFD6'})
     def test_advanced_foreach_size_hint_width_enforcement(self, qtbot):
@@ -273,6 +305,10 @@ class TestSizeHintMethods:
         # Should enforce minimum width of 500
         assert size_hint.width() == 500
         mock_subwf.set_minimum_width.assert_called_with(500)
+        
+        qtbot._widgets_to_keep = getattr(qtbot, '_widgets_to_keep', [])
+        qtbot._widgets_to_keep.append(view)
+        qtbot._widgets_to_keep.append(parent)
 
 
 class TestWidgetMethodCoverage:
@@ -310,6 +346,12 @@ class TestWidgetMethodCoverage:
         
         result3 = view3.get_middle_widget()
         assert result3 is view3.splitter
+        
+        qtbot._widgets_to_keep = getattr(qtbot, '_widgets_to_keep', [])
+        qtbot._widgets_to_keep.append(view)
+        qtbot._widgets_to_keep.append(view2)
+        qtbot._widgets_to_keep.append(view3)
+        qtbot._widgets_to_keep.append(parent)
 
     @patch('simstack.view.wf_editor_views.widgetColors', {'ButtonColor': '#D4FF7F', 'Control': '#EBFFD6'})
     def test_get_bottom_layout_methods(self, qtbot):
@@ -331,6 +373,11 @@ class TestWidgetMethodCoverage:
             qtbot.addWidget(view)
             result = view.get_bottom_layout()
             assert result is None
+        
+        qtbot._widgets_to_keep = getattr(qtbot, '_widgets_to_keep', [])
+        for view in views:
+            qtbot._widgets_to_keep.append(view)
+        qtbot._widgets_to_keep.append(parent)
 
 
 class TestControlMethodCoverage:
@@ -358,6 +405,10 @@ class TestControlMethodCoverage:
         view.delete()
         mock_model.deletelast.assert_called_once()
         view.relayout.assert_called_once()
+        
+        qtbot._widgets_to_keep = getattr(qtbot, '_widgets_to_keep', [])
+        qtbot._widgets_to_keep.append(view)
+        qtbot._widgets_to_keep.append(parent)
 
     @patch('simstack.view.wf_editor_views.widgetColors', {'ButtonColor': '#D4FF7F', 'Control': '#EBFFD6'})
     def test_control_relayout_methods(self, qtbot):
@@ -379,6 +430,10 @@ class TestControlMethodCoverage:
         
         view.relayout()
         mock_wf_root_view.relayout.assert_called_once()
+        
+        qtbot._widgets_to_keep = getattr(qtbot, '_widgets_to_keep', [])
+        qtbot._widgets_to_keep.append(view)
+        qtbot._widgets_to_keep.append(parent)
 
 
 class TestLineEditHandlers:
@@ -418,6 +473,11 @@ class TestLineEditHandlers:
         
         view2._on_line_edit()
         mock_model.set_itername.assert_called_with("iterator_name")
+        
+        qtbot._widgets_to_keep = getattr(qtbot, '_widgets_to_keep', [])
+        qtbot._widgets_to_keep.append(view)
+        qtbot._widgets_to_keep.append(view2)
+        qtbot._widgets_to_keep.append(parent)
 
     @patch('simstack.view.wf_editor_views.widgetColors', {'ButtonColor': '#D4FF7F', 'Control': '#EBFFD6'})
     def test_variable_line_edit_handlers(self, qtbot):
@@ -445,6 +505,10 @@ class TestLineEditHandlers:
         
         view._on_varequation_line_edit()
         mock_model.set_varequation.assert_called_with("var_equation")
+        
+        qtbot._widgets_to_keep = getattr(qtbot, '_widgets_to_keep', [])
+        qtbot._widgets_to_keep.append(view)
+        qtbot._widgets_to_keep.append(parent)
 
     @patch('simstack.view.wf_editor_views.widgetColors', {'ButtonColor': '#D4FF7F', 'Control': '#EBFFD6'})
     def test_foreach_line_edit_handlers(self, qtbot):
@@ -488,6 +552,11 @@ class TestLineEditHandlers:
         
         view2.line_edited()
         mock_model.set_filelist.assert_called_with("advanced_files")
+        
+        qtbot._widgets_to_keep = getattr(qtbot, '_widgets_to_keep', [])
+        qtbot._widgets_to_keep.append(view)
+        qtbot._widgets_to_keep.append(view2)
+        qtbot._widgets_to_keep.append(parent)
 
 
 class TestWFTabsWidgetMethods:
@@ -589,3 +658,7 @@ class TestLocateElementAbove:
         mock_position.y.return_value = 400
         result = view._locate_element_above(mock_position)
         assert result == 3  # After all elements
+        
+        qtbot._widgets_to_keep = getattr(qtbot, '_widgets_to_keep', [])
+        qtbot._widgets_to_keep.append(view)
+        qtbot._widgets_to_keep.append(parent)
