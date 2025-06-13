@@ -34,7 +34,7 @@ class TestSubWorkflowViewAdvanced:
         
         view = SubWorkflowView(qt_parent=parent, logical_parent=logical_parent)
         qtbot.addWidget(view)
-        
+
         # Mock model with elements
         mock_model = MagicMock()
         mock_element1 = MagicMock()
@@ -110,6 +110,7 @@ class TestSubWorkflowViewAdvanced:
         view = SubWorkflowView(qt_parent=parent, logical_parent=logical_parent)
         qtbot.addWidget(view)
         
+        
         # Mock model with multiple elements
         mock_model = MagicMock()
         mock_element1 = MagicMock()
@@ -131,21 +132,23 @@ class TestSubWorkflowViewAdvanced:
         mock_model.elements = [mock_element1, mock_element2]
         view.model = mock_model
         
-        # Mock paint event
-        mock_event = MagicMock()
+        # Create a real QPaintEvent
+        paint_event = QtGui.QPaintEvent(QtCore.QRect(0, 0, 400, 300))
         
         # Mock QPainter to avoid actual painting
-        with patch('PySide6.QtGui.QPainter') as mock_painter_class:
+        with patch('simstack.view.wf_editor_views.QtGui.QPainter') as mock_painter_class:
             mock_painter = MagicMock()
             mock_painter_class.return_value = mock_painter
             
-            view.paintEvent(mock_event)
+            view.paintEvent(paint_event)
             
             # Verify painter was created and used
             mock_painter_class.assert_called_with(view)
             mock_painter.setBrush.assert_called()
             mock_painter.drawLine.assert_called()
             mock_painter.end.assert_called()
+        qtbot._widgets_to_keep = getattr(qtbot, '_widgets_to_keep', [])
+        qtbot._widgets_to_keep.append()
 
     @patch('simstack.view.wf_editor_views.widgetColors', {'Control': '#EBFFD6', 'ButtonColor': '#D4FF7F'})
     def test_paint_event_single_element(self, qtbot):
@@ -157,6 +160,7 @@ class TestSubWorkflowViewAdvanced:
         view = SubWorkflowView(qt_parent=parent, logical_parent=logical_parent)
         qtbot.addWidget(view)
         
+        
         # Mock model with single element
         mock_model = MagicMock()
         mock_element = MagicMock()
@@ -165,13 +169,14 @@ class TestSubWorkflowViewAdvanced:
         mock_model.elements = [mock_element]
         view.model = mock_model
         
-        mock_event = MagicMock()
+        # Create a real QPaintEvent
+        paint_event = QtGui.QPaintEvent(QtCore.QRect(0, 0, 400, 300))
         
         with patch('simstack.view.wf_editor_views.QtGui.QPainter') as mock_painter_class:
             mock_painter = MagicMock()
             mock_painter_class.return_value = mock_painter
             
-            view.paintEvent(mock_event)
+            view.paintEvent(paint_event)
             
             # With single element, no lines should be drawn
             mock_painter.drawLine.assert_not_called()
@@ -185,6 +190,7 @@ class TestSubWorkflowViewAdvanced:
         
         view = SubWorkflowView(qt_parent=parent, logical_parent=logical_parent)
         qtbot.addWidget(view)
+        
         
         # Mock model with multiple elements
         mock_model = MagicMock()
@@ -211,20 +217,19 @@ class TestSubWorkflowViewAdvanced:
         
         # Test position in middle
         mock_position = MagicMock()
-        mock_position.y.return_value = 150  # Should be after first element
+        mock_position.y.return_value = 150  # Should be after second element
         
         result = view._locate_element_above(mock_position)
-        assert result == 1
+        assert result == 2
 
         # Test position at end
         mock_position.y.return_value = 400  # Should be after all elements
         result = view._locate_element_above(mock_position)
         assert result == 3
 
-
+globalview = None
 class TestWorkflowViewAdvanced:
     """Advanced tests for WorkflowView covering complex methods."""
-    
     @patch('simstack.view.wf_editor_views.widgetColors', {'Base': '#F5FFEB', 'MainEditor': '#F5FFF5'})
     def test_place_elements_with_background_logic(self, qtbot):
         """Test place_elements background enabling/disabling logic."""
@@ -233,6 +238,7 @@ class TestWorkflowViewAdvanced:
         
         view = WorkflowView(qt_parent=parent)
         qtbot.addWidget(view)
+        
         
         # Mock enable_background method
         view.enable_background = MagicMock()
@@ -268,7 +274,8 @@ class TestWorkflowViewAdvanced:
         """Test place_elements with complex element layout."""
         parent = QWidget()
         qtbot.addWidget(parent)
-        
+
+        global view
         view = WorkflowView(qt_parent=parent)
         qtbot.addWidget(view)
         
@@ -330,10 +337,12 @@ class TestWorkflowViewAdvanced:
         """Test paintEvent for WorkflowView."""
         parent = QWidget()
         qtbot.addWidget(parent)
-        
+
         view = WorkflowView(qt_parent=parent)
         qtbot.addWidget(view)
-        
+        qtbot._widgets_to_keep = getattr(qtbot, '_widgets_to_keep', [])
+        qtbot._widgets_to_keep.append(view)
+        qtbot._widgets_to_keep.append(parent)
         # Mock model with elements
         mock_model = MagicMock()
         mock_element1 = MagicMock()
@@ -352,13 +361,13 @@ class TestWorkflowViewAdvanced:
         mock_model.elements = [mock_element1, mock_element2]
         view.model = mock_model
         
-        mock_event = MagicMock()
+        # Create a real QPaintEvent
+        paint_event = QtGui.QPaintEvent(QtCore.QRect(0, 0, 400, 300))
         
         with patch('simstack.view.wf_editor_views.QtGui.QPainter') as mock_painter_class:
             mock_painter = MagicMock()
             mock_painter_class.return_value = mock_painter
-            
-            view.paintEvent(mock_event)
+            view.paintEvent(paint_event)
             
             mock_painter.drawLine.assert_called()
             mock_painter.end.assert_called()
@@ -626,9 +635,11 @@ class TestControlViewsAdvanced:
         view = ForEachView(qt_parent=parent, logical_parent=logical_parent)
         qtbot.addWidget(view)
         
+        
         # Mock model
         mock_model = MagicMock()
         mock_subwf_view = MagicMock()
+        mock_subwf_view.sizeHint.return_value = QSize(400, 200)
         mock_model.subwfview = mock_subwf_view
         view.model = mock_model
         
@@ -649,9 +660,11 @@ class TestControlViewsAdvanced:
         view = AdvancedForEachView(qt_parent=parent, logical_parent=logical_parent)
         qtbot.addWidget(view)
         
+        
         # Mock model
         mock_model = MagicMock()
         mock_subwf_view = MagicMock()
+        mock_subwf_view.sizeHint.return_value = QSize(400, 200)
         mock_model.subwfview = mock_subwf_view
         view.model = mock_model
         

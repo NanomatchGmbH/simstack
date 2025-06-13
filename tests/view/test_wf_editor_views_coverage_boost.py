@@ -35,6 +35,7 @@ class TestPlaceElementsMethods:
         view = SubWorkflowView(qt_parent=parent, logical_parent=logical_parent)
         qtbot.addWidget(view)
         
+        
         # Create mock model with elements
         mock_model = MagicMock()
         mock_element = MagicMock()
@@ -66,6 +67,7 @@ class TestPlaceElementsMethods:
         
         view = WorkflowView(qt_parent=parent)
         qtbot.addWidget(view)
+        
         
         # Mock enable_background
         view.enable_background = MagicMock()
@@ -106,9 +108,11 @@ class TestPlaceElementsMethods:
         view = ForEachView(qt_parent=parent, logical_parent=logical_parent)
         qtbot.addWidget(view)
         
+        
         # Mock model and init_from_model
         mock_model = MagicMock()
         mock_subwf = MagicMock()
+        mock_subwf.sizeHint.return_value = QSize(400, 200)
         mock_model.subwfview = mock_subwf
         view.model = mock_model
         
@@ -129,9 +133,11 @@ class TestPlaceElementsMethods:
         view = AdvancedForEachView(qt_parent=parent, logical_parent=logical_parent)
         qtbot.addWidget(view)
         
+        
         # Mock model
         mock_model = MagicMock()
         mock_subwf = MagicMock()
+        mock_subwf.sizeHint.return_value = QSize(400, 200)
         mock_model.subwfview = mock_subwf
         view.model = mock_model
         
@@ -258,6 +264,7 @@ class TestSizeHintMethods:
         mock_model = MagicMock()
         mock_subwf = MagicMock()
         mock_subwf.sizeHint.return_value = QSize(300, 150)  # Small width
+        mock_subwf.set_minimum_width = MagicMock()
         mock_model.subwfview = mock_subwf
         view.model = mock_model
         
@@ -521,7 +528,12 @@ class TestWFTabsWidgetMethods:
         """Test get_index method comprehensively."""
         tabs = WFTabsWidget.__new__(WFTabsWidget)
         tabs.count = MagicMock(return_value=5)
-        tabs.tabText = MagicMock(side_effect=["Tab1", "Tab2", "Target", "Tab4", "Tab5"])
+        
+        def mock_tab_text(index):
+            tab_names = ["Tab1", "Tab2", "Target", "Tab4", "Tab5"]
+            return tab_names[index] if 0 <= index < len(tab_names) else ""
+        
+        tabs.tabText = MagicMock(side_effect=mock_tab_text)
         tabs.get_index = WFTabsWidget.get_index.__get__(tabs, WFTabsWidget)
         
         # Test finding tab at different positions
