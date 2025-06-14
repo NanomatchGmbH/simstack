@@ -35,7 +35,7 @@ class TestWaNoEditor:
 
         # Verify signals are connected (can't directly test isConnected in PySide6)
         # Just verify the signal exists
-        assert hasattr(editor, 'tabCloseRequested')
+        assert hasattr(editor, "tabCloseRequested")
 
     def test_close_tab(self, editor):
         """Test closeTab method."""
@@ -66,6 +66,7 @@ class TestWaNoEditor:
                 # Create a proper paint event
                 from PySide6.QtGui import QPaintEvent
                 from PySide6.QtCore import QRect
+
                 event = QPaintEvent(QRect(0, 0, 100, 100))
 
                 # Call method
@@ -264,7 +265,7 @@ class TestWaNoEditor:
 
         # Mock clear method
         editor.clear = MagicMock()
-        
+
         # Call method
         editor.deleteClose()
 
@@ -287,7 +288,9 @@ class TestWaNoEditor:
         editor.clear = MagicMock()
 
         # Call method
-        with patch("simstack.view.WFEditorPanel.WFWorkflowWidget", create=True) as mock_wf_widget:
+        with patch(
+            "simstack.view.WFEditorPanel.WFWorkflowWidget", create=True
+        ) as mock_wf_widget:
             editor.deleteClose()
 
             # Verify hasChanged was called
@@ -315,7 +318,7 @@ class TestWaNoEditor:
 
         # Mock clear method
         editor.clear = MagicMock()
-        
+
         # Verify deactivateWidget was not called
         editor.editor.deactivateWidget.assert_not_called()
 
@@ -332,7 +335,9 @@ class TestWaNoEditor:
 
         # Call method with changed flag
         WaNoEditor.changedFlag = True
-        with patch("simstack.view.WFEditorPanel.WFWorkflowWidget", create=True) as mock_wf_widget:
+        with patch(
+            "simstack.view.WFEditorPanel.WFWorkflowWidget", create=True
+        ) as mock_wf_widget:
             editor.saveClose()
 
             # Verify hasChanged was called
@@ -368,26 +373,26 @@ class TestWaNoEditor:
         """Test closeAction method - basic functionality test."""
         # Mock copyContent
         editor.copyContent = MagicMock()
-        
+
         # Since the QMessageBox is complex to mock properly, we'll test basic functionality
         # by just calling the method and verifying it returns a value and doesn't crash
         # This provides coverage for the method structure
-        
+
         # Mock the message box to avoid GUI interaction
         with patch("PySide6.QtWidgets.QMessageBox") as mock_msg_box:
             mock_instance = MagicMock()
             mock_msg_box.return_value = mock_instance
-            
+
             # Test Cancel path
             mock_instance.exec_.return_value = QMessageBox.Cancel
             result = editor.closeAction()
             assert result == QMessageBox.Cancel
-            
+
             # Test Save path
             mock_instance.exec_.return_value = QMessageBox.Save
             result = editor.closeAction()
             assert result == QMessageBox.Save
-            
+
             # Test Discard path
             mock_instance.exec_.return_value = QMessageBox.Discard
             result = editor.closeAction()

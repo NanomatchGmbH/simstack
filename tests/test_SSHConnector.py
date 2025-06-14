@@ -839,7 +839,7 @@ class TestSSHConnector:
         cm_instance.is_connected.return_value = True  # Already connected
         ssh_connector._clustermanagers = {"test_registry": cm_instance}
 
-        with patch("simstack.SSHConnector.SimStackPaths") as mock_paths:
+        with patch("simstack.SSHConnector.SimStackPaths"):
             with patch.object(ssh_connector, "start_server"):
                 callback = MagicMock()
 
