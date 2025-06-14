@@ -103,6 +103,8 @@ class WFItemListInterface(object):
         return self.elementnames[idx]
 
     def collect_wano_widgets(self):
+        from .wf_editor_widgets import WFWaNoWidget
+
         outlist = []
         for element in self.elements:
             if isinstance(element, WFWaNoWidget):
@@ -152,6 +154,8 @@ class WFItemListInterface(object):
         self.editor.openWaNoEditor(wanoWidget)
 
     def removeElement(self, element):
+        from .wf_editor_widgets import WFWaNoWidget
+
         # remove element both from the buttons and child list
         element.close()
         self.editor.remove(element)
@@ -302,6 +306,8 @@ class SubWFModel(WFItemModel, WFItemListInterface):
 
         for child in xml_subelement:
             if child.tag == "WaNo":
+                from .wf_editor_widgets import WFWaNoWidget
+
                 type = child.attrib["type"]
                 name = child.attrib["name"]
                 uuid = child.attrib["uuid"]
@@ -364,6 +370,8 @@ class SubWFModel(WFItemModel, WFItemListInterface):
         return root
 
     def remove_element(self, element):
+        from .wf_editor_widgets import WFWaNoWidget
+
         myid = self.elements.index(element)
         self.elements.remove(element)
         del self.elementnames[myid]
@@ -1165,6 +1173,8 @@ class WFModel:
             shutil.rmtree(possible_folder)
 
     def collect_wano_widgets(self):
+        from .wf_editor_widgets import WFWaNoWidget
+
         outlist = []
         for element in self.elements:
             if isinstance(element, WFWaNoWidget):
@@ -1336,6 +1346,8 @@ class WFModel:
         foldername_path = pathlib.Path(foldername)
         for child in root:
             if child.tag == "WaNo":
+                from .wf_editor_widgets import WFWaNoWidget
+
                 type = child.attrib["type"]
                 name = child.attrib["name"]
                 uuid = child.attrib["uuid"]
@@ -1438,6 +1450,8 @@ class WFModel:
         element.view.show()
 
     def remove_element(self, element):
+        from .wf_editor_widgets import WFWaNoWidget
+
         myid = self.elements.index(element)
         self.elements.remove(element)
         del self.elementnames[myid]
@@ -1519,21 +1533,6 @@ class VariableModel(WFItemModel):
         assert attribs["type"] == "Variable"
         self._varequation = attribs["equation"]
         self._varname = attribs["varname"]
-
-
-# Note: WFWaNoWidget and ControlFactory are defined in the main WFEditorPanel.py file
-# and are imported here through circular dependencies. This is a temporary solution
-# until the full refactoring is complete.
-
-# Forward declarations for classes that will need to be imported or defined elsewhere:
-# - WFWaNoWidget: Widget class for WaNo components
-# - ControlFactory: Factory class for creating control model/view pairs
-
-
-class WFWaNoWidget:
-    """Placeholder for WFWaNoWidget class - will be imported from WFEditorPanel.py"""
-
-    pass
 
 
 # ControlFactory import will be done at runtime to avoid circular imports

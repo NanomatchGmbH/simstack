@@ -257,7 +257,7 @@ class TestWFItemListInterface:
         class MockWFWaNoWidget:
             pass
 
-        with patch("simstack.view.wf_editor_models.WFWaNoWidget", MockWFWaNoWidget):
+        with patch("simstack.view.wf_editor_widgets.WFWaNoWidget", MockWFWaNoWidget):
             mock_wano = MockWFWaNoWidget()
 
             item_list.elements = [mock_wano]
@@ -272,7 +272,7 @@ class TestWFItemListInterface:
         class MockWFWaNoWidget:
             pass
 
-        with patch("simstack.view.wf_editor_models.WFWaNoWidget", MockWFWaNoWidget):
+        with patch("simstack.view.wf_editor_widgets.WFWaNoWidget", MockWFWaNoWidget):
             mock_element = MockWFWaNoWidget()
             mock_element.close = MagicMock()
             mock_element.view = MagicMock()
@@ -526,7 +526,7 @@ class TestSubWFModel:
         mock_root = MagicMock()
         mock_root.get_wf_read_version.return_value = "2.0"
         with patch.object(sub_wf_model, "get_root", return_value=mock_root), patch(
-            "simstack.view.wf_editor_models.WFWaNoWidget"
+            "simstack.view.wf_editor_widgets.WFWaNoWidget"
         ) as mock_wfwanowidget, patch("pathlib.Path"), patch(
             "simstack.view.wf_editor_models.WaNoDelta"
         ) as mock_wanodelta:
@@ -575,7 +575,7 @@ class TestSubWFModel:
 
     def test_remove_element_with_wano_cleanup(self, sub_wf_model):
         """Test remove_element with WaNo cleanup."""
-        from simstack.view.wf_editor_models import WFWaNoWidget
+        from simstack.view.wf_editor_widgets import WFWaNoWidget
 
         # Create a mock element that is instance of WFWaNoWidget
         mock_element = MagicMock()
@@ -2218,7 +2218,7 @@ class TestWFModel:
 
     def test_collect_wano_widgets_with_mixed_elements(self, wf_model):
         """Test collect_wano_widgets with mixed element types."""
-        from simstack.view.wf_editor_models import WFWaNoWidget
+        from simstack.view.wf_editor_widgets import WFWaNoWidget
 
         # Create mock WaNo widgets that properly inherit from the base class
         mock_wano1 = MagicMock(spec=WFWaNoWidget)
@@ -2487,7 +2487,7 @@ class TestWFModel:
             with patch(
                 "simstack.view.wf_editor_models.etree.parse", return_value=mock_tree
             ), patch(
-                "simstack.view.wf_editor_models.WFWaNoWidget"
+                "simstack.view.wf_editor_widgets.WFWaNoWidget"
             ) as mock_wfwanowidget, patch("pathlib.Path"), patch(
                 "simstack.view.wf_editor_models.WaNoDelta"
             ) as mock_wanodelta, patch(
@@ -2677,7 +2677,7 @@ class TestWFModel:
         class MockWFWaNoWidget:
             pass
 
-        with patch("simstack.view.wf_editor_models.WFWaNoWidget", MockWFWaNoWidget):
+        with patch("simstack.view.wf_editor_widgets.WFWaNoWidget", MockWFWaNoWidget):
             mock_element = MockWFWaNoWidget()
             mock_element.wano = MagicMock()
             mock_element.wano.name = "TestWaNo"
