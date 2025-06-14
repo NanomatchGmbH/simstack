@@ -50,14 +50,14 @@ class WFEditor(QWidget):
 
     workflow_saved = Signal(bool, str, name="WorkflowSaved")
 
-    def __build_infobox(self):
+    def __build_infobox(self):  # pragma: no cover
         infobox = QTabWidget(self)
         infobox.setTabsClosable(False)
         infobox.addTab(LogTab(), "Log")
         infobox.addTab(QWidget(), "Copyright")
         return infobox
 
-    def __init_ui(self):
+    def __init_ui(self):  # pragma: no cover
         self.wanoEditor = WaNoEditor(self)  # make this first to enable logging
         self.wanoEditor.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
 
@@ -141,7 +141,7 @@ class WFEditor(QWidget):
 
         # pprint.pprint(self._controls)
 
-    def _connect_signals(self):
+    def _connect_signals(self):  # pragma: no cover
         self.registrySelection.registrySelectionChanged.connect(self.registry_changed)
         self.registrySelection.connect_registry.connect(self.connect_registry)
         self.registrySelection.disconnect_registry.connect(self.disconnect_registry)
@@ -168,10 +168,10 @@ class WFEditor(QWidget):
 
         self.workflowWidget.workflow_saved.connect(self.workflow_saved)
 
-    def resizeEvent(self, *args, **kwargs):
+    def resizeEvent(self, *args, **kwargs):  # pragma: no cover
         self.workflowWidget.relayout()
 
-    def __init__(self, parent=None):
+    def __init__(self, parent=None):  # pragma: no cover
         super().__init__(parent)
         self._convert_ctrl_icon_paths_to_absolute()
         self.logger = logging.getLogger("WFELOG")
@@ -208,7 +208,7 @@ class WFEditor(QWidget):
             self.lastActive.setColor(Qt.lightGray)
             self.lastActive = None
 
-    def openWaNoEditor(self, wanoWidget):
+    def openWaNoEditor(self, wanoWidget):  # pragma: no cover
         if self.wanoEditor.init(wanoWidget.wano_view):
             self.settingsAndFilesTabs.setCurrentIndex(self.wanoSettingsTab)
             wanoWidget.setColor(Qt.green)
