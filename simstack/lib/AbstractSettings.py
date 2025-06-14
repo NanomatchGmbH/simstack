@@ -279,23 +279,3 @@ class TestSettings(AbstractSettings):
         for valuename, default, explanation in defaults:
             self._add_default(valuename, default, explanation)
 
-
-if __name__ == "__main__":
-    # Small unit test.
-    import os
-
-    myset = TestSettings()
-    myset.parse_eq_args(sys.argv)
-    myset._finish_parsing()
-
-    if len(sys.argv) <= 1:
-        print("Use this class with: %s Box.Lx=11" % os.path.basename(__file__))
-        print("Afterwards check the file TestSettings.yml\n")
-        myset.print_options(sys.stdout)
-
-    # These are the current two ways to access the data:
-    settings_filename = myset.get_value("settings.filename")
-    settings_filename2 = myset.as_dict()["settings"]["filename"]
-    assert settings_filename == settings_filename2
-    myset.dump_to_file(settings_filename)
-    print("\nWrote settings to %s" % settings_filename)
