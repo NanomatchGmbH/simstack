@@ -1196,3 +1196,192 @@ class TestWFEditorApplication:
         app._update_saved_registries.assert_called_once()
         app._update_wanos.assert_called_once()
         app._update_workflow_list.assert_called_once()
+
+    def test_on_connect_error(self, app):
+        """Test _on_connect_error method (stub method)"""
+        # This is a stub method that currently does nothing
+        # Just verify it can be called without error
+        app._on_connect_error("base_uri", "error")
+
+    def test_on_disconnect_error(self, app):
+        """Test _on_disconnect_error method (stub method)"""
+        # This is a stub method that currently does nothing
+        # Just verify it can be called without error
+        app._on_disconnect_error("base_uri", "error")
+
+    def test_on_workflow_aborted(self, app):
+        """Test _on_workflow_aborted method (stub method)"""
+        # This is a stub method that currently does nothing (commented out code)
+        # Just verify it can be called without error
+        app._on_workflow_aborted("base_uri", "status", "err", workflow="workflow1")
+
+    @patch("simstack.WFEditorApplication.print")
+    def test_on_upload_update(self, mock_print, app):
+        """Test __on_upload_update method"""
+        # Mock _on_fs_job_update_request
+        app._on_fs_job_update_request = MagicMock()
+        
+        # Test with progress < 100%
+        app._WFEditorApplication__on_upload_update("uri", "localfile", 50, 100)
+        
+        # Verify print was called but update was not
+        mock_print.assert_called()
+        app._on_fs_job_update_request.assert_not_called()
+        
+        # Test with progress >= 100%
+        app._WFEditorApplication__on_upload_update("uri", "localfile", 100, 100)
+        
+        # Verify update was called
+        app._on_fs_job_update_request.assert_called_once_with("uri")
+
+    @patch("simstack.WFEditorApplication.print")
+    def test_on_download_update(self, mock_print, app):
+        """Test __on_download_update method"""
+        # Call the method
+        app._WFEditorApplication__on_download_update("uri", "localdest", 75, 100)
+        
+        # Verify print was called with correct format
+        mock_print.assert_called_once()
+        args = mock_print.call_args[0][0]
+        assert "75.00" in args and "uri" in args
+
+    def test_disconnect_remote_no_status_update(self, app):
+        """Test _disconnect_remote method with no_status_update=True"""
+        # Mock methods
+        app._get_current_registry_name = MagicMock(return_value="test_registry")
+        
+        # Call method with no_status_update=True
+        app._disconnect_remote(no_status_update=True)
+        
+        # Verify logger was called
+        app._logger.info.assert_called_once_with("Disconnecting from registry")
+        
+        # Verify connector was called
+        app._connector.disconnect_registry.assert_called_once()
+
+    def test_connect_remote_no_status_update(self, app):
+        """Test _connect_remote method with no_status_update=True"""
+        # Mock methods
+        app._set_connecting = MagicMock()
+        app._set_current_registry_name = MagicMock()
+        app._get_current_registry = MagicMock()
+        
+        registry_name = "test_registry"
+        
+        # Call method with no_status_update=True
+        app._connect_remote(registry_name, no_status_update=True)
+        
+        # Verify _set_connecting was NOT called
+        app._set_connecting.assert_not_called()
+        
+        # Verify other methods were still called
+        app._set_current_registry_name.assert_called_once_with(registry_name)
+        app._get_current_registry.assert_called_once()
+        app._connector.connect_registry.assert_called_once()
+
+    def test_reconnect_remote_no_current_registry(self, app):
+        """Test _reconnect_remote method when no current registry"""
+        # Mock methods
+        app._set_connecting = MagicMock()
+        app._get_current_registry_name = MagicMock(return_value=None)
+        app._disconnect_remote = MagicMock()
+        app._connect_remote = MagicMock()
+        
+        registry_name = "new_registry"
+        
+        # Call method
+        app._reconnect_remote(registry_name)
+        
+        # Verify disconnect was NOT called (no current registry)
+        app._disconnect_remote.assert_not_called()
+        
+        # Verify connect was called
+        app._connect_remote.assert_called_once_with(registry_name)
+
+    def test_error_operation_mapping(self, app):
+        """Test _on_error method operation mapping logic"""
+        # Test DISCONNECT_REGISTRY operation maps to _on_connect_error
+        app._on_connect_error = MagicMock()
+        
+        app._on_error("registry", uops.DISCONNECT_REGISTRY.value, uerror.NO_ERROR.value)
+        
+        # Verify _on_connect_error was called (line 70 mapping)
+        app._on_connect_error.assert_called_once_with("registry", uerror.NO_ERROR.value)
+
+    def test_error_workflow_operations(self, app):
+        """Test _on_error method for workflow operations"""
+        # Mock _on_run_single_job_error
+        app._on_run_single_job_error = MagicMock()
+        
+        # Test workflow operations that map to _on_run_single_job_error
+        for operation in [uops.UPDATE_WF_LIST, uops.UPDATE_WF_JOB_LIST, 
+                         uops.UPDATE_DIR_LIST, uops.RUN_WORKFLOW_JOB]:
+            app._on_run_single_job_error.reset_mock()
+            app._on_error("registry", operation.value, uerror.NO_ERROR.value)
+            app._on_run_single_job_error.assert_called_once_with("registry", uerror.NO_ERROR.value)
+
+    def test_error_auto_generated_message(self, app):
+        """Test _on_error method with auto-generated error message"""
+        # Call method without error_msg (should auto-generate)
+        app._on_error("registry", uops.DELETE_FILE.value, uerror.NO_ERROR.value)
+        
+        # Verify show_error was called with auto-generated message
+        app._view_manager.show_error.assert_called_once()
+        args = app._view_manager.show_error.call_args[0]
+        assert args[0] == "General Error."
+        # The second argument should contain the auto-generated message
+        assert "registry" in args[1] and "DELETE_FILE" in args[1]
+
+    @patch("simstack.WFEditorApplication.Path")
+    @patch("simstack.WFEditorApplication.zipfile")
+    @patch("simstack.WFEditorApplication.QtGui")
+    @patch("simstack.WFEditorApplication.QtWidgets")
+    @patch("simstack.WFEditorApplication.get_wano_xml_path")
+    def test_load_wanos_from_repo_zip(self, mock_get_xml_path, mock_qtwidgets, 
+                                     mock_qtgui, mock_zipfile, mock_path, app):
+        """Test __load_wanos_from_repo method with zip files"""
+        # This tests the complex WaNo loading logic that's not currently covered
+        # Mock path operations
+        mock_repo_path = MagicMock()
+        mock_path.return_value = mock_repo_path
+        
+        # Mock zip file
+        mock_zip_path = MagicMock()
+        mock_zip_path.name = "test_wano.zip"
+        mock_zip_path.is_dir.return_value = False
+        mock_zip_path.__str__.return_value = "test_wano.zip"
+        
+        # Mock directory iteration
+        mock_repo_path.iterdir.return_value = [mock_zip_path]
+        
+        # Mock zipfile.Path
+        mock_zipfile_path = MagicMock()
+        mock_zipfile.Path.return_value = mock_zipfile_path
+        
+        # Mock XML path
+        mock_xml_path = MagicMock()
+        mock_xml_path.is_file.return_value = True
+        mock_xml_path.open.return_value.__enter__ = MagicMock()
+        mock_xml_path.open.return_value.__exit__ = MagicMock()
+        mock_get_xml_path.return_value = mock_xml_path
+        
+        # Mock icon path (no icon)
+        mock_icon_path = MagicMock()
+        mock_icon_path.is_file.return_value = False
+        mock_zipfile_path.__truediv__.return_value = mock_icon_path
+        
+        # Mock Qt icon provider
+        mock_icon_provider = MagicMock()
+        mock_pixmap = MagicMock()
+        mock_icon_provider.icon.return_value.pixmap.return_value = mock_pixmap
+        mock_qtwidgets.QFileIconProvider.return_value = mock_icon_provider
+        
+        # Clear existing wanos
+        app.wanos = []
+        
+        # Call method
+        result = app._WFEditorApplication__load_wanos_from_repo("/test/path")
+        
+        # Verify WaNo was loaded
+        assert len(result) == 1
+        assert result[0].name == "test_wano"

@@ -431,3 +431,89 @@ def test_load_from_dict_invalid():
     # Try to load a non-dict value
     with pytest.raises(ValueError):
         settings.load_from_dict("invalid")
+
+
+def test_getattr_not_implemented():
+    """Test __getattr__ method raises NotImplementedError"""
+    settings = TestConcreteSettings("TestSettings")
+    
+    # Try to access an attribute that doesn't exist - should raise NotImplementedError
+    with pytest.raises(NotImplementedError, match="Still todo"):
+        settings.some_nonexistent_attribute
+
+
+def test_abstract_set_defaults():
+    """Test calling _set_defaults on base AbstractSettings class"""
+    # This should raise NotImplementedError for the abstract method
+    
+    class IncompleteSettings(AbstractSettings):
+        # Don't implement _set_defaults
+        pass
+    
+    with pytest.raises(NotImplementedError, match="Abstract Virtual Method"):
+        incomplete = IncompleteSettings("Incomplete")
+
+
+def test_set_value_list_appending():
+    """Test set_value method with list appending scenarios"""
+    settings = TestConcreteSettings("TestSettings")
+    
+    # Test appending to a list by creating new nested structures
+    settings.set_value("new_list.0.dict_key", "value1")
+    settings.set_value("new_list.1.list_key.0", "value2")
+    
+    # Verify the structures were created correctly
+    assert settings.get_value("new_list.0.dict_key") == "value1"
+    assert settings.get_value("new_list.1.list_key.0") == "value2"
+
+
+def test_set_value_complex_validation():
+    """Test set_value method complex validation paths"""
+    settings = TestConcreteSettings("TestSettings")
+    
+    # Create a list first
+    settings.set_value("test_list.0", "first")
+    
+    # Test accessing list element during validation (line 125)
+    settings.set_value("test_list.0", "updated_first")
+    assert settings.get_value("test_list.0") == "updated_first"
+
+
+def test_set_value_list_index_error():
+    """Test set_value with out-of-range list assignment"""
+    settings = TestConcreteSettings("TestSettings")
+    
+    # Create a list with one element
+    settings.set_value("test_list.0", "first")
+    
+    # Try to set index 2 (skipping 1) - should raise IndexError
+    with pytest.raises(IndexError, match="Out of range"):
+        settings.set_value("test_list.2", "third")
+
+
+def test_parse_eq_args_missing_final_key():
+    """Test parse_eq_args with missing final key and createdicts=False"""
+    settings = TestConcreteSettings("TestSettings")
+    
+    # Create a nested structure but not the final key
+    settings.set_value("existing.intermediate", "value")
+    
+    # Try to set a nonexistent final key with createdicts=False
+    args = ["existing.intermediate.nonexistent=value"]
+    
+    with pytest.raises(KeyError, match="The settings module did not contain"):
+        settings.parse_eq_args(args, createdicts=False)
+
+
+def test_set_value_direct_list_assignment():
+    """Test direct list element assignment (line 152)"""
+    settings = TestConcreteSettings("TestSettings")
+    
+    # Use the existing list from _set_defaults
+    # Modify an existing list element directly
+    settings.set_value("list.0", "modified_first")
+    assert settings.settings_container["list"][0] == "modified_first"
+    
+    # Set the second element
+    settings.set_value("list.1", "modified_second") 
+    assert settings.settings_container["list"][1] == "modified_second"
