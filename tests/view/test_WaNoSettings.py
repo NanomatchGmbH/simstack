@@ -160,9 +160,9 @@ class TestWaNoTabButtonsWidget:
     def test_signals_connected(self, tab_buttons):
         """Test signals are connected."""
         # Verify signals are properly connected by checking the custom signals exist
-        assert hasattr(tab_buttons, 'addClicked')
-        assert hasattr(tab_buttons, 'removeClicked')
-        
+        assert hasattr(tab_buttons, "addClicked")
+        assert hasattr(tab_buttons, "removeClicked")
+
         # Verify the buttons exist and can be accessed
         add_btn = tab_buttons._WaNoTabButtonsWidget__btn_addRegistry
         remove_btn = tab_buttons._WaNoTabButtonsWidget__btn_removeRegistry
@@ -226,10 +226,12 @@ class TestSimStackClusterSettingsView:
     @pytest.fixture
     def cluster_settings_view(self, qtbot):
         """Create a SimStackClusterSettingsView instance."""
-        with patch('simstack.lib.QtClusterSettingsProvider.QtClusterSettingsProvider.get_registries') as mock_registries:
+        with patch(
+            "simstack.lib.QtClusterSettingsProvider.QtClusterSettingsProvider.get_registries"
+        ) as mock_registries:
             # Mock empty registries to avoid complex initialization
             mock_registries.return_value = {}
-            
+
             dialog = SimStackClusterSettingsView()
             qtbot.addWidget(dialog)
             return dialog
@@ -237,24 +239,26 @@ class TestSimStackClusterSettingsView:
     def test_init(self, cluster_settings_view):
         """Test initialization of SimStackClusterSettingsView."""
         assert cluster_settings_view is not None
-        assert hasattr(cluster_settings_view, '_registries')
+        assert hasattr(cluster_settings_view, "_registries")
 
-    @patch('simstack.lib.QtClusterSettingsProvider.QtClusterSettingsProvider.get_instance')
+    @patch(
+        "simstack.lib.QtClusterSettingsProvider.QtClusterSettingsProvider.get_instance"
+    )
     def test_on_save(self, mock_get_instance, cluster_settings_view):
         """Test the __on_save method."""
         # Mock the provider instance
         mock_provider = MagicMock()
         mock_get_instance.return_value = mock_provider
-        
+
         # Call the private method
         cluster_settings_view._SimStackClusterSettingsView__on_save()
-        
+
         # Verify write_settings was called
         mock_provider.write_settings.assert_called_once()
 
     def test_on_cancel(self, cluster_settings_view):
         """Test the __on_cancel method."""
         # Mock the reject method to avoid actually closing the dialog
-        with patch.object(cluster_settings_view, 'reject') as mock_reject:
+        with patch.object(cluster_settings_view, "reject") as mock_reject:
             cluster_settings_view._SimStackClusterSettingsView__on_cancel()
             mock_reject.assert_called_once()

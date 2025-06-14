@@ -193,12 +193,11 @@ def test_on_selection_change_with_autoset_text(qtbot):
     # Select items to trigger _on_selection_change
     mdl._list.item(0).setSelected(True)
     mdl._list.item(2).setSelected(True)
-    
-    # Trigger the selection change manually - this will raise TypeError on signal emission
-    with pytest.raises(TypeError):
-        mdl._on_selection_change()
 
-    # We covered the method even though it has a bug
+    # Trigger the selection change manually - should work now that bug is fixed
+    mdl._on_selection_change()
+
+    # Method executed successfully
 
 
 def test_on_selection_change_empty_selection(qtbot):
@@ -213,12 +212,11 @@ def test_on_selection_change_empty_selection(qtbot):
 
     # Clear all selections
     mdl._list.clearSelection()
-    
-    # Trigger the selection change manually - this will raise TypeError on signal emission
-    with pytest.raises(TypeError):
-        mdl._on_selection_change()
 
-    # We covered the method even though it has a bug
+    # Trigger the selection change manually - should work now that bug is fixed
+    mdl._on_selection_change()
+
+    # Method executed successfully
 
 
 def test_connect_workaround(qtbot):
@@ -227,19 +225,20 @@ def test_connect_workaround(qtbot):
     qtbot.addWidget(parent)
 
     mdl = MultiselectDropDownList(parent, text="Test")
-    
+
     # Mock function to connect
-    mock_function = lambda: None
-    
+    def mock_function():
+        return None
+
     # This should not raise any errors
     mdl.connect_workaround(mock_function)
-    
+
     # Verify the signal exists
-    assert hasattr(mdl, 'menuAboutToShow')
+    assert hasattr(mdl, "menuAboutToShow")
 
 
 def test_item_selection_changed_signal(qtbot):
-    """Test that itemSelectionChanged signal emission is attempted (but fails due to bug)"""
+    """Test that itemSelectionChanged signal is emitted correctly"""
     parent = QtWidgets.QWidget()
     qtbot.addWidget(parent)
 
@@ -247,9 +246,9 @@ def test_item_selection_changed_signal(qtbot):
     items = ["item1", "item2", "item3"]
     mdl.set_items(items)
 
-    # The signal emission will fail due to TypeError, but we can test that it's attempted
-    with pytest.raises(TypeError):
+    # Set up signal spy to catch the signal emission
+    with qtbot.waitSignal(mdl.itemSelectionChanged) as signal_spy:
         mdl._on_selection_change()
-    
-    # Verify the signal exists
-    assert hasattr(mdl, 'itemSelectionChanged')
+
+    # Verify signal was emitted
+    assert signal_spy.signal_triggered

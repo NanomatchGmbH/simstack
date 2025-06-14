@@ -1,5 +1,4 @@
 import abc
-import sys
 from six import string_types
 import logging
 import yaml
@@ -278,4 +277,3 @@ class TestSettings(AbstractSettings):
         ]
         for valuename, default, explanation in defaults:
             self._add_default(valuename, default, explanation)
-

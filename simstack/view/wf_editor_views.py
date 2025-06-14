@@ -969,7 +969,6 @@ class ForEachView(WFControlWithTopMiddleAndBottom):
     def _on_line_edit(self):
         self.model.itername = self.itername_widget.text()
 
-
     def line_edited(self):
         files = self.list_of_variables.text()
         self.model.set_filelist(files)

@@ -583,4 +583,3 @@ class WFERemoteFileSystemModel(WFEFileSystemModel):
                 super().loading(child, text="Loading")
         else:
             self.removeSubRows(index)
-

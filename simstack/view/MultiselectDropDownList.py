@@ -27,7 +27,7 @@ class MultiselectDropDownList(DropDownWidgetPushButton):
             self.setText(shortened)
         else:
             self.setText(self.text)
-        self.itemSelectionChanged.emit(self)
+        self.itemSelectionChanged.emit()
 
     """Returns a list of strings of the selected items
 
