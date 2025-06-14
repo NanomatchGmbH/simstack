@@ -25,7 +25,6 @@ def pytest_collection_modifyitems(config, items):
             or "test_WFEditorTreeModels" in item.nodeid
             and "test_get_icon_type" in item.nodeid
             or "test_WFEditorWidgets" in item.nodeid
-            or "test_WaNoEditorWidget" in item.nodeid
             or "test_WaNoSettings" in item.nodeid
             and "test_signals_connected" in item.nodeid
         ):
