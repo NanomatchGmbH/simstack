@@ -350,3 +350,113 @@ class TestWhileView:
 
         assert view.logical_parent is logical_parent
         assert hasattr(view, "vbox")
+
+
+class TestControlFactoryUtilityMethods:
+    """Tests for simple utility methods in the file."""
+
+    def test_wf_filename_custom_extension(self):
+        """Test WFFileName with different extensions."""
+        filename = WFFileName()
+        filename.ext = "yaml"
+        filename.name = "test"
+        filename.dirName = "/tmp"
+        assert filename.fullName().endswith("test.yaml")
+
+    def test_wf_filename_empty_dir(self):
+        """Test WFFileName with empty directory."""
+        filename = WFFileName()
+        filename.dirName = ""
+        filename.name = "workflow"
+        assert filename.fullName() == "workflow.xml"
+
+
+class TestControlViewsSizeHints:
+    """Tests for size hint methods in control views."""
+
+    @patch("simstack.view.wf_editor_views.widgetColors", {"ButtonColor": "#D4FF7F", "Control": "#EBFFD6"})
+    def test_parallel_view_size_hint(self, qtbot):
+        """Test ParallelView sizeHint method."""
+        parent = QWidget()
+        qtbot.addWidget(parent)
+        logical_parent = MagicMock()
+        
+        view = ParallelView(qt_parent=parent, logical_parent=logical_parent)
+        qtbot.addWidget(view)
+        
+        # Test size hint calculation
+        size = view.sizeHint()
+        assert size.width() >= 200
+        assert size.height() >= 100
+
+    @patch("simstack.view.wf_editor_views.widgetColors", {"ButtonColor": "#D4FF7F", "Control": "#EBFFD6"})
+    def test_if_view_size_hint(self, qtbot):
+        """Test IfView sizeHint method."""
+        parent = QWidget()
+        qtbot.addWidget(parent)
+        logical_parent = MagicMock()
+        
+        view = IfView(qt_parent=parent, logical_parent=logical_parent)
+        qtbot.addWidget(view)
+        
+        # Test size hint calculation
+        size = view.sizeHint()
+        assert size.width() >= 200
+        assert size.height() >= 100
+
+    @patch("simstack.view.wf_editor_views.widgetColors", {"ButtonColor": "#D4FF7F", "Control": "#EBFFD6"})
+    def test_variable_view_size_hint(self, qtbot):
+        """Test VariableView sizeHint method."""
+        parent = QWidget()
+        qtbot.addWidget(parent)
+        logical_parent = MagicMock()
+        
+        view = VariableView(qt_parent=parent, logical_parent=logical_parent)
+        qtbot.addWidget(view)
+        
+        # Test size hint calculation
+        size = view.sizeHint()
+        assert size.width() >= 200
+        assert size.height() >= 100
+
+
+class TestControlViewProperties:
+    """Tests for simple property access in control views."""
+
+    @patch("simstack.view.wf_editor_views.widgetColors", {"ButtonColor": "#D4FF7F", "Control": "#EBFFD6"})
+    def test_foreach_view_line_edited(self, qtbot):
+        """Test ForEachView line_edited method."""
+        parent = QWidget()
+        qtbot.addWidget(parent)
+        logical_parent = MagicMock()
+        
+        view = ForEachView(qt_parent=parent, logical_parent=logical_parent)
+        qtbot.addWidget(view)
+        
+        # Mock the model and widgets
+        view.model = MagicMock()
+        view.list_of_variables = MagicMock()
+        view.list_of_variables.text.return_value = "file1.txt file2.txt"
+        
+        # Test line_edited method
+        view.line_edited()
+        view.model.set_filelist.assert_called_once_with("file1.txt file2.txt")
+
+    @patch("simstack.view.wf_editor_views.widgetColors", {"ButtonColor": "#D4FF7F", "Control": "#EBFFD6"})
+    def test_foreach_view_on_line_edit(self, qtbot):
+        """Test ForEachView _on_line_edit method."""
+        parent = QWidget()
+        qtbot.addWidget(parent)
+        logical_parent = MagicMock()
+        
+        view = ForEachView(qt_parent=parent, logical_parent=logical_parent)
+        qtbot.addWidget(view)
+        
+        # Mock the model and widgets
+        view.model = MagicMock()
+        view.itername_widget = MagicMock()
+        view.itername_widget.text.return_value = "test_iterator"
+        
+        # Test _on_line_edit method
+        view._on_line_edit()
+        assert view.model.itername == "test_iterator"

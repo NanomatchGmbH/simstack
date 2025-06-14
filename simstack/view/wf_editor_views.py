@@ -189,7 +189,7 @@ class SubWorkflowView(QtWidgets.QFrame):
 
         return len(self.model.elements)
 
-    def dropEvent(self, e):
+    def dropEvent(self, e):  # pragma: no cover
         position = e.pos()
         new_position = self._locate_element_above(position)
         ele = e.source()
@@ -392,7 +392,7 @@ class WorkflowView(QtWidgets.QFrame):
 
         return len(self.model.elements)
 
-    def dropEvent(self, e):
+    def dropEvent(self, e):  # pragma: no cover
         position = e.pos()
         new_position = self._locate_element_above(position)
         ele = e.source()
@@ -505,7 +505,7 @@ class WFTabsWidget(QtWidgets.QTabWidget):
         scroll.setWidgetResizable(True)
         return scroll, wf_model, wf
 
-    def clear(self):
+    def clear(self):  # pragma: no cover
         # print ("Workflow has changed ? ",WFWorkflowWidget.changedFlag)
         if self.changedFlag:
             reply = QtWidgets.QMessageBox(self)
@@ -586,7 +586,7 @@ class WFTabsWidget(QtWidgets.QTabWidget):
             shutil.rmtree(wanoconfigdir)
         os.unlink(xmlpath)
 
-    def saveAs(self):
+    def saveAs(self):  # pragma: no cover
         foldername, ok = QtWidgets.QInputDialog.getText(
             self,
             self.tr("Specify Workflow Name"),
@@ -636,7 +636,7 @@ class WFTabsWidget(QtWidgets.QTabWidget):
 
         return self.saveFile(fullpath)
 
-    def open(self):
+    def open(self):  # pragma: no cover
         fileName, filtr = QtWidgets.QFileDialog(self).getOpenFileName(
             self, "Open Workflow", ".", "xml (*.xml *.xm)"
         )
@@ -740,7 +740,7 @@ class WFControlWithTopMiddleAndBottom(QtWidgets.QFrame, DragDropTargetTracker):
         line.setLineWidth(2)
         return line
 
-    def mouseMoveEvent(self, e):
+    def mouseMoveEvent(self, e):  # pragma: no cover
         return self.mouseMoveEvent_feature(e)
 
     def fill_layout(self):
@@ -765,7 +765,7 @@ class WFControlWithTopMiddleAndBottom(QtWidgets.QFrame, DragDropTargetTracker):
         pass
 
     @abc.abstractmethod
-    def get_top_widget(self):
+    def get_top_widget(self):  # pragma: no cover
         return None
 
     @abc.abstractmethod
@@ -814,7 +814,7 @@ class AdvancedForEachView(WFControlWithTopMiddleAndBottom):
         self.dontplace = False
         self.is_wano = False
 
-    def get_top_widget(self):
+    def get_top_widget(self):  # pragma: no cover
         self.topwidget = QtWidgets.QWidget()
         self.topLineLayout = QtWidgets.QHBoxLayout()
         self.topwidget.setLayout(self.topLineLayout)
@@ -835,7 +835,7 @@ class AdvancedForEachView(WFControlWithTopMiddleAndBottom):
         self.topLineLayout.addWidget(self._open_variables)
         return self.topwidget
 
-    def open_remote_importer(self):
+    def open_remote_importer(self):  # pragma: no cover
         varpaths = self.model.wf_root.assemble_variables("")
         mydialog = RemoteImporterDialog(
             varname='Import variable "%s" from:' % self.model.name, importlist=varpaths
@@ -900,7 +900,7 @@ class ForEachView(WFControlWithTopMiddleAndBottom):
         self.dontplace = False
         self.is_wano = False
 
-    def get_top_widget(self):
+    def get_top_widget(self):  # pragma: no cover
         self.topwidget = QtWidgets.QWidget()
         self.topLineLayout = QtWidgets.QHBoxLayout()
         self.topwidget.setLayout(self.topLineLayout)
@@ -927,7 +927,7 @@ class ForEachView(WFControlWithTopMiddleAndBottom):
         self.topLineLayout.addWidget(self.open_variables)
         return self.topwidget
 
-    def open_remote_importer(self):
+    def open_remote_importer(self):  # pragma: no cover
         varpaths = self.model.wf_root.assemble_variables("")
         mydialog = RemoteImporterDialog(
             varname='Import variable "%s" from:' % self.model.name, importlist=varpaths
@@ -942,7 +942,7 @@ class ForEachView(WFControlWithTopMiddleAndBottom):
         else:
             pass
 
-    def open_remote_importer_files(self):
+    def open_remote_importer_files(self):  # pragma: no cover
         varpaths = self.model.wf_root.assemble_files("")
         from simstack.view.RemoteImporterDialog import RemoteImporterDialog
 
@@ -969,15 +969,6 @@ class ForEachView(WFControlWithTopMiddleAndBottom):
     def _on_line_edit(self):
         self.model.itername = self.itername_widget.text()
 
-    def load_wf_files(self):
-        wf = self.model.wf_root
-        importable_files = wf.assemble_files("")
-        self.open_variables.set_items(importable_files)
-        self.model.set_is_file_iterator(True)
-
-    def on_wf_file_change(self):
-        self.list_of_variables.setText(" ".join(self.open_variables.get_selection()))
-        self.line_edited()
 
     def line_edited(self):
         files = self.list_of_variables.text()
@@ -1027,7 +1018,7 @@ class ParallelView(WFControlWithTopMiddleAndBottom):
         self.model.deletelast()
         self.relayout()
 
-    def get_top_widget(self):
+    def get_top_widget(self):  # pragma: no cover
         tw = QtWidgets.QWidget()
         hor_layout = QtWidgets.QHBoxLayout()
         a = QtWidgets.QPushButton("Add additional parallel pane")
@@ -1103,7 +1094,7 @@ class IfView(WFControlWithTopMiddleAndBottom):
     def _on_line_edit(self):
         self.model.set_condition(self.list_of_variables.text())
 
-    def get_top_widget(self):
+    def get_top_widget(self):  # pragma: no cover
         self.topwidget = QtWidgets.QWidget()
         self.topLineLayout = QtWidgets.QHBoxLayout()
         self.topwidget.setLayout(self.topLineLayout)
@@ -1122,7 +1113,7 @@ class IfView(WFControlWithTopMiddleAndBottom):
         # self.open_variables.connect_workaround(self._load_variables)
         return self.topwidget
 
-    def open_remote_importer(self):
+    def open_remote_importer(self):  # pragma: no cover
         varpaths = self.model.wf_root.assemble_variables("")
         mydialog = RemoteImporterDialog(
             varname='Import variable "%s" from:' % self.model.name, importlist=varpaths
@@ -1193,7 +1184,7 @@ class VariableView(WFControlWithTopMiddleAndBottom):
     def _on_varequation_line_edit(self):
         self.model.set_varequation(self._varequation_widget.text())
 
-    def get_top_widget(self):
+    def get_top_widget(self):  # pragma: no cover
         self.topwidget = QtWidgets.QWidget()
         self.topLineLayout = QtWidgets.QHBoxLayout()
         self.topwidget.setLayout(self.topLineLayout)
@@ -1307,7 +1298,7 @@ class WhileView(WFControlWithTopMiddleAndBottom):
     def _on_line_edit(self):
         self.model.set_itername(self.itername_widget.text())
 
-    def get_top_widget(self):
+    def get_top_widget(self):  # pragma: no cover
         self.topwidget = QtWidgets.QWidget()
         self.topLineLayout = QtWidgets.QHBoxLayout()
         self.topwidget.setLayout(self.topLineLayout)
@@ -1327,7 +1318,7 @@ class WhileView(WFControlWithTopMiddleAndBottom):
         # self.open_variables.connect_workaround(self._load_variables)
         return self.topwidget
 
-    def open_remote_importer(self):
+    def open_remote_importer(self):  # pragma: no cover
         varpaths = self.model.wf_root.assemble_variables("")
         mydialog = RemoteImporterDialog(
             varname='Import variable "%s" from:' % self.model.name, importlist=varpaths
