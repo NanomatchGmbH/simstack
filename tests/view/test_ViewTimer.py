@@ -296,3 +296,21 @@ def test_view_timer_set_or_start_inactive_timer(qtbot):
 
     # Check if setInterval was NOT called
     timer._timer.setInterval.assert_not_called()
+
+
+def test_view_timer_lock_unlock_methods(qtbot):
+    """Test _lock_list and _unlock_list methods"""
+    callback = MagicMock()
+    timer = ViewTimer(callback)
+
+    # Mock QMutex lock and unlock methods
+    timer._lock.lock = MagicMock()
+    timer._lock.unlock = MagicMock()
+
+    # Test _lock_list
+    timer._lock_list()
+    timer._lock.lock.assert_called_once()
+
+    # Test _unlock_list
+    timer._unlock_list()
+    timer._lock.unlock.assert_called_once()
