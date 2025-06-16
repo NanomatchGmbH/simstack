@@ -320,7 +320,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/noarch/referencing-0.36.2-pyh29332c3_0.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/rpds-py-0.25.1-py313h4b2b08d_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/setuptools-80.9.0-pyhff2d567_0.conda
-      - conda: https://repo.prefix.dev/simstack/noarch/simstackserver-1.6.0-py_0.conda
+      - conda: https://repo.prefix.dev/simstack/noarch/simstackserver-1.6.1-py_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/six-1.17.0-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/sqlalchemy-2.0.41-py313h536fd9c_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/sshtunnel-0.4.0-pyhd8ed1ab_2.conda
@@ -538,7 +538,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/noarch/referencing-0.36.2-pyh29332c3_0.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/rpds-py-0.25.1-py312h680f630_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/setuptools-80.9.0-pyhff2d567_0.conda
-      - conda: https://repo.prefix.dev/simstack/noarch/simstackserver-1.6.0-py_0.conda
+      - conda: https://repo.prefix.dev/simstack/noarch/simstackserver-1.6.1-py_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/six-1.17.0-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/sqlalchemy-2.0.41-py312h66e93f0_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/sshtunnel-0.4.0-pyhd8ed1ab_2.conda
@@ -739,7 +739,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/noarch/referencing-0.36.2-pyh29332c3_0.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/rpds-py-0.25.1-py313h4b2b08d_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/setuptools-80.9.0-pyhff2d567_0.conda
-      - conda: https://repo.prefix.dev/simstack/noarch/simstackserver-1.6.0-py_0.conda
+      - conda: https://repo.prefix.dev/simstack/noarch/simstackserver-1.6.1-py_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/six-1.17.0-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/sqlalchemy-2.0.41-py313h536fd9c_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/sshtunnel-0.4.0-pyhd8ed1ab_2.conda
@@ -918,7 +918,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/noarch/referencing-0.36.2-pyh29332c3_0.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/rpds-py-0.25.1-py313h4b2b08d_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/setuptools-80.9.0-pyhff2d567_0.conda
-      - conda: https://repo.prefix.dev/simstack/noarch/simstackserver-1.6.0-py_0.conda
+      - conda: https://repo.prefix.dev/simstack/noarch/simstackserver-1.6.1-py_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/six-1.17.0-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/sqlalchemy-2.0.41-py313h536fd9c_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/sshtunnel-0.4.0-pyhd8ed1ab_2.conda
@@ -4099,8 +4099,8 @@ packages:
   sha256: 71d6f17320f4d2f9dbdf1b2f78dc711dd1410a7e13f83a970d58c3413071323a
   requires_python: '>=3.11'
   editable: true
-- conda: https://repo.prefix.dev/simstack/noarch/simstackserver-1.6.0-py_0.conda
-  sha256: c0690110eb10b0c318de5f2ab58a17e4ac54aed8fff18a7c89b11b89db8b49d5
+- conda: https://repo.prefix.dev/simstack/noarch/simstackserver-1.6.1-py_0.conda
+  sha256: a6af669246a011a89bf8abc26caf2e2a19a027b86ae6e6097f1ed5a97082f7e7
   depends:
   - appdirs >=1.4.4
   - clusterjob >=2.1.0,<2.2.0
@@ -4128,8 +4128,8 @@ packages:
   - threadfarm 2.0.0
   - xmltodict >=0.12.0
   license: proprietary
-  size: 423387
-  timestamp: 1750103563910
+  size: 422650
+  timestamp: 1750105963748
 - conda: https://conda.anaconda.org/conda-forge/noarch/six-1.17.0-pyhd8ed1ab_0.conda
   sha256: 41db0180680cc67c3fa76544ffd48d6a5679d96f4b71d7498a759e94edc9a2db
   md5: a451d576819089b0d672f18768be0f65
