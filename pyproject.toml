@@ -60,10 +60,17 @@ pixi-pycharm = "*"
 
 # End of your dependencies
 
+[tool.pixi.feature.serverdev.pypi-dependencies]
+simstackserver = { path = "../simstackserver", editable = true }
+
+[tool.pixi.feature.serverdev.tasks]
+serverdev = "simstack"
+
 [tool.pixi.environments]
 test = { features = ["test"], solve-group = "default" }
 mypy = ["mypy"]
 default = { features = ["dev"], solve-group = "main" }
+serverdev = { features = ["dev", "serverdev"], solve-group = "main" }
 cruft = { features = ["cruft"], no-default-feature = true }
 pythonbuild = { features = ["pythonbuild"], no-default-feature = true, solve-group = "default" }
 condabuild = { features = ["condabuild"], no-default-feature = true, solve-group = "default" }
