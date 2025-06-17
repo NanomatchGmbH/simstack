@@ -130,18 +130,40 @@ When contributing:
 - Ensure features work with the WaNo system
 - Update relevant documentation
 
+### Breaking Changes
+
+- Discuss breaking changes in an issue before implementation
+- Provide migration guide for users
+- Update version appropriately
+- Document all breaking changes in CHANGELOG.md
+
+### Documentation Updates
+
+- Keep documentation up to date with code changes
+- Use clear, concise language
+- Include code examples where helpful
+- Update relevant sections when functionality changes
+
+### Code Refactoring
+
+- Maintain existing functionality while improving code structure
+- Include comprehensive tests to ensure no regressions
+- Document architectural improvements
+- Keep refactoring PRs focused and well-scoped
+
+### Performance Improvements
+
+- Include benchmarks demonstrating performance gains
+- Test across different environments and use cases
+- Consider memory usage and startup time impacts
+- Document performance characteristics
+
 ### UI/UX Improvements
 
 - Maintain consistency with existing Qt design patterns
 - Test on different screen sizes/resolutions
 - Consider accessibility guidelines
 - Provide screenshots in PR description
-
-### Documentation
-
-- Keep documentation up to date with code changes
-- Use clear, concise language
-- Include code examples where helpful
 
 ## Environment-Specific Development
 
@@ -150,7 +172,6 @@ When contributing:
 - `default`: Main development environment (PySide6, dev tools)
 - `test`: Testing environment (pytest, pytest-qt, pytest-xvfb)
 - `lint`: Linting environment (ruff, pre-commit)
-- `mypy`: Type checking environment
 
 Switch environments with: `pixi shell -e <environment-name>`
 
