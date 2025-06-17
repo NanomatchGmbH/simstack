@@ -1,6 +1,6 @@
 # Contributing to SimStack
 
-We welcome contributions to SimStack! This document provides guidelines for contributing to our Qt-based desktop workflow editor application.
+We welcome contributions to SimStack! This document provides guidelines for contributing to the GUI of the SimStack workflow platform.
 
 ## Getting Started
 
@@ -47,7 +47,6 @@ We welcome contributions to SimStack! This document provides guidelines for cont
 We maintain high code quality standards using automated tools:
 
 - **Linting**: Run `pixi run lint` before committing
-- **Type Checking**: Run `pixi run mypy` to check type annotations
 - **Pre-commit Hooks**: Automatically run on commit to enforce standards
 
 ### Testing
@@ -69,7 +68,7 @@ SimStack follows an MVC-like architecture:
 - **Application Layer**: Central controllers (`WFEditorApplication`, settings providers)
 - **UI Layer**: Qt widgets organized in `view/` directory
 - **Remote Operations**: SSH and cluster management components
-- **WaNo System**: Workflow nodes with custom UI views
+- **WaNo System**: Workflow nodes with custom UI views. WaNos are not part of this repository.
 
 When contributing:
 - Follow existing patterns and code organization
@@ -99,12 +98,7 @@ When contributing:
    pixi run lint
    ```
 
-3. Check types:
-   ```bash
-   pixi run mypy
-   ```
-
-4. Update tests if needed and ensure good coverage
+3. Update tests if needed and ensure good coverage
 
 ### Pull Request Guidelines
 
