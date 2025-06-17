@@ -18,9 +18,9 @@ Provide context about what you're trying to accomplish or the problem you're fac
 
 Describe what you've already attempted:
 
-- 
-- 
-- 
+-
+-
+-
 
 ## Environment Information
 

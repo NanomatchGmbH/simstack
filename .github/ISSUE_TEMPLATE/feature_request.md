@@ -50,9 +50,9 @@ If this feature involves UI changes, please provide mockups, sketches, or descri
 - [ ] Documentation
 
 **Potential Challenges:**
-- 
-- 
-- 
+-
+-
+-
 
 ## Priority
 

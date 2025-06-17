@@ -18,9 +18,9 @@
 
 <!-- Describe the specific changes made in this PR -->
 
-- 
-- 
-- 
+-
+-
+-
 
 ## Testing
 
@@ -35,9 +35,9 @@
 
 <!-- If applicable, describe the steps to manually test this PR -->
 
-1. 
-2. 
-3. 
+1.
+2.
+3.
 
 ## Screenshots
 
@@ -64,7 +64,7 @@
 <!-- For significant changes, describe architectural impact -->
 
 - [ ] Follows existing MVC patterns
-- [ ] UI components properly placed in `view/` directory  
+- [ ] UI components properly placed in `view/` directory
 - [ ] Maintains separation between UI and business logic
 - [ ] Compatible with WaNo system (if applicable)
 - [ ] Considers remote operation implications (if applicable)
