@@ -53,7 +53,6 @@
 
 - [ ] Code follows the project's style guidelines
 - [ ] Linting passes (`pixi run lint`)
-- [ ] Type checking passes (`pixi run mypy`)
 - [ ] Pre-commit hooks pass
 - [ ] Added appropriate type hints
 - [ ] Added/updated docstrings for public methods
