@@ -70,7 +70,7 @@ serverdev = "simstack"
 test = { features = ["test"], solve-group = "default" }
 mypy = ["mypy"]
 default = { features = ["dev"], solve-group = "main" }
-serverdev = { features = ["dev", "serverdev"], solve-group = "main" }
+serverdev = { features = ["dev", "serverdev"] }
 cruft = { features = ["cruft"], no-default-feature = true }
 pythonbuild = { features = ["pythonbuild"], no-default-feature = true, solve-group = "default" }
 condabuild = { features = ["condabuild"], no-default-feature = true, solve-group = "default" }
