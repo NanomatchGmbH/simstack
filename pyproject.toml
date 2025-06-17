@@ -61,7 +61,8 @@ pixi-pycharm = "*"
 # End of your dependencies
 
 [tool.pixi.feature.serverdev.pypi-dependencies]
-simstackserver = { path = "../simstackserver", editable = true }
+#uncomment for local dev:
+#simstackserver = { path = "../simstackserver", editable = true }
 
 [tool.pixi.feature.serverdev.tasks]
 serverdev = "simstack"
@@ -70,7 +71,7 @@ serverdev = "simstack"
 test = { features = ["test"], solve-group = "default" }
 mypy = ["mypy"]
 default = { features = ["dev"], solve-group = "main" }
-serverdev = { features = ["dev", "serverdev"] }
+serverdev = { features = ["serverdev"] }
 cruft = { features = ["cruft"], no-default-feature = true }
 pythonbuild = { features = ["pythonbuild"], no-default-feature = true, solve-group = "default" }
 condabuild = { features = ["condabuild"], no-default-feature = true, solve-group = "default" }
@@ -118,7 +119,7 @@ mypy = "mypy ."
 conda-build = "*"
 
 [tool.pixi.feature.condabuild.tasks]
-condabuild = "conda build conda-recipe/ -c https://repo.prefix.dev/simstack"
+condabuild = "conda build conda-recipe/ -c https://repo.prefix.dev/simstack -c conda-forge"
 
 [tool.pixi.feature.pythonbuild.dependencies]
 python-build = "*"
