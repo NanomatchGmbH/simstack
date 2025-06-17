@@ -1,6 +1,6 @@
 package:
   name: simstack
-  version: "1.6.0"
+  version: "1.6.1"
 about:
   home: https://github.com/NanomatchGmbH/simstack
   license: MIT
