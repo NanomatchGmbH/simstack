@@ -4090,7 +4090,7 @@ packages:
 - pypi: .
   name: simstack
   version: 0.1.0
-  sha256: b80a1de2f8298f11737ce2ba5fd9ddcf85365f80340723df6d0acb1a56644bb5
+  sha256: ea8075955a77f128c921561ac74570c843dbd99d14c43d4f1e868af21a2d49b9
   requires_python: '>=3.11'
   editable: true
 - pypi: ../simstackserver

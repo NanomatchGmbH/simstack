@@ -12,7 +12,7 @@ build:
   noarch: python
 requirements:
   build:
-    - flit
+    - setuptools
   run:
     - python>=3.10
     - pyside6>=6.8

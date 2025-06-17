@@ -118,7 +118,7 @@ mypy = "mypy ."
 conda-build = "*"
 
 [tool.pixi.feature.condabuild.tasks]
-condabuild = "conda build conda-recipe/"
+condabuild = "conda build conda-recipe/ -c https://repo.prefix.dev/simstack"
 
 [tool.pixi.feature.pythonbuild.dependencies]
 python-build = "*"
