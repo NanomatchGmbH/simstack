@@ -12,9 +12,9 @@ We welcome contributions to SimStack! This document provides guidelines for cont
 
 After cloning the workflow, use pixi to do everything.
 
-1. Run the tests: 
+1. Run the tests:
    ```bash
-   pixi run tests 
+   pixi run tests
    ```
 
 2. Run simstack:
