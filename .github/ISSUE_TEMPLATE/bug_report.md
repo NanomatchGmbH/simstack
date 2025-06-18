@@ -35,15 +35,7 @@ If applicable, add screenshots to help explain your problem.
 
 **Desktop:**
 - OS: [e.g. Ubuntu 20.04, Windows 10, macOS 12.0]
-- Python Version: [e.g. 3.11.5]
 - SimStack Version: [e.g. 0.1.0]
-- Qt/PySide6 Version: [from `pip show PySide6`]
-
-**Installation Method:**
-- [ ] Pixi installation
-- [ ] Pip installation
-- [ ] Conda installation
-- [ ] Source installation
 
 ## Console Output/Error Messages
 

@@ -26,9 +26,7 @@ Describe what you've already attempted:
 
 **System:**
 - OS: [e.g. Ubuntu 20.04, Windows 10, macOS 12.0]
-- Python Version: [e.g. 3.11.5]
 - SimStack Version: [e.g. 0.1.0]
-- Installation Method: [pixi/pip/conda/source]
 
 ## Code Examples
 

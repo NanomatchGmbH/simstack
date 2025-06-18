@@ -6,6 +6,10 @@ labels: ['enhancement']
 assignees: ''
 ---
 
+## Disclaimer
+
+Don't feel forced to fill all of this. If you need a small change, just write it naturally and delete the template.
+
 ## Feature Summary
 
 A clear and concise description of the feature you would like to see added.
