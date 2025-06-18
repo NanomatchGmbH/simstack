@@ -6,35 +6,27 @@ We welcome contributions to SimStack! This document provides guidelines for cont
 
 ### Prerequisites
 
-- Python 3.11 or higher
 - [Pixi](https://pixi.sh/) package manager
-- Git
 
 ### Setting Up Development Environment
 
-1. Clone the repository:
+After cloning the workflow, use pixi to do everything.
+
+1. Run the tests: 
    ```bash
-   git clone https://github.com/NanomatchGmbH/simstack.git
-   cd simstack
+   pixi run tests 
    ```
 
-2. Set up the development environment:
+2. Run simstack:
    ```bash
-   pixi shell  # Activates development environment with PySide6 and dev tools
+   pixi run simstack
    ```
-
-3. Install pre-commit hooks:
-   ```bash
-   pixi run pre-commit-install
-   ```
-
-## Development Workflow
 
 ### Before Making Changes
 
-1. Create a new branch from `main`:
+1. Fork simstack into your own github repo and create a new branch:
    ```bash
-   git checkout -b feature/your-feature-name
+   git switch -c feature/your-feature-name
    ```
 
 2. Make sure all tests pass:
@@ -47,13 +39,11 @@ We welcome contributions to SimStack! This document provides guidelines for cont
 We maintain high code quality standards using automated tools:
 
 - **Linting**: Run `pixi run lint` before committing
-- **Pre-commit Hooks**: Automatically run on commit to enforce standards
 
 ### Testing
 
 - Run all tests: `pixi run tests`
-- Run with coverage: `pytest --cov=simstack tests/`
-- Test specific functionality: `pytest tests/test_file.py::test_function_name`
+- Test specific functionality: `pixi run tests tests/test_file.py::test_function_name`
 - Single test file: `pixi run tests tests/path/to/test_file.py`
 
 We aim for comprehensive test coverage. When adding new features:
@@ -150,13 +140,6 @@ When contributing:
 - Include comprehensive tests to ensure no regressions
 - Document architectural improvements
 - Keep refactoring PRs focused and well-scoped
-
-### Performance Improvements
-
-- Include benchmarks demonstrating performance gains
-- Test across different environments and use cases
-- Consider memory usage and startup time impacts
-- Document performance characteristics
 
 ### UI/UX Improvements
 
