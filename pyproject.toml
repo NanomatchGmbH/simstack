@@ -1,0 +1,146 @@
+[project]
+name = "simstack"
+authors = [{name = "Nanomatch GmbH", email = "info@nanomatch.com"}]
+requires-python = ">= 3.11"
+dependencies = []
+readme = "README.md"
+license = {file = "LICENSE"}
+classifiers = ["License :: OSI Approved :: MIT License"]
+version="0.1.0"
+description="A short description of the project"
+
+[project.urls]
+Homepage = "https://github.com/NanomatchGmbH/simstack"
+
+
+[project.scripts]
+simstack = "simstack.SimStackEntryPoint:main"
+
+[build-system]
+requires = ["setuptools", "setuptools-scm"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+package-dir = {"simstack" = "simstack"}
+include-package-data = true
+
+[tool.pixi.project]
+channels = ["https://repo.prefix.dev/simstack", "conda-forge"]
+platforms = ["linux-64"]
+
+[tool.pixi.pypi-dependencies]
+# These dependencies are the main pypi dependencies for your project
+# Add these also to the tool.pixi.dependencies. Keep the package itself in the first line:
+simstack = { path = ".", editable = true }
+# Your dependencies come here:
+
+# End of your dependencies
+[tool.pixi.tasks]
+
+[tool.pixi.dependencies]
+# These the main conda dependencies, they will override the pypi ones
+# e.g. python = "3.12.*"
+# Cruft dependencies here:
+# End of cruft dependencies
+
+# Your dependencies come here:
+python = ">=3.11"
+pyside6 = ">6.8"
+yaml = ">=0.2.5,<0.3.0"
+pyyaml = ">=6.0.0,<6.1.0"
+simstackserver = ">=1.6.0,<1.7.0"
+# End of your dependencies
+
+[tool.pixi.feature.dev.dependencies]
+# Cruft dependencies here:
+pixi-pycharm = "*"
+# End of cruft dependencies
+
+# Your dependencies come here:
+
+# End of your dependencies
+
+[tool.pixi.feature.serverdev.pypi-dependencies]
+#uncomment for local dev:
+#simstackserver = { path = "../simstackserver", editable = true }
+
+[tool.pixi.feature.serverdev.tasks]
+serverdev = "simstack"
+
+[tool.pixi.environments]
+test = { features = ["test"], solve-group = "default" }
+mypy = ["mypy"]
+default = { features = ["dev"], solve-group = "main" }
+serverdev = { features = ["serverdev"] }
+cruft = { features = ["cruft"], no-default-feature = true }
+pythonbuild = { features = ["pythonbuild"], no-default-feature = true, solve-group = "default" }
+condabuild = { features = ["condabuild"], no-default-feature = true, solve-group = "default" }
+lint = { features = ["lint"], no-default-feature = true, solve-group = "default" }
+
+[tool.pixi.feature.lint.dependencies]
+ruff = "*"
+pre-commit = ">=3.7.1,<4"
+pre-commit-hooks = ">=4.6.0,<5"
+typos = ">=1.23.1,<2"
+
+[tool.pixi.feature.lint.tasks]
+pre-commit-install = "pre-commit install"
+pre-commit-run = "pre-commit run --all"
+lint = { depends-on = ["pre-commit-run"] }
+
+[tool.pixi.feature.cruft.dependencies]
+cruft = "*"
+
+[tool.pixi.feature.cruft.tasks]
+cruft = "cruft"
+
+[tool.pixi.feature.test.dependencies]
+# Cruft dependencies here:
+pytest = ">=7,<8"
+pytest-cov = ">=6.0.0,<7"
+# Cruft dependencies end. Add yours below this line
+pytest-qt = "*"
+pytest-xvfb = "*"
+
+[tool.pixi.feature.test.tasks]
+tests = "pytest --junitxml=pytest.xml --cov-report=term-missing:skip-covered --cov=simstack"
+simstack = "simstack"
+
+[tool.pixi.feature.mypy.dependencies]
+mypy = "*"
+# Add your mypy dependencies here:
+
+# End of your mypy dependencies
+
+[tool.pixi.feature.mypy.tasks]
+mypy = "mypy ."
+
+[tool.pixi.feature.condabuild.dependencies]
+conda-build = "*"
+
+[tool.pixi.feature.condabuild.tasks]
+condabuild = "conda build conda-recipe/ -c https://repo.prefix.dev/simstack -c conda-forge"
+
+[tool.pixi.feature.pythonbuild.dependencies]
+python-build = "*"
+
+[tool.pixi.feature.pythonbuild.tasks]
+pythonbuild = "python3 -m build"
+
+[tool.pytest.ini_options]
+pythonpath = "."
+minversion = "6.0"
+addopts = "-ra -q"
+testpaths = [
+    "tests",
+]
+
+[tool.mypy]
+mypy_path = "$MYPY_CONFIG_FILE_DIR/"
+python_version = "3.12"
+disallow_untyped_defs = true
+show_error_codes = true
+no_implicit_optional = true
+warn_return_any = true
+warn_unused_ignores = true
+exclude = ["tests"]
