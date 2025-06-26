@@ -1,5 +1,3 @@
-"""Advanced tests for wf_editor_views.py targeting complex methods and remaining coverage gaps."""
-
 from unittest.mock import MagicMock, patch
 from PySide6 import QtCore, QtGui
 from PySide6.QtWidgets import QWidget

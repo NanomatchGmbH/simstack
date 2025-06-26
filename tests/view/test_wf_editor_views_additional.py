@@ -1,5 +1,3 @@
-"""Additional tests for wf_editor_views.py focusing on coverage of simpler methods and edge cases."""
-
 from unittest.mock import MagicMock, patch
 import os
 from PySide6 import QtWidgets
@@ -298,8 +296,6 @@ class TestWFControlWithTopMiddleAndBottomAdditional:
 
 
 class TestWidgetColorsDependencies:
-    """Test that the views handle widgetColors correctly."""
-
     @patch("simstack.view.wf_editor_views.widgetColors", {})
     def test_missing_colors_handled_gracefully(self):
         """Test that missing colors are handled gracefully."""

@@ -194,7 +194,6 @@ def test_on_selection_change_with_autoset_text(qtbot):
     mdl._list.item(0).setSelected(True)
     mdl._list.item(2).setSelected(True)
 
-    # Trigger the selection change manually - should work now that bug is fixed
     mdl._on_selection_change()
 
     # Method executed successfully
@@ -213,7 +212,6 @@ def test_on_selection_change_empty_selection(qtbot):
     # Clear all selections
     mdl._list.clearSelection()
 
-    # Trigger the selection change manually - should work now that bug is fixed
     mdl._on_selection_change()
 
     # Method executed successfully

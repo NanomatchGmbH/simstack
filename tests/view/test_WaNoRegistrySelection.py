@@ -402,7 +402,6 @@ class TestWaNoRegistrySelection:
         assert hasattr(registry_selection, "connect_registry")
 
     def test_select_registry_method_coverage(self, registry_selection):
-        """Test select_registry method for coverage."""
         # Add some items first
         registry_selection.registryComboBox.addItem("test1")
         registry_selection.registryComboBox.addItem("test2")

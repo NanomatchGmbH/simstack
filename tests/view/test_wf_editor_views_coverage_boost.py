@@ -1,5 +1,3 @@
-"""Coverage boost tests for wf_editor_views.py focusing on stable, high-coverage methods."""
-
 from unittest.mock import MagicMock, patch
 from PySide6.QtWidgets import QWidget
 from PySide6.QtCore import QRect, QSize
@@ -18,8 +16,6 @@ from simstack.view.wf_editor_views import (
 
 
 class TestPlaceElementsMethods:
-    """Test place_elements methods which are heavily uncovered."""
-
     @patch(
         "simstack.view.wf_editor_views.widgetColors",
         {"Control": "#EBFFD6", "ButtonColor": "#D4FF7F"},
@@ -201,8 +197,6 @@ class TestPlaceElementsMethods:
 
 
 class TestSizeHintMethods:
-    """Test sizeHint methods for better coverage."""
-
     @patch(
         "simstack.view.wf_editor_views.widgetColors",
         {"ButtonColor": "#D4FF7F", "Control": "#EBFFD6"},
@@ -405,8 +399,6 @@ class TestWidgetMethodCoverage:
 
 
 class TestControlMethodCoverage:
-    """Test control flow method coverage."""
-
     @patch(
         "simstack.view.wf_editor_views.widgetColors",
         {"ButtonColor": "#D4FF7F", "Control": "#EBFFD6"},

@@ -474,7 +474,6 @@ def test_set_value_complex_validation():
     # Create a list first
     settings.set_value("test_list.0", "first")
 
-    # Test accessing list element during validation (line 125)
     settings.set_value("test_list.0", "updated_first")
     assert settings.get_value("test_list.0") == "updated_first"
 

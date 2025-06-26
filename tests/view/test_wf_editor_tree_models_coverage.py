@@ -1,5 +1,3 @@
-"""Comprehensive tests for WFEditorTreeModels.py - Focus on improving coverage."""
-
 import pytest
 from unittest.mock import patch, MagicMock
 from PySide6.QtCore import QModelIndex, Qt
@@ -19,8 +17,6 @@ from SimStackServer.MessageTypes import JobStatus
 
 
 class TestDataTreeModel:
-    """Test DataTreeModel methods for better coverage."""
-
     @pytest.fixture
     def model(self):
         """Create a mock DataTreeModel instance."""

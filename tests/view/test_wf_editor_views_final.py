@@ -1,5 +1,3 @@
-"""Final coverage tests for wf_editor_views.py targeting remaining stable methods."""
-
 from unittest.mock import MagicMock, patch
 from PySide6.QtWidgets import QWidget
 from PySide6.QtCore import QSize
@@ -18,8 +16,6 @@ from simstack.view.wf_editor_views import (
 
 
 class TestInitFromModelMethods:
-    """Test init_from_model methods for better coverage."""
-
     @patch(
         "simstack.view.wf_editor_views.widgetColors",
         {"ButtonColor": "#D4FF7F", "Control": "#EBFFD6"},
@@ -215,8 +211,6 @@ class TestInitFromModelMethods:
 
 
 class TestDragEnterMethods:
-    """Test dragEnterEvent methods for coverage."""
-
     @patch(
         "simstack.view.wf_editor_views.widgetColors",
         {"Base": "#F5FFEB", "MainEditor": "#F5FFF5"},
@@ -323,8 +317,6 @@ class TestWorkflowLocateElement:
 
 
 class TestSimpleMethodCalls:
-    """Test simple method calls for final coverage boost."""
-
     @patch("simstack.view.wf_editor_views.WFModel")
     @patch("simstack.view.wf_editor_views.WorkflowView")
     def test_wf_tabs_mark_changed(self, mock_workflow_view, mock_wf_model):

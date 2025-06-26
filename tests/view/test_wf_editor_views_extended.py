@@ -1,5 +1,3 @@
-"""Extended tests for wf_editor_views.py to increase coverage further."""
-
 from unittest.mock import MagicMock, patch
 from PySide6 import QtWidgets, QtCore
 from PySide6.QtWidgets import QWidget
@@ -19,8 +17,6 @@ from simstack.view.wf_editor_views import (
 
 
 class TestSubWorkflowViewExtended:
-    """Extended tests for SubWorkflowView to increase coverage."""
-
     @patch(
         "simstack.view.wf_editor_views.widgetColors",
         {"Control": "#EBFFD6", "ButtonColor": "#D4FF7F"},
@@ -203,8 +199,6 @@ class TestSubWorkflowViewExtended:
 
 
 class TestWorkflowViewExtended:
-    """Extended tests for WorkflowView to increase coverage."""
-
     @patch(
         "simstack.view.wf_editor_views.widgetColors",
         {"Base": "#F5FFEB", "MainEditor": "#F5FFF5"},

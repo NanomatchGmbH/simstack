@@ -1021,7 +1021,6 @@ class TestIfModel:
             _,
         ) = if_model_dependencies
 
-        # Note: there's a bug in the original code - it uses true model twice instead of false
         # We test the actual behavior, not the intended behavior
         mock_true_model.assemble_variables.return_value = ["true_var1", "true_var2"]
 
@@ -1030,10 +1029,8 @@ class TestIfModel:
 
             result = if_model.assemble_variables("base_path")
 
-            # The bug means it calls true model twice, once for True and once for False
             assert mock_true_model.assemble_variables.call_count == 2
 
-            # Should have variables from both calls (even though it's the same model due to bug)
             expected = ["true_var1", "true_var2", "true_var1", "true_var2"]
             assert result == expected
 

@@ -1,5 +1,3 @@
-"""Final tests for wf_editor_widgets.py - Focus on working tests that improve coverage."""
-
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 

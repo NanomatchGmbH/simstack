@@ -450,7 +450,6 @@ class TestSSHConnector:
         # Verify
         cm_instance.is_directory.assert_called_once_with("/test/directory")
         cm_instance.rmtree.assert_called_once_with("/test/directory")
-        # Callback should be called with registry, filename, and ErrorCodes.NO_ERROR
         callback.assert_called_once()
 
     def test_delete_file_regular_file(self, ssh_connector, mock_clustermanager):
@@ -470,7 +469,6 @@ class TestSSHConnector:
         # Verify
         cm_instance.is_directory.assert_called_once_with("/test/file.txt")
         cm_instance.delete_file.assert_called_once_with("/test/file.txt")
-        # Callback should be called with registry, filename, and ErrorCodes.NO_ERROR
         callback.assert_called_once()
 
     def test_delete_job(self, ssh_connector):

@@ -162,7 +162,6 @@ class TestWaNoSwitchView:
         view.set_model(model)
         view.set_disable = MagicMock()
 
-        # Mock the clear method since QVBoxLayout doesn't have it (likely a bug in the original code)
         view.vbox.clear = MagicMock()
 
         view.init_from_model()
