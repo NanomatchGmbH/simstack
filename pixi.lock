@@ -358,7 +358,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/linux-64/zeromq-4.3.5-h3b0a872_7.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/zipp-3.23.0-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/zstd-1.5.7-hb8e6e7a_2.conda
-      - pypi: ./
+      - pypi: .
   lint:
     channels:
     - url: https://repo.prefix.dev/simstack/
@@ -576,7 +576,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/linux-64/zeromq-4.3.5-h3b0a872_7.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/zipp-3.23.0-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/zstd-1.5.7-hb8e6e7a_2.conda
-      - pypi: ./
+      - pypi: .
   pythonbuild:
     channels:
     - url: https://repo.prefix.dev/simstack/
@@ -776,7 +776,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/linux-64/zeromq-4.3.5-h3b0a872_7.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/zipp-3.23.0-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/zstd-1.5.7-hb8e6e7a_2.conda
-      - pypi: ./
+      - pypi: .
   test:
     channels:
     - url: https://repo.prefix.dev/simstack/
@@ -955,7 +955,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/linux-64/zeromq-4.3.5-h3b0a872_7.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/zipp-3.23.0-pyhd8ed1ab_0.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/zstd-1.5.7-hb8e6e7a_2.conda
-      - pypi: ./
+      - pypi: .
 packages:
 - conda: https://conda.anaconda.org/conda-forge/linux-64/_libgcc_mutex-0.1-conda_forge.tar.bz2
   sha256: fe51de6107f9edc7aa4f786a70f4a883943bc9d39b3bb7307c04c41410990726
@@ -4087,10 +4087,10 @@ packages:
   purls: []
   size: 248262
   timestamp: 1749080745183
-- pypi: ./
+- pypi: .
   name: simstack
-  version: 0.1.0
-  sha256: 1a64abc49b0714cab36eeb2577b61f10d10b1aca075d1ae81dbdda1381407662
+  version: 1.6.2
+  sha256: f26e2d08c5db5cba38653b6162e68a01f6626acaac823b2a9f55172c0e3c411a
   requires_python: '>=3.11'
   editable: true
 - conda: https://repo.prefix.dev/simstack/noarch/simstackserver-1.6.1-py_0.conda
