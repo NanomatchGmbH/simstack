@@ -62,7 +62,7 @@ pixi-pycharm = "*"
 
 [tool.pixi.feature.serverdev.pypi-dependencies]
 #uncomment for local dev:
-#simstackserver = { path = "../simstackserver", editable = true }
+simstackserver = { path = "../simstackserver", editable = true }
 
 [tool.pixi.feature.serverdev.tasks]
 serverdev = "simstack"
