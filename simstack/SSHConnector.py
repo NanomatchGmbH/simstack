@@ -14,8 +14,6 @@ import paramiko
 from lxml import etree
 
 
-from zmq.error import Again, ZMQError
-
 from PySide6.QtCore import Signal, QObject
 from PySide6.QtWidgets import QMessageBox
 
@@ -107,11 +105,6 @@ def eagain_catcher(f):
     def wrapper(self, *args, **kwds):
         try:
             return f(self, *args, **kwds)
-        except (Again, ZMQError):
-            from simstack.view.WFViewManager import WFViewManager
-
-            message = "Connection Error, please try reconnecting Client."
-            WFViewManager.show_error(message)
         except socket.timeout as e:
             from simstack.view.WFViewManager import WFViewManager
 
@@ -147,7 +140,7 @@ class SSHConnector(QObject):
         registry: Resources = self._registries[registry_name]
         software_dir = registry.sw_dir_on_resource
         command = cm.get_server_command_from_software_directory(software_dir)
-        cm.connect_zmq_tunnel(command)
+        cm.start_server_remote(command)
         return ErrorCodes.NO_ERROR
 
     def _get_main_par_dir(self):
@@ -221,6 +214,7 @@ class SSHConnector(QObject):
                 extra_config=extra_config,
                 queueing_system=registry.queueing_system,
                 default_queue=registry.queue,
+
             )
         self._clustermanagers[name] = cm
         if not cm.is_connected():
@@ -259,10 +253,6 @@ class SSHConnector(QObject):
             except paramiko.ssh_exception.SSHException as e:
                 statusmessage = str(e)
                 traceback.print_exc()
-                error = ErrorCodes.CONN_ERROR
-                del self._clustermanagers[name]
-            except Again:
-                statusmessage = "Connection Error, please try reconnecting Client."
                 error = ErrorCodes.CONN_ERROR
                 del self._clustermanagers[name]
             except socket.timeout as e:

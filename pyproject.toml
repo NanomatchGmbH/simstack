@@ -24,7 +24,7 @@ build-backend = "setuptools.build_meta"
 package-dir = {"simstack" = "simstack"}
 include-package-data = true
 
-[tool.pixi.project]
+[tool.pixi.workspace]
 channels = ["https://repo.prefix.dev/simstack", "conda-forge"]
 platforms = ["linux-64"]
 
@@ -49,6 +49,9 @@ pyside6 = ">6.8"
 yaml = ">=0.2.5,<0.3.0"
 pyyaml = ">=6.0.0,<6.1.0"
 simstackserver = ">=1.6.0,<1.7.0"
+uvicorn = "*"
+fastapi = "*"
+requests = "*"
 # End of your dependencies
 
 [tool.pixi.feature.dev.dependencies]
@@ -62,7 +65,7 @@ pixi-pycharm = "*"
 
 [tool.pixi.feature.serverdev.pypi-dependencies]
 #uncomment for local dev:
-#simstackserver = { path = "../simstackserver", editable = true }
+simstackserver = { path = "../simstackserver", editable = true }
 
 [tool.pixi.feature.serverdev.tasks]
 serverdev = "simstack"
