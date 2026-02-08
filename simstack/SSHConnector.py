@@ -296,18 +296,14 @@ class SSHConnector(QObject):
 
                 error = ErrorCodes.CONN_ERROR
                 del self._clustermanagers[name]
-            except OSError as e:
-                statusmessage = (
-                    "Caught generic exception %s. Please reconnect and try again and if it reappears report to Nanomatch"
-                    % (e)
-                )
-                error = ErrorCodes.CONN_ERROR
-                del self._clustermanagers[name]
             except Exception as e:
+                traceback_out = StringIO()
+                traceback.print_exc(file=traceback_out)
                 statusmessage = (
-                        "Caught generic exception %s. Please reconnect and try again and if it reappears report to Nanomatch"
-                        % (e)
+                        "Caught generic exception:\n%s  \n ----- Traceback -----\n %s"
+                        % (e, traceback_out.getvalue())
                 )
+
                 error = ErrorCodes.CONN_ERROR
                 del self._clustermanagers[name]
         else:

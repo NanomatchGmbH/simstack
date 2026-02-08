@@ -267,14 +267,6 @@ class SSLCertificateHandler:
         # Step 5: Store certificate locally
         try:
             self.cert_path = self.client.store_certificate(cert)
-
-            # Also save to home directory for user reference
-            home_cert_file = (
-                Path.home()
-                / f"fastapilocalhttps-{self.client.host}-{self.client.port}.crt"
-            )
-            self.client.save_certificate(cert, home_cert_file)
-
             # Step 6: Verify connection works with the stored certificate
             test_success, test_error = self.test_connection(verify_ssl=True, cert_path=self.cert_path)
 
@@ -284,7 +276,6 @@ class SSLCertificateHandler:
                     "Certificate Stored and Verified",
                     f"Certificate has been stored and verified successfully:\n\n"
                     f"• System trust store: {self.cert_path}\n"
-                    f"• User reference: {home_cert_file}\n\n"
                     "✓ Connection test successful!\n"
                     "You can now connect to this server securely."
                 )
