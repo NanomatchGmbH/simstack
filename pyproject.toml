@@ -52,6 +52,8 @@ simstackserver = ">=1.6.0,<1.7.0"
 uvicorn = "*"
 fastapi = "*"
 requests = "*"
+fastapilocalhttps = "*"
+urllib3 = "*"
 # End of your dependencies
 
 [tool.pixi.feature.dev.dependencies]

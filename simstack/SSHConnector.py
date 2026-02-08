@@ -30,6 +30,7 @@ from SimStackServer.Util.FileUtilities import filewalker
 from functools import wraps
 
 from simstack.lib.QtClusterSettingsProvider import QtClusterSettingsProvider
+from simstack.view.SSLCertificateDialog import SSLCertificateHandler
 
 """ Number of data transfer workers per regisrtry. """
 MAX_DT_WORKERS_PER_REGISTRY = 3
@@ -134,6 +135,28 @@ class SSHConnector(QObject):
             message = ""
         self.error.emit(base_uri, operation.value, error.value, message)
 
+    def certificate_trust_workflow(self, client_url):
+        handler = SSLCertificateHandler(client_url)
+        if handler.has_stored_certificate():
+            print(f"ℹ Found existing certificate at: {handler.get_certificate_path()}")
+            cert_info = handler.get_certificate_info()
+            if cert_info:
+                print(f"  Subject: {cert_info.subject}")
+                print(f"  Valid until: {cert_info.not_valid_after}")
+
+            # Run the interactive SSL certificate trust workflow
+        success, message = handler.handle_ssl_certificate_trust()
+
+        if success:
+            print("\n✓ SUCCESS!")
+            print(f"  {message}")
+            cert_path = handler.get_certificate_path()
+            if cert_path:
+                print(f"  Certificate at: {cert_path}")
+        else:
+            print("\n✗ FAILED!")
+            raise Exception(f"SSL Certificate trust workflow failed: {message}")
+
     def start_server(self, registry_name: str, callback=(None, (), {})):
         cm = self._get_cm(registry_name)
         cm: ClusterManager
@@ -141,6 +164,7 @@ class SSHConnector(QObject):
         software_dir = registry.sw_dir_on_resource
         command = cm.get_server_command_from_software_directory(software_dir)
         cm.start_server_remote(command)
+        self.certificate_trust_workflow(cm.get_client_url())
         return ErrorCodes.NO_ERROR
 
     def _get_main_par_dir(self):
@@ -276,6 +300,13 @@ class SSHConnector(QObject):
                 statusmessage = (
                     "Caught generic exception %s. Please reconnect and try again and if it reappears report to Nanomatch"
                     % (e)
+                )
+                error = ErrorCodes.CONN_ERROR
+                del self._clustermanagers[name]
+            except Exception as e:
+                statusmessage = (
+                        "Caught generic exception %s. Please reconnect and try again and if it reappears report to Nanomatch"
+                        % (e)
                 )
                 error = ErrorCodes.CONN_ERROR
                 del self._clustermanagers[name]
