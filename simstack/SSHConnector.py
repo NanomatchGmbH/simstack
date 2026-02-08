@@ -165,6 +165,7 @@ class SSHConnector(QObject):
         command = cm.get_server_command_from_software_directory(software_dir)
         cm.start_server_remote(command)
         self.certificate_trust_workflow(cm.get_client_url())
+        cm.init_client()
         return ErrorCodes.NO_ERROR
 
     def _get_main_par_dir(self):

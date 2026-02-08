@@ -7,6 +7,7 @@ when connecting to FastAPI servers with HTTPS.
 
 from pathlib import Path
 from typing import Optional, Tuple
+import time
 
 import requests
 from PySide6.QtWidgets import (
@@ -25,6 +26,16 @@ from fastapilocalhttps import (
     CertificateInfo,
     CertificateRetrievalError,
 )
+
+
+class SSLCertificateError(Exception):
+    """Exception raised when SSL certificate verification fails."""
+    pass
+
+
+class ConnectionFailedError(Exception):
+    """Exception raised when connection to server fails (timeout, refused, etc)."""
+    pass
 
 
 class CertificateInfoDialog(QDialog):
@@ -160,39 +171,65 @@ class SSLCertificateHandler:
     def test_connection(
         self,
         verify_ssl: bool = True,
-        cert_path: Optional[Path] = None
-    ) -> Tuple[bool, Optional[str]]:
+        cert_path: Optional[Path] = None,
+        max_retries: int = 1,
+        retry_delay: float = 5.0
+    ) -> None:
         """
         Test connection to the server.
 
         Args:
             verify_ssl: Whether to verify SSL certificate
             cert_path: Path to certificate file to use for verification
+            max_retries: Maximum number of retry attempts for connection failures (default: 1)
+            retry_delay: Delay in seconds between retry attempts (default: 5.0)
 
-        Returns:
-            Tuple of (success: bool, error_message: Optional[str])
+        Raises:
+            SSLCertificateError: If SSL certificate verification fails
+            ConnectionFailedError: If connection to server fails after retries
         """
-        try:
-            session = requests.Session()
+        session = requests.Session()
 
-            if cert_path:
-                # Use the provided certificate for verification
-                session.verify = str(cert_path)
-            elif not verify_ssl:
-                session.verify = False
-                # Suppress SSL warnings
-                import urllib3
-                urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+        if cert_path:
+            # Use the provided certificate for verification
+            session.verify = str(cert_path)
+        elif not verify_ssl:
+            session.verify = False
+            # Suppress SSL warnings
+            import urllib3
+            urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
-            response = session.get(self.server_url, timeout=10)
-            response.raise_for_status()
+        for attempt in range(max_retries + 1):
+            try:
+                response = session.get(self.server_url, timeout=10)
+                response.raise_for_status()
+                # Connection successful
+                return
 
-            return True, None
+            except requests.exceptions.SSLError as e:
+                # SSL error - certificate validation failed
+                # Don't retry for SSL errors, raise immediately
+                raise SSLCertificateError(f"SSL certificate verification failed: {str(e)}") from e
 
-        except requests.exceptions.SSLError as e:
-            return False, f"SSL Error: {str(e)}"
-        except requests.exceptions.RequestException as e:
-            return False, f"Connection Error: {str(e)}"
+            except (
+                requests.exceptions.ConnectionError,
+                requests.exceptions.Timeout,
+                requests.exceptions.ConnectTimeout
+            ) as e:
+                # Connection failure - server not responding
+                if attempt < max_retries:
+                    # Wait before retrying
+                    time.sleep(retry_delay)
+                    continue
+                else:
+                    # All retries exhausted
+                    raise ConnectionFailedError(
+                        f"Failed to connect to server after {max_retries + 1} attempt(s): {str(e)}"
+                    ) from e
+
+            except requests.exceptions.RequestException as e:
+                # Other request errors (HTTP errors, etc.)
+                raise ConnectionFailedError(f"Request failed: {str(e)}") from e
 
     def handle_ssl_certificate_trust(self) -> Tuple[bool, Optional[str]]:
         """
@@ -211,16 +248,16 @@ class SSLCertificateHandler:
         # Step 1: Check if we already have a stored certificate
         if self.cert_path and self.cert_path.exists():
             # Try connection with stored certificate
-            success, error = self.test_connection(verify_ssl=True, cert_path=self.cert_path)
-            if success:
+            try:
+                self.test_connection(verify_ssl=True, cert_path=self.cert_path)
                 return True, f"Connected successfully using stored certificate: {self.cert_path}"
-            else:
+            except (SSLCertificateError, ConnectionFailedError) as e:
                 # Stored certificate exists but connection failed - ask user what to do
                 reply = QMessageBox.question(
                     self.parent,
                     "Stored Certificate Failed",
                     f"A certificate for this server is already stored at:\n{self.cert_path}\n\n"
-                    f"However, connection using this certificate failed:\n{error}\n\n"
+                    f"However, connection using this certificate failed:\n{str(e)}\n\n"
                     "Would you like to retrieve and trust a new certificate?",
                     QMessageBox.Yes | QMessageBox.No,
                     QMessageBox.Yes
@@ -229,23 +266,35 @@ class SSLCertificateHandler:
                     return False, "Connection failed with stored certificate, user declined to update."
 
         # Step 2: Try normal connection first (without stored cert)
-        success, error = self.test_connection(verify_ssl=True)
-        if success:
+        try:
+            self.test_connection(verify_ssl=True)
             return True, "Server is using a trusted certificate."
+        except SSLCertificateError as e:
+            # SSL certificate error - show dialog to inspect certificate
+            reply = QMessageBox.question(
+                self.parent,
+                "SSL Certificate Error",
+                f"Could not establish a secure connection to the server:\n\n{str(e)}\n\n"
+                "This is likely because the server is using a self-signed certificate.\n\n"
+                "Would you like to inspect and potentially trust this certificate?",
+                QMessageBox.Yes | QMessageBox.No,
+                QMessageBox.Yes
+            )
 
-        # Step 2: Show initial SSL error dialog
-        reply = QMessageBox.question(
-            self.parent,
-            "SSL Certificate Error",
-            f"Could not establish a secure connection to the server:\n\n{error}\n\n"
-            "This is likely because the server is using a self-signed certificate.\n\n"
-            "Would you like to inspect and potentially trust this certificate?",
-            QMessageBox.Yes | QMessageBox.No,
-            QMessageBox.Yes
-        )
-
-        if reply != QMessageBox.Yes:
-            return False, "User declined to inspect certificate."
+            if reply != QMessageBox.Yes:
+                return False, "User declined to inspect certificate."
+        except ConnectionFailedError as e:
+            # Connection failed - server not responding
+            QMessageBox.critical(
+                self.parent,
+                "Connection Failed",
+                f"Failed to connect to the server:\n\n{str(e)}\n\n"
+                "Please verify that:\n"
+                "• The server is running\n"
+                "• The URL is correct\n"
+                "• Network connectivity is available"
+            )
+            return False, f"Connection failed: {str(e)}"
 
         # Step 3: Retrieve and inspect certificate
         try:
@@ -267,10 +316,10 @@ class SSLCertificateHandler:
         # Step 5: Store certificate locally
         try:
             self.cert_path = self.client.store_certificate(cert)
-            # Step 6: Verify connection works with the stored certificate
-            test_success, test_error = self.test_connection(verify_ssl=True, cert_path=self.cert_path)
 
-            if test_success:
+            # Step 6: Verify connection works with the stored certificate
+            try:
+                self.test_connection(verify_ssl=True, cert_path=self.cert_path)
                 QMessageBox.information(
                     self.parent,
                     "Certificate Stored and Verified",
@@ -280,15 +329,15 @@ class SSLCertificateHandler:
                     "You can now connect to this server securely."
                 )
                 return True, f"Certificate stored at: {self.cert_path}"
-            else:
+            except (SSLCertificateError, ConnectionFailedError) as test_error:
                 QMessageBox.warning(
                     self.parent,
                     "Certificate Stored (Verification Failed)",
                     f"Certificate has been stored at:\n{self.cert_path}\n\n"
-                    f"However, connection test failed:\n{test_error}\n\n"
+                    f"However, connection test failed:\n{str(test_error)}\n\n"
                     "The certificate may still work depending on your configuration."
                 )
-                return True, f"Certificate stored but verification failed: {test_error}"
+                return True, f"Certificate stored but verification failed: {str(test_error)}"
 
         except Exception as e:
             QMessageBox.critical(
