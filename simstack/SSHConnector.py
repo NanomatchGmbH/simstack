@@ -217,7 +217,7 @@ class SSHConnector(QObject):
             )
         elif connection_is_localhost_and_same_user(
             registry.base_URI, user=registry.username
-        ):
+        ) and False:
             cm = LocalClusterManager(
                 url=registry.base_URI,
                 port=registry.port,
@@ -370,19 +370,19 @@ class SSHConnector(QObject):
             cm.put_file(filename, submitpath.replace("\\", "/"))
 
         wf_yml_name = real_submitname + "/" + "rendered_workflow.xml"
-        with cm.remote_open(wf_yml_name, "wt") as outfile:
-            outfile.write(
-                etree.tostring(xml, encoding="utf8", pretty_print=True)
-                .decode()
-                .replace("c9m:", "")
-                .replace("${STORAGE}/", "")
-                .replace("${SUBMIT_NAME}", real_submitname)
-                .replace(
-                    "${BASEFOLDER}", cm.get_calculation_basepath() + "/" + submitname
-                )
-                .replace("${QUEUE}", cm.get_queueing_system())
-                .replace("${QUEUE_NAME}", cm.get_default_queue())
+        wf_content = (
+            etree.tostring(xml, encoding="utf8", pretty_print=True)
+            .decode()
+            .replace("c9m:", "")
+            .replace("${STORAGE}/", "")
+            .replace("${SUBMIT_NAME}", real_submitname)
+            .replace(
+                "${BASEFOLDER}", cm.get_calculation_basepath() + "/" + submitname
             )
+            .replace("${QUEUE}", cm.get_queueing_system())
+            .replace("${QUEUE_NAME}", cm.get_default_queue())
+        )
+        cm.put_file_content(wf_content, wf_yml_name)
         cm.submit_wf(wf_yml_name)
 
     def update_job_list(self, base_uri, callback=(None, (), {})):
