@@ -11,8 +11,7 @@ from simstack.view.SSLCertificateDialog import SSLCertificateHandler
 
 
 def connect_to_fastapi_server(
-    server_url: str,
-    parent=None
+    server_url: str, parent=None
 ) -> tuple[bool, Optional[str]]:
     """
     Connect to a FastAPI server with SSL certificate handling.
@@ -76,13 +75,13 @@ def example_connection_flow():
         QMessageBox.information(
             None,
             "Connection Successful",
-            f"Successfully connected to server:\n{server_url}\n\n{message}"
+            f"Successfully connected to server:\n{server_url}\n\n{message}",
         )
     else:
         QMessageBox.warning(
             None,
             "Connection Failed",
-            f"Failed to connect to server:\n{server_url}\n\n{message}"
+            f"Failed to connect to server:\n{server_url}\n\n{message}",
         )
 
     return success

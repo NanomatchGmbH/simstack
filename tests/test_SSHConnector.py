@@ -325,14 +325,16 @@ class TestSSHConnector:
             "test_command"
         )
 
-        # Call method
-        result = ssh_connector.start_server("test_registry")
+        # Call method, mocking out the SSL certificate workflow
+        with patch.object(ssh_connector, "certificate_trust_workflow"):
+            result = ssh_connector.start_server("test_registry")
 
         # Verify
         cm_instance.get_server_command_from_software_directory.assert_called_once_with(
             "/test/sw/dir"
         )
-        cm_instance.connect_zmq_tunnel.assert_called_once_with("test_command")
+        cm_instance.start_server_remote.assert_called_once_with("test_command")
+        cm_instance.init_client.assert_called_once()
         assert result.name == "NO_ERROR"  # ErrorCodes.NO_ERROR
 
     def test_update_job_list(self, ssh_connector):
@@ -710,11 +712,19 @@ class TestSSHConnector:
 
     @patch("simstack.SSHConnector.getpass")
     def test_connect_registry_localhost_same_user(
-        self, mock_getpass, ssh_connector, mock_local_clustermanager
+        self,
+        mock_getpass,
+        ssh_connector,
+        mock_local_clustermanager,
+        mock_clustermanager,
     ):
-        """Test connect_registry with localhost and same user."""
-        # Setup
-        cm_class, cm_instance = mock_local_clustermanager
+        """Test connect_registry with localhost and same user.
+
+        The LocalClusterManager branch is currently disabled (and False), so
+        ClusterManager is used even for localhost connections.
+        """
+        # Setup — ClusterManager is what actually gets instantiated
+        cm_class, cm_instance = mock_clustermanager
         ssh_connector._clustermanagers = {}
         mock_getpass.getuser.return_value = "test_user"
 
@@ -733,7 +743,7 @@ class TestSSHConnector:
                 callback = MagicMock()
                 ssh_connector.connect_registry("test_registry", callback)
 
-                # Verify LocalClusterManager was used
+                # Verify ClusterManager was used (LocalClusterManager branch is disabled)
                 cm_class.assert_called_once()
                 callback.assert_called_once()
 
@@ -762,8 +772,6 @@ class TestSSHConnector:
 
         # Mock cluster manager methods
         cm_instance.exists.return_value = False
-        mock_remote_file = MagicMock()
-        cm_instance.remote_open.return_value.__enter__.return_value = mock_remote_file
         cm_instance.get_calculation_basepath.return_value = "/calc/base"
         cm_instance.get_queueing_system.return_value = "test_queue"
         cm_instance.get_default_queue.return_value = "default"
@@ -781,7 +789,7 @@ class TestSSHConnector:
         cm_instance.exists.assert_called_once_with("test_submitname")
         assert cm_instance.mkdir_p.call_count == 2
         assert cm_instance.put_file.call_count == 2
-        cm_instance.remote_open.assert_called_once()
+        cm_instance.put_file_content.assert_called_once()
         cm_instance.submit_wf.assert_called_once()
 
     def test_run_workflow_job_file_exists(self, ssh_connector, mock_clustermanager):

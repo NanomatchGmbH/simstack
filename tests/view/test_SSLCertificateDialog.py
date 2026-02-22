@@ -5,10 +5,10 @@ Tests the PySide6-based SSL certificate trust workflow.
 """
 
 import pytest
-from unittest.mock import Mock, patch, MagicMock
+from unittest.mock import Mock, patch
 from pathlib import Path
 
-from PySide6.QtWidgets import QMessageBox, QDialog
+from PySide6.QtWidgets import QMessageBox
 
 from simstack.view.SSLCertificateDialog import (
     SSLCertificateHandler,
@@ -34,15 +34,14 @@ class TestSSLCertificateHandler:
         mock_session.return_value.get.return_value = mock_response
 
         handler = SSLCertificateHandler("https://127.0.0.1:8443")
-        success, error = handler.test_connection(verify_ssl=True)
-
-        assert success is True
-        assert error is None
+        # test_connection raises on failure; returning normally means success
+        handler.test_connection(verify_ssl=True)
 
     @patch("simstack.view.SSLCertificateDialog.requests.Session")
     def test_ssl_error_connection(self, mock_session):
         """Test connection failure with SSL error."""
         import requests
+        from simstack.view.SSLCertificateDialog import SSLCertificateError
 
         # Mock SSL error
         mock_session.return_value.get.side_effect = requests.exceptions.SSLError(
@@ -50,11 +49,10 @@ class TestSSLCertificateHandler:
         )
 
         handler = SSLCertificateHandler("https://127.0.0.1:8443")
-        success, error = handler.test_connection(verify_ssl=True)
+        with pytest.raises(SSLCertificateError) as exc_info:
+            handler.test_connection(verify_ssl=True)
 
-        assert success is False
-        assert error is not None
-        assert "SSL Error" in error
+        assert "SSL" in str(exc_info.value)
 
     @patch("simstack.view.SSLCertificateDialog.requests.Session")
     def test_connection_without_ssl_verification(self, mock_session):
@@ -65,10 +63,8 @@ class TestSSLCertificateHandler:
         mock_session.return_value.get.return_value = mock_response
 
         handler = SSLCertificateHandler("https://127.0.0.1:8443")
-        success, error = handler.test_connection(verify_ssl=False)
+        handler.test_connection(verify_ssl=False)
 
-        assert success is True
-        assert error is None
         # Verify SSL verification was disabled
         assert mock_session.return_value.verify is False
 
@@ -159,9 +155,15 @@ class TestCertificateInfoDialog:
         button_texts = [btn.text() for btn in buttons]
 
         # Should have Trust, Reject, and More Info buttons
-        assert any("Trust" in text for text in button_texts), f"Available buttons: {button_texts}"
-        assert any("Reject" in text for text in button_texts), f"Available buttons: {button_texts}"
-        assert any("Info" in text for text in button_texts), f"Available buttons: {button_texts}"
+        assert any(
+            "Trust" in text for text in button_texts
+        ), f"Available buttons: {button_texts}"
+        assert any(
+            "Reject" in text for text in button_texts
+        ), f"Available buttons: {button_texts}"
+        assert any(
+            "Info" in text for text in button_texts
+        ), f"Available buttons: {button_texts}"
 
     @patch("simstack.view.SSLCertificateDialog.QMessageBox")
     def test_show_additional_info(self, mock_msgbox, qtbot, mock_cert_info):

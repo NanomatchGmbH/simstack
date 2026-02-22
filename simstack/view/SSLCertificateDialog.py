@@ -30,11 +30,13 @@ from fastapilocalhttps import (
 
 class SSLCertificateError(Exception):
     """Exception raised when SSL certificate verification fails."""
+
     pass
 
 
 class ConnectionFailedError(Exception):
     """Exception raised when connection to server fails (timeout, refused, etc)."""
+
     pass
 
 
@@ -173,7 +175,7 @@ class SSLCertificateHandler:
         verify_ssl: bool = True,
         cert_path: Optional[Path] = None,
         max_retries: int = 1,
-        retry_delay: float = 5.0
+        retry_delay: float = 5.0,
     ) -> None:
         """
         Test connection to the server.
@@ -197,6 +199,7 @@ class SSLCertificateHandler:
             session.verify = False
             # Suppress SSL warnings
             import urllib3
+
             urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
         for attempt in range(max_retries + 1):
@@ -209,12 +212,14 @@ class SSLCertificateHandler:
             except requests.exceptions.SSLError as e:
                 # SSL error - certificate validation failed
                 # Don't retry for SSL errors, raise immediately
-                raise SSLCertificateError(f"SSL certificate verification failed: {str(e)}") from e
+                raise SSLCertificateError(
+                    f"SSL certificate verification failed: {str(e)}"
+                ) from e
 
             except (
                 requests.exceptions.ConnectionError,
                 requests.exceptions.Timeout,
-                requests.exceptions.ConnectTimeout
+                requests.exceptions.ConnectTimeout,
             ) as e:
                 # Connection failure - server not responding
                 if attempt < max_retries:
@@ -250,7 +255,10 @@ class SSLCertificateHandler:
             # Try connection with stored certificate
             try:
                 self.test_connection(verify_ssl=True, cert_path=self.cert_path)
-                return True, f"Connected successfully using stored certificate: {self.cert_path}"
+                return (
+                    True,
+                    f"Connected successfully using stored certificate: {self.cert_path}",
+                )
             except (SSLCertificateError, ConnectionFailedError) as e:
                 # Stored certificate exists but connection failed - ask user what to do
                 reply = QMessageBox.question(
@@ -260,10 +268,13 @@ class SSLCertificateHandler:
                     f"However, connection using this certificate failed:\n{str(e)}\n\n"
                     "Would you like to retrieve and trust a new certificate?",
                     QMessageBox.Yes | QMessageBox.No,
-                    QMessageBox.Yes
+                    QMessageBox.Yes,
                 )
                 if reply != QMessageBox.Yes:
-                    return False, "Connection failed with stored certificate, user declined to update."
+                    return (
+                        False,
+                        "Connection failed with stored certificate, user declined to update.",
+                    )
 
         # Step 2: Try normal connection first (without stored cert)
         try:
@@ -278,7 +289,7 @@ class SSLCertificateHandler:
                 "This is likely because the server is using a self-signed certificate.\n\n"
                 "Would you like to inspect and potentially trust this certificate?",
                 QMessageBox.Yes | QMessageBox.No,
-                QMessageBox.Yes
+                QMessageBox.Yes,
             )
 
             if reply != QMessageBox.Yes:
@@ -292,7 +303,7 @@ class SSLCertificateHandler:
                 "Please verify that:\n"
                 "• The server is running\n"
                 "• The URL is correct\n"
-                "• Network connectivity is available"
+                "• Network connectivity is available",
             )
             return False, f"Connection failed: {str(e)}"
 
@@ -304,7 +315,7 @@ class SSLCertificateHandler:
             QMessageBox.critical(
                 self.parent,
                 "Certificate Retrieval Failed",
-                f"Failed to retrieve certificate from server:\n\n{str(e)}"
+                f"Failed to retrieve certificate from server:\n\n{str(e)}",
             )
             return False, f"Certificate retrieval failed: {str(e)}"
 
@@ -326,7 +337,7 @@ class SSLCertificateHandler:
                     f"Certificate has been stored and verified successfully:\n\n"
                     f"• System trust store: {self.cert_path}\n"
                     "✓ Connection test successful!\n"
-                    "You can now connect to this server securely."
+                    "You can now connect to this server securely.",
                 )
                 return True, f"Certificate stored at: {self.cert_path}"
             except (SSLCertificateError, ConnectionFailedError) as test_error:
@@ -335,15 +346,18 @@ class SSLCertificateHandler:
                     "Certificate Stored (Verification Failed)",
                     f"Certificate has been stored at:\n{self.cert_path}\n\n"
                     f"However, connection test failed:\n{str(test_error)}\n\n"
-                    "The certificate may still work depending on your configuration."
+                    "The certificate may still work depending on your configuration.",
                 )
-                return True, f"Certificate stored but verification failed: {str(test_error)}"
+                return (
+                    True,
+                    f"Certificate stored but verification failed: {str(test_error)}",
+                )
 
         except Exception as e:
             QMessageBox.critical(
                 self.parent,
                 "Certificate Storage Failed",
-                f"Failed to store certificate:\n\n{str(e)}"
+                f"Failed to store certificate:\n\n{str(e)}",
             )
             return False, f"Certificate storage failed: {str(e)}"
 

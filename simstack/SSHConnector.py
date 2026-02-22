@@ -215,9 +215,12 @@ class SSHConnector(QObject):
                 default_queue=registry.queue,
                 filegen_mode=True,
             )
-        elif connection_is_localhost_and_same_user(
-            registry.base_URI, user=registry.username
-        ) and False:
+        elif (
+            connection_is_localhost_and_same_user(
+                registry.base_URI, user=registry.username
+            )
+            and False
+        ):
             cm = LocalClusterManager(
                 url=registry.base_URI,
                 port=registry.port,
@@ -239,7 +242,6 @@ class SSHConnector(QObject):
                 extra_config=extra_config,
                 queueing_system=registry.queueing_system,
                 default_queue=registry.queue,
-
             )
         self._clustermanagers[name] = cm
         if not cm.is_connected():
@@ -301,8 +303,8 @@ class SSHConnector(QObject):
                 traceback_out = StringIO()
                 traceback.print_exc(file=traceback_out)
                 statusmessage = (
-                        "Caught generic exception:\n%s  \n ----- Traceback -----\n %s"
-                        % (e, traceback_out.getvalue())
+                    "Caught generic exception:\n%s  \n ----- Traceback -----\n %s"
+                    % (e, traceback_out.getvalue())
                 )
 
                 error = ErrorCodes.CONN_ERROR
@@ -376,9 +378,7 @@ class SSHConnector(QObject):
             .replace("c9m:", "")
             .replace("${STORAGE}/", "")
             .replace("${SUBMIT_NAME}", real_submitname)
-            .replace(
-                "${BASEFOLDER}", cm.get_calculation_basepath() + "/" + submitname
-            )
+            .replace("${BASEFOLDER}", cm.get_calculation_basepath() + "/" + submitname)
             .replace("${QUEUE}", cm.get_queueing_system())
             .replace("${QUEUE_NAME}", cm.get_default_queue())
         )
