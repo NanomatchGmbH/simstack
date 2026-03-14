@@ -164,8 +164,10 @@ class SSHConnector(QObject):
         software_dir = registry.sw_dir_on_resource
         command = cm.get_server_command_from_software_directory(software_dir)
         cm.start_server_remote(command)
-        self.certificate_trust_workflow(cm.get_client_url(), cm.get_client_secret())
+        if not registry.use_ssh_tunnel:
+            self.certificate_trust_workflow(cm.get_client_url(), cm.get_client_secret())
         cm.init_client()
+        cm.configure(registry)
         return ErrorCodes.NO_ERROR
 
     def _get_main_par_dir(self):
