@@ -21,7 +21,7 @@ class TestSSLCertificateHandler:
 
     def test_handler_initialization(self):
         """Test handler can be initialized."""
-        handler = SSLCertificateHandler("https://127.0.0.1:8443")
+        handler = SSLCertificateHandler("https://127.0.0.1:8443", "secret")
         assert handler.server_url == "https://127.0.0.1:8443"
         assert handler.cert_path is None
 
@@ -33,7 +33,7 @@ class TestSSLCertificateHandler:
         mock_response.status_code = 200
         mock_session.return_value.get.return_value = mock_response
 
-        handler = SSLCertificateHandler("https://127.0.0.1:8443")
+        handler = SSLCertificateHandler("https://127.0.0.1:8443", "secret")
         # test_connection raises on failure; returning normally means success
         handler.test_connection(verify_ssl=True)
 
@@ -48,7 +48,7 @@ class TestSSLCertificateHandler:
             "SSL certificate verify failed"
         )
 
-        handler = SSLCertificateHandler("https://127.0.0.1:8443")
+        handler = SSLCertificateHandler("https://127.0.0.1:8443", "secret")
         with pytest.raises(SSLCertificateError) as exc_info:
             handler.test_connection(verify_ssl=True)
 
@@ -62,7 +62,7 @@ class TestSSLCertificateHandler:
         mock_response.status_code = 200
         mock_session.return_value.get.return_value = mock_response
 
-        handler = SSLCertificateHandler("https://127.0.0.1:8443")
+        handler = SSLCertificateHandler("https://127.0.0.1:8443", "secret")
         handler.test_connection(verify_ssl=False)
 
         # Verify SSL verification was disabled
@@ -70,31 +70,31 @@ class TestSSLCertificateHandler:
 
     def test_get_certificate_path_before_storage(self):
         """Test getting certificate path when none is stored."""
-        handler = SSLCertificateHandler("https://127.0.0.1:8443")
+        handler = SSLCertificateHandler("https://127.0.0.1:8443", "secret")
         assert handler.get_certificate_path() is None
 
     def test_has_stored_certificate_initially_false(self):
         """Test that initially no certificate is stored."""
-        handler = SSLCertificateHandler("https://127.0.0.1:8443")
+        handler = SSLCertificateHandler("https://127.0.0.1:8443", "secret")
         assert handler.has_stored_certificate() is False
 
     @patch.object(Path, "exists")
     def test_has_stored_certificate_when_exists(self, mock_exists):
         """Test detection of existing certificate."""
         mock_exists.return_value = True
-        handler = SSLCertificateHandler("https://127.0.0.1:8443")
+        handler = SSLCertificateHandler("https://127.0.0.1:8443", "secret")
         # Manually set cert_path for testing
         handler.cert_path = Path("/fake/path/cert.pem")
         assert handler.has_stored_certificate() is True
 
     def test_get_certificate_info_when_none_stored(self):
         """Test getting certificate info when none is stored."""
-        handler = SSLCertificateHandler("https://127.0.0.1:8443")
+        handler = SSLCertificateHandler("https://127.0.0.1:8443", "secret")
         assert handler.get_certificate_info() is None
 
     def test_revoke_certificate_when_none_stored(self):
         """Test revoking certificate when none is stored."""
-        handler = SSLCertificateHandler("https://127.0.0.1:8443")
+        handler = SSLCertificateHandler("https://127.0.0.1:8443", "secret")
         success, message = handler.revoke_certificate()
         assert success is False
         assert "No certificate" in message
@@ -191,7 +191,7 @@ class TestSSLCertificateWorkflow:
         mock_response.status_code = 200
         mock_session.return_value.get.return_value = mock_response
 
-        handler = SSLCertificateHandler("https://127.0.0.1:8443")
+        handler = SSLCertificateHandler("https://127.0.0.1:8443", "secret")
         success, message = handler.handle_ssl_certificate_trust()
 
         # Should succeed without showing any dialogs
@@ -216,7 +216,7 @@ class TestSSLCertificateWorkflow:
         # User declines to inspect
         mock_question.return_value = QMessageBox.No
 
-        handler = SSLCertificateHandler("https://127.0.0.1:8443")
+        handler = SSLCertificateHandler("https://127.0.0.1:8443", "secret")
         success, message = handler.handle_ssl_certificate_trust()
 
         assert success is False
@@ -234,7 +234,7 @@ class TestSSLCertificateWorkflow:
         mock_response.status_code = 200
         mock_session.return_value.get.return_value = mock_response
 
-        handler = SSLCertificateHandler("https://127.0.0.1:8443")
+        handler = SSLCertificateHandler("https://127.0.0.1:8443", "secret")
 
         # Set up stored certificate
         handler.cert_path = Path("/fake/cert.pem")
@@ -263,7 +263,7 @@ class TestSSLCertificateWorkflow:
         # User declines to update certificate
         mock_question.return_value = QMessageBox.No
 
-        handler = SSLCertificateHandler("https://127.0.0.1:8443")
+        handler = SSLCertificateHandler("https://127.0.0.1:8443", "secret")
 
         # Set up stored certificate
         handler.cert_path = Path("/fake/cert.pem")

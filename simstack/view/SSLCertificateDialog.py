@@ -144,7 +144,7 @@ class SSLCertificateHandler:
     4. Storing trusted certificates locally
     """
 
-    def __init__(self, server_url: str, parent=None):
+    def __init__(self, server_url: str, client_secret: str, parent=None):
         """
         Initialize SSL certificate handler.
 
@@ -156,6 +156,7 @@ class SSLCertificateHandler:
         self.parent = parent
         self.client = HTTPSClient(server_url)
         self.cert_path: Optional[Path] = None
+        self.client_secret = client_secret
 
         # Check if certificate is already stored
         self._check_stored_certificate()
@@ -191,7 +192,7 @@ class SSLCertificateHandler:
             ConnectionFailedError: If connection to server fails after retries
         """
         session = requests.Session()
-
+        session.auth = ('simstack', self.client_secret)
         if cert_path:
             # Use the provided certificate for verification
             session.verify = str(cert_path)

@@ -135,8 +135,8 @@ class SSHConnector(QObject):
             message = ""
         self.error.emit(base_uri, operation.value, error.value, message)
 
-    def certificate_trust_workflow(self, client_url):
-        handler = SSLCertificateHandler(client_url)
+    def certificate_trust_workflow(self, client_url, client_secret):
+        handler = SSLCertificateHandler(client_url, client_secret)
         if handler.has_stored_certificate():
             print(f"ℹ Found existing certificate at: {handler.get_certificate_path()}")
             cert_info = handler.get_certificate_info()
@@ -164,7 +164,7 @@ class SSHConnector(QObject):
         software_dir = registry.sw_dir_on_resource
         command = cm.get_server_command_from_software_directory(software_dir)
         cm.start_server_remote(command)
-        self.certificate_trust_workflow(cm.get_client_url())
+        self.certificate_trust_workflow(cm.get_client_url(), cm.get_client_secret())
         cm.init_client()
         return ErrorCodes.NO_ERROR
 
