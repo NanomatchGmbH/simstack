@@ -242,6 +242,7 @@ class SSHConnector(QObject):
                 extra_config=extra_config,
                 queueing_system=registry.queueing_system,
                 default_queue=registry.queue,
+                use_ssh_tunnel=registry.use_ssh_tunnel,
             )
         self._clustermanagers[name] = cm
         if not cm.is_connected():
