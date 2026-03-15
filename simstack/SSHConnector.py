@@ -157,13 +157,27 @@ class SSHConnector(QObject):
             print("\n✗ FAILED!")
             raise Exception(f"SSL Certificate trust workflow failed: {message}")
 
+    def _port_is_listening(self, host: str, port: int) -> bool:
+        """Return True if a TCP connection to host:port succeeds within 2 seconds."""
+        try:
+            with socket.create_connection((host, port), timeout=2):
+                return True
+        except (socket.timeout, ConnectionRefusedError, OSError):
+            return False
+
     def start_server(self, registry_name: str, callback=(None, (), {})):
         cm = self._get_cm(registry_name)
         cm: ClusterManager
         registry: Resources = self._registries[registry_name]
         software_dir = registry.sw_dir_on_resource
-        command = cm.get_server_command_from_software_directory(software_dir)
-        cm.start_server_remote(command)
+
+        server_already_running = not registry.use_ssh_tunnel and bool(
+            registry.rest_port and registry.client_secret
+        ) and self._port_is_listening(registry.base_URI, registry.rest_port)
+
+        if not server_already_running:
+            command = cm.get_server_command_from_software_directory(software_dir)
+            cm.start_server_remote(command)
         if not registry.use_ssh_tunnel:
             self.certificate_trust_workflow(cm.get_client_url(), cm.get_client_secret())
         cm.init_client()
@@ -245,38 +259,50 @@ class SSHConnector(QObject):
                 queueing_system=registry.queueing_system,
                 default_queue=registry.queue,
                 use_ssh_tunnel=registry.use_ssh_tunnel,
+                rest_port=registry.rest_port,
+                client_secret=registry.client_secret,
             )
         self._clustermanagers[name] = cm
+        if registry.use_ssh_tunnel or not (registry.rest_port and registry.client_secret):
+            needs_ssh = True
+        else:
+            # rest_port and client_secret are configured and no tunnel is required.
+            # Only skip SSH if the server is already reachable; otherwise we need
+            # SSH to start it.
+            needs_ssh = not self._port_is_listening(registry.base_URI, registry.rest_port)
         if not cm.is_connected():
             try:
-                local_hostkey_file = SimStackPaths.get_local_hostfile()
-                try:
-                    # We read the known hosts at the last time:
-                    cm.load_extra_host_keys(local_hostkey_file)
-                    cm.connect()
-                except paramiko.ssh_exception.SSHException as e:
-                    exstr = str(e)
-                    if exstr.endswith("not found in known_hosts"):
-                        reply = QMessageBox.question(
-                            None,
-                            "SSH HostKey unknown",
-                            "An unknown hostkey was encountered, when connecting to %s. If this is your first time connecting, this is expected. Add the Host to your local hostkeys?"
-                            % name,
-                            QMessageBox.Yes,
-                            QMessageBox.No,
-                        )
-                        if reply == QMessageBox.Yes:
-                            if hasattr(cm, "set_connect_to_unknown_hosts"):
-                                # This is backwards compatibility for horeka
-                                cm.set_connect_to_unknown_hosts(True)
-                                cm.connect()
+                if needs_ssh:
+                    local_hostkey_file = SimStackPaths.get_local_hostfile()
+                    try:
+                        # We read the known hosts at the last time:
+                        cm.load_extra_host_keys(local_hostkey_file)
+                        cm.connect()
+                    except paramiko.ssh_exception.SSHException as e:
+                        exstr = str(e)
+                        if exstr.endswith("not found in known_hosts"):
+                            reply = QMessageBox.question(
+                                None,
+                                "SSH HostKey unknown",
+                                "An unknown hostkey was encountered, when connecting to %s. If this is your first time connecting, this is expected. Add the Host to your local hostkeys?"
+                                % name,
+                                QMessageBox.Yes,
+                                QMessageBox.No,
+                            )
+                            if reply == QMessageBox.Yes:
+                                if hasattr(cm, "set_connect_to_unknown_hosts"):
+                                    # This is backwards compatibility for horeka
+                                    cm.set_connect_to_unknown_hosts(True)
+                                    cm.connect()
+                                else:
+                                    cm.connect(connect_to_unknown_hosts=True)
+                                cm.save_hostkeyfile(local_hostkey_file)
                             else:
-                                cm.connect(connect_to_unknown_hosts=True)
-                            cm.save_hostkeyfile(local_hostkey_file)
+                                raise e from e
                         else:
                             raise e from e
-                    else:
-                        raise e from e
+                else:
+                    cm.connect_if_disconnected()
                 error = ErrorCodes.NO_ERROR
                 statusmessage = "Connected."
                 self.start_server(registry_name)
