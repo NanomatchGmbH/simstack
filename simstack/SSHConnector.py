@@ -328,6 +328,13 @@ class SSHConnector(QObject):
 
                 error = ErrorCodes.CONN_ERROR
                 del self._clustermanagers[name]
+            except ConnectionError:
+                statusmessage = (
+                    "The server could not be reached. Please check if it is running "
+                    "or setup ssh credentials for automatic server starting."
+                )
+                error = ErrorCodes.CONN_ERROR
+                del self._clustermanagers[name]
             except Exception as e:
                 traceback_out = StringIO()
                 traceback.print_exc(file=traceback_out)
