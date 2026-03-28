@@ -1,0 +1,104 @@
+{
+    "commands": {
+        "TABS.materials.materials": 2,
+        "TABS.materials.materials.0.TP": 3,
+        "TABS.materials.materials.1.TP": 3,
+        "TABS.device.layers.0.TP": 1,
+        "TABS.device.layers.0.molecule_species": 2
+    },
+    "values": {
+        "TABS": {
+            "general": {
+                "connect_electrodes": false
+            },
+            "IO": {
+                "QP output file": [
+                    {
+                        "name": "DisorderJs",
+                        "QP_output zip": "global://AdvancedForEach/${c0,c1_ITER}/ESAnalysis/outputs/Analysis.zip"
+                    }
+                ]
+            },
+            "materials": {
+                "materials": [
+                    {
+                        "input_mode_transport": "QP: sig PAR: eaip,l",
+                        "TP": [
+                            {},
+                            {},
+                            {},
+                            {
+                                "molecule_pdb": "global://Parallel/0/MolPrep/outputs/molecule.pdb",
+                                "energies": "[ [  6.0 , 2.0 ] , [  0.1 , 0.1 ] ] "
+                            },
+                            {},
+                            {}
+                        ]
+                    },
+                    {
+                        "name": "mol B",
+                        "input_mode_transport": "QP: sig PAR: eaip,l",
+                        "TP": [
+                            {},
+                            {},
+                            {},
+                            {
+                                "molecule_pdb": "global://Parallel/1/MolPrep/outputs/molecule.pdb",
+                                "energies": "[ [  5.8 , 2.0 ] , [  0.1 , 0.1 ] ] "
+                            },
+                            {},
+                            {}
+                        ]
+                    }
+                ],
+                "exciton_presets": [
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {}
+                ]
+            },
+            "device": {
+                "morphology width [nm]": 30.0,
+                "layers": [
+                    {
+                        "thickness": 30.0,
+                        "morphology_input_mode": "cubic",
+                        "molecule_species": [
+                            {
+                                "concentration": "import_from:${c0}"
+                            },
+                            {
+                                "material": "mol B",
+                                "concentration": "import_from:${c1}"
+                            }
+                        ]
+                    }
+                ],
+                "electrodes": [
+                    {},
+                    {}
+                ]
+            },
+            "topology": {
+                "transport tuning parameters": [
+                    {}
+                ],
+                "pair parameters": [
+                    {}
+                ]
+            },
+            "operation": {
+                "simulations": 10,
+                "initial holes": "30"
+            }
+        }
+    },
+    "metadata": {
+        "name": "lightforge2",
+        "folder": "lightforge2"
+    }
+}

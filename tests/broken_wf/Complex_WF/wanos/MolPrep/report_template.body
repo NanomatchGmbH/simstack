@@ -1,0 +1,47 @@
+<h1> Parametrizer </h1>
+
+DFT Engine  <b> {{ output_dict["DFT Method"]  }} </b> was used. <br>
+The molecule - named {{output_dict["Molecule Info"]["Molecule Identifier"] }}-  was
+{% if output_dict["Molecule Info"]["Optimize Molecule"] == true %}
+ optimized using <b> {{output_dict["Simulation settings"]["Geometry Convergence"] }} </b> as geometry convergence criteria. <br>
+{% else %}
+ not optimized and just a single point energy calculation was performed. <br>
+{% endif %}
+
+ <img src="output_molecule.svg"/>
+
+<h2>Setting details: </h2>
+<b>{{output_dict["Simulation settings"]["Functional"] }}/ {{output_dict["Simulation settings"]["Basis"] }} </b> <br>
+
+{% if output_dict["Molecule Info"]["Excited State of Interest"] == 0 %}
+Groundstate - S0 was selected <br>
+ {% else %}
+Excited state - S {{output_dict["Molecule Info"]["Excited State of Interest"] }} was selected <br>
+First excitation energy: {{output_dict["Excitation energy 0"]}}  <br>
+
+{% if output_dict["Simulation settings"]["Functional"] == "ADC(2)" %}
+First excitation energy in implicit solvent: {{output_dict["Excitation energy COSMO 0"]}} <br>
+
+ {% endif %}
+ {% endif %}
+
+{% if "w-fit" in output_dict %}
+
+w-tuning of range sep. functional was activated:  <br>
+w-fit: {{output_dict["w-fit"]}}  <br>
+{% endif %}
+
+molecular properties:
+<ul>
+<li>{{output_dict["homo-id"]}} occupeid orbitals </li>
+<li>HOMO energy is {{output_dict["homo energy"] | round(4,'ceil') }} eV</li>
+<li>LUMO energy is {{output_dict["lumo energy"] | round(4,'ceil') }} eV</li>
+<li>total energy is {{output_dict["total_energy"]  | round(4,'ceil')}} eV</li>
+
+</ul>
+
+{% if output_dict["Molecule Info"]["Calculate UV/VIS spectrum"] == true %}
+
+<img src="UV_VIS_{{output_dict["Molecule Info"]["Molecule Identifier"] }}_spectrum.png"/>
+
+{% endif %}

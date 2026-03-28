@@ -1,0 +1,53 @@
+<WaNoTemplate>
+    <WaNoRoot name="MolPrep">
+
+            <WaNoFile logical_filename="input_molecule" name="Input Molecule File">Mol/CML/PDB/Mol2/XYZ</WaNoFile>
+            <WaNoThreeRandomLetters name="Molecule Identifier"></WaNoThreeRandomLetters>
+            <WaNoBool name="Optimize Molecule">True</WaNoBool>
+            <WaNoBool name="Compute Dihedral Forcefield">True</WaNoBool>
+
+    </WaNoRoot>
+ <WaNoExecCommand>
+#!/bin/bash
+
+set -euo pipefail
+
+simstack_server_mamba_source
+$MAMBA_EXE activate nmsci-2024.3
+
+python3 init_molprep.py
+
+bash ./parametrizer.sh
+
+
+DO_DHP="{{ wano["Compute Dihedral Forcefield"] }}"
+
+if [ "aa$DO_DHP" == "aaTrue" ]; then
+    echo "running dhp"
+    # run dhp
+    bash ./dihedral_parametrizer_4.sh
+    mv molecule.spf molecule_before_dhp.spf
+    mv dihedral_forcefield.spf molecule_forcefield.spf
+else
+    cp molecule.spf molecule_forcefield.spf
+fi
+
+</WaNoExecCommand>
+ <WaNoInputFiles>
+   <WaNoInputFile logical_filename="init_molprep.py">init_molprep.py</WaNoInputFile>
+   <WaNoInputFile logical_filename="dihedral_parametrizer_4.sh">dihedral_parametrizer_4.sh</WaNoInputFile>
+   <WaNoInputFile logical_filename="parametrizer.sh">parametrizer.sh</WaNoInputFile>
+   <WaNoInputFile logical_filename="merge_dh.py">merge_dh.py</WaNoInputFile>
+   <WaNoInputFile logical_filename="report_template.body">report_template.body</WaNoInputFile>
+   <WaNoInputFile logical_filename="parametrizer_settings_template.yml">parametrizer_settings_template.yml</WaNoInputFile>
+   <WaNoInputFile logical_filename="dhp_settings_template.yml">dhp_settings_template.yml</WaNoInputFile>
+ </WaNoInputFiles>
+ <WaNoOutputFiles>
+    <WaNoOutputFile>report.zip</WaNoOutputFile>
+    <WaNoOutputFile>molecule_forcefield.spf</WaNoOutputFile>
+    <WaNoOutputFile>molecule.pdb</WaNoOutputFile>
+    <WaNoOutputFile>output_molecule.mol2</WaNoOutputFile>
+    <WaNoOutputFile>mol_data.yml</WaNoOutputFile>
+    <WaNoOutputFile>output_dict.yml</WaNoOutputFile>
+ </WaNoOutputFiles>
+</WaNoTemplate>

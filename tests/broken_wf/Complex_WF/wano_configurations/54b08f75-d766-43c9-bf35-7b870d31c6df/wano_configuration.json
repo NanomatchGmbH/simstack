@@ -1,0 +1,40 @@
+{
+    "commands": {
+        "TABS.Simulation Parameters.Dimensions.ModeSwitch": 1,
+        "TABS.Molecules.Molecules": 2
+    },
+    "values": {
+        "TABS": {
+            "Simulation Parameters": {
+                "Dimensions": {
+                    "ModeSwitch": [
+                        {},
+                        {
+                            "X [A]": 40.0,
+                            "Y [A]": 40.0,
+                            "Z [A]": 50.0
+                        }
+                    ]
+                }
+            },
+            "Molecules": {
+                "Molecules": [
+                    {
+                        "Molecule": "global://Parallel/0/MolPrep/outputs/molecule.pdb",
+                        "Forcefield": "global://Parallel/0/MolPrep/outputs/molecule_forcefield.spf",
+                        "Mixing Ratio": "import_from:${c0}"
+                    },
+                    {
+                        "Molecule": "global://Parallel/1/MolPrep/outputs/molecule.pdb",
+                        "Forcefield": "global://Parallel/1/MolPrep/outputs/molecule_forcefield.spf",
+                        "Mixing Ratio": "import_from:${c1}"
+                    }
+                ]
+            }
+        }
+    },
+    "metadata": {
+        "name": "Deposit4",
+        "folder": "Deposit4"
+    }
+}

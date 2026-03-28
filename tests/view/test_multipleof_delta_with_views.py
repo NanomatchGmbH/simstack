@@ -10,7 +10,7 @@ from pathlib import Path
 
 import pytest
 
-BROKEN_WF = Path(__file__).parents[2] / "broken_wf" / "Complex_WF"
+BROKEN_WF = Path(__file__).parents[1] / "broken_wf" / "Complex_WF"
 WANOS_DIR = BROKEN_WF / "wanos"
 WANO_CONFIGS_DIR = BROKEN_WF / "wano_configurations"
 

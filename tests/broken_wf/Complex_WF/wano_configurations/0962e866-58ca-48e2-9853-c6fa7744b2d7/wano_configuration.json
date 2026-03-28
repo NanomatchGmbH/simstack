@@ -1,0 +1,20 @@
+{
+    "commands": {},
+    "values": {
+        "Tabs": {
+            "General": {
+                "General Settings": {
+                    "Morphology": "global://AdvancedForEach/${c0,c1_ITER}/Deposit4/outputs/structurePBC.cml",
+                    "Compute absolute levels of IP/EA": false
+                },
+                "Shell for Disorder and Couplings": {
+                    "Number of molecules": 50
+                }
+            }
+        }
+    },
+    "metadata": {
+        "name": "ESAnalysis",
+        "folder": "ESAnalysis"
+    }
+}

@@ -1,0 +1,77 @@
+<WaNoTemplate>
+ <WaNoRoot name="Deposit4">
+ <WaNoTabs name="TABS">
+ <WaNoGroup name="Simulation Parameters">
+  <WaNoDictBox name="Dimensions">
+    <WaNoDropDown name="Morphology size defined by">
+      <Entry id="0" chosen="true">box size</Entry>
+      <Entry id="1">number of molecules</Entry>
+    </WaNoDropDown>
+
+    <WaNoSwitch switch_path="TABS.Simulation Parameters.Dimensions.Morphology size defined by" name="ModeSwitch" >
+      <WaNoInviBox switch_name="number of molecules" name="box">
+        <WaNoInt name="Number of Molecules">10</WaNoInt>
+        <WaNoBool name="Cubic Box">False</WaNoBool>
+        <WaNoFloat visibility_condition="%s == False" visibility_var_path="TABS.Simulation Parameters.Dimensions.ModeSwitch.0.Cubic Box" name="X [A]">100.0</WaNoFloat>
+        <WaNoFloat visibility_condition="%s == False" visibility_var_path="TABS.Simulation Parameters.Dimensions.ModeSwitch.0.Cubic Box" name="Y [A]">100.0</WaNoFloat>
+      </WaNoInviBox>
+      <WaNoInviBox switch_name="box size" name="box">
+        <WaNoFloat name="X [A]">100.0</WaNoFloat>
+        <WaNoFloat name="Y [A]">100.0</WaNoFloat>
+        <WaNoFloat name="Z [A]">200.0</WaNoFloat>
+      </WaNoInviBox>
+    </WaNoSwitch>
+    <WaNoBool name="Set total box height for multilayer">False</WaNoBool>
+    <WaNoFloat visibility_condition="%s == True" visibility_var_path="TABS.Simulation Parameters.Dimensions.Set total box height for multilayer" name="Total Z [A]">200.0</WaNoFloat>
+    <WaNoDictBox visibility_condition="'%s' == '2'" visibility_var_path="TABS.Simulation Parameters.Dimensions.Morphology size defined by" name="PBC">
+       <WaNoBool name="enabled">True</WaNoBool>
+       <WaNoFloat name="Cutoff">20.0</WaNoFloat>
+    </WaNoDictBox>
+  </WaNoDictBox>
+  <WaNoBool name="Show simulation parameters (advanced)">False</WaNoBool>
+  <WaNoDictBox visibility_condition="%s == True" visibility_var_path="TABS.Simulation Parameters.Show simulation parameters (advanced)"
+               name="Simulation Parameters">
+    <WaNoFloat name="Initial Temperature [K]">4000.0</WaNoFloat>
+    <WaNoFloat name="Final Temperature [K]">300.0</WaNoFloat>
+    <WaNoFloat name="SA Acc Temp">5.0</WaNoFloat>
+    <WaNoInt name="Number of Steps">130000</WaNoInt>
+    <WaNoInt name="Number of SA cycles">32</WaNoInt>
+    <WaNoBool name="Dihedral Moves">True</WaNoBool>
+    <WaNoInt name="Postrelaxation Steps">10000</WaNoInt>
+  </WaNoDictBox>
+  </WaNoGroup>
+ <WaNoGroup name="Molecules">
+  <WaNoBool name="Restart from existing morphology">False</WaNoBool>
+  <WaNoFile logical_filename="restartfile.zip"
+            visibility_condition="%s == True" visibility_var_path="TABS.Molecules.Restart from existing morphology"
+            name="Restartfile">restartfile.zip</WaNoFile>
+  <WaNoMultipleOf name="Molecules">
+    <Element id="0">
+       <WaNoFile logical_filename="molecule_{{ path[3] }}.pdb" name="Molecule">Choose Molecule</WaNoFile>
+       <WaNoFile logical_filename="molecule_{{ path[3] }}.spf" name="Forcefield">Choose Forcefield</WaNoFile>
+       <WaNoFloat name="Mixing Ratio">1.0</WaNoFloat>
+    </Element>
+  </WaNoMultipleOf>
+ </WaNoGroup>
+  <WaNoGroup name="Postprocessing">
+  <WaNoBool name="Extend morphology (x,y)">True</WaNoBool>
+  <WaNoFloat visibility_condition="%s == True" visibility_var_path="TABS.Postprocessing.Extend morphology (x,y)" name="Cut first layer by (A)">7.0</WaNoFloat>
+ </WaNoGroup>
+ </WaNoTabs>
+ </WaNoRoot>
+ <WaNoExecCommand>
+   simstack_server_mamba_source
+   $MAMBA_EXE activate nmsci-2024.3
+   bash ./deposit_init.sh
+</WaNoExecCommand>
+ <WaNoInputFiles>
+   <WaNoInputFile logical_filename="deposit_init.sh">deposit_init.sh</WaNoInputFile>
+   <WaNoInputFile logical_filename="report_template.body">report_template.body</WaNoInputFile>
+ </WaNoInputFiles>
+ <WaNoOutputFiles>
+    <WaNoOutputFile>structure.cml</WaNoOutputFile>
+    <WaNoOutputFile>structurePBC.cml</WaNoOutputFile>
+    <WaNoOutputFile>merged.spf</WaNoOutputFile>
+    <WaNoOutputFile>restartfile.zip</WaNoOutputFile>
+ </WaNoOutputFiles>
+</WaNoTemplate>

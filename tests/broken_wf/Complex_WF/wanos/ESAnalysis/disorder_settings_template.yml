@@ -1,0 +1,144 @@
+QuantumPatch:
+  morphology: morphology.cml
+  type: uncharged_equilibration
+  dimer_cutoff: 7.0
+  pc_cutoff_by_cog: true
+  number_of_equilibration_steps: 0
+  charge_damping: 0.0
+  damping_by_iter: {}
+  abs_damping_by_iter: {}
+  partial_charge_cutoff: 55
+  calculateJs: true
+  max_batch_size: 20
+  chargetype_multipoles: false
+  atomistic_polarizability_steps: [Vacuum]
+  vacuum_charge_mapping: map_similar
+  ff_pbc: true
+  equilibration_options:
+    equilibration_mode: steps
+    core_only: false
+    mixing_type: NoMixing
+    max_iterdelta_pc: 0.1
+    max_iterdelta_pot: 0.05
+    vac_damping: false
+    p_skip: 0.0
+    delta_pot: 0.002
+    delta_E: 0.0005
+    multiplier: 1.0
+    max_level: 2
+  molstate_loop_order:
+  - [2]
+  - [0]
+  - [1]
+DFTEngine:
+  defaults:
+    Turbomole:
+      engine: Turbomole
+      basis: def2-SVP
+      functional: BP86
+      threads: 1
+      memory: 1500
+      charge_model: ESP
+  user:
+    polFF:
+      engine: polFF
+      threads: 1
+      field_screening: 0.3
+      damp_radius: 0.75
+      damp_type: avrg
+      induction_only: false
+      induced_multipoles:
+        dipol: true
+        monopol: false
+        monodipol: false
+        quadrupol: false
+    TM env:
+      engine: Turbomole
+      basis: def2-SVP
+      functional: BP86
+      charge_model: ESP
+      mem_per_cpu: 3500
+      threads: 1
+      polFF_env: false
+    PySCF env:
+      engine: PySCF
+      basis: def2-SVP
+      functional: BP86
+      charge_model: ESP
+      gridsize: fast
+      mem_per_cpu: 3500
+      threads: auto
+  geo_opt: {}
+System:
+  Core:
+    type: number
+    engine: PySCF env
+    engine_by_iter: {}
+    default_molstates: 2;0;1
+    list: 'molstate.2: 74;94 | molstate.0: 74;94 | molstate.1: 74;94'
+    GeometricalOptimizationSteps: []
+    distance:
+      cutoff_x: 10.0
+      cutoff_y: 10.0
+      cutoff_z: 10.0
+    number: 100
+  Shells:
+    '0':
+      cutoff: 8.0
+      engine: PySCF env
+      type: static
+      shellsize_by: number
+      number: 100
+      skip_apo: true
+      type_by_iter: {}
+      engine_by_iter: {}
+  MolStates:
+    '0':
+      charge: 1
+      multiplicity: 2
+      excited_state_of_interest: 0
+      roots: 10
+    '1':
+      charge: -1
+      multiplicity: 2
+      excited_state_of_interest: 0
+      roots: 10
+    '2':
+      charge: 0
+      multiplicity: 1
+      excited_state_of_interest: 0
+      roots: 10
+Analysis:
+  HigherOrder:
+    ExtraJs: 10
+  MultipoleOutput: false
+  MatrixEAIP:
+    radius: [8, 25]
+    classical_eps: 3.5
+    do_lambda: false
+    DoEvalStep: false
+    single_delta: true
+    calculate_vac: false
+    exact_pot: false
+    exact_pot_cutoff: 15
+    sd_scaling:
+      ind1_ind: 0.5
+      ind2_ind: 0.5
+      n_ind: 0.5
+      ind1_n: 0.5
+      ind2_n: 0.5
+    coulomb_analysis:
+      radii: [8, 25]
+      pc_decomposition: [0, 100]
+      exact_pot_decomposition: [0, 100]
+      extrapolate:
+      - [8, 15]
+      - [pc_decomposition, exact_pot_decomposition]
+    ewald_mode: equilibrated
+    statistic_target: mean_lumo_homo
+  MachineLearning:
+    enable: false
+    neighbour_radius: 20.0
+    histogram_width: 6
+    debug_output: false
+SpecialSteps: {}
