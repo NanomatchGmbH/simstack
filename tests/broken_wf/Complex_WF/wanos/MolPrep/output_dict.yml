@@ -1,0 +1,17 @@
+Excitation energy 0: 8.171257543314308
+Excitation energy 1: 8.459448528783962
+Flourescene lifetime 0: 8.461272302313732e-10
+Flourescene lifetime 1: 146.00489096308436
+Excitation energy COSMO 0: 8.84057
+Excitation energy COSMO 1: 8.96991
+dipole:
+- 0.0
+- 0.0
+- 0.0
+homo energy: -10.628439717585954
+homo-id: 7
+lumo energy: 2.8257953780844187
+lumo_id: 8
+total_energy: -2132.905494
+w-fit: 0.1
+walltime: 25.010499954223633

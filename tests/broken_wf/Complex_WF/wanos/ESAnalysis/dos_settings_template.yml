@@ -1,0 +1,218 @@
+QuantumPatch:
+  morphology: morphology.cml
+  type: matrix_eaip
+  dimer_cutoff: 7.0
+  pc_cutoff_by_cog: true
+  number_of_equilibration_steps: 2
+  charge_damping: 0.3
+  damping_by_iter: {}
+  abs_damping_by_iter: {}
+  partial_charge_cutoff: 55
+  calculateJs: false
+  max_batch_size: 20
+  chargetype_multipoles: false
+  atomistic_polarizability_steps: [Vacuum]
+  vacuum_charge_mapping: map_similar
+  ff_pbc: true
+  equilibration_options:
+    equilibration_mode: steps
+    core_only: false
+    mixing_type: NoMixing
+    max_iterdelta_pc: 0.1
+    max_iterdelta_pot: 0.05
+    vac_damping: false
+    p_skip: 0.0
+    delta_pot: 0.002
+    delta_E: 0.0005
+    multiplier: 1.0
+    max_level: 2
+  molstate_loop_order:
+  - [2]
+  - [0]
+  - [1]
+DFTEngine:
+  defaults:
+    Turbomole:
+      engine: Turbomole
+      basis: def2-SVP
+      functional: BP86
+      threads: 1
+      memory: 1500
+      charge_model: ESP
+  user:
+    polFF:
+      engine: polFF
+      threads: 31
+      field_screening: 0.3
+      damp_radius: 0.75
+      damp_type: avrg
+      induction_only: false
+      induced_multipoles:
+        dipol: true
+        monopol: false
+        monodipol: false
+        quadrupol: false
+    PySCF 1:
+      engine: PySCF
+      basis: def2-SVPD
+      functional: PBE0
+      charge_model: ESP
+      gridsize: fast
+      mem_per_cpu: 1500
+      threads: f"1.25xauto.min.{4}"
+      polFF_env: true
+      mf_opts_override:
+        max_cycle: 100
+    PySCF 2:
+      engine: PySCF
+      basis: def2-SVPD
+      functional: PBE0
+      charge_model: ESP
+      gridsize: fast
+      mem_per_cpu: 1500
+      threads: f"1x25xauto.min.{4}"
+      polFF_env: false
+      mf_opts_override:
+        max_cycle: 200
+    PySCF env:
+      engine: PySCF
+      basis: def2-SVPD
+      functional: BP86
+      charge_model: ESP
+      gridsize: fast
+      mem_per_cpu: 3000
+      threads: 1.25xauto
+    PySCF Evalstep:
+      engine: PySCF
+      basis: aug-cc-pVDZ
+      functional: PBE0
+      cbs_extra_basis: ["aug-cc-pVTZ"]
+      threads: 31
+      memory: 128000
+      charge_model: Mulliken
+      on_the_fly_jk: true
+      float_gw: true
+      gw_df_type: lpq
+      GW:
+        doGW: true
+        mode: g0w0
+    Turbomole Evalstep:
+      engine: Turbomole
+      basis: def2-SVP
+      method: ridft
+      functional: TMHF
+      cbs_correction: ccsdt_from_gw
+      cbs_basis: ["aug-cc-pVDZ", "aug-cc-pVTZ"]
+      threads: 31
+      memory: 24000
+      charge_model: Mulliken
+      GW:
+        doGW: true
+        mode: g0w0
+System:
+  Core:
+    type: number_by_type
+    engine: PySCF 1
+    engine_by_iter:
+      Vacuum: PySCF env
+      LastMolState_2: PySCF 2
+      LastMolState_0: PySCF 2
+      LastMolState_1: PySCF 2
+    default_molstates: 2;0;1
+    list: 'molstate.2: 735;837;890;982;877;807;906;1078 | molstate.0: 735;837;890;982;877;807;906;1078
+      | molstate.1: 735;837;890;982;877;807;906;1078'
+    GeometricalOptimizationSteps: []
+    distance:
+      cutoff_x: 10.0
+      cutoff_y: 10.0
+      cutoff_z: 10.0
+    number: 8
+  Shells:
+    '0':
+      cutoff: 20.0
+      engine: polFF
+      type: static
+      type_by_iter:
+        LastMolState_2: scf
+        LastMolState_0: scf
+        LastMolState_1: scf
+      engine_by_iter:
+        Vacuum: PySCF env
+        LastMolState_2: PySCF env
+        LastMolState_0: PySCF env
+        LastMolState_1: PySCF env
+    '1':
+      cutoff: 25.0
+      engine: polFF
+      type: static
+      skip_apo: true
+      type_by_iter:
+        LastMolState_2: scf
+        LastMolState_0: scf
+        LastMolState_1: scf
+      engine_by_iter:
+        Vacuum: PySCF env
+        LastMolState_2: PySCF env
+        LastMolState_0: PySCF env
+        LastMolState_1: PySCF env
+    '2':
+      cutoff: 55.0
+      engine: polFF
+      type: static
+      type_by_iter: {}
+      skip_by_iter: [Vacuum]
+      engine_by_iter: {}
+  MolStates:
+    '0':
+      charge: 1
+      multiplicity: 2
+      excited_state_of_interest: 0
+      roots: 10
+    '1':
+      charge: -1
+      multiplicity: 2
+      excited_state_of_interest: 0
+      roots: 10
+    '2':
+      charge: 0
+      multiplicity: 1
+      excited_state_of_interest: 0
+      roots: 10
+Analysis:
+  HigherOrder:
+    ExtraJs: 10
+  MultipoleOutput: false
+  MatrixEAIP:
+    radius: [50, 20]
+    hide_raw_data: true
+    classical_eps: 3.5
+    do_lambda: false
+    DoEvalStep: true
+    single_delta: true
+    exact_pot: true
+    exact_pot_cutoff: 25
+    sd_scaling:
+      ind1_ind: 0.5
+      ind2_ind: 0.5
+      n_ind: 0.5
+      ind1_n: 0.5
+      ind2_n: 0.5
+    coulomb_analysis:
+      radii: [20, 55]
+      pc_decomposition: [0, 100]
+      exact_pot_decomposition: [0, 100]
+      extrapolate:
+      - [20, 25]
+      - [pc_decomposition, exact_pot_decomposition]
+    ewald_mode: equilibrated
+    statistic_target: mean_homo_lumo
+  MachineLearning:
+    enable: false
+    neighbour_radius: 20.0
+    histogram_width: 6
+    debug_output: false
+SpecialSteps:
+  EvalStep:
+    engine: "PySCF Evalstep"
+    mollist: LowestGS
+    environment_source: None

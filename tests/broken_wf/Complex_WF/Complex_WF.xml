@@ -1,0 +1,24 @@
+<root wfxml_version="2.0">
+  <WFControl name="Parallel" type="Parallel">
+    <WFControl name="SubWF" type="SubWorkflow">
+      <WaNo type="MolPrep" uuid="68933edf-0605-4bcd-9465-352e98e293ee" id="0" name="MolPrep"/>
+    </WFControl>
+    <WFControl name="SubWF" type="SubWorkflow">
+      <WaNo type="MolPrep" uuid="6632a474-ca27-40f8-b681-6c861d3e46ce" id="0" name="MolPrep"/>
+    </WFControl>
+  </WFControl>
+  <WFControl name="AdvancedForEach" type="AdvancedFor" is_file_iterator="False">
+    <WFControl name="SubWF" type="SubWorkflow">
+      <WaNo type="Deposit4" uuid="54b08f75-d766-43c9-bf35-7b870d31c6df" id="0" name="Deposit4"/>
+      <WaNo type="ESAnalysis" uuid="0962e866-58ca-48e2-9853-c6fa7744b2d7" id="1" name="ESAnalysis"/>
+      <WaNo type="lightforge2" uuid="2ca2a7af-9529-45e3-b8f8-bc80a0ecb328" id="2" name="lightforge2"/>
+    </WFControl>
+    <FileList>
+      <File>zip([1,0.5,</File>
+      <File>0.0],[0.0,</File>
+      <File>0.5,</File>
+      <File>1.0])</File>
+    </FileList>
+    <IterName>c0,c1</IterName>
+  </WFControl>
+</root>

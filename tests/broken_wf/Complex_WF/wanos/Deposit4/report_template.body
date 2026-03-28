@@ -1,0 +1,33 @@
+<h1> Deposit </h1>
+Boxdimensions:
+<ul>
+<li> x-direction: {{ output_dict["Box"]['Lx'] }} <br> </li>
+<li> y-direction: {{ output_dict["Box"]['Ly'] }} <br> </li>
+<li> z-direction: {{ output_dict["Box"]['Lz'] }} <br> </li>
+<li> pbc-cutoff:  {{ output_dict["Box"]['pbc_cutoff'] }} <br> </li>
+</ul>
+
+The following molecule(s) are included: <br>
+{{ output_dict["molecule"] }} <br>
+
+The morphology consists of  {{ output_dict["simparams"]['Nmol'] }} molecules and the following molecule(s) (named after their internal used hashs) are contained: <br>
+---------------------------------<br>
+ {{ output_dict["Concentration"] }} <br>
+<br>
+The density of the box is {{ output_dict["averaged_box_density"] }} +- {{ output_dict["std_box_dens"] }} <br>
+    <style>
+      p { margin-top: 2em; }
+   </style>
+The following figure(s) show(s) the radial distribution functions - all possible combinations for mixed morphologies <br>
+(the first four characters of the hash are used to assign the molecule to the RDF plot) <br>
+<figure>
+  <img src="summary_RDF.png" alt="RDFs" style="width:55%">
+ <figcaption>Fig.1 - Summary RDF.</figcaption>
+</figure>
+
+The following pictures show different schematic 2D views of the morphologie and the one at the right a 3D view <br>
+(the molecules are just represented by their centre of geometry - cog) <br>
+<figure>
+  <img src="visualization_2D_and_3D.png" alt="morphology view" style="width:100%">
+<figcaption>Fig.2 - Morphology view 2D and 3D.</figcaption>
+</figure>

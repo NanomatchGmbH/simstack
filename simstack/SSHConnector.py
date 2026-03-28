@@ -14,8 +14,6 @@ import paramiko
 from lxml import etree
 
 
-from zmq.error import Again, ZMQError
-
 from PySide6.QtCore import Signal, QObject
 from PySide6.QtWidgets import QMessageBox
 
@@ -32,6 +30,7 @@ from SimStackServer.Util.FileUtilities import filewalker
 from functools import wraps
 
 from simstack.lib.QtClusterSettingsProvider import QtClusterSettingsProvider
+from simstack.view.SSLCertificateDialog import SSLCertificateHandler
 
 """ Number of data transfer workers per regisrtry. """
 MAX_DT_WORKERS_PER_REGISTRY = 3
@@ -107,11 +106,6 @@ def eagain_catcher(f):
     def wrapper(self, *args, **kwds):
         try:
             return f(self, *args, **kwds)
-        except (Again, ZMQError):
-            from simstack.view.WFViewManager import WFViewManager
-
-            message = "Connection Error, please try reconnecting Client."
-            WFViewManager.show_error(message)
         except socket.timeout as e:
             from simstack.view.WFViewManager import WFViewManager
 
@@ -141,13 +135,55 @@ class SSHConnector(QObject):
             message = ""
         self.error.emit(base_uri, operation.value, error.value, message)
 
+    def certificate_trust_workflow(self, client_url, client_secret):
+        handler = SSLCertificateHandler(client_url, client_secret)
+        if handler.has_stored_certificate():
+            print(f"ℹ Found existing certificate at: {handler.get_certificate_path()}")
+            cert_info = handler.get_certificate_info()
+            if cert_info:
+                print(f"  Subject: {cert_info.subject}")
+                print(f"  Valid until: {cert_info.not_valid_after}")
+
+            # Run the interactive SSL certificate trust workflow
+        success, message = handler.handle_ssl_certificate_trust()
+
+        if success:
+            print("\n✓ SUCCESS!")
+            print(f"  {message}")
+            cert_path = handler.get_certificate_path()
+            if cert_path:
+                print(f"  Certificate at: {cert_path}")
+        else:
+            print("\n✗ FAILED!")
+            raise Exception(f"SSL Certificate trust workflow failed: {message}")
+
+    def _port_is_listening(self, host: str, port: int) -> bool:
+        """Return True if a TCP connection to host:port succeeds within 2 seconds."""
+        try:
+            with socket.create_connection((host, port), timeout=2):
+                return True
+        except (socket.timeout, ConnectionRefusedError, OSError):
+            return False
+
     def start_server(self, registry_name: str, callback=(None, (), {})):
         cm = self._get_cm(registry_name)
         cm: ClusterManager
         registry: Resources = self._registries[registry_name]
         software_dir = registry.sw_dir_on_resource
-        command = cm.get_server_command_from_software_directory(software_dir)
-        cm.connect_zmq_tunnel(command)
+
+        server_already_running = (
+            not registry.use_ssh_tunnel
+            and bool(registry.rest_port and registry.client_secret)
+            and self._port_is_listening(registry.base_URI, registry.rest_port)
+        )
+
+        if not server_already_running:
+            command = cm.get_server_command_from_software_directory(software_dir)
+            cm.start_server_remote(command)
+        if not registry.use_ssh_tunnel:
+            self.certificate_trust_workflow(cm.get_client_url(), cm.get_client_secret())
+        cm.init_client()
+        cm.configure(registry)
         return ErrorCodes.NO_ERROR
 
     def _get_main_par_dir(self):
@@ -197,8 +233,11 @@ class SSHConnector(QObject):
                 default_queue=registry.queue,
                 filegen_mode=True,
             )
-        elif connection_is_localhost_and_same_user(
-            registry.base_URI, user=registry.username
+        elif (
+            connection_is_localhost_and_same_user(
+                registry.base_URI, user=registry.username
+            )
+            and False
         ):
             cm = LocalClusterManager(
                 url=registry.base_URI,
@@ -221,48 +260,61 @@ class SSHConnector(QObject):
                 extra_config=extra_config,
                 queueing_system=registry.queueing_system,
                 default_queue=registry.queue,
+                use_ssh_tunnel=registry.use_ssh_tunnel,
+                rest_port=registry.rest_port,
+                client_secret=registry.client_secret,
             )
         self._clustermanagers[name] = cm
+        if registry.use_ssh_tunnel or not (
+            registry.rest_port and registry.client_secret
+        ):
+            needs_ssh = True
+        else:
+            # rest_port and client_secret are configured and no tunnel is required.
+            # Only skip SSH if the server is already reachable; otherwise we need
+            # SSH to start it.
+            needs_ssh = not self._port_is_listening(
+                registry.base_URI, registry.rest_port
+            )
         if not cm.is_connected():
             try:
-                local_hostkey_file = SimStackPaths.get_local_hostfile()
-                try:
-                    # We read the known hosts at the last time:
-                    cm.load_extra_host_keys(local_hostkey_file)
-                    cm.connect()
-                except paramiko.ssh_exception.SSHException as e:
-                    exstr = str(e)
-                    if exstr.endswith("not found in known_hosts"):
-                        reply = QMessageBox.question(
-                            None,
-                            "SSH HostKey unknown",
-                            "An unknown hostkey was encountered, when connecting to %s. If this is your first time connecting, this is expected. Add the Host to your local hostkeys?"
-                            % name,
-                            QMessageBox.Yes,
-                            QMessageBox.No,
-                        )
-                        if reply == QMessageBox.Yes:
-                            if hasattr(cm, "set_connect_to_unknown_hosts"):
-                                # This is backwards compatibility for horeka
-                                cm.set_connect_to_unknown_hosts(True)
-                                cm.connect()
+                if needs_ssh:
+                    local_hostkey_file = SimStackPaths.get_local_hostfile()
+                    try:
+                        # We read the known hosts at the last time:
+                        cm.load_extra_host_keys(local_hostkey_file)
+                        cm.connect()
+                    except paramiko.ssh_exception.SSHException as e:
+                        exstr = str(e)
+                        if exstr.endswith("not found in known_hosts"):
+                            reply = QMessageBox.question(
+                                None,
+                                "SSH HostKey unknown",
+                                "An unknown hostkey was encountered, when connecting to %s. If this is your first time connecting, this is expected. Add the Host to your local hostkeys?"
+                                % name,
+                                QMessageBox.Yes,
+                                QMessageBox.No,
+                            )
+                            if reply == QMessageBox.Yes:
+                                if hasattr(cm, "set_connect_to_unknown_hosts"):
+                                    # This is backwards compatibility for horeka
+                                    cm.set_connect_to_unknown_hosts(True)
+                                    cm.connect()
+                                else:
+                                    cm.connect(connect_to_unknown_hosts=True)
+                                cm.save_hostkeyfile(local_hostkey_file)
                             else:
-                                cm.connect(connect_to_unknown_hosts=True)
-                            cm.save_hostkeyfile(local_hostkey_file)
+                                raise e from e
                         else:
                             raise e from e
-                    else:
-                        raise e from e
+                else:
+                    cm.connect_if_disconnected()
                 error = ErrorCodes.NO_ERROR
                 statusmessage = "Connected."
                 self.start_server(registry_name)
             except paramiko.ssh_exception.SSHException as e:
                 statusmessage = str(e)
                 traceback.print_exc()
-                error = ErrorCodes.CONN_ERROR
-                del self._clustermanagers[name]
-            except Again:
-                statusmessage = "Connection Error, please try reconnecting Client."
                 error = ErrorCodes.CONN_ERROR
                 del self._clustermanagers[name]
             except socket.timeout as e:
@@ -282,11 +334,21 @@ class SSHConnector(QObject):
 
                 error = ErrorCodes.CONN_ERROR
                 del self._clustermanagers[name]
-            except OSError as e:
+            except ConnectionError:
                 statusmessage = (
-                    "Caught generic exception %s. Please reconnect and try again and if it reappears report to Nanomatch"
-                    % (e)
+                    "The server could not be reached. Please check if it is running "
+                    "or setup ssh credentials for automatic server starting."
                 )
+                error = ErrorCodes.CONN_ERROR
+                del self._clustermanagers[name]
+            except Exception as e:
+                traceback_out = StringIO()
+                traceback.print_exc(file=traceback_out)
+                statusmessage = (
+                    "Caught generic exception:\n%s  \n ----- Traceback -----\n %s"
+                    % (e, traceback_out.getvalue())
+                )
+
                 error = ErrorCodes.CONN_ERROR
                 del self._clustermanagers[name]
         else:
@@ -352,19 +414,17 @@ class SSHConnector(QObject):
             cm.put_file(filename, submitpath.replace("\\", "/"))
 
         wf_yml_name = real_submitname + "/" + "rendered_workflow.xml"
-        with cm.remote_open(wf_yml_name, "wt") as outfile:
-            outfile.write(
-                etree.tostring(xml, encoding="utf8", pretty_print=True)
-                .decode()
-                .replace("c9m:", "")
-                .replace("${STORAGE}/", "")
-                .replace("${SUBMIT_NAME}", real_submitname)
-                .replace(
-                    "${BASEFOLDER}", cm.get_calculation_basepath() + "/" + submitname
-                )
-                .replace("${QUEUE}", cm.get_queueing_system())
-                .replace("${QUEUE_NAME}", cm.get_default_queue())
-            )
+        wf_content = (
+            etree.tostring(xml, encoding="utf8", pretty_print=True)
+            .decode()
+            .replace("c9m:", "")
+            .replace("${STORAGE}/", "")
+            .replace("${SUBMIT_NAME}", real_submitname)
+            .replace("${BASEFOLDER}", cm.get_calculation_basepath() + "/" + submitname)
+            .replace("${QUEUE}", cm.get_queueing_system())
+            .replace("${QUEUE_NAME}", cm.get_default_queue())
+        )
+        cm.put_file_content(wf_content, wf_yml_name)
         cm.submit_wf(wf_yml_name)
 
     def update_job_list(self, base_uri, callback=(None, (), {})):

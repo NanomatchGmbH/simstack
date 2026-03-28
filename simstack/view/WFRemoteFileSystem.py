@@ -64,6 +64,11 @@ class WFRemoteFileSystem(QWidget):
 
             if subelements is not None and len(subelements) > 0:
                 if filePath == "?wf?":
+                    if isinstance(subelements, dict):
+                        wflist = []
+                        for subelement in subelements.values():
+                            wflist += subelement
+                        subelements = wflist
                     subelements.sort(key=lambda k: k["name"], reverse=True)
                 else:
                     subelements.sort(key=lambda k: k["name"])

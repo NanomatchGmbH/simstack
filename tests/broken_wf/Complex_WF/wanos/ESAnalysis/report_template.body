@@ -1,0 +1,5 @@
+<h1> Quantumpatch  </h1>
+A detailed report is comming soon ... <br>
+The output contains a <b> {{ output_dict["QuantumPatch"]["type"] }} </b> calculation. <br>
+The following shells were used: <br>
+ {{ output_dict["System"]["Shells"] }}

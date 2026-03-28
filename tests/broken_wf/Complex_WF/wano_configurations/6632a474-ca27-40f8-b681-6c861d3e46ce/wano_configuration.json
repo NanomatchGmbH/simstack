@@ -1,0 +1,11 @@
+{
+    "commands": {},
+    "values": {
+        "Input Molecule File": "local:///home/neumann/OLEDSWActivities/Projekte/2023/GSP/Input/OXD-7/MolView.mol2",
+        "Molecule Identifier": "XJK"
+    },
+    "metadata": {
+        "name": "MolPrep",
+        "folder": "MolPrep"
+    }
+}

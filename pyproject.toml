@@ -6,7 +6,7 @@ dependencies = []
 readme = "README.md"
 license = {file = "LICENSE"}
 classifiers = ["License :: OSI Approved :: MIT License"]
-version="1.6.2"
+version="2.0.0"
 description="SimStack is a platform for rapid prototyping of multimodule simulation workflows to be executed on remote computational resources. This project contains the GUI of this platform that connects to SimStackServer."
 
 [project.urls]
@@ -24,7 +24,7 @@ build-backend = "setuptools.build_meta"
 package-dir = {"simstack" = "simstack"}
 include-package-data = true
 
-[tool.pixi.project]
+[tool.pixi.workspace]
 channels = ["https://repo.prefix.dev/simstack", "conda-forge"]
 platforms = ["linux-64"]
 
@@ -48,7 +48,7 @@ python = ">=3.11"
 pyside6 = ">6.8"
 yaml = ">=0.2.5,<0.3.0"
 pyyaml = ">=6.0.0,<6.1.0"
-simstackserver = ">=1.6.0,<1.7.0"
+simstackserver = ">=2.0.0,<2.1.0"
 # End of your dependencies
 
 [tool.pixi.feature.dev.dependencies]
@@ -71,7 +71,7 @@ serverdev = "simstack"
 test = { features = ["test"], solve-group = "default" }
 mypy = ["mypy"]
 default = { features = ["dev"], solve-group = "main" }
-serverdev = { features = ["serverdev"] }
+serverdev = { features = ["serverdev", "test"] }
 cruft = { features = ["cruft"], no-default-feature = true }
 pythonbuild = { features = ["pythonbuild"], no-default-feature = true, solve-group = "default" }
 condabuild = { features = ["condabuild"], no-default-feature = true, solve-group = "default" }

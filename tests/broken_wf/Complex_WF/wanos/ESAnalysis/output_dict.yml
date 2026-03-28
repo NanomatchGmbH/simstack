@@ -1,0 +1,148 @@
+Analysis:
+  Excitonic:
+    Fluorescence:
+      DFTEngine: Turbomole 1
+      enabled: true
+    Phosphorescence:
+      DFTEngine: Dalton 1
+      enabled: true
+    TPQ:
+      DFTEngine: Turbomole 1
+      anion: true
+      cation: true
+      enabled: true
+      roots: 20
+    TTA:
+      DFTEngine: Turbomole 1
+      enabled: true
+      roots: 20
+  HigherOrder:
+    ExtraJs: 7
+  MachineLearning:
+    enable: false
+  MatrixEAIP:
+    do_lambda: false
+    radius: sameas:System.Shells.0.cutoff
+  homo_lumo_generator:
+    coulomb_cutoff: 25
+    enabled: false
+    esp_avrg_options:
+      bins_per_nm: 1.7
+      mode: by_distance
+      z-extend: true
+    non_PBC_morphology: structure.cml
+    periodic_copies:
+    - 2
+    - 2
+    - 2
+    swap_x_z_axis: true
+DFTEngine:
+  defaults:
+    DFTBplus:
+      charge_model: cm3
+      engine: DFTBplus
+      threads: 1
+    Dalton:
+      basis: def2-SVP
+      charge_model: ESP
+      engine: Dalton
+      functional: BP86
+      memory: 1500
+      threads: 1
+    Psi4Engine:
+      basis: def2-SVP
+      charge_model: ESP
+      engine: Psi4Engine
+      functional: BP86
+      memory: 1500
+      reference: rdft
+      threads: 1
+    Turbomole:
+      basis: def2-SVP
+      charge_model: ESP
+      engine: Turbomole
+      functional: BP86
+      memory: 1500
+      threads: 1
+  geo_opt:
+    ffenv: true
+    keysfrom: DFTEngine.defaults.DFTBplus
+  user:
+    DFTB+ 1:
+      charge_model: CM5
+      dispersion: false
+      engine: DFTBplus
+      memory: 1500
+      threads: 1
+    Psi4 1:
+      basis: def2-SVP
+      charge_model: ESP
+      dispersion: false
+      engine: Psi4
+      functional: BP86
+      memory: 1500
+      threads: 1
+    Turbomole 1:
+      basis: def2-SVP
+      charge_model: ESP
+      dispersion: false
+      engine: Turbomole
+      functional: BP86
+      memory: 1500
+      rangesep:
+        alpha: 0.0
+        beta: 1.0
+        w: 0.1
+      scf_convergence: normal
+      threads: 1
+    XTBEngine 1:
+      charge_model: CM5
+      engine: XTBEngine
+      memory: 1500
+      threads: 1
+QuantumPatch:
+  calculateJs: false
+  charge_damping: 0.15
+  chargetype_multipoles: false
+  dimer_cutoff: 7.0
+  morphology: morphology.cml
+  number_of_equilibration_steps: 7
+  partial_charge_cutoff: 60
+  type: uncharged_equilibration
+System:
+  Core:
+    GeometricalOptimizationSteps: []
+    default_molstates: 0;1
+    distance:
+      cutoff_x: 10.0
+      cutoff_y: 10.0
+      cutoff_z: 10.0
+    engine: Turbomole 1
+    engine_by_iter: {}
+    type: distance
+  IdenticalMolecules:
+    crystal_centers: []
+    enable_mapping: false
+    filename: identical_molecules.txt
+  MolStates:
+    '0':
+      charge: 1
+      excited_state_of_interest: 0
+      multiplicity: 2
+      roots: 0
+    '1':
+      charge: -1
+      excited_state_of_interest: 0
+      multiplicity: 2
+      roots: 0
+  Shells:
+    '0':
+      cutoff: 25.0
+      engine: Turbomole 1
+      engine_by_iter: {}
+      type: scf
+    '1':
+      cutoff: 60.0
+      engine: Turbomole 1
+      engine_by_iter: {}
+      type: static

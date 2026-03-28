@@ -1,0 +1,69 @@
+<WaNoTemplate>
+    <WaNoRoot name="ESAnalysis">
+        <WaNoTabs name="Tabs">
+            <WaNoGroup name="General">
+                <WaNoDictBox name="General Settings">
+                    <WaNoFile logical_filename="morphology.cml" name="Morphology">Put .cml file here</WaNoFile>
+                    <WaNoBool name="Compute absolute levels of IP/EA">True</WaNoBool>
+                    <WaNoBool name="Compute disorder">True</WaNoBool>
+                    <WaNoBool visibility_condition="'%s' == 'True'" visibility_var_path="Tabs.General.General Settings.Compute disorder" name="Compute couplings">True</WaNoBool>
+                </WaNoDictBox>
+               <WaNoDictBox visibility_condition="'%s' == 'True'" visibility_var_path="Tabs.General.General Settings.Compute absolute levels of IP/EA" name="Core Shell">
+                    <WaNoDropDown name="Shell size defined by">
+                        <Entry id="0" chosen="True">Number of Molecules</Entry>
+                        <Entry id="1">Number of Molecules of each Type</Entry>
+                        <Entry id="2">List of Molecule IDs</Entry>
+                    </WaNoDropDown>
+                    <WaNoString visibility_condition="'%s' == 'List of Molecule IDs'" visibility_var_path="Tabs.General.Core Shell.Shell size defined by" name="List of molecule IDs">43;57;79-100</WaNoString>
+                    <WaNoInt visibility_condition="'Number' in '%s'" visibility_var_path="Tabs.General.Core Shell.Shell size defined by" name="Number of molecules">8</WaNoInt>
+                </WaNoDictBox>
+                <WaNoDictBox visibility_condition="'%s' == 'True'" visibility_var_path="Tabs.General.General Settings.Compute disorder" name="Shell for Disorder and Couplings">
+                    <WaNoInt name="Number of molecules">200</WaNoInt>
+                </WaNoDictBox>
+            </WaNoGroup>
+            <WaNoGroup name="Engines">
+                <WaNoDictBox name="General engine settings">
+                    <WaNoInt name="Memory per CPU (MB)">1500</WaNoInt>
+                </WaNoDictBox>
+                <WaNoDictBox visibility_condition="'%s' == 'True'" visibility_var_path="Tabs.General.General Settings.Compute absolute levels of IP/EA" name="GW settings">
+                    <WaNoDropDown name="GW Engine">
+                        <Entry id="0" chosen="true">PySCF</Entry>
+                        <Entry id="1">Turbomole</Entry>
+                    </WaNoDropDown>
+                    <WaNoDropDown visibility_condition="'%s' == 'PySCF'" visibility_var_path="Tabs.Engines.GW settings.GW Engine" name="Functional GW PySCF">
+                        <Entry id="0" chosen="true">PBE0</Entry>
+                    </WaNoDropDown>
+                    <WaNoDropDown visibility_condition="'%s' == 'Turbomole'" visibility_var_path="Tabs.Engines.GW settings.GW Engine" name="Functional GW Turbomole">
+                        <Entry id="0" chosen="true">PBE0</Entry>
+                        <Entry id="1">TMHF</Entry>
+                    </WaNoDropDown>
+                </WaNoDictBox>
+            </WaNoGroup>
+            <WaNoGroup name="Storage">
+                <WaNoDropDown name="Storage Location">
+                        <Entry id="0" chosen="true">Workdir</Entry>
+                        <Entry id="1">Scratch</Entry>
+                </WaNoDropDown>
+            </WaNoGroup>
+        </WaNoTabs>
+    </WaNoRoot>
+    <WaNoExecCommand>
+simstack_server_mamba_source
+$MAMBA_EXE activate nmsci-2024.3
+
+bash ./init.sh
+    </WaNoExecCommand>
+    <WaNoInputFiles>
+        <WaNoInputFile logical_filename="init.sh">init.sh</WaNoInputFile>
+        <WaNoInputFile logical_filename="init_dos.py">init_dos.py</WaNoInputFile>
+        <WaNoInputFile logical_filename="dos_settings_template.yml">dos_settings_template.yml</WaNoInputFile>
+        <WaNoInputFile logical_filename="disorder_settings_template.yml">disorder_settings_template.yml</WaNoInputFile>
+        <WaNoInputFile logical_filename="report_template.body">report_template.body</WaNoInputFile>
+    </WaNoInputFiles>
+    <WaNoOutputFiles>
+        <WaNoOutputFile>Analysis.zip</WaNoOutputFile>
+        <WaNoOutputFile>Analysis/GSP/partial_charges.yml</WaNoOutputFile>
+        <WaNoOutputFile>Analysis/GSP/core_shell.cml</WaNoOutputFile>
+        <WaNoOutputFile>output_dict.yml</WaNoOutputFile>
+    </WaNoOutputFiles>
+</WaNoTemplate>
