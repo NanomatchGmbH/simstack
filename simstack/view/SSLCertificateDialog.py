@@ -192,7 +192,7 @@ class SSLCertificateHandler:
             ConnectionFailedError: If connection to server fails after retries
         """
         session = requests.Session()
-        session.auth = ('simstack', self.client_secret)
+        session.auth = ("simstack", self.client_secret)
         if cert_path:
             # Use the provided certificate for verification
             session.verify = str(cert_path)

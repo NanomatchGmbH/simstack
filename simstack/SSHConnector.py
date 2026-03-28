@@ -171,9 +171,11 @@ class SSHConnector(QObject):
         registry: Resources = self._registries[registry_name]
         software_dir = registry.sw_dir_on_resource
 
-        server_already_running = not registry.use_ssh_tunnel and bool(
-            registry.rest_port and registry.client_secret
-        ) and self._port_is_listening(registry.base_URI, registry.rest_port)
+        server_already_running = (
+            not registry.use_ssh_tunnel
+            and bool(registry.rest_port and registry.client_secret)
+            and self._port_is_listening(registry.base_URI, registry.rest_port)
+        )
 
         if not server_already_running:
             command = cm.get_server_command_from_software_directory(software_dir)
@@ -263,13 +265,17 @@ class SSHConnector(QObject):
                 client_secret=registry.client_secret,
             )
         self._clustermanagers[name] = cm
-        if registry.use_ssh_tunnel or not (registry.rest_port and registry.client_secret):
+        if registry.use_ssh_tunnel or not (
+            registry.rest_port and registry.client_secret
+        ):
             needs_ssh = True
         else:
             # rest_port and client_secret are configured and no tunnel is required.
             # Only skip SSH if the server is already reachable; otherwise we need
             # SSH to start it.
-            needs_ssh = not self._port_is_listening(registry.base_URI, registry.rest_port)
+            needs_ssh = not self._port_is_listening(
+                registry.base_URI, registry.rest_port
+            )
         if not cm.is_connected():
             try:
                 if needs_ssh:
