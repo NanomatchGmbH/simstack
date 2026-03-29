@@ -308,6 +308,9 @@ class SSHConnector(QObject):
                         else:
                             raise e from e
                 else:
+                    self.certificate_trust_workflow(
+                        cm.get_client_url(), cm.get_client_secret()
+                    )
                     cm.connect_if_disconnected()
                 error = ErrorCodes.NO_ERROR
                 statusmessage = "Connected."

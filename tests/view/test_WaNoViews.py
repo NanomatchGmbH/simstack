@@ -664,7 +664,7 @@ class TestWaNoItemFileView:
 
         view.set_file_import(None)
 
-        model.set_local.assert_called_with(True)
+        assert model.is_local_file is True
         assert view.lineedit.text() == ""
 
     def test_set_file_import_with_filename(self, qtbot):
@@ -677,7 +677,7 @@ class TestWaNoItemFileView:
 
         view.set_file_import("test_file.txt")
 
-        model.set_local.assert_called_with(False)
+        assert model.is_local_file is False
         assert view.lineedit.text() == "test_file.txt"
 
     @patch("PySide6.QtWidgets.QFileDialog.getOpenFileName")
@@ -693,7 +693,7 @@ class TestWaNoItemFileView:
 
         view.showLocalDialog()
 
-        model.set_local.assert_called_with(True)
+        assert model.is_local_file is True
         assert "/path/to/selected/file.txt" in view.lineedit.text()
 
 
