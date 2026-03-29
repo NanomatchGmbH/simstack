@@ -621,9 +621,10 @@ class TestWFEditorApplication:
         # Mock _get_current_registry_name
         app._get_current_registry_name = MagicMock(return_value="registry")
 
-        # Mock get_workflow_url
+        # Mock get_workflow_url and get_registry_client_secret
         mock_url = "http://example.com/workflow/workflow1"
         app._connector.get_workflow_url.return_value = mock_url
+        app._connector.get_registry_client_secret.return_value = "my_secret"
 
         # Create test workflow
         workflow = "workflow1"
@@ -633,9 +634,11 @@ class TestWFEditorApplication:
 
         # Verify connector was called
         app._connector.get_workflow_url.assert_called_once_with("registry", workflow)
+        app._connector.get_registry_client_secret.assert_called_once_with("registry")
 
-        # Verify webbrowser was called
-        mock_webbrowser.open_new_tab.assert_called_once_with(mock_url)
+        # Verify webbrowser was called with basic auth credentials injected
+        expected_url = "http://simstack:my_secret@example.com/workflow/workflow1"
+        mock_webbrowser.open_new_tab.assert_called_once_with(expected_url)
 
     def test_on_fs_delete_workflow(self, app):
         """Test _on_fs_delete_workflow method."""

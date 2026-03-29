@@ -485,6 +485,10 @@ class SSHConnector(QObject):
         cm = self._get_cm(registry_name)
         return cm.get_url_for_workflow(workflow)
 
+    def get_registry_client_secret(self, registry_name):
+        cm = self._get_cm(registry_name)
+        return cm.get_client_secret()
+
     @eagain_catcher
     def delete_workflow(
         self, registry_name, workflow_submitname, callback=(None, (), {})

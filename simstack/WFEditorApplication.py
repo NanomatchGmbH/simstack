@@ -1,5 +1,6 @@
 import logging
 import os
+import urllib.parse
 import webbrowser
 import zipfile
 from os.path import join
@@ -303,7 +304,15 @@ class WFEditorApplication:
         registry_name = self._get_current_registry_name()
         # print("Im workflow",workflow)
         myurl = self._connector.get_workflow_url(registry_name, workflow)
-        webbrowser.open_new_tab(myurl)
+        client_secret = self._connector.get_registry_client_secret(registry_name)
+        parsed = urllib.parse.urlparse(myurl)
+        netloc = (
+            f"simstack:{client_secret}@{parsed.hostname}:{parsed.port}"
+            if parsed.port
+            else f"simstack:{client_secret}@{parsed.hostname}"
+        )
+        auth_url = parsed._replace(netloc=netloc).geturl()
+        webbrowser.open_new_tab(auth_url)
 
     def _on_fs_delete_workflow(self, workflow):
         registry_name = self._get_current_registry_name()
