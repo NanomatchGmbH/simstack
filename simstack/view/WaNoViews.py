@@ -295,7 +295,10 @@ class WaNoItemIntView(AbstractWanoQTView):
         hbox.addWidget(self.spinner)
 
         self._global_import_button = QtWidgets.QPushButton(
-            QtWidgets.QApplication.style().standardIcon(QtWidgets.QStyle.StandardPixmap.SP_ArrowDown), ""
+            QtWidgets.QApplication.style().standardIcon(
+                QtWidgets.QStyle.StandardPixmap.SP_ArrowDown
+            ),
+            "",
         )
         self._global_import_button.clicked.connect(self.open_remote_importer)
         hbox.addWidget(self._global_import_button)
@@ -350,7 +353,10 @@ class WaNoItemFloatView(AbstractWanoQTView):
         hbox.addStretch()
         hbox.addWidget(self.spinner)
         self._global_import_button = QtWidgets.QPushButton(
-            QtWidgets.QApplication.style().standardIcon(QtWidgets.QStyle.StandardPixmap.SP_ArrowDown), ""
+            QtWidgets.QApplication.style().standardIcon(
+                QtWidgets.QStyle.StandardPixmap.SP_ArrowDown
+            ),
+            "",
         )
         self._global_import_button.clicked.connect(self.open_remote_importer)
         # hbox.addWidget(self.line_edit)
@@ -471,7 +477,10 @@ class WaNoItemStringView(AbstractWanoQTView):
         vbox.addWidget(self.lineedit)
 
         self._global_import_button = QtWidgets.QPushButton(
-            QtWidgets.QApplication.style().standardIcon(QtWidgets.QStyle.StandardPixmap.SP_ArrowDown), ""
+            QtWidgets.QApplication.style().standardIcon(
+                QtWidgets.QStyle.StandardPixmap.SP_ArrowDown
+            ),
+            "",
         )
         self._global_import_button.clicked.connect(self.open_remote_importer)
         # hbox.addWidget(self.line_edit)
@@ -583,7 +592,9 @@ class WaNoItemFileView(AbstractWanoQTView):
         self.label = QtWidgets.QLabel("ABC", parent=self.actual_widget)
         self.openfilebutton = QtWidgets.QPushButton("", parent=self.actual_widget)
         self.openfilebutton.setIcon(
-            self.openfilebutton.style().standardIcon(QtWidgets.QStyle.StandardPixmap.SP_FileIcon)
+            self.openfilebutton.style().standardIcon(
+                QtWidgets.QStyle.StandardPixmap.SP_FileIcon
+            )
         )
 
         """
@@ -597,7 +608,10 @@ class WaNoItemFileView(AbstractWanoQTView):
         # self.openwfbutton.itemSelectionChanged.connect(self.on_wf_file_change)
 
         self.openwfbutton = QtWidgets.QPushButton(
-            QtWidgets.QApplication.style().standardIcon(QtWidgets.QStyle.StandardPixmap.SP_ArrowDown), ""
+            QtWidgets.QApplication.style().standardIcon(
+                QtWidgets.QStyle.StandardPixmap.SP_ArrowDown
+            ),
+            "",
         )
         self.openwfbutton.clicked.connect(self.open_remote_importer_files)
 
