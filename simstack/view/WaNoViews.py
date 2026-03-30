@@ -295,7 +295,10 @@ class WaNoItemIntView(AbstractWanoQTView):
         hbox.addWidget(self.spinner)
 
         self._global_import_button = QtWidgets.QPushButton(
-            QtGui.QIcon.fromTheme("insert-object"), ""
+            QtWidgets.QApplication.style().standardIcon(
+                QtWidgets.QStyle.StandardPixmap.SP_ArrowDown
+            ),
+            "",
         )
         self._global_import_button.clicked.connect(self.open_remote_importer)
         hbox.addWidget(self._global_import_button)
@@ -350,7 +353,10 @@ class WaNoItemFloatView(AbstractWanoQTView):
         hbox.addStretch()
         hbox.addWidget(self.spinner)
         self._global_import_button = QtWidgets.QPushButton(
-            QtGui.QIcon.fromTheme("insert-object"), ""
+            QtWidgets.QApplication.style().standardIcon(
+                QtWidgets.QStyle.StandardPixmap.SP_ArrowDown
+            ),
+            "",
         )
         self._global_import_button.clicked.connect(self.open_remote_importer)
         # hbox.addWidget(self.line_edit)
@@ -471,7 +477,10 @@ class WaNoItemStringView(AbstractWanoQTView):
         vbox.addWidget(self.lineedit)
 
         self._global_import_button = QtWidgets.QPushButton(
-            QtGui.QIcon.fromTheme("insert-object"), ""
+            QtWidgets.QApplication.style().standardIcon(
+                QtWidgets.QStyle.StandardPixmap.SP_ArrowDown
+            ),
+            "",
         )
         self._global_import_button.clicked.connect(self.open_remote_importer)
         # hbox.addWidget(self.line_edit)
@@ -583,7 +592,9 @@ class WaNoItemFileView(AbstractWanoQTView):
         self.label = QtWidgets.QLabel("ABC", parent=self.actual_widget)
         self.openfilebutton = QtWidgets.QPushButton("", parent=self.actual_widget)
         self.openfilebutton.setIcon(
-            QtWidgets.QFileIconProvider().icon(QtWidgets.QFileIconProvider.File)
+            self.openfilebutton.style().standardIcon(
+                QtWidgets.QStyle.StandardPixmap.SP_FileIcon
+            )
         )
 
         """
@@ -597,7 +608,10 @@ class WaNoItemFileView(AbstractWanoQTView):
         # self.openwfbutton.itemSelectionChanged.connect(self.on_wf_file_change)
 
         self.openwfbutton = QtWidgets.QPushButton(
-            QtGui.QIcon.fromTheme("insert-object"), ""
+            QtWidgets.QApplication.style().standardIcon(
+                QtWidgets.QStyle.StandardPixmap.SP_ArrowDown
+            ),
+            "",
         )
         self.openwfbutton.clicked.connect(self.open_remote_importer_files)
 
@@ -627,13 +641,12 @@ class WaNoItemFileView(AbstractWanoQTView):
         )
         mydialog.setModal(True)
         mydialog.exec_()
-        if mydialog.result() is True:
+        if mydialog.result() == QtWidgets.QDialog.Accepted:
             choice = mydialog.getchoice()
             self.set_file_import(choice)
             self.set_disable(True)
         else:
             self.set_disable(False)
-            self.set_file_import(None)
 
     def set_parent(self, parent_view):
         super().set_parent(parent_view)
@@ -648,7 +661,7 @@ class WaNoItemFileView(AbstractWanoQTView):
             self.set_disable(False)
             fname = QtCore.QDir.toNativeSeparators(fname)
             self.lineedit.setText(fname)
-            self.model.set_local(True)
+            self.model.is_local_file = True
             self.line_edited()
 
     """
@@ -667,12 +680,12 @@ class WaNoItemFileView(AbstractWanoQTView):
 
     def set_file_import(self, filename):
         if filename is None:
-            self.model.set_local(True)
+            self.model.is_local_file = True
             self.lineedit.setText("")
             self.line_edited()
             return
         self.lineedit.setText(filename)
-        self.model.set_local(False)
+        self.model.is_local_file = False
         self.line_edited()
 
     """

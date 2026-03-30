@@ -13,7 +13,7 @@ class HorizontalTextEditWithFileImport(QtWidgets.QWidget):
         self._textedit = QtWidgets.QLineEdit()
         self._openfilebrowser_button = QtWidgets.QPushButton("")
         self._openfilebrowser_button.setIcon(
-            QtWidgets.QFileIconProvider().icon(QtWidgets.QFileIconProvider.File)
+            self.style().standardIcon(QtWidgets.QStyle.StandardPixmap.SP_FileIcon)
         )
         self._layout.addWidget(self._textedit)
         self._layout.addWidget(self._openfilebrowser_button)

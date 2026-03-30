@@ -4868,8 +4868,8 @@ packages:
   timestamp: 1766034103379
 - pypi: ./
   name: simstack
-  version: 2.0.0
-  sha256: 464652b8c34025a86e28156d581e20b0d88a9b46f383978ef0bfc221203ea9a7
+  version: 2.0.1
+  sha256: 853a693e4236b54fc872ae4c90bcadbf5e1ba01a90ceca311a0fc76424d5f5fa
   requires_python: '>=3.11'
   editable: true
 - conda: https://repo.prefix.dev/simstack/noarch/simstackserver-2.0.0-py_0.conda

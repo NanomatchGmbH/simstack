@@ -308,6 +308,9 @@ class SSHConnector(QObject):
                         else:
                             raise e from e
                 else:
+                    self.certificate_trust_workflow(
+                        cm.get_client_url(), cm.get_client_secret()
+                    )
                     cm.connect_if_disconnected()
                 error = ErrorCodes.NO_ERROR
                 statusmessage = "Connected."
@@ -481,6 +484,10 @@ class SSHConnector(QObject):
     def get_workflow_url(self, registry_name, workflow):
         cm = self._get_cm(registry_name)
         return cm.get_url_for_workflow(workflow)
+
+    def get_registry_client_secret(self, registry_name):
+        cm = self._get_cm(registry_name)
+        return cm.get_client_secret()
 
     @eagain_catcher
     def delete_workflow(

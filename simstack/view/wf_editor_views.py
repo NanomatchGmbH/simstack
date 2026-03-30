@@ -829,7 +829,10 @@ class AdvancedForEachView(WFControlWithTopMiddleAndBottom):
         self.list_of_variables.editingFinished.connect(self.line_edited)
         self.topLineLayout.addWidget(self.list_of_variables)
         self._open_variables = QtWidgets.QPushButton(
-            QtGui.QIcon.fromTheme("drive-removable-media"), ""
+            QtWidgets.QApplication.style().standardIcon(
+                QtWidgets.QStyle.StandardPixmap.SP_DriveNetIcon
+            ),
+            "",
         )
         self._open_variables.clicked.connect(self.open_remote_importer)
         self.topLineLayout.addWidget(self._open_variables)
@@ -911,14 +914,20 @@ class ForEachView(WFControlWithTopMiddleAndBottom):
         self.list_of_variables = QtWidgets.QLineEdit("")
         self.topLineLayout.addWidget(self.list_of_variables)
         self.open_variables = QtWidgets.QPushButton(
-            QtGui.QIcon.fromTheme("drive-removable-media"), ""
+            QtWidgets.QApplication.style().standardIcon(
+                QtWidgets.QStyle.StandardPixmap.SP_DriveNetIcon
+            ),
+            "",
         )
         self.open_variables.clicked.connect(self.open_remote_importer_files)
         # self.open_variables = MultiselectDropDownList(self, text="Import")
         # self.open_variables.connect_workaround(self.load_wf_files)
         # self.open_variables.itemSelectionChanged.connect(self.on_wf_file_change)
         self._global_import_button = QtWidgets.QPushButton(
-            QtGui.QIcon.fromTheme("insert-object"), ""
+            QtWidgets.QApplication.style().standardIcon(
+                QtWidgets.QStyle.StandardPixmap.SP_ArrowDown
+            ),
+            "",
         )
         self._global_import_button.clicked.connect(self.open_remote_importer)
         self.topLineLayout.addWidget(self._global_import_button)
@@ -1104,7 +1113,10 @@ class IfView(WFControlWithTopMiddleAndBottom):
         self.list_of_variables.editingFinished.connect(self._on_line_edit)
         self.topLineLayout.addWidget(self.list_of_variables)
         self._global_import_button = QtWidgets.QPushButton(
-            QtGui.QIcon.fromTheme("insert-object"), ""
+            QtWidgets.QApplication.style().standardIcon(
+                QtWidgets.QStyle.StandardPixmap.SP_ArrowDown
+            ),
+            "",
         )
         self._global_import_button.clicked.connect(self.open_remote_importer)
         self.topLineLayout.addWidget(self._global_import_button)
@@ -1201,7 +1213,10 @@ class VariableView(WFControlWithTopMiddleAndBottom):
             )
 
         self._varname_import_button = QtWidgets.QPushButton(
-            QtGui.QIcon.fromTheme("insert-object"), ""
+            QtWidgets.QApplication.style().standardIcon(
+                QtWidgets.QStyle.StandardPixmap.SP_ArrowDown
+            ),
+            "",
         )
         self._varname_import_button.clicked.connect(open_remote_importer_func_varname)
         self.topLineLayout.addWidget(self._varname_widget)
@@ -1215,7 +1230,10 @@ class VariableView(WFControlWithTopMiddleAndBottom):
 
         self.topLineLayout.addWidget(self._varequation_widget)
         self._global_import_button = QtWidgets.QPushButton(
-            QtGui.QIcon.fromTheme("insert-object"), ""
+            QtWidgets.QApplication.style().standardIcon(
+                QtWidgets.QStyle.StandardPixmap.SP_ArrowDown
+            ),
+            "",
         )
         self._global_import_button.clicked.connect(
             open_remote_importer_func_varequation
@@ -1309,7 +1327,10 @@ class WhileView(WFControlWithTopMiddleAndBottom):
         self.list_of_variables.editingFinished.connect(self._on_varname_line_edit)
         self.topLineLayout.addWidget(self.list_of_variables)
         self._global_import_button = QtWidgets.QPushButton(
-            QtGui.QIcon.fromTheme("insert-object"), ""
+            QtWidgets.QApplication.style().standardIcon(
+                QtWidgets.QStyle.StandardPixmap.SP_ArrowDown
+            ),
+            "",
         )
         self._global_import_button.clicked.connect(self.open_remote_importer)
         self.topLineLayout.addWidget(self._global_import_button)

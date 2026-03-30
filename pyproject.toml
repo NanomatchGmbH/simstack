@@ -6,7 +6,7 @@ dependencies = []
 readme = "README.md"
 license = {file = "LICENSE"}
 classifiers = ["License :: OSI Approved :: MIT License"]
-version="2.0.0"
+version="2.0.1"
 description="SimStack is a platform for rapid prototyping of multimodule simulation workflows to be executed on remote computational resources. This project contains the GUI of this platform that connects to SimStackServer."
 
 [project.urls]
